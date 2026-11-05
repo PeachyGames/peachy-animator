@@ -1,6 +1,6 @@
+//! Shared imperative shell for project files, image copying and packed exports.
 use peachy_document::Document;
 use std::{
-    collections::BTreeSet,
     fs,
     io::Write,
     path::{Path, PathBuf},
@@ -10,7 +10,7 @@ use std::{
 pub fn load(path: &Path) -> Result<Document, String> {
     let text = fs::read_to_string(path).map_err(|e| e.to_string())?;
     let doc = if path.extension().and_then(|s| s.to_str()) == Some("peachy") {
-        serde_json::from_str(&text).map_err(|e| e.to_string())?
+        decode_project(&text)?
     } else {
         let value = serde_json::from_str(&text).map_err(|e| e.to_string())?;
         peachy_spine::import_json(
@@ -24,14 +24,57 @@ pub fn load(path: &Path) -> Result<Document, String> {
     Ok(doc)
 }
 
-fn asset_paths(doc: &Document) -> BTreeSet<String> {
-    doc.skins
-        .values()
-        .flat_map(|s| s.values())
-        .flat_map(|a| a.values())
-        .map(|r| r.path.clone())
-        .collect()
+pub fn decode_project(text: &str) -> Result<Document, String> {
+    let doc: Document = serde_json::from_str(text).map_err(|e| e.to_string())?;
+    doc.validate()?;
+    Ok(doc)
 }
+
+pub fn create_project(path: &Path, doc: &Document) -> Result<(), String> {
+    doc.validate()?;
+    require_extension(path, "peachy")?;
+    write_new(
+        path,
+        &serde_json::to_vec_pretty(doc).map_err(|e| e.to_string())?,
+    )
+}
+
+pub fn export_json(path: &Path, doc: &Document) -> Result<(), String> {
+    require_extension(path, "json")?;
+    let value = peachy_spine::export_json(doc)?;
+    write_new(
+        path,
+        &serde_json::to_vec_pretty(&value).map_err(|e| e.to_string())?,
+    )
+}
+
+fn require_extension(path: &Path, extension: &str) -> Result<(), String> {
+    if path.extension().and_then(|s| s.to_str()) != Some(extension) {
+        return Err(format!("Output must have .{extension} extension"));
+    }
+    Ok(())
+}
+
+/// Publish a complete new file without replacing an existing destination.
+/// The temporary file and hard link are on the same filesystem.
+fn write_new(path: &Path, bytes: &[u8]) -> Result<(), String> {
+    let temporary = path.with_extension(format!("tmp-{}-{}", std::process::id(), stamp()));
+    let result = (|| {
+        let mut file = fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&temporary)
+            .map_err(|e| e.to_string())?;
+        file.write_all(bytes)
+            .and_then(|()| file.sync_all())
+            .map_err(|e| e.to_string())?;
+        fs::hard_link(&temporary, path)
+            .map_err(|e| format!("Cannot publish new file {}: {e}", path.display()))
+    })();
+    let _ = fs::remove_file(temporary);
+    result
+}
+
 fn stamp() -> u128 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -41,12 +84,23 @@ fn stamp() -> u128 {
 
 pub fn save(path: &Path, doc: &Document, asset_root: &Path) -> Result<(), String> {
     doc.validate()?;
-    let parent = path.parent().ok_or("Invalid save path")?;
+    require_extension(path, "peachy")?;
+    let bytes = serde_json::to_vec_pretty(doc).map_err(|e| e.to_string())?;
+    let old = if path.exists() {
+        Some(fs::read(path).map_err(|e| e.to_string())?)
+    } else {
+        None
+    };
+    let parent = path
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."));
     let source = asset_root.canonicalize().map_err(|e| e.to_string())?;
     let destination = parent.canonicalize().map_err(|e| e.to_string())?;
     if source != destination {
         // Validate all paths before copying or committing the project.
-        let assets: Vec<_> = asset_paths(doc)
+        let assets: Vec<_> = doc
+            .image_paths()
             .into_iter()
             .map(|p| {
                 let from = source.join("images").join(format!("{p}.png"));
@@ -75,13 +129,10 @@ pub fn save(path: &Path, doc: &Document, asset_root: &Path) -> Result<(), String
             }
         }
     }
-    let bytes = serde_json::to_vec_pretty(doc).map_err(|e| e.to_string())?;
-    if path.exists() {
+    if let Some(old) = old {
         let backup = path.with_extension(format!("peachy.backup-{}", stamp()));
-        fs::copy(path, &backup).map_err(|e| e.to_string())?;
-        if fs::read(&backup).map_err(|e| e.to_string())?
-            != fs::read(path).map_err(|e| e.to_string())?
-        {
+        write_new(&backup, &old)?;
+        if fs::read(&backup).map_err(|e| e.to_string())? != old {
             return Err("Backup verification failed".into());
         }
     }
@@ -110,7 +161,7 @@ pub fn export_bundle(parent: &Path, doc: &Document, asset_root: &Path) -> Result
     let mut y = 2;
     let mut row = 0;
     let mut used_width = 1;
-    for path in asset_paths(doc) {
+    for path in doc.image_paths() {
         let image = image::open(asset_root.join("images").join(format!("{path}.png")))
             .map_err(|e| format!("Image {path}: {e}"))?
             .into_rgba8();
@@ -128,7 +179,7 @@ pub fn export_bundle(parent: &Path, doc: &Document, asset_root: &Path) -> Result
         used_width = used_width.max(x + image.width() + 2);
         row = row.max(image.height());
         regions.push((path, image, x, y));
-        x += regions.last().unwrap().1.width() + 4;
+        x += regions.last().expect("Region just appended").1.width() + 4;
     }
     let width = used_width.next_power_of_two();
     let height = (y + row + 2).next_power_of_two();
@@ -166,6 +217,28 @@ pub fn export_bundle(parent: &Path, doc: &Document, asset_root: &Path) -> Result
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn native_projects_reject_unknown_fields_instead_of_losing_future_features() {
+        let mut value: serde_json::Value =
+            serde_json::from_str(include_str!("../../../examples/peach-bot/peach-bot.peachy"))
+                .unwrap();
+        value["meshes"] = serde_json::json!([]);
+        assert!(decode_project(&value.to_string()).is_err());
+        value.as_object_mut().unwrap().remove("meshes");
+        value["bones"][0]["futureConstraint"] = serde_json::json!(1);
+        assert!(decode_project(&value.to_string()).is_err());
+    }
+    #[test]
+    fn failed_publish_keeps_existing_file_intact_and_removes_temporary_file() {
+        let folder = std::env::temp_dir().join(format!("peachy-atomic-{}", stamp()));
+        fs::create_dir(&folder).unwrap();
+        let output = folder.join("original");
+        fs::write(&output, b"original").unwrap();
+        assert!(write_new(&output, b"replacement").is_err());
+        assert_eq!(fs::read(&output).unwrap(), b"original");
+        assert_eq!(fs::read_dir(&folder).unwrap().count(), 1);
+        fs::remove_dir_all(folder).unwrap();
+    }
     #[test]
     fn saves_reopens_backs_up_and_exports_original_fixture() {
         let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../examples/peach-bot");

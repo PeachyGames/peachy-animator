@@ -2145,7 +2145,7 @@ dependencies = [
  "image",
  "peachy-document",
  "peachy-engine",
- "peachy-spine",
+ "peachy-io",
  "rfd",
  "serde_json",
 ]
@@ -2156,6 +2156,7 @@ version = "0.1.0"
 dependencies = [
  "peachy-document",
  "peachy-engine",
+ "peachy-io",
  "peachy-spine",
  "serde_json",
 ]
@@ -2173,6 +2174,17 @@ version = "0.1.0"
 dependencies = [
  "peachy-document",
  "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "peachy-io"
+version = "0.1.0"
+dependencies = [
+ "image",
+ "peachy-document",
+ "peachy-spine",
+ "serde_json",
 ]
 
 [[package]]
@@ -2180,6 +2192,7 @@ name = "peachy-spine"
 version = "0.1.0"
 dependencies = [
  "peachy-document",
+ "serde",
  "serde_json",
 ]
 

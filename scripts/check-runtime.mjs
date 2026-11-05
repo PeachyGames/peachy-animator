@@ -14,7 +14,7 @@ const runtimePath = process.argv[2];
 if (!runtimePath) throw new Error('Supply an absolute path to your separately licensed Spine 4.3 runtime module.');
 const { Texture, TextureAtlas, AtlasAttachmentLoader, SkeletonJson, Skeleton, AnimationState, AnimationStateData, Physics } = await import(pathToFileURL(resolve(runtimePath)));
 class OracleTexture extends Texture {
-  constructor() { super({ width: 512, height: 512 }); }
+  constructor(width, height) { super({ width, height }); }
   setFilters() {}
   setWraps() {}
   dispose() {}
@@ -26,8 +26,14 @@ const atlasPath = process.argv[4] ? resolve(process.argv[4]) : resolve(root, 'ex
 if (!existsSync(exportPath)) execFileSync(cli, ['export', source, exportPath]);
 const atlas = new TextureAtlas(readFileSync(atlasPath, 'utf8'));
 for (const page of atlas.pages) {
-  assert.ok(existsSync(resolve(dirname(atlasPath), page.name)), `Missing atlas page ${page.name}`);
-  page.setTexture(new OracleTexture());
+  const imagePath=resolve(dirname(atlasPath),page.name);
+  assert.ok(existsSync(imagePath), `Missing atlas page ${page.name}`);
+  const png=readFileSync(imagePath);
+  assert.equal(png.subarray(0,8).toString('hex'),'89504e470d0a1a0a','Oracle accepts PNG atlas pages');
+  const width=png.readUInt32BE(16),height=png.readUInt32BE(20);
+  assert.equal(page.width,width,'Atlas width matches the actual PNG');
+  assert.equal(page.height,height,'Atlas height matches the actual PNG');
+  page.setTexture(new OracleTexture(width,height));
 }
 const data = new SkeletonJson(new AtlasAttachmentLoader(atlas)).readSkeletonData(readFileSync(exportPath, 'utf8'));
 assert.equal(data.version.split('.').slice(0, 2).join('.'), '4.3');

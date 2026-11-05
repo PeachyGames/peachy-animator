@@ -1,12 +1,27 @@
 //! Independently written Spine 4.3 JSON adapter. No runtime implementation dependency.
 use peachy_document::*;
+use serde::Serialize;
 use serde_json::{Value, json};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 pub const TARGET_VERSION: &str = "4.3.26";
 
-pub fn inspect(value: &Value) -> Value {
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Inspection {
+    pub spine_version: String,
+    pub bones: usize,
+    pub slots: usize,
+    pub skins: usize,
+    pub attachments: usize,
+    pub animations: usize,
+    pub supported: bool,
+    pub unsupported: Vec<String>,
+}
+
+pub fn inspect(value: &Value) -> Inspection {
     let mut unsupported = vec![];
+    inspect_shapes(value, &mut unsupported);
     if !value.is_object() || !value["bones"].is_array() || array(&value["bones"]).is_empty() {
         unsupported.push("A skeleton object with a nonempty bones array is required".into());
     }
@@ -228,15 +243,24 @@ pub fn inspect(value: &Value) -> Value {
     );
     unsupported.sort();
     unsupported.dedup();
-    json!({"spineVersion":version,"bones":array(&value["bones"]).len(),"slots":array(&value["slots"]).len(),"skins":array(&value["skins"]).len(),"attachments":attachments,"animations":value["animations"].as_object().map_or(0,|v|v.len()),"supported":unsupported.is_empty(),"unsupported":unsupported})
+    Inspection {
+        spine_version: version.into(),
+        bones: array(&value["bones"]).len(),
+        slots: array(&value["slots"]).len(),
+        skins: array(&value["skins"]).len(),
+        attachments,
+        animations: value["animations"].as_object().map_or(0, |v| v.len()),
+        supported: unsupported.is_empty(),
+        unsupported,
+    }
 }
 
 pub fn import_json(value: &Value, name: &str) -> Result<Document, String> {
     let report = inspect(value);
-    if report["supported"] != true {
+    if !report.supported {
         return Err(format!(
             "Import blocked to prevent data loss:\n{}",
-            serde_json::to_string_pretty(&report["unsupported"]).unwrap_or_default()
+            report.unsupported.join("\n")
         ));
     }
     let mut bones = vec![];
@@ -295,7 +319,10 @@ pub fn import_json(value: &Value, name: &str) -> Result<Document, String> {
                 mapped.insert(slot.clone(), mapped_regions);
             }
         }
-        skins.insert(required_string(skin, "name")?.into(), mapped);
+        let name = required_string(skin, "name")?;
+        if skins.insert(name.into(), mapped).is_some() {
+            return Err(format!("Duplicate skin name {name}"));
+        }
     }
     let mut animations = vec![];
     if let Some(entries) = value["animations"].as_object() {
@@ -401,6 +428,7 @@ pub fn import_json(value: &Value, name: &str) -> Result<Document, String> {
 
 pub fn export_json(doc: &Document) -> Result<Value, String> {
     doc.validate()?;
+    validate_export_names(doc)?;
     let bones: Vec<_> = doc
         .bones
         .iter()
@@ -506,6 +534,143 @@ pub fn export_json(doc: &Document) -> Result<Value, String> {
 fn array(value: &Value) -> &[Value] {
     value.as_array().map_or(&[], Vec::as_slice)
 }
+
+/// Spine Editor interchange restrictions belong to this adapter, not our model.
+fn validate_export_names(doc: &Document) -> Result<(), String> {
+    let mut names = BTreeSet::new();
+    for (skin_name, skin) in &doc.skins {
+        for (slot, attachments) in skin {
+            for (placeholder, region) in attachments {
+                if !names.insert(region.name.as_ref().unwrap_or(placeholder)) {
+                    return Err(
+                        "Spine Editor export requires distinct attachment names across skins"
+                            .into(),
+                    );
+                }
+                if skin_name != "default"
+                    && doc
+                        .skins
+                        .get("default")
+                        .and_then(|s| s.get(slot))
+                        .is_some_and(|a| a.contains_key(placeholder))
+                {
+                    return Err(format!(
+                        "Spine Editor export: skin placeholder {slot}/{placeholder} collides with a direct default attachment"
+                    ));
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+fn inspect_shapes(root: &Value, issues: &mut Vec<String>) {
+    fn object(value: &Value, context: &str, issues: &mut Vec<String>) {
+        if !value.is_object() {
+            issues.push(format!("{context} must be an object"));
+        }
+    }
+    fn field(value: &Value, key: &str, context: &str, issues: &mut Vec<String>) {
+        if let Some(v) = value.get(key) {
+            object(v, &format!("{context}.{key}"), issues);
+        }
+    }
+    fn strings(value: &Value, keys: &[&str], context: &str, issues: &mut Vec<String>) {
+        for key in keys {
+            if value.get(key).is_some_and(|v| !v.is_string()) {
+                issues.push(format!("{context}.{key} must be a string"));
+            }
+        }
+    }
+    object(root, "Skeleton", issues);
+    field(root, "skeleton", "Skeleton", issues);
+    field(root, "animations", "Skeleton", issues);
+    if root["skeleton"]
+        .get("fps")
+        .is_some_and(|v| v.as_u64().is_none_or(|v| v == 0 || v > 240))
+    {
+        issues.push("Skeleton FPS must be an integer between 1 and 240".into());
+    }
+    for bone in array(&root["bones"]) {
+        object(bone, "Bone", issues);
+        strings(bone, &["name", "parent"], "Bone", issues);
+    }
+    for slot in array(&root["slots"]) {
+        object(slot, "Slot", issues);
+        strings(
+            slot,
+            &["name", "bone", "blend", "color", "dark"],
+            "Slot",
+            issues,
+        );
+        if slot
+            .get("attachment")
+            .is_some_and(|v| !v.is_null() && !v.is_string())
+        {
+            issues.push("Slot attachment must be a string or null".into());
+        }
+    }
+    let mut skin_names = BTreeSet::new();
+    for skin in array(&root["skins"]) {
+        object(skin, "Skin", issues);
+        strings(skin, &["name"], "Skin", issues);
+        field(skin, "attachments", "Skin", issues);
+        if let Some(name) = skin["name"].as_str()
+            && !skin_names.insert(name)
+        {
+            issues.push(format!("Duplicate skin name {name}"));
+        }
+        if let Some(slots) = skin["attachments"].as_object() {
+            for regions in slots.values() {
+                object(regions, "Skin slot attachments", issues);
+                if let Some(regions) = regions.as_object() {
+                    for region in regions.values() {
+                        object(region, "Attachment", issues);
+                        strings(region, &["type", "name", "path"], "Attachment", issues);
+                    }
+                }
+            }
+        }
+    }
+    if let Some(animations) = root["animations"].as_object() {
+        for animation in animations.values() {
+            object(animation, "Animation", issues);
+            field(animation, "bones", "Animation", issues);
+            if let Some(bones) = animation["bones"].as_object() {
+                for timelines in bones.values() {
+                    object(timelines, "Bone timelines", issues);
+                    if let Some(timelines) = timelines.as_object() {
+                        for (name, keys) in timelines {
+                            for key in array(keys) {
+                                object(key, "Keyframe", issues);
+                                if let Some(curve) = key.get("curve") {
+                                    let handles = if ["translate", "scale"].contains(&name.as_str())
+                                    {
+                                        8
+                                    } else {
+                                        4
+                                    };
+                                    let valid = curve.as_str() == Some("stepped")
+                                        || curve.as_array().is_some_and(|a| {
+                                            a.len() == handles
+                                                && a.iter().all(|v| {
+                                                    v.as_f64().is_some_and(|n| {
+                                                        n.is_finite() && (n as f32).is_finite()
+                                                    })
+                                                })
+                                        });
+                                    if !valid {
+                                        issues.push(format!("{name} curve must be stepped or have {handles} finite Bezier coordinates"));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 fn nonempty(value: &Value) -> bool {
     match value {
         Value::Null => false,
@@ -593,5 +758,51 @@ mod tests {
         v["bones"][0]["x"] = json!(20);
         v["animations"]["test"]["bones"]["root"]["rotate"][0]["angle"] = json!(50);
         assert!(import_json(&v, "test").is_err());
+    }
+
+    #[test]
+    fn malformed_containers_duplicate_skins_and_extra_curve_values_are_rejected() {
+        let v = fixture();
+        for (field, bad) in [
+            ("animations", json!([])),
+            ("skins", json!([{"name":"a","attachments":[]}])),
+        ] {
+            let mut candidate = v.clone();
+            candidate[field] = bad;
+            assert!(!inspect(&candidate).supported);
+            assert!(import_json(&candidate, "test").is_err());
+        }
+        let mut candidate = v.clone();
+        candidate["skins"] = json!([{"name":"a"},{"name":"a"}]);
+        assert!(import_json(&candidate, "test").is_err());
+        let mut candidate = v.clone();
+        candidate["animations"]["test"]["bones"]["root"]["rotate"][0]["curve"] =
+            json!([0.1, 0, 0.4, 90, 999]);
+        assert!(import_json(&candidate, "test").is_err());
+        let mut candidate = v;
+        candidate["skeleton"]["fps"] = json!("60");
+        assert!(import_json(&candidate, "test").is_err());
+    }
+
+    #[test]
+    fn target_naming_restrictions_do_not_leak_into_the_document_model() {
+        let mut doc = import_json(&fixture(), "test").unwrap();
+        doc.slots.push(Slot {
+            name: "body".into(),
+            bone: 0,
+            attachment: Some("shared".into()),
+        });
+        let region = Region {
+            name: None,
+            path: "body".into(),
+            width: 10.0,
+            height: 10.0,
+            transform: Transform::default(),
+        };
+        let skin = BTreeMap::from([("body".into(), BTreeMap::from([("shared".into(), region)]))]);
+        doc.skins.insert("default".into(), skin.clone());
+        doc.skins.insert("variant".into(), skin);
+        assert!(doc.validate().is_ok());
+        assert!(export_json(&doc).is_err());
     }
 }

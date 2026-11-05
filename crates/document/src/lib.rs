@@ -3,8 +3,13 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
 pub const FORMAT_VERSION: u32 = 1;
+pub const KEY_TIME_EPSILON: f32 = 0.00001;
+pub fn same_key_time(a: f32, b: f32) -> bool {
+    (a - b).abs() < KEY_TIME_EPSILON
+}
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Document {
     pub format: u32,
     pub name: String,
@@ -16,6 +21,7 @@ pub struct Document {
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Bone {
     pub name: String,
     pub parent: Option<usize>,
@@ -24,6 +30,7 @@ pub struct Bone {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Transform {
     pub x: f32,
     pub y: f32,
@@ -45,6 +52,7 @@ impl Default for Transform {
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Slot {
     pub name: String,
     pub bone: usize,
@@ -55,6 +63,7 @@ pub struct Slot {
 pub type Skin = BTreeMap<String, BTreeMap<String, Region>>;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Region {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -65,6 +74,7 @@ pub struct Region {
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Animation {
     pub name: String,
     pub duration: f32,
@@ -72,6 +82,7 @@ pub struct Animation {
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Track {
     pub bone: usize,
     pub property: Property,
@@ -90,14 +101,8 @@ pub enum Property {
 
 impl Property {
     pub const ALL: [Self; 5] = [Self::X, Self::Y, Self::Rotation, Self::ScaleX, Self::ScaleY];
-    pub fn label(self) -> &'static str {
-        match self {
-            Self::X => "Position X",
-            Self::Y => "Position Y",
-            Self::Rotation => "Rotation",
-            Self::ScaleX => "Scale X",
-            Self::ScaleY => "Scale Y",
-        }
+    pub fn is_scale(self) -> bool {
+        matches!(self, Self::ScaleX | Self::ScaleY)
     }
     pub fn neutral(self) -> f32 {
         if matches!(self, Self::ScaleX | Self::ScaleY) {
@@ -127,6 +132,7 @@ impl Property {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Keyframe {
     pub time: f32,
     /// Translation/rotation are offsets from setup; scales multiply setup.
@@ -173,7 +179,6 @@ impl Document {
                 return Err("Invalid slot or duplicate slot name".into());
             }
         }
-        let mut attachment_names = BTreeSet::new();
         for skin in self.skins.values() {
             for (slot, attachments) in skin {
                 if !self.slots.iter().any(|s| &s.name == slot) {
@@ -181,8 +186,8 @@ impl Document {
                 }
                 for (placeholder, region) in attachments {
                     let name = region.name.as_ref().unwrap_or(placeholder);
-                    if name.trim().is_empty() || !attachment_names.insert(name) {
-                        return Err("Attachment names must be unique across skins for Spine Editor import; use an explicit region name for variants".into());
+                    if name.trim().is_empty() {
+                        return Err("Attachment names must be nonempty".into());
                     }
                     if !region.width.is_finite()
                         || !region.height.is_finite()
@@ -233,6 +238,29 @@ impl Document {
             }
         }
         Ok(())
+    }
+
+    pub fn image_paths(&self) -> BTreeSet<&str> {
+        self.skins
+            .values()
+            .flat_map(|s| s.values())
+            .flat_map(|a| a.values())
+            .map(|r| r.path.as_str())
+            .collect()
+    }
+    pub fn region(&self, skin: &str, slot: usize) -> Option<&Region> {
+        let slot = self.slots.get(slot)?;
+        let attachment = slot.attachment.as_ref()?;
+        self.skins
+            .get(skin)
+            .and_then(|s| s.get(&slot.name))
+            .and_then(|r| r.get(attachment))
+            .or_else(|| {
+                self.skins
+                    .get("default")
+                    .and_then(|s| s.get(&slot.name))
+                    .and_then(|r| r.get(attachment))
+            })
     }
 }
 

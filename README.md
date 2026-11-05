@@ -60,11 +60,13 @@ cargo run -p peachy-cli -- pose examples/peach-bot/peach-bot.peachy wave 0.3
 cargo run -p peachy-cli -- inspect /path/to/skeleton.json
 cargo run -p peachy-cli -- import /path/to/skeleton.json new-project.peachy
 cargo run -p peachy-cli -- export examples/peach-bot/peach-bot.peachy new-export.json
+cargo run -p peachy-cli -- bundle examples/peach-bot/peach-bot.peachy /path/to/export-parent
 cargo run -p peachy-cli -- apply input.peachy commands.json edited.peachy
 ```
 
 CLI outputs must be new files; it refuses to overwrite existing output. The CLI
 `export` command writes JSON only. Use the desktop exporter for a packed bundle.
+The CLI `bundle` command uses that same shared exporter.
 Native projects reference loose images in `images/` beside the project.
 
 ## Architecture and verification
@@ -77,6 +79,7 @@ and [the next slices](docs/ROADMAP.md).
 
 ```sh
 cargo fmt --all -- --check
+python3 scripts/check-architecture.py
 cargo test --workspace --locked
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo build --workspace --locked
@@ -84,6 +87,8 @@ cargo build --workspace --locked
 
 The included GitHub workflow is manual-only. Hosted CI has not been run; the
 initial verification was local on macOS.
+The [code quality review](docs/CODE_QUALITY.md) records the subsequent boundary
+refactor, corrected defects and checks for expanding the editor.
 
 The optional external compatibility check needs Node.js and a **separately licensed**
 Spine 4.3 runtime supplied by its absolute module path. It executes that runtime as

@@ -1,0 +1,185 @@
+use peachy_document::*;
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(tag = "command", rename_all = "camelCase", deny_unknown_fields)]
+pub enum Command {
+    SetPose {
+        bone: usize,
+        target: EditTarget,
+        transform: Transform,
+        properties: Vec<Property>,
+    },
+    SetSetup {
+        bone: usize,
+        transform: Transform,
+    },
+    SetKey {
+        animation: usize,
+        bone: usize,
+        property: Property,
+        key: Keyframe,
+    },
+    DeleteKey {
+        animation: usize,
+        bone: usize,
+        property: Property,
+        time: f32,
+    },
+    AddBone {
+        bone: Bone,
+    },
+    AddAnimation {
+        name: String,
+        duration: f32,
+    },
+    Batch {
+        commands: Vec<Command>,
+    },
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[serde(tag = "mode", rename_all = "camelCase", deny_unknown_fields)]
+pub enum EditTarget {
+    Setup,
+    Animate { animation: usize, time: f32 },
+}
+
+/// Pure document transition. Neither the input nor history changes on failure.
+pub fn apply_command(document: &Document, command: Command) -> Result<Document, String> {
+    document.validate()?;
+    let mut candidate = document.clone();
+    apply(&mut candidate, command)?;
+    candidate.validate()?;
+    Ok(candidate)
+}
+
+fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
+    match command {
+        Command::SetPose {
+            bone,
+            target,
+            transform,
+            properties,
+        } => {
+            let setup = doc.bones.get(bone).ok_or("Unknown bone")?.setup;
+            if !finite_transform(transform) {
+                return Err("Pose must be finite".into());
+            }
+            match target {
+                EditTarget::Setup => doc.bones[bone].setup = transform,
+                EditTarget::Animate { animation, time } => {
+                    let clip = doc.animations.get(animation).ok_or("Unknown animation")?;
+                    if !time.is_finite() || time < 0.0 || time > clip.duration {
+                        return Err("Key time must be finite and inside the animation".into());
+                    }
+                    let time =
+                        ((time * doc.fps as f32).round() / doc.fps as f32).min(clip.duration);
+                    let commands: Result<Vec<_>, String> = properties
+                        .into_iter()
+                        .map(|property| {
+                            let base = property.read(setup);
+                            let value = if property.is_scale() {
+                                if base.abs() < 1e-8 {
+                                    return Err("Cannot animate a zero setup scale".into());
+                                }
+                                property.read(transform) / base
+                            } else {
+                                property.read(transform) - base
+                            };
+                            let curve = clip
+                                .tracks
+                                .iter()
+                                .find(|t| t.bone == bone && t.property == property)
+                                .and_then(|t| t.keys.iter().find(|k| same_key_time(k.time, time)))
+                                .map_or(Curve::Linear, |k| k.curve);
+                            Ok(Command::SetKey {
+                                animation,
+                                bone,
+                                property,
+                                key: Keyframe { time, value, curve },
+                            })
+                        })
+                        .collect();
+                    for command in commands? {
+                        apply(doc, command)?;
+                    }
+                }
+            }
+        }
+        Command::SetSetup { bone, transform } => {
+            doc.bones.get_mut(bone).ok_or("Unknown bone")?.setup = transform
+        }
+        Command::AddBone { bone } => doc.bones.push(bone),
+        Command::AddAnimation { name, duration } => doc.animations.push(Animation {
+            name,
+            duration,
+            tracks: vec![],
+        }),
+        Command::SetKey {
+            animation,
+            bone,
+            property,
+            key,
+        } => {
+            let a = doc
+                .animations
+                .get_mut(animation)
+                .ok_or("Unknown animation")?;
+            if !key.time.is_finite() || !key.value.is_finite() {
+                return Err("Keyframe must be finite".into());
+            }
+            let index = match a
+                .tracks
+                .iter()
+                .position(|t| t.bone == bone && t.property == property)
+            {
+                Some(i) => i,
+                None => {
+                    a.tracks.push(Track {
+                        bone,
+                        property,
+                        keys: vec![],
+                    });
+                    a.tracks.len() - 1
+                }
+            };
+            let keys = &mut a.tracks[index].keys;
+            if let Some(i) = keys.iter().position(|k| same_key_time(k.time, key.time)) {
+                keys[i] = key;
+            } else {
+                keys.push(key);
+            }
+            keys.sort_by(|a, b| a.time.total_cmp(&b.time));
+        }
+        Command::DeleteKey {
+            animation,
+            bone,
+            property,
+            time,
+        } => {
+            if bone >= doc.bones.len() {
+                return Err("Unknown bone".into());
+            }
+            let a = doc
+                .animations
+                .get_mut(animation)
+                .ok_or("Unknown animation")?;
+            if !time.is_finite() || time < 0.0 || time > a.duration {
+                return Err("Key time must be finite and inside the animation".into());
+            }
+            for track in &mut a.tracks {
+                if track.bone == bone && track.property == property {
+                    track.keys.retain(|k| !same_key_time(k.time, time));
+                }
+            }
+            a.tracks.retain(|t| !t.keys.is_empty());
+        }
+        Command::Batch { commands } => {
+            for command in commands {
+                apply(doc, command)?;
+            }
+        }
+    }
+    Ok(())
+}
