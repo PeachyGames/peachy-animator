@@ -2,7 +2,8 @@ use super::*;
 
 impl Editor {
     pub(super) fn enter_mesh_tool(&mut self) {
-        self.tool = Tool::Mesh;
+        self.set_tool(Tool::Mesh);
+        self.has_selection = true;
         self.setup_mode = true;
         self.playing = false;
         self.drag = None;
@@ -81,7 +82,11 @@ impl Editor {
         };
         match attachment {
             Attachment::Region(_) => {
-                let convert = ui.add_enabled(self.setup_mode, egui::Button::new("Convert to mesh"));
+                let mut convert_to_mesh = false;
+                let convert = ui.add_enabled(
+                    self.setup_mode,
+                    egui::Checkbox::new(&mut convert_to_mesh, "Mesh"),
+                );
                 self.capture_targets.insert(
                     "convertMesh".into(),
                     [
@@ -109,7 +114,17 @@ impl Editor {
                 let count = m.vertices.len();
                 let triangles = m.triangles.len() / 3;
                 ui.label(format!("{} vertices · {} triangles", count, triangles));
-                if ui.button("Setup vertices  [M]").clicked() {
+                let vertices = ui.button("Vertices");
+                self.capture_targets.insert(
+                    "meshVertices".into(),
+                    [
+                        vertices.rect.min.x,
+                        vertices.rect.min.y,
+                        vertices.rect.max.x,
+                        vertices.rect.max.y,
+                    ],
+                );
+                if vertices.clicked() {
                     self.enter_mesh_tool();
                 }
                 if self.setup_mode {

@@ -4,7 +4,7 @@ A native 2D skeletal animation editor from Team Peachy, with an independent Rust
 core and Spine-compatible exports. The current slice adds editable unweighted
 meshes; this is still a bounded subset of Spine.
 
-![Peach Bot in the editor](docs/editor.png)
+![Peach Bot in the editor](docs/workspace-setup.png)
 
 ## Try it
 
@@ -26,24 +26,32 @@ For the mesh demo, open **Mesh Lab.command**, or run:
 cargo run -p peachy-animator -- examples/peach-bot/mesh-bot.peachy
 ```
 
-Select **Mesh [M]** to enter Setup, then drag a numbered vertex. The attachment
-inspector can convert a region to a four-corner mesh or split a triangle at its
-center. Setup vertex movement deforms the image while UVs stay fixed; each canvas
+The workspace follows Spine’s default arrangement: viewport left, Tree and item
+properties right, transform controls below the viewport, and Dopesheet below those
+in Animate mode. UI parity is an ongoing acceptance requirement; see the
+[UI parity contract](docs/UI_PARITY.md) for remaining differences.
+
+In Setup, select the hand.R bone in the Tree, then **Vertices** in its attachment
+properties and drag a numbered vertex. The **Mesh** checkbox converts a region
+to a four-corner mesh; existing mesh triangles can be split at their centers.
+Setup vertex movement deforms the image while UVs stay fixed; each canvas
 drag is one undo step, and Escape cancels the current drag.
 This corresponds to Spine's setup vertex transforms. UV editing, freeform hull
 creation, weights and animated deform keys are not implemented yet.
 
-![Setup vertex editing](docs/mesh-editor.png)
+![Animate workspace](docs/workspace-animate.png)
 
-1. Press **Space** to play/pause, or click the timeline to scrub.
-2. Select a bone in the scene or hierarchy. Drag in **Rotate** or **Move** mode.
-3. Adjust the inspector or press **K** to key the transform at the playhead.
-4. Select a key's frame and choose Linear, Hold, or Ease. Ease exposes Bezier handles.
-5. Undo/redo with **Cmd/Ctrl+Z** / **Cmd/Ctrl+Shift+Z**.
-6. Save a `.peachy` project, reopen it, then choose **Export Spine 4.3…**.
+1. Switch to **Animate** at the viewport's upper left; press **D** to play/stop.
+2. Select a bone in the viewport or right-side Tree; **C** rotates, **V** translates.
+3. Use the transform fields below the viewport. **L** keys the active transform;
+   **Cmd/Ctrl+L** keys all supported transforms for the selected bone.
+4. Scrub the Dopesheet; use **R/F** for next/previous frame and **Shift+R/F** for ten.
+5. Undo/redo with **Cmd/Ctrl+Z** / **Cmd/Ctrl+Shift+Z**. Space deselects.
+6. Save a `.peachy` project and use **Peachy → Export** or **Cmd/Ctrl+E**.
 
 **Animate** edits create keys. **Setup** edits change the underlying rig.
-Arrow keys step frames; **F** fits the scene; scroll zooms; right-drag pans.
+Arrows nudge the selection; the **Fit** button fits the scene. Scroll zooms,
+right-drag pans, and right-click switches the last two tools. **F9** hides/restores views.
 **F12** captures the editor and a diagnostic project snapshot to a local temporary
 capture folder. The app currently runs from its source checkout; an installer and
 bundled-resource packaging are later work.

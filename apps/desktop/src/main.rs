@@ -21,7 +21,7 @@ fn main() -> eframe::Result {
         viewport: egui::ViewportBuilder::default()
             .with_inner_size([1500.0, 960.0])
             .with_min_inner_size([1120.0, 740.0])
-            .with_title("Peachy Animator — First Slice"),
+            .with_title("Peachy Animator"),
         renderer: eframe::Renderer::Wgpu,
         ..Default::default()
     };

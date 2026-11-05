@@ -2,6 +2,12 @@
 
 Build a native, open-source 2D skeletal animation editor with versioned Spine-compatible exports.
 
+## Spine user interface parity
+
+The user explicitly requires Spine's visual layout, controls, terminology and interaction conventions, alongside compatible animation data. This is a familiar replacement for Spine users. Do not invent a different workspace or shortcut scheme. Match the observed Spine 4.3 default workspace: viewport on the left, Tree with item properties on the right, Setup/Animate switch at the viewport's upper left, main transform toolbar below the viewport, and animation views below it. Use the installed editor and public user guide as behavioral/visual references; write all implementation and icons independently. Keep Peachy Animator's own identity.
+
+UI parity is part of every feature's acceptance criteria. Record observations, implemented behavior and remaining differences in `docs/UI_PARITY.md`. Verify placement and real mouse/keyboard behavior. Do not claim pixel or interaction parity from export/runtime checks. Prioritize correcting the prototype's workspace and conflicting shortcuts before expanding weights or other features.
+
 ## Architecture
 
 - `document`: serializable data, validation, no UI, rendering or filesystem dependencies.

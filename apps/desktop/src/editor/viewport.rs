@@ -3,41 +3,42 @@ use super::*;
 impl Editor {
     pub(super) fn canvas(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
-            if ui
-                .selectable_label(self.tool == Tool::Rotate, "Rotate  [R]")
-                .clicked()
-            {
-                self.tool = Tool::Rotate;
+            let mode = ui.add(egui::Button::new(
+                RichText::new(if self.setup_mode { "SETUP" } else { "ANIMATE" })
+                    .strong()
+                    .color(ACCENT),
+            ));
+            self.capture_targets.insert(
+                "mode".into(),
+                [
+                    mode.rect.min.x,
+                    mode.rect.min.y,
+                    mode.rect.max.x,
+                    mode.rect.max.y,
+                ],
+            );
+            if mode.clicked() {
+                self.setup_mode = !self.setup_mode;
+                self.playing = false;
             }
-            if ui
-                .selectable_label(self.tool == Tool::Move, "Move  [V]")
-                .clicked()
-            {
-                self.tool = Tool::Move;
-            }
-            if ui
-                .selectable_label(self.tool == Tool::Mesh, "Mesh  [M]")
-                .clicked()
-            {
-                self.enter_mesh_tool();
-            }
-            ui.separator();
-            ui.checkbox(&mut self.show_bones, "Bones");
-            if ui.button("Fit  [F]").clicked() {
-                self.fit = true;
-            }
-            ui.label(RichText::new(format!("{}%", (self.zoom * 100.0) as u32)).color(MUTED));
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 ui.label(
-                    RichText::new(if self.setup_mode { "SETUP" } else { "ANIMATE" })
-                        .color(ACCENT)
-                        .small(),
+                    RichText::new(format!("{}%", (self.zoom * 100.0) as u32))
+                        .small()
+                        .color(MUTED),
                 );
+                let fit = ui.small_button("Fit");
+                self.record_target("fit", fit.rect);
+                if fit.clicked() {
+                    self.fit = true;
+                }
+                ui.checkbox(&mut self.show_bones, "Bones");
             });
         });
         let (rect, response) = ui.allocate_exact_size(ui.available_size(), Sense::click_and_drag());
+        self.record_target("viewport", rect);
         let painter = ui.painter_at(rect);
-        painter.rect_filled(rect, 6.0, Color32::from_rgb(19, 24, 31));
+        painter.rect_filled(rect, 0.0, Color32::from_gray(43));
         let doc = self.session.document();
         let scene = evaluate_scene(
             doc,
@@ -82,7 +83,7 @@ impl Editor {
             while x < rect.right() {
                 painter.line_segment(
                     [pos2(x, rect.top()), pos2(x, rect.bottom())],
-                    Stroke::new(1.0, Color32::from_rgb(29, 36, 45)),
+                    Stroke::new(1.0, Color32::from_gray(49)),
                 );
                 x += grid;
             }
@@ -90,7 +91,7 @@ impl Editor {
             while y < rect.bottom() {
                 painter.line_segment(
                     [pos2(rect.left(), y), pos2(rect.right(), y)],
-                    Stroke::new(1.0, Color32::from_rgb(29, 36, 45)),
+                    Stroke::new(1.0, Color32::from_gray(49)),
                 );
                 y += grid;
             }
@@ -124,7 +125,8 @@ impl Editor {
                 let Some(Attachment::Mesh(m)) = doc.attachment(&draw.attachment) else {
                     continue;
                 };
-                let selected = self.mesh_attachment.as_ref() == Some(&draw.attachment);
+                let selected =
+                    self.has_selection && self.mesh_attachment.as_ref() == Some(&draw.attachment);
                 if selected {
                     self.mesh_handles = draw
                         .vertices
@@ -183,18 +185,33 @@ impl Editor {
         for (i, (bone, matrix)) in doc.bones.iter().zip(world).enumerate() {
             let start = screen(matrix.point(0.0, 0.0));
             let end = screen(matrix.point(bone.length, 0.0));
-            if self.show_bones || i == self.selected {
-                let color = if i == self.selected {
+            if self.show_bones || (self.has_selection && i == self.selected) {
+                let color = if self.has_selection && i == self.selected {
                     ACCENT
                 } else {
                     Color32::from_rgba_unmultiplied(117, 205, 185, 175)
                 };
                 painter.line_segment(
                     [start, end],
-                    Stroke::new(if i == self.selected { 2.5 } else { 1.3 }, color),
+                    Stroke::new(
+                        if self.has_selection && i == self.selected {
+                            2.5
+                        } else {
+                            1.3
+                        },
+                        color,
+                    ),
                 );
-                painter.circle_filled(start, if i == self.selected { 5.0 } else { 3.0 }, color);
-                if i == self.selected {
+                painter.circle_filled(
+                    start,
+                    if self.has_selection && i == self.selected {
+                        5.0
+                    } else {
+                        3.0
+                    },
+                    color,
+                );
+                if self.has_selection && i == self.selected {
                     painter.circle_stroke(start, 13.0, Stroke::new(1.0, ACCENT));
                     painter.text(
                         end + vec2(10.0, -10.0),
@@ -223,11 +240,16 @@ impl Editor {
             FontId::proportional(12.0),
             MUTED,
         );
+        if response.clicked_by(egui::PointerButton::Secondary) {
+            self.set_tool(self.last_tool);
+            return;
+        }
         if self.tool == Tool::Mesh {
             if (response.clicked() || response.drag_started_by(egui::PointerButton::Primary))
                 && let Some((key, vertex, bone, position, _)) = nearest_vertex
             {
                 self.selected = bone;
+                self.has_selection = true;
                 self.mesh_attachment = Some(key.clone());
                 self.mesh_vertex = vertex;
                 if response.drag_started_by(egui::PointerButton::Primary)
@@ -273,15 +295,23 @@ impl Editor {
             }
             return;
         }
+        if response.clicked() && nearest.is_none() {
+            self.deselect();
+            return;
+        }
         if response.clicked()
             && let Some((i, _)) = nearest
         {
             self.selected = i;
+            self.has_selection = true;
         }
         if response.drag_started_by(egui::PointerButton::Primary)
-            && let Some((i, _)) = nearest
+            && let Some(i) = nearest
+                .map(|(i, _)| i)
+                .or_else(|| self.has_selection.then_some(self.selected))
         {
             self.selected = i;
+            self.has_selection = true;
             self.playing = false;
             if let Some(mouse) = response.interact_pointer_pos() {
                 self.drag = Some((locals[i], mouse));
@@ -333,6 +363,9 @@ impl Editor {
                                     delta += 360.0;
                                 }
                                 preview.rotation += delta;
+                                if ui.input(|i| i.modifiers.shift) {
+                                    preview.rotation = (preview.rotation / 15.0).round() * 15.0;
+                                }
                             }
                         } else {
                             preview.rotation += (mouse.x - start.x) * 0.5;

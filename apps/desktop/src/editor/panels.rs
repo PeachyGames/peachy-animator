@@ -3,76 +3,79 @@ use super::*;
 impl Editor {
     pub(super) fn toolbar(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
-            ui.label(RichText::new("P").size(24.0).strong().color(ACCENT));
-            ui.label(RichText::new("PEACHY ANIMATOR").strong().size(16.0));
-            ui.separator();
-            if ui.button("Open…").clicked() {
+            ui.menu_button(RichText::new("Peachy").strong().color(ACCENT), |ui| {
+                if ui.button("Open Project…    Cmd/Ctrl+O").clicked() {
+                    ui.close();
+                    self.open_project(ui.ctx());
+                }
+                if ui.button("Save    Cmd/Ctrl+S").clicked() {
+                    ui.close();
+                    self.save_project();
+                }
+                if ui.button("Export…    Cmd/Ctrl+E").clicked() {
+                    ui.close();
+                    self.export();
+                }
+            });
+            if ui.small_button("Open").clicked() {
                 self.open_project(ui.ctx());
             }
-            if ui
-                .button("Save")
-                .on_hover_text("Save project · Cmd/Ctrl+S")
-                .clicked()
-            {
+            if ui.small_button("Save").clicked() {
                 self.save_project();
             }
             if ui
-                .add_enabled(self.session.can_undo(), egui::Button::new("Undo"))
+                .add_enabled(self.session.can_undo(), egui::Button::new("Undo").small())
                 .clicked()
             {
                 self.undo();
             }
             if ui
-                .add_enabled(self.session.can_redo(), egui::Button::new("Redo"))
+                .add_enabled(self.session.can_redo(), egui::Button::new("Redo").small())
                 .clicked()
             {
                 self.redo();
             }
+            ui.separator();
+            ui.label(
+                RichText::new(format!(
+                    "{}{}",
+                    if self.session.is_dirty() { "* " } else { "" },
+                    self.session.document().name
+                ))
+                .color(MUTED),
+            );
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                ui.menu_button("Views", |ui| {
+                    ui.checkbox(&mut self.show_tree, "Tree");
+                    ui.add_enabled_ui(!self.setup_mode, |ui| {
+                        ui.checkbox(&mut self.show_dopesheet, "Dopesheet");
+                    });
+                    if ui.button("Restore default workspace").clicked() {
+                        self.show_tree = true;
+                        self.show_dopesheet = true;
+                        self.hidden_views = None;
+                        ui.close();
+                    }
+                });
                 if ui
-                    .add(
-                        egui::Button::new(
-                            RichText::new("Export Spine 4.3…").color(Color32::from_rgb(32, 35, 39)),
-                        )
-                        .fill(ACCENT),
-                    )
+                    .small_button("Hide views")
+                    .on_hover_text("Minimize/restore views · F9")
                     .clicked()
                 {
-                    self.export();
+                    self.toggle_views();
                 }
-                ui.label(RichText::new("MESH SLICE  /  0.1.0").small().color(MUTED));
             });
         });
     }
 
     pub(super) fn hierarchy(&mut self, ui: &mut egui::Ui) {
-        ui.add_space(10.0);
-        ui.label(RichText::new("SCENE").small().color(MUTED));
-        ui.heading(&self.session.document().name);
-        ui.label(
-            RichText::new(format!(
-                "{} bones · {} slots",
-                self.session.document().bones.len(),
-                self.session.document().slots.len()
-            ))
-            .small()
-            .color(MUTED),
-        );
-        ui.add_space(8.0);
+        self.record_target("tree", ui.max_rect());
+        ui.label(RichText::new("Tree").strong());
         ui.separator();
-        ui.horizontal(|ui| {
-            if ui.selectable_label(self.setup_mode, "Setup").clicked() {
-                self.setup_mode = true;
-                self.playing = false;
-            }
-            if ui.selectable_label(!self.setup_mode, "Animate").clicked() {
-                self.setup_mode = false;
-            }
-        });
-        ui.add_space(8.0);
+        ui.label(RichText::new(&self.session.document().name).color(ACCENT));
         let bones = &self.session.document().bones;
         egui::ScrollArea::vertical()
-            .max_height(ui.available_height() - 190.0)
+            .id_salt("tree-scroll")
             .show(ui, |ui| {
                 for (i, bone) in bones.iter().enumerate() {
                     let mut depth = 0;
@@ -82,106 +85,163 @@ impl Editor {
                         parent = bones[p].parent;
                     }
                     ui.horizontal(|ui| {
-                        ui.add_space((depth as f32) * 12.0);
-                        let label = if i == self.selected {
-                            RichText::new(format!("◇  {}", bone.name)).color(ACCENT)
-                        } else {
-                            RichText::new(format!("◇  {}", bone.name))
-                        };
-                        if ui.selectable_label(i == self.selected, label).clicked() {
+                        ui.add_space(depth as f32 * 12.0);
+                        let row = ui.selectable_label(
+                            self.has_selection && i == self.selected,
+                            format!("◇  {}", bone.name),
+                        );
+                        let r = row.rect;
+                        self.capture_targets
+                            .insert(format!("bone:{i}"), [r.min.x, r.min.y, r.max.x, r.max.y]);
+                        if row.clicked() {
                             self.selected = i;
+                            self.has_selection = true;
                         }
                     });
                 }
             });
-        ui.separator();
-        ui.label(RichText::new("ADD A CHILD BONE").small().color(MUTED));
-        ui.text_edit_singleline(&mut self.new_bone);
-        if ui.button("+ Add to selected bone").clicked() {
-            let parent = self.selected;
-            let applied = self.dispatch(Command::AddBone {
-                bone: Bone {
-                    name: self.new_bone.trim().to_owned(),
-                    parent: Some(parent),
-                    length: 60.0,
-                    setup: Transform {
-                        x: self.session.document().bones[parent].length,
-                        ..Default::default()
-                    },
-                },
-            });
-            if applied {
-                self.selected = self.session.document().bones.len() - 1;
-                self.new_bone.clear();
-            }
-        }
-        ui.add_space(12.0);
-        ui.label(
-            RichText::new("A little rig. A real workflow.")
-                .color(MUTED)
-                .italics(),
-        );
     }
 
-    pub(super) fn inspector(&mut self, ui: &mut egui::Ui) {
-        ui.add_space(10.0);
-        ui.label(RichText::new("INSPECTOR").small().color(MUTED));
-        ui.heading(&self.session.document().bones[self.selected].name);
-        ui.label(
-            RichText::new(if self.setup_mode {
-                "Setup pose"
-            } else {
-                "Animation pose · edits create keys"
-            })
-            .color(MUTED)
-            .small(),
-        );
-        ui.add_space(8.0);
-        ui.separator();
+    pub(super) fn main_tools(&mut self, ui: &mut egui::Ui) {
+        self.record_target("mainTools", ui.max_rect());
+        ui.horizontal(|ui| {
+            ui.vertical(|ui| {
+                self.transform_row(ui, "Rotate  [C]", &[Property::Rotation], Some(Tool::Rotate));
+                self.transform_row(ui, "Translate  [V]", &[Property::X, Property::Y], Some(Tool::Move));
+                self.transform_row(ui, "Scale", &[Property::ScaleX, Property::ScaleY], None);
+            });
+            ui.separator();
+            ui.vertical(|ui| {
+                if self.has_selection {
+                    ui.label(RichText::new(&self.session.document().bones[self.selected].name).color(ACCENT));
+                } else {
+                    ui.label(RichText::new("No selection").color(MUTED));
+                }
+                ui.label(RichText::new("Translate: Parent axes").small().color(MUTED));
+                ui.label(RichText::new("Rotate / Scale: Local axes").small().color(MUTED));
+                if !self.setup_mode {
+                    ui.label(RichText::new("Auto Key enabled").small().color(ACCENT))
+                        .on_hover_text("Transform edits create keys. Unkeyed pose editing is a later parity task.");
+                }
+            });
+        });
+    }
+
+    fn transform_row(
+        &mut self,
+        ui: &mut egui::Ui,
+        label: &str,
+        properties: &[Property],
+        tool: Option<Tool>,
+    ) {
         let mut pose =
             local_pose(self.session.document(), self.active_animation(), self.time)[self.selected];
-        self.attachment_panel(ui);
-        for property in Property::ALL {
-            let mut value = property.read(pose);
-            ui.horizontal(|ui| {
-                ui.add_sized([105.0, 22.0], egui::Label::new(property.label()));
-                let drag = ui.add(
-                    egui::DragValue::new(&mut value)
-                        .speed(if matches!(property, Property::ScaleX | Property::ScaleY) {
-                            0.01
-                        } else {
-                            0.25
-                        })
-                        .max_decimals(2),
+        ui.horizontal(|ui| {
+            if let Some(tool) = tool {
+                let response = ui.add_sized(
+                    [112.0, 22.0],
+                    egui::Button::selectable(self.tool == tool, label),
                 );
-                if drag.drag_started() {
-                    self.session.begin_transaction();
+                let target = if tool == Tool::Rotate {
+                    "rotateTool"
+                } else {
+                    "translateTool"
+                };
+                self.capture_targets.insert(
+                    target.into(),
+                    [
+                        response.rect.min.x,
+                        response.rect.min.y,
+                        response.rect.max.x,
+                        response.rect.max.y,
+                    ],
+                );
+                if response.clicked() {
+                    self.set_tool(tool);
                 }
-                if drag.changed() {
-                    property.write(&mut pose, value);
-                    self.edit_transform(pose, &[property]);
-                }
-                if drag.drag_stopped() {
-                    self.session.commit_transaction();
+            } else {
+                ui.add_sized([112.0, 22.0], egui::Label::new(label));
+            }
+            ui.add_enabled_ui(self.has_selection, |ui| {
+                for &property in properties {
+                    let mut value = property.read(pose);
+                    if property != Property::Rotation {
+                        ui.label(if matches!(property, Property::X | Property::ScaleX) {
+                            "X"
+                        } else {
+                            "Y"
+                        });
+                    }
+                    let response = ui.add(
+                        egui::DragValue::new(&mut value)
+                            .speed(if property.is_scale() { 0.01 } else { 0.25 })
+                            .max_decimals(2),
+                    );
+                    if response.drag_started() {
+                        self.session.begin_transaction();
+                    }
+                    if response.changed() {
+                        property.write(&mut pose, value);
+                        self.edit_transform(pose, &[property]);
+                    }
+                    if response.drag_stopped() {
+                        self.session.commit_transaction();
+                    }
                 }
                 if !self.setup_mode
                     && ui
                         .small_button("◇")
-                        .on_hover_text("Key this property at the playhead")
+                        .on_hover_text("Key this transform · L keys the active tool")
                         .clicked()
                 {
-                    self.edit_transform(pose, &[property]);
+                    self.edit_transform(pose, properties);
+                }
+            });
+        });
+    }
+
+    pub(super) fn inspector(&mut self, ui: &mut egui::Ui) {
+        self.record_target("properties", ui.clip_rect());
+        ui.label(RichText::new("Properties").strong());
+        ui.separator();
+        if !self.has_selection {
+            ui.label(RichText::new("Select an item in the Tree or viewport.").color(MUTED));
+            return;
+        }
+        ui.label(
+            RichText::new(format!(
+                "Bone: {}",
+                self.session.document().bones[self.selected].name
+            ))
+            .color(ACCENT),
+        );
+        self.attachment_panel(ui);
+        if self.setup_mode {
+            ui.collapsing("New bone", |ui| {
+                ui.text_edit_singleline(&mut self.new_bone);
+                if ui.button("Create child bone").clicked() {
+                    let parent = self.selected;
+                    if self.dispatch(Command::AddBone {
+                        bone: Bone {
+                            name: self.new_bone.trim().to_owned(),
+                            parent: Some(parent),
+                            length: 60.0,
+                            setup: Transform {
+                                x: self.session.document().bones[parent].length,
+                                ..Default::default()
+                            },
+                        },
+                    }) {
+                        self.selected = self.session.document().bones.len() - 1;
+                        self.new_bone.clear();
+                    }
                 }
             });
         }
-        ui.add_space(10.0);
         if !self.setup_mode {
-            if ui.button("◇ Key entire transform  [K]").clicked() {
-                self.edit_transform(pose, &Property::ALL);
-            }
             ui.add_space(10.0);
             ui.separator();
-            ui.label(RichText::new("KEY INTERPOLATION").small().color(MUTED));
+            ui.label(RichText::new("Key interpolation").small().color(MUTED));
             let time = self.snapped_time();
             let keys: Vec<_> = self
                 .session
@@ -212,13 +272,13 @@ impl Editor {
                         curve = Curve::Linear;
                     }
                     if ui
-                        .selectable_label(curve == Curve::Stepped, "Hold")
+                        .selectable_label(curve == Curve::Stepped, "Stepped")
                         .clicked()
                     {
                         curve = Curve::Stepped;
                     }
                     if ui
-                        .selectable_label(matches!(curve, Curve::Bezier(_)), "Ease")
+                        .selectable_label(matches!(curve, Curve::Bezier(_)), "Bezier")
                         .clicked()
                     {
                         curve = Curve::Bezier([0.42, 0.0, 0.58, 1.0]);
@@ -291,13 +351,13 @@ impl Editor {
                 }
             });
     }
-
     pub(super) fn timeline(&mut self, ui: &mut egui::Ui) {
+        self.record_target("dopesheet", ui.max_rect());
         ui.horizontal(|ui| {
-            ui.label(RichText::new("TIMELINE").small().color(MUTED));
+            ui.label(RichText::new("Dopesheet").small().color(MUTED));
             if ui
                 .button(if self.playing { "Pause" } else { "Play" })
-                .on_hover_text("Space")
+                .on_hover_text("Play forward/stop · D")
                 .clicked()
             {
                 self.playing = !self.playing;
@@ -338,7 +398,7 @@ impl Editor {
             );
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 ui.label(
-                    RichText::new("Click to scrub · arrows step frames · K adds keys")
+                    RichText::new("D: play · R / F: frames · L: key active transform")
                         .small()
                         .color(MUTED),
                 );
@@ -362,7 +422,11 @@ impl Editor {
             painter.text(
                 pos2(x, rect.top() + 11.0),
                 egui::Align2::CENTER_CENTER,
-                format!("{:.1}", duration * i as f32 / 12.0),
+                format!(
+                    "{}",
+                    (duration * self.session.document().fps as f32 * i as f32 / 12.0).round()
+                        as u32
+                ),
                 FontId::monospace(11.0),
                 MUTED,
             );
@@ -384,7 +448,7 @@ impl Editor {
             );
             if let Some(track) = tracks
                 .iter()
-                .find(|t| t.bone == self.selected && t.property == property)
+                .find(|t| self.has_selection && t.bone == self.selected && t.property == property)
             {
                 for key in &track.keys {
                     let x = start + width * key.time / duration;

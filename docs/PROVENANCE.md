@@ -76,3 +76,17 @@ counts. The installed Spine Editor 4.3.26 imported/re-exported three original me
 retaining their mesh data exactly. That also confirmed the nonessential edge values
 as coordinate offsets (twice the vertex index). All artwork and rigs remain original
 Peach Bot fixtures; no private artist data was copied or modified.
+
+## User interface alignment
+
+The user explicitly requested Spine's visual layout and interaction conventions.
+The independently implemented desktop now follows the documented default workspace
+and supported default hotkeys, using the public
+[UI guide](https://esotericsoftware.com/spine-ui),
+[Views](https://esotericsoftware.com/spine-views),
+[Tools](https://en.esotericsoftware.com/spine-tools/), and
+[shortcut sheet](https://esotericsoftware.com/spine-cheat-sheet).
+No proprietary interface source, font, icon or other UI asset was extracted.
+The local Spine reference was opened with our original project using its documented
+CLI project argument. UI_PARITY.md records acceptance requirements and outstanding
+visual/behavioral differences, independently of data-format compatibility.

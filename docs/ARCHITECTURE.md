@@ -52,7 +52,8 @@ before strict deserialization. It does not weaken unknown-field validation.
 
 The desktop owns dialogs, texture upload, camera and pointer coordinates, labels and
 platform events. Its entrypoint parses arguments and starts the app. `editor/mod.rs`
-coordinates application state, `panels.rs` renders controls, and `viewport.rs` translates
+coordinates application state, `panels.rs` renders controls, `shortcuts.rs` maps
+Spine conventions to existing operations, and `viewport.rs` translates
 pointer gestures and paints the evaluated scene. `mesh.rs` coordinates attachment
 selection and controls. View selections, including vertex and triangle indices, are repaired after
 history/document changes. Inspector pointer drags and curve sliders use Session
@@ -73,3 +74,13 @@ check alone cannot establish their absence. See [the quality review](CODE_QUALIT
 
 The app is native-only today. Core crates have no OS/UI dependencies, but WebAssembly
 compilation, a web frontend and additional platform builds have not been verified.
+
+## User interface contract
+
+The user requires Spine's visual layout, controls and conventions. The native shell
+must follow [UI parity](UI_PARITY.md), independently of export/runtime compatibility.
+UI layout and shortcuts stay in the desktop, while pose/key changes still use shared
+commands. Deselecting clears transient view selection; the remembered bone index stays
+valid for history reconciliation. It does not edit the document. Tree/properties are
+on the right; the viewport, main transform toolbar and Animate-mode Dopesheet occupy
+the left. UI presentation changes do not change the file/engine adapters.

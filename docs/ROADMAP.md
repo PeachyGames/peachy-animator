@@ -4,26 +4,32 @@ The first slice proves a complete bounded workflow: pose an original rig, add ke
 scrub/play, edit curves, undo/redo, save/reopen and export to a separately supplied
 Spine runtime. Subsequent work should grow that working loop.
 
-1. **Weights and broader mesh editing.** Unweighted mesh import/export, rendering,
+1. **Spine UI parity.** Match Spine's layout, controls, terminology and conventions.
+   The first pass moves the Tree/properties right, tools below the viewport and the
+   Dopesheet below those, and corrects conflicting shortcuts. Finish the typed Tree,
+   tool/axis controls, view tabs and unkeyed/Auto Key behavior in
+   [UI parity](UI_PARITY.md) before expanding the authoring UI.
+
+2. **Weights and broader mesh editing.** Unweighted mesh import/export, rendering,
    region conversion, fixed-UV setup vertex transforms and triangle subdivision now
    work. Next add typed bone influences and deterministic weighted evaluation, then
    binding/weight editing. Follow with UV/hull editing and controlled triangulation.
    These remain major gaps for our existing characters. Refuse unsupported imports
    without changing their source files.
-2. **Artwork and rig creation.** Import layered/loose images, create attachments,
+3. **Artwork and rig creation.** Import layered/loose images, create attachments,
    edit pivots and draw order, rename/delete/reparent with stable IDs. Add robust
    atlas import so artist exports can be reviewed without loose originals.
-3. **Constraint parity.** Begin with one- and two-bone IK, then transform/path
+4. **Constraint parity.** Begin with one- and two-bone IK, then transform/path
    constraints and physics. Specify each through controlled fixtures and compare
    observed outputs at boundaries as well as ordinary poses.
-4. **Animation editing.** Key selection, copy/paste, retiming, editable clip lengths,
+5. **Animation editing.** Key selection, copy/paste, retiming, editable clip lengths,
    animation creation UI, ghosting, and timeline/curve editor refinement. Group
    inspector keyboard edits into one undo transaction. Pointer drags in the inspector
    and canvas already group their updates.
-5. **Agent interfaces.** Publish a discoverable command registry and schemas, then
+6. **Agent interfaces.** Publish a discoverable command registry and schemas, then
    MCP/JSON-RPC around the same dispatcher. `SetPose` already centralizes setup-to-key
    conversion for every client. Add batch screenshot and render commands.
-6. **Distribution.** Package a macOS application with bundled demo resources; verify
+7. **Distribution.** Package a macOS application with bundled demo resources; verify
    Windows/Linux and WASM builds. Add additional Spine export targets deliberately,
    each with a recorded compatibility matrix.
 

@@ -7,13 +7,14 @@ comparison. The native `.peachy` format is our own editable model.
 
 | Spine capability | Current implementation | Evidence or remaining gate |
 | --- | --- | --- |
+| Workspace, controls and conventions | First alignment pass; explicit ongoing requirement | See [UI parity](UI_PARITY.md); finish interaction gaps before weight-painting UI |
 | Bone hierarchy and transforms | Normal inheritance, translation, rotation, scale | Sampled world matrices; still needs shear and other inheritance modes |
 | Region attachments and skins | Image transforms, named skins, default fallback, fixed slot draw order | Native editor round trip and external runtime |
 | Unweighted mesh attachments | Import/export explicit UVs, topology, hull, setup vertices | Three original meshes round-trip through editor with identical data; runtime world vertices and atlas UVs agree |
 | Region → mesh | Four corners preserve the textured geometry and slot position | Engine checks under animation, reflection and nonuniform scale; native conversion check |
 | Setup mesh transforms | Single-vertex drag and numeric local coordinates, fixed UVs | Native mouse drag, one-step undo, redo, no UV changes |
 | Mesh topology editing | Split an existing triangle at its centroid | Preserves hull, indices and UV interpolation; freeform hull, UV/edge editing and general retriangulation remain |
-| Weights and binding | Pending | Next slice: typed bone influences, binding, deterministic weighted geometry, normalized edits and black-box vertex comparisons |
+| Weights and binding | Pending, following UI alignment | Typed bone influences, binding, deterministic weighted geometry, normalized edits and black-box vertex comparisons |
 | Deform animation and linked meshes | Pending | Requires explicit model, interpolation, shared-mesh semantics and round-trip cases |
 | Bone animation and curves | Scalar transform keys, linear/stepped/Bezier, playback and scrubbing | External runtime boundaries, backwards scrubbing, full-turn rotation, native key/history checks |
 | Timeline authoring | Basic key insertion/removal and curve controls | Still needs selection, retiming, copy/paste, richer animation management and mixing |

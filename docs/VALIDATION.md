@@ -64,3 +64,33 @@ only their own native test windows. No private artwork or existing user window c
 
 Weights, deform animation, linked meshes, UV/hull editing, production artist migration,
 pixel rendering equivalence, other operating systems and hosted CI remain unverified.
+
+## UI alignment — November 5, 2026
+
+The user made Spine's layout, controls and conventions an explicit requirement.
+The initial alignment uses the public 4.3 UI/views/tools documentation and default
+shortcut sheet. A task-owned instance of installed Spine 4.3.26 opened our original
+reference project, but macOS refused its window screenshot (`could not create image
+from window`). Exact visual comparison with that installed window remains pending;
+this pass does not claim pixel equivalence. The reference process was closed.
+
+Native mouse/key checks in our own task-owned review window verify:
+
+- Tree and properties on the right, transform toolbar below the viewport, Setup/Animate
+  at upper left, and Dopesheet below main tools only in Animate.
+- C/V tool selection, D play/stop, R/F frame stepping, Shift ten-frame stepping,
+  Cmd/Ctrl+R loop toggle without stepping, Space deselection, Cmd/Ctrl+L keying,
+  arrows nudging instead of stepping, and F9 view hide/restore.
+- Setup mesh vertex dragging preserves UVs and remains one undo step.
+- History restores the original document after checks; no fixture is saved or changed.
+
+All 28 existing Rust checks, formatting, warnings-denied Clippy, build and the six-crate
+architecture guard pass. Domain and format crates are unchanged, so the previous
+mesh/runtime results remain the data compatibility baseline. The native interaction
+summary is `docs/evidence/ui-native.json`; current Setup/Animate screenshots are in
+`docs/workspace-setup.png` and `docs/workspace-animate.png`. Earlier screenshots and
+records describe earlier slices. The review window is closed after checking; a clean
+interactive native handoff is retained separately.
+
+Detailed styling, Graph/docking, full Tree entity types, all tool axes and selection
+semantics, unkeyed poses and other controls remain required work in UI_PARITY.md.

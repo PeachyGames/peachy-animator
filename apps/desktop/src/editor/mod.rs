@@ -1,5 +1,6 @@
 mod mesh;
 mod panels;
+mod shortcuts;
 mod viewport;
 use eframe::egui::{self, Color32, FontId, Pos2, RichText, Sense, Stroke, Vec2, pos2, vec2};
 use peachy_document::*;
@@ -7,10 +8,10 @@ use peachy_engine::{Command, EditTarget, Session, evaluate_scene, local_pose};
 use peachy_io as files;
 use std::{collections::BTreeMap, path::PathBuf};
 
-const ACCENT: Color32 = Color32::from_rgb(248, 180, 151);
-const MINT: Color32 = Color32::from_rgb(110, 201, 178);
-const MUTED: Color32 = Color32::from_rgb(143, 155, 170);
-const PANEL: Color32 = Color32::from_rgb(28, 33, 41);
+const ACCENT: Color32 = Color32::from_rgb(235, 133, 44);
+const MINT: Color32 = Color32::from_rgb(149, 188, 150);
+const MUTED: Color32 = Color32::from_rgb(166, 166, 166);
+const PANEL: Color32 = Color32::from_rgb(53, 53, 53);
 
 #[derive(Clone, Copy, PartialEq)]
 enum Tool {
@@ -32,6 +33,7 @@ pub(crate) struct Editor {
     asset_root: PathBuf,
     textures: BTreeMap<String, egui::TextureHandle>,
     selected: usize,
+    has_selection: bool,
     animation: usize,
     skin: String,
     setup_mode: bool,
@@ -43,6 +45,10 @@ pub(crate) struct Editor {
     pan: Vec2,
     fit: bool,
     tool: Tool,
+    last_tool: Tool,
+    show_tree: bool,
+    show_dopesheet: bool,
+    hidden_views: Option<(bool, bool)>,
     drag: Option<(Transform, Pos2)>,
     drag_preview: Option<Transform>,
     mesh_attachment: Option<AttachmentRef>,
@@ -60,6 +66,12 @@ pub(crate) struct Editor {
 }
 
 impl Editor {
+    fn record_target(&mut self, name: &str, rect: egui::Rect) {
+        self.capture_targets.insert(
+            name.into(),
+            [rect.min.x, rect.min.y, rect.max.x, rect.max.y],
+        );
+    }
     pub(crate) fn new(
         cc: &eframe::CreationContext<'_>,
         project: Option<PathBuf>,
@@ -70,18 +82,19 @@ impl Editor {
         style.visuals = egui::Visuals::dark();
         style.visuals.panel_fill = PANEL;
         style.visuals.window_fill = PANEL;
-        style.visuals.selection.bg_fill = Color32::from_rgb(82, 66, 60);
+        style.visuals.selection.bg_fill = Color32::from_rgb(91, 68, 45);
         style.visuals.selection.stroke = Stroke::new(1.0, ACCENT);
-        style.visuals.widgets.active.bg_fill = Color32::from_rgb(89, 71, 65);
-        style.visuals.widgets.hovered.bg_fill = Color32::from_rgb(60, 68, 79);
-        style.spacing.item_spacing = vec2(9.0, 9.0);
-        style.spacing.button_padding = vec2(12.0, 7.0);
+        style.visuals.widgets.active.bg_fill = Color32::from_rgb(106, 77, 47);
+        style.visuals.widgets.hovered.bg_fill = Color32::from_rgb(77, 77, 77);
+        style.visuals.widgets.inactive.bg_fill = Color32::from_rgb(66, 66, 66);
+        style.spacing.item_spacing = vec2(6.0, 5.0);
+        style.spacing.button_padding = vec2(7.0, 3.0);
         style
             .text_styles
-            .insert(egui::TextStyle::Body, FontId::proportional(14.0));
+            .insert(egui::TextStyle::Body, FontId::proportional(13.0));
         style
             .text_styles
-            .insert(egui::TextStyle::Button, FontId::proportional(14.0));
+            .insert(egui::TextStyle::Button, FontId::proportional(13.0));
         cc.egui_ctx.set_style_of(egui::Theme::Dark, style);
         let demo = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("../../examples/peach-bot/peach-bot.peachy");
@@ -118,17 +131,22 @@ impl Editor {
             asset_root,
             textures: BTreeMap::new(),
             selected: 8,
+            has_selection: true,
             animation: 0,
             skin,
-            setup_mode: false,
+            setup_mode: true,
             playing: false,
             looping: true,
-            time: 0.3,
+            time: 0.0,
             show_bones: true,
             zoom: 1.0,
             pan: Vec2::ZERO,
             fit: true,
             tool: Tool::Rotate,
+            last_tool: Tool::Move,
+            show_tree: true,
+            show_dopesheet: true,
+            hidden_views: None,
             drag: None,
             drag_preview: None,
             mesh_attachment: None,
@@ -219,6 +237,9 @@ impl Editor {
     }
 
     fn edit_transform(&mut self, local: Transform, properties: &[Property]) {
+        if !self.has_selection {
+            return;
+        }
         self.playing = false;
         let target = if self.setup_mode {
             EditTarget::Setup
@@ -290,6 +311,7 @@ impl Editor {
                             None
                         };
                     self.selected = 0;
+                    self.has_selection = true;
                     self.animation = 0;
                     self.time = 0.0;
                     self.playing = false;
@@ -340,69 +362,6 @@ impl Editor {
             }
         }
     }
-
-    fn shortcuts(&mut self, ctx: &egui::Context) {
-        if ctx.input(|i| i.viewport().close_requested()) && !self.confirm_discard() {
-            ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
-        }
-        if ctx.egui_wants_keyboard_input() {
-            return;
-        }
-        if ctx.input(|i| i.key_pressed(egui::Key::F12)) {
-            let _ = std::fs::create_dir_all(&self.capture_directory);
-            let stamp = std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_nanos();
-            self.capture = Some(self.capture_directory.join(format!("editor-{stamp}.png")));
-            ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
-        }
-        if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::S)) {
-            self.save_project();
-        }
-        if ctx.input_mut(|i| {
-            i.consume_key(
-                egui::Modifiers::COMMAND | egui::Modifiers::SHIFT,
-                egui::Key::Z,
-            )
-        }) {
-            self.redo();
-        } else if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::Z)) {
-            self.undo();
-        }
-        if ctx.input(|i| i.key_pressed(egui::Key::Space)) {
-            self.playing = !self.playing;
-            self.setup_mode = false;
-        }
-        if ctx.input(|i| i.key_pressed(egui::Key::F)) {
-            self.fit = true;
-        }
-        if ctx.input(|i| i.key_pressed(egui::Key::R)) {
-            self.tool = Tool::Rotate;
-        }
-        if ctx.input(|i| i.key_pressed(egui::Key::V)) {
-            self.tool = Tool::Move;
-        }
-        if ctx.input(|i| i.key_pressed(egui::Key::M)) {
-            self.enter_mesh_tool();
-        }
-        if ctx.input(|i| i.key_pressed(egui::Key::Escape)) && self.mesh_drag.is_some() {
-            self.session.cancel_transaction();
-            self.mesh_drag = None;
-            self.reconcile_selection();
-        }
-        if ctx.input(|i| i.key_pressed(egui::Key::K)) && !self.setup_mode {
-            let pose = local_pose(self.session.document(), self.active_animation(), self.time);
-            self.edit_transform(pose[self.selected], &Property::ALL);
-        }
-        for (key, delta) in [(egui::Key::ArrowLeft, -1.0), (egui::Key::ArrowRight, 1.0)] {
-            if ctx.input(|i| i.key_pressed(key)) {
-                self.playing = false;
-                self.time = (self.snapped_time() + delta / self.session.document().fps as f32)
-                    .clamp(0.0, self.duration());
-            }
-        }
-    }
 }
 
 impl eframe::App for Editor {
@@ -427,58 +386,76 @@ impl eframe::App for Editor {
             ctx.request_repaint();
         }
         egui::Panel::top("toolbar")
-            .frame(egui::Frame::new().fill(PANEL).inner_margin(14))
+            .frame(egui::Frame::new().fill(PANEL).inner_margin(5))
             .show(ui, |ui| self.toolbar(ui));
         egui::Panel::bottom("status")
             .frame(
                 egui::Frame::new()
-                    .fill(Color32::from_rgb(23, 28, 35))
-                    .inner_margin(8),
+                    .fill(Color32::from_gray(38))
+                    .inner_margin(4),
             )
             .show(ui, |ui| {
                 ui.horizontal(|ui| {
                     ui.label(
                         RichText::new(if self.session.is_dirty() {
-                            "● Unsaved"
+                            "Modified"
                         } else {
-                            "● Saved"
+                            "Saved"
                         })
                         .small()
                         .color(if self.session.is_dirty() {
                             ACCENT
                         } else {
-                            MINT
+                            MUTED
                         }),
                     );
                     ui.separator();
                     ui.label(RichText::new(&self.status).small().color(MUTED));
                 });
             });
-        egui::Panel::bottom("timeline")
-            .default_size(222.0)
-            .min_size(200.0)
-            .resizable(true)
-            .frame(egui::Frame::new().fill(PANEL).inner_margin(12))
-            .show(ui, |ui| self.timeline(ui));
-        egui::Panel::left("hierarchy")
-            .default_size(232.0)
-            .min_size(200.0)
-            .frame(egui::Frame::new().fill(PANEL).inner_margin(14))
-            .show(ui, |ui| self.hierarchy(ui));
-        egui::Panel::right("inspector")
-            .default_size(280.0)
-            .min_size(250.0)
-            .frame(egui::Frame::new().fill(PANEL).inner_margin(16))
-            .show(ui, |ui| {
-                egui::ScrollArea::vertical().show(ui, |ui| self.inspector(ui));
-            });
+        if self.show_tree {
+            egui::Panel::right("tree")
+                .default_size(310.0)
+                .min_size(260.0)
+                .resizable(true)
+                .frame(egui::Frame::new().fill(PANEL).inner_margin(6))
+                .show(ui, |ui| {
+                    egui::Panel::bottom("item-properties")
+                        .default_size(350.0)
+                        .min_size(160.0)
+                        .resizable(true)
+                        .frame(egui::Frame::new().fill(PANEL).inner_margin(6))
+                        .show(ui, |ui| {
+                            egui::ScrollArea::vertical()
+                                .id_salt("properties-scroll")
+                                .show(ui, |ui| self.inspector(ui));
+                        });
+                    egui::CentralPanel::default()
+                        .frame(egui::Frame::new().fill(PANEL).inner_margin(3))
+                        .show(ui, |ui| self.hierarchy(ui));
+                });
+        }
+        if !self.setup_mode && self.show_dopesheet {
+            egui::Panel::bottom("dopesheet")
+                .default_size(235.0)
+                .min_size(180.0)
+                .resizable(true)
+                .frame(egui::Frame::new().fill(PANEL).inner_margin(6))
+                .show(ui, |ui| self.timeline(ui));
+        }
         egui::CentralPanel::default()
             .frame(
                 egui::Frame::new()
-                    .fill(Color32::from_rgb(23, 28, 35))
-                    .inner_margin(12),
+                    .fill(Color32::from_gray(43))
+                    .inner_margin(0),
             )
-            .show(ui, |ui| self.canvas(ui));
+            .show(ui, |ui| {
+                egui::Panel::bottom("main-tools")
+                    .exact_size(106.0)
+                    .frame(egui::Frame::new().fill(PANEL).inner_margin(7))
+                    .show(ui, |ui| self.main_tools(ui));
+                self.canvas(ui);
+            });
         if !ctx.input(|i| i.pointer.any_down()) {
             self.session.commit_transaction();
         }
@@ -520,7 +497,7 @@ impl eframe::App for Editor {
                 ) {
                     eprintln!("Capture failed: {e}");
                 }
-                let report = serde_json::json!({"document":self.session.document(),"selectedBone":self.selected,"animation":self.animation,"time":self.time,"playing":self.playing,"setupMode":self.setup_mode,"dirty":self.session.is_dirty(),"imageCount":self.textures.len(),"selectedAttachment":self.mesh_attachment,"selectedVertex":self.mesh_vertex,"targets":self.capture_targets,"meshHandles":self.mesh_handles,"innerSize":[ctx.content_rect().width(),ctx.content_rect().height()]});
+                let report = serde_json::json!({"document":self.session.document(),"selectedBone":self.selected,"hasSelection":self.has_selection,"tool":match self.tool {Tool::Rotate=>"rotate",Tool::Move=>"translate",Tool::Mesh=>"vertices"},"treeVisible":self.show_tree,"dopesheetVisible":!self.setup_mode && self.show_dopesheet,"animation":self.animation,"time":self.time,"playing":self.playing,"looping":self.looping,"zoom":self.zoom,"setupMode":self.setup_mode,"dirty":self.session.is_dirty(),"imageCount":self.textures.len(),"selectedAttachment":self.mesh_attachment,"selectedVertex":self.mesh_vertex,"targets":self.capture_targets,"meshHandles":self.mesh_handles,"innerSize":[ctx.content_rect().width(),ctx.content_rect().height()]});
                 let _ = std::fs::write(
                     path.with_extension("json"),
                     serde_json::to_vec_pretty(&report).unwrap_or_default(),

@@ -1,0 +1,23 @@
+{
+  "layout": {
+    "treeAndPropertiesRight": true,
+    "mainToolsBelowViewport": true,
+    "dopesheetBelowToolsInAnimate": true,
+    "setupSwitchTopLeft": true
+  },
+  "bindings": {
+    "rotateC": true,
+    "translateV": true,
+    "playD": true,
+    "frameRF": true,
+    "tenFramesWithShift": true,
+    "loopCmdRDoesNotStep": true,
+    "spaceDeselects": true,
+    "keyAllCmdL": true,
+    "arrowsNudgeInsteadOfStep": true,
+    "F9HidesRestoresViews": true
+  },
+  "meshMouseDrag": true,
+  "undo": true,
+  "documentRestored": true
+}
