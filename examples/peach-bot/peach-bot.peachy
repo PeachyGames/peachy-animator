@@ -1,5 +1,5 @@
 {
-  "format": 1,
+  "format": 2,
   "name": "Peach Bot",
   "fps": 30,
   "bones": [
@@ -260,6 +260,7 @@
     "default": {
       "thigh.L": {
         "thigh.L": {
+          "type": "region",
           "path": "thigh",
           "width": 100,
           "height": 49,
@@ -274,6 +275,7 @@
       },
       "shin.L": {
         "shin.L": {
+          "type": "region",
           "path": "shin",
           "width": 88,
           "height": 45,
@@ -288,6 +290,7 @@
       },
       "foot.L": {
         "foot.L": {
+          "type": "region",
           "path": "foot",
           "width": 81,
           "height": 45,
@@ -302,6 +305,7 @@
       },
       "thigh.R": {
         "thigh.R": {
+          "type": "region",
           "path": "thigh",
           "width": 100,
           "height": 49,
@@ -316,6 +320,7 @@
       },
       "shin.R": {
         "shin.R": {
+          "type": "region",
           "path": "shin",
           "width": 88,
           "height": 45,
@@ -330,6 +335,7 @@
       },
       "foot.R": {
         "foot.R": {
+          "type": "region",
           "path": "foot",
           "width": 81,
           "height": 45,
@@ -344,6 +350,7 @@
       },
       "upper-arm.L": {
         "upper-arm.L": {
+          "type": "region",
           "path": "upper-arm",
           "width": 82,
           "height": 42,
@@ -358,6 +365,7 @@
       },
       "forearm.L": {
         "forearm.L": {
+          "type": "region",
           "path": "forearm",
           "width": 78,
           "height": 40,
@@ -372,6 +380,7 @@
       },
       "hand.L": {
         "hand.L": {
+          "type": "region",
           "path": "hand",
           "width": 54,
           "height": 56,
@@ -386,6 +395,7 @@
       },
       "upper-arm.R": {
         "upper-arm.R": {
+          "type": "region",
           "path": "upper-arm",
           "width": 82,
           "height": 42,
@@ -400,6 +410,7 @@
       },
       "forearm.R": {
         "forearm.R": {
+          "type": "region",
           "path": "forearm",
           "width": 78,
           "height": 40,
@@ -414,6 +425,7 @@
       },
       "hand.R": {
         "hand.R": {
+          "type": "region",
           "path": "hand",
           "width": 54,
           "height": 56,
@@ -430,6 +442,7 @@
     "peach": {
       "body": {
         "body": {
+          "type": "region",
           "path": "torso",
           "width": 140,
           "height": 148,
@@ -445,6 +458,7 @@
       },
       "head": {
         "head": {
+          "type": "region",
           "path": "head",
           "width": 142,
           "height": 134,
@@ -462,6 +476,7 @@
     "mint": {
       "body": {
         "body": {
+          "type": "region",
           "path": "torso-mint",
           "width": 140,
           "height": 148,
@@ -477,6 +492,7 @@
       },
       "head": {
         "head": {
+          "type": "region",
           "path": "head-mint",
           "width": 142,
           "height": 134,

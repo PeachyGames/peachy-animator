@@ -12,7 +12,7 @@ CLI -> spine (capability inspection)
 
 `peachy-document` contains plain serializable data and general invariants. Bones are
 topologically ordered; parent indices point backwards. Slots establish draw order;
-skins resolve region references with default fallback. Transforms use degrees and a
+skins resolve tagged region/mesh attachments with default fallback. Transforms use degrees and a
 Y-up coordinate system. Translation/rotation keys offset setup, while scale multiplies
 it. Native data rejects unknown fields so future features cannot silently disappear.
 
@@ -23,10 +23,18 @@ and automated clients. Session adds bounded snapshot history, dirty state and ge
 transactions around that transition. Cancelled gestures preserve the prior redo branch.
 
 Evaluation starts from setup on every call. `evaluate_scene` resolves skins and returns
-world transforms, textured region quads in draw order and their common bounds. Its drag
+world transforms, textured vertex/UV/index buffers in draw order and their common bounds. Its bone drag
 preview is transient input rather than a document edit. Rendering and fit-to-view use
 those same vertices; frontends never rebuild attachment geometry. The external 4.3
 curve observations are recorded in PROVENANCE.md.
+
+Mesh vertices live in slot-bone local coordinates; UVs use a top-left origin.
+Region conversion bakes its attachment transform into four local vertices, using
+the same geometry function as region rendering. Subdivision inserts a triangle
+centroid and interpolates its UV; it preserves the hull and existing vertex indices.
+Both operations and setup vertex movement are shared serializable commands. The
+canvas converts pointer motion to bone-local coordinates and dispatches a Session
+transaction. Mesh rendering, bounds and CLI geometry all use `evaluate_scene`.
 
 `peachy-spine` converts the supported 4.3 JSON subset. It owns Spine-specific naming
 and placeholder restrictions, separate from native invariants. Inspection returns a
@@ -39,11 +47,14 @@ exports. It depends on document/spine, not the engine or a UI toolkit. The CLI c
 the pure transition for batches and uses this same file service. Its model-only
 import/apply outputs still require loose images beside the project; desktop Save copies
 images when saving to another directory. Both frontends use the same bundle exporter.
+The decoder explicitly migrates native v1 region data to v2 tagged attachments
+before strict deserialization. It does not weaken unknown-field validation.
 
 The desktop owns dialogs, texture upload, camera and pointer coordinates, labels and
 platform events. Its entrypoint parses arguments and starts the app. `editor/mod.rs`
 coordinates application state, `panels.rs` renders controls, and `viewport.rs` translates
-pointer gestures and paints the evaluated scene. View selections are repaired after
+pointer gestures and paints the evaluated scene. `mesh.rs` coordinates attachment
+selection and controls. View selections, including vertex and triangle indices, are repaired after
 history/document changes. Inspector pointer drags and curve sliders use Session
 transactions rather than creating history entries for every intermediate value.
 
@@ -54,7 +65,7 @@ an explicit allowlist, including a negative probe for an engine-to-UI dependency
 core was also reviewed for standard-library filesystem/clock/process calls; the graph
 check alone cannot establish their absence. See [the quality review](CODE_QUALITY.md).
 
-1. Extend typed native data and evaluated draw operations before building mesh controls.
+1. Extend typed native data and evaluated draw operations before building weights or deform controls.
 2. Introduce stable entity IDs before deletion/reparenting and animation merging.
 3. Extend the shared I/O shell for formats/destinations; keep dialogs in the frontend.
 4. Add schemas and MCP around the existing serializable commands when needed.

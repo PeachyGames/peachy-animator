@@ -1,3 +1,4 @@
+mod mesh;
 mod panels;
 mod viewport;
 use eframe::egui::{self, Color32, FontId, Pos2, RichText, Sense, Stroke, Vec2, pos2, vec2};
@@ -15,6 +16,14 @@ const PANEL: Color32 = Color32::from_rgb(28, 33, 41);
 enum Tool {
     Rotate,
     Move,
+    Mesh,
+}
+
+struct MeshDrag {
+    attachment: AttachmentRef,
+    vertex: usize,
+    position: [f32; 2],
+    pointer: Pos2,
 }
 
 pub(crate) struct Editor {
@@ -36,6 +45,12 @@ pub(crate) struct Editor {
     tool: Tool,
     drag: Option<(Transform, Pos2)>,
     drag_preview: Option<Transform>,
+    mesh_attachment: Option<AttachmentRef>,
+    mesh_vertex: usize,
+    mesh_triangle: usize,
+    mesh_drag: Option<MeshDrag>,
+    capture_targets: BTreeMap<String, [f32; 4]>,
+    mesh_handles: Vec<[f32; 2]>,
     status: String,
     error: Option<String>,
     new_bone: String,
@@ -116,6 +131,12 @@ impl Editor {
             tool: Tool::Rotate,
             drag: None,
             drag_preview: None,
+            mesh_attachment: None,
+            mesh_vertex: 0,
+            mesh_triangle: 0,
+            mesh_drag: None,
+            capture_targets: BTreeMap::new(),
+            mesh_handles: vec![],
             status: "Original Peach Bot • select a bone and make it yours".into(),
             error: initial_error,
             new_bone: String::new(),
@@ -223,17 +244,20 @@ impl Editor {
             self.playing = false;
             self.setup_mode = true;
         }
+        self.reconcile_attachment();
     }
     fn undo(&mut self) {
         self.session.undo();
         self.drag = None;
         self.drag_preview = None;
+        self.mesh_drag = None;
         self.reconcile_selection();
     }
     fn redo(&mut self) {
         self.session.redo();
         self.drag = None;
         self.drag_preview = None;
+        self.mesh_drag = None;
         self.reconcile_selection();
     }
 
@@ -271,6 +295,9 @@ impl Editor {
                     self.playing = false;
                     self.fit = true;
                     self.skin = preferred_skin(self.session.document());
+                    self.mesh_attachment = None;
+                    self.mesh_drag = None;
+                    self.reconcile_selection();
                     self.error = None;
                     self.load_textures(ctx);
                     self.status = "Project opened".into();
@@ -356,6 +383,14 @@ impl Editor {
         if ctx.input(|i| i.key_pressed(egui::Key::V)) {
             self.tool = Tool::Move;
         }
+        if ctx.input(|i| i.key_pressed(egui::Key::M)) {
+            self.enter_mesh_tool();
+        }
+        if ctx.input(|i| i.key_pressed(egui::Key::Escape)) && self.mesh_drag.is_some() {
+            self.session.cancel_transaction();
+            self.mesh_drag = None;
+            self.reconcile_selection();
+        }
         if ctx.input(|i| i.key_pressed(egui::Key::K)) && !self.setup_mode {
             let pose = local_pose(self.session.document(), self.active_animation(), self.time);
             self.edit_transform(pose[self.selected], &Property::ALL);
@@ -373,6 +408,8 @@ impl Editor {
 impl eframe::App for Editor {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let ctx = ui.ctx().clone();
+        self.capture_targets.clear();
+        self.mesh_handles.clear();
         self.reconcile_selection();
         self.shortcuts(&ctx);
         self.reconcile_selection();
@@ -483,7 +520,7 @@ impl eframe::App for Editor {
                 ) {
                     eprintln!("Capture failed: {e}");
                 }
-                let report = serde_json::json!({"document":self.session.document(),"selectedBone":self.selected,"animation":self.animation,"time":self.time,"playing":self.playing,"setupMode":self.setup_mode,"dirty":self.session.is_dirty(),"imageCount":self.textures.len()});
+                let report = serde_json::json!({"document":self.session.document(),"selectedBone":self.selected,"animation":self.animation,"time":self.time,"playing":self.playing,"setupMode":self.setup_mode,"dirty":self.session.is_dirty(),"imageCount":self.textures.len(),"selectedAttachment":self.mesh_attachment,"selectedVertex":self.mesh_vertex,"targets":self.capture_targets,"meshHandles":self.mesh_handles,"innerSize":[ctx.content_rect().width(),ctx.content_rect().height()]});
                 let _ = std::fs::write(
                     path.with_extension("json"),
                     serde_json::to_vec_pretty(&report).unwrap_or_default(),

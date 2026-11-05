@@ -55,3 +55,24 @@ CLI on the original fixture only. Two initial imports revealed default-attachmen
 and named-skin placeholder collisions. The final fixture puts shared parts in default
 and appearances in named skins with unique attachment names. It imports and re-exports
 successfully, and its re-exported data passes the same external pose comparison.
+
+## Mesh slice observations
+
+The mesh slice uses the public JSON attachment contract and
+[Spine's mesh user guide](https://esotericsoftware.com/spine-meshes). The latter
+distinguishes fixed-UV setup vertex movement from UV/topology editing and animated
+deform keys. Our first mesh controls implement fixed-UV setup movement only, plus
+four-corner region conversion and local centroid subdivision.
+
+Mesh positions use ordinary affine bone transforms. Region conversion uses our
+existing region geometry, and subdivision averages the three position/UV pairs.
+These algorithms were written independently from general mathematics. No official
+triangulation, renderer, mesh evaluator or editor implementation was read.
+
+Public TypeScript API declarations for MeshAttachment, VertexAttachment, Sequence,
+SlotPose and TextureRegion were read to call the separately installed runtime oracle.
+The oracle compares world vertices, normalized/packed UVs, triangle indices and hull
+counts. The installed Spine Editor 4.3.26 imported/re-exported three original meshes,
+retaining their mesh data exactly. That also confirmed the nonessential edge values
+as coordinate offsets (twice the vertex index). All artwork and rigs remain original
+Peach Bot fixtures; no private artist data was copied or modified.

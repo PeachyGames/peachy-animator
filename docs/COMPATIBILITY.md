@@ -1,4 +1,4 @@
-# Compatibility contract — slice 1
+# Compatibility contract — mesh slice
 
 Target: Spine **4.3.x JSON**, with export metadata `4.3.26`. The initial external
 oracle is separately installed `@esotericsoftware/spine-core` **4.3.13**.
@@ -7,14 +7,14 @@ Compatibility applies to the subset below, not every 4.3 project or future patch
 | Area | Supported | Import refuses |
 | --- | --- | --- |
 | Bones | Normal inheritance; X/Y, rotation, scale X/Y, length | Shear, other inheritance modes, skin-required bones |
-| Attachments | Static rectangular regions with transforms and image paths | Meshes, linked meshes, clipping, paths, sequences, other attachment types |
+| Attachments | Regions and unweighted meshes with explicit UVs, triangles, hulls and setup vertices | Weighted/linked meshes, clipping, paths, sequences, other attachment types |
 | Slots | Setup attachment and normal blending in fixed draw order | Tint, dark tint, other blend modes |
-| Skins | Region maps, explicit attachment names and default-skin fallback | Skin-required bones or constraints |
+| Skins | Region/mesh maps, explicit attachment names and default-skin fallback | Skin-required bones or constraints |
 | Animation | Bone rotation, translation and scale; combined or scalar input timelines | Slot, attachment, draw-order, event or constraint timelines |
 | Curves | Linear, stepped, normalized monotone-time cubic handles | Nonfinite or unordered controls; overshooting curves between equal values |
 | Constraints | None | IK, transform, path, physics and other constraints |
 | Images | Loose PNGs for editing; one untrimmed atlas page for desktop export | Packed-atlas import, rotated/trimmed atlas regions, multipage export |
-| Files | `.peachy` v1; Spine JSON adapter | Native `.spine` projects and binary `.skel` |
+| Files | `.peachy` v2; in-memory v1 migration; Spine JSON adapter | Native `.spine` projects and binary `.skel` |
 
 Our own project format is JSON and holds the editable rig, skin references and clips.
 It is distinct from a runtime export. The importer ignores documented editor-only
@@ -53,3 +53,33 @@ attachments in the default skin. Select `peach` or `mint` for a complete demo ch
 Fresh exported JSON, runtime reports, original-demo screenshots and local native
 interaction evidence are retained during development. Private artist inputs and their
 reports stay outside the repository.
+
+## Mesh slice
+
+Region conversion preserves its name, path, image size, setup transform, UV mapping
+and draw order by baking the attachment transform into four slot-bone-local vertices.
+Setup vertex motion deforms the image with fixed UVs. A triangle may be subdivided
+at its centroid; UVs interpolate at that point, and existing indices and hull stay
+unchanged. The UI shows triangle edges and numbered handles. These are deliberately
+bounded operations, not a replacement for all of Spine's Edit Mesh tools.
+
+Imported meshes must be unweighted, triangulated, have matching coordinate/UV pairs,
+UVs within 0–1, a hull count of at least three, valid nonduplicate triangle indices,
+and every vertex referenced by a triangle. Nonessential image dimensions and edge
+pairs are preserved when supplied. Edge entries use coordinate offsets, twice the
+vertex index, as confirmed by the installed editor's round trip. Runtime-only meshes
+may omit dimensions/edges. Missing hulls are refused. Tint other than white, linked
+meshes, sequences, weights and all attachment/deform timelines remain blocked.
+
+Native v2 tags each attachment as `region` or `mesh`. The loader migrates v1 regions
+in memory, then applies the strict v2 schema. Save writes v2, preserving a verified
+backup of any previous native file. Unknown native fields/future versions are refused.
+
+The external harness now checks all three fixture skins. Across mesh demo and reflected,
+nonuniform-scale contract fixtures it checks 7,650 world coordinates and 15,300 local/
+packed UV values. Maximum mesh error was 0.0000610352 units (tolerance 0.001), with
+zero observed UV error. It also checks triangle order and hull count. Separate checks
+pass after the installed Spine Editor 4.3.26 round trip and the shared packed exporter.
+The editor retained all three meshes' vertices, UVs, triangles, hulls and edges exactly.
+These checks establish sampled geometry/format agreement; they do not establish pixel
+rendering equivalence, weight/deform behavior or complete Spine parity.

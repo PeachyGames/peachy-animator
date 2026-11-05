@@ -1,0 +1,29 @@
+{
+  "meshComparisons": 2550,
+  "maxMeshError": 0.00006103515625,
+  "uvComparisons": 5100,
+  "maxUVError": 0,
+  "runtime": "Spine 4.3 external oracle",
+  "bones": 15,
+  "slots": 14,
+  "skins": [
+    "default",
+    "mint",
+    "peach"
+  ],
+  "clips": [
+    {
+      "name": "contract",
+      "samplesPerSkin": 51,
+      "skins": [
+        "default",
+        "mint",
+        "peach"
+      ],
+      "maxWorldError": 0.00003187913491586869
+    }
+  ],
+  "tolerance": 0.001,
+  "maxWorldError": 0.00003187913491586869,
+  "comparisons": 13770
+}

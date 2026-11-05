@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const runtimePath = process.argv[2];
 if (!runtimePath) throw new Error('Supply an absolute path to your separately licensed Spine 4.3 runtime module.');
-const { Texture, TextureAtlas, AtlasAttachmentLoader, SkeletonJson, Skeleton, AnimationState, AnimationStateData, Physics } = await import(pathToFileURL(resolve(runtimePath)));
+const { Texture, TextureAtlas, AtlasAttachmentLoader, SkeletonJson, Skeleton, AnimationState, AnimationStateData, Physics, MeshAttachment } = await import(pathToFileURL(resolve(runtimePath)));
 class OracleTexture extends Texture {
   constructor(width, height) { super({ width, height }); }
   setFilters() {}
@@ -35,37 +35,80 @@ for (const page of atlas.pages) {
   assert.equal(page.height,height,'Atlas height matches the actual PNG');
   page.setTexture(new OracleTexture(width,height));
 }
+const sourceProject = JSON.parse(readFileSync(source, 'utf8'));
 const data = new SkeletonJson(new AtlasAttachmentLoader(atlas)).readSkeletonData(readFileSync(exportPath, 'utf8'));
 assert.equal(data.version.split('.').slice(0, 2).join('.'), '4.3');
-const report = { runtime: 'Spine 4.3 external oracle', bones: data.bones.length, slots: data.slots.length, skins:data.skins.map(s=>s.name), clips: [], tolerance: 0.001, maxWorldError: 0, comparisons: 0 };
+const report = { meshComparisons: 0, maxMeshError: 0, uvComparisons: 0, maxUVError: 0, runtime: 'Spine 4.3 external oracle', bones: data.bones.length, slots: data.slots.length, skins:data.skins.map(s=>s.name), clips: [], tolerance: 0.001, maxWorldError: 0, comparisons: 0 };
 for (const animation of data.animations) {
   let maxError = 0;
   // Include the exact last frame, boundaries and backwards scrubbing.
   const times = [...Array.from({ length: 49 }, (_, i) => animation.duration * i / 48), animation.duration * 0.31, 0];
-  for (const time of times) {
-    const skeleton = new Skeleton(data);
-    const state = new AnimationState(new AnimationStateData(data));
-    skeleton.setSkin(data.skins.find(s=>s.name==='peach') ?? data.defaultSkin);
-    skeleton.setupPose();
-    state.setAnimation(0, animation.name, false);
-    state.update(time);
-    state.apply(skeleton);
-    skeleton.updateWorldTransform(Physics.none);
-    const ours = JSON.parse(execFileSync(cli, ['pose', source, animation.name, String(time)], { encoding: 'utf8' }));
-    for (let i = 0; i < skeleton.bones.length; i++) {
-      const official = skeleton.bones[i].appliedPose;
-      const actual = ours.bones[i].world;
-      assert.equal(ours.bones[i].name, skeleton.bones[i].data.name);
-      for (const [ourKey, theirKey] of [['a','a'],['b','b'],['c','c'],['d','d'],['x','worldX'],['y','worldY']]) {
-        const error = Math.abs(actual[ourKey] - official[theirKey]);
-        assert.ok(Number.isFinite(error), `${animation.name} ${time} ${theirKey} is nonfinite`);
-        assert.ok(error <= report.tolerance, `${animation.name} t=${time} bone=${ours.bones[i].name} ${ourKey}: ours ${actual[ourKey]} vs Spine ${official[theirKey]} (error ${error})`);
-        maxError = Math.max(maxError, error);
-        report.comparisons++;
+  for (const skin of data.skins.length ? data.skins : [null]) {
+    for (const time of times) {
+      const skeleton = new Skeleton(data);
+      const state = new AnimationState(new AnimationStateData(data));
+      if (skin) skeleton.setSkin(skin);
+      skeleton.setupPose();
+      state.setAnimation(0, animation.name, false);
+      state.update(time);
+      state.apply(skeleton);
+      skeleton.updateWorldTransform(Physics.none);
+      const ours = JSON.parse(execFileSync(cli, ['pose', source, animation.name, String(time), skin?.name ?? 'default'], { encoding: 'utf8' }));
+      for (let i = 0; i < skeleton.bones.length; i++) {
+        const official = skeleton.bones[i].appliedPose;
+        const actual = ours.bones[i].world;
+        assert.equal(ours.bones[i].name, skeleton.bones[i].data.name);
+        for (const [ourKey, theirKey] of [['a','a'],['b','b'],['c','c'],['d','d'],['x','worldX'],['y','worldY']]) {
+          const error = Math.abs(actual[ourKey] - official[theirKey]);
+          assert.ok(Number.isFinite(error), `${animation.name} ${time} ${theirKey} is nonfinite`);
+          assert.ok(error <= report.tolerance, `${animation.name} t=${time} bone=${ours.bones[i].name} ${ourKey}: ours ${actual[ourKey]} vs Spine ${official[theirKey]} (error ${error})`);
+          maxError = Math.max(maxError, error);
+          report.comparisons++;
+        }
       }
+      const actualMeshes = new Map(ours.attachments.map(a=>[a.slot,a]));
+      for (const draw of ours.attachments) {
+        const key=draw.attachment;
+        const native=sourceProject.skins[key.skin][key.slot][key.placeholder];
+        assert.equal(skeleton.slots[draw.slot].data.name,key.slot,'Slot identity');
+        if (native.type==='mesh') assert.ok(skeleton.slots[draw.slot].appliedPose.attachment instanceof MeshAttachment,'Native mesh remains a mesh in the external runtime');
+      }
+      for (let slotIndex=0;slotIndex<skeleton.slots.length;slotIndex++) {
+        const slot=skeleton.slots[slotIndex];
+        const attachment=slot.appliedPose.attachment;
+        if (!(attachment instanceof MeshAttachment)) continue;
+        const actual=actualMeshes.get(slotIndex);
+        assert.ok(actual,`Missing mesh at slot ${slotIndex}`);
+        assert.equal(actual.image,attachment.path);
+        assert.deepEqual(actual.triangles,Array.from(attachment.triangles),'Triangle order');
+        assert.equal(actual.hull*2,attachment.hullLength,'Hull coordinate count');
+        const vertices=new Float32Array(attachment.worldVerticesLength);
+        attachment.computeWorldVertices(skeleton,slot,0,vertices.length,vertices,0,2);
+        const oursVertices=actual.vertices.flat();
+        assert.equal(oursVertices.length,vertices.length);
+        for (let i=0;i<vertices.length;i++) {
+          const error=Math.abs(oursVertices[i]-vertices[i]);
+          assert.ok(Number.isFinite(error) && error<=report.tolerance,`${animation.name} skin=${skin?.name} t=${time} mesh=${slotIndex} coordinate=${i} error=${error}`);
+          report.meshComparisons++; report.maxMeshError=Math.max(report.maxMeshError,error);
+        }
+        const localUVs=actual.uvs.flat();
+        const packedUVs=attachment.sequence.getUVs(0);
+        const region=attachment.sequence.regions[0];
+        assert.ok(region,'Mesh texture region'); assert.equal(region.degrees ?? 0,0,'Fixture atlas is unrotated');
+        assert.equal(localUVs.length,attachment.regionUVs.length);
+        for (let i=0;i<localUVs.length;i++) {
+          const error=Math.abs(localUVs[i]-attachment.regionUVs[i]);
+          assert.ok(Number.isFinite(error) && error<=1e-6,'Local UV agreement');
+          const expected=i%2===0 ? region.u+localUVs[i]*(region.u2-region.u) : region.v+localUVs[i]*(region.v2-region.v);
+          const packedError=Math.abs(expected-packedUVs[i]);
+          assert.ok(Number.isFinite(packedError) && packedError<=1e-6,'Packed UV agreement');
+          report.uvComparisons+=2; report.maxUVError=Math.max(report.maxUVError,error,packedError);
+        }
+      }
+
     }
   }
   report.maxWorldError = Math.max(report.maxWorldError, maxError);
-  report.clips.push({ name: animation.name, samples: times.length, maxWorldError: maxError });
+  report.clips.push({ name: animation.name, samplesPerSkin: times.length, skins: data.skins.map(s=>s.name), maxWorldError: maxError });
 }
 console.log(JSON.stringify(report, null, 2));

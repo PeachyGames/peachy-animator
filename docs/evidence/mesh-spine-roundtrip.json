@@ -1,0 +1,8 @@
+{
+  "spineEditor": "4.3.26",
+  "imports": true,
+  "reexports": true,
+  "ourImporterAcceptsReexport": true,
+  "meshes": 3,
+  "maxMeshDataError": 0
+}

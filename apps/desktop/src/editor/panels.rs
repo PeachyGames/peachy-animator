@@ -40,7 +40,7 @@ impl Editor {
                 {
                     self.export();
                 }
-                ui.label(RichText::new("FIRST SLICE  /  0.1.0").small().color(MUTED));
+                ui.label(RichText::new("MESH SLICE  /  0.1.0").small().color(MUTED));
             });
         });
     }
@@ -140,6 +140,7 @@ impl Editor {
         ui.separator();
         let mut pose =
             local_pose(self.session.document(), self.active_animation(), self.time)[self.selected];
+        self.attachment_panel(ui);
         for property in Property::ALL {
             let mut value = property.read(pose);
             ui.horizontal(|ui| {

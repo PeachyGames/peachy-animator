@@ -15,6 +15,12 @@ impl Editor {
             {
                 self.tool = Tool::Move;
             }
+            if ui
+                .selectable_label(self.tool == Tool::Mesh, "Mesh  [M]")
+                .clicked()
+            {
+                self.enter_mesh_tool();
+            }
             ui.separator();
             ui.checkbox(&mut self.show_bones, "Bones");
             if ui.button("Fit  [F]").clicked() {
@@ -97,24 +103,81 @@ impl Editor {
             [pos2(origin.x, rect.top()), pos2(origin.x, rect.bottom())],
             Stroke::new(1.0, Color32::from_rgb(38, 67, 60)),
         );
-        for draw in &scene.regions {
+        for draw in &scene.attachments {
             let Some(texture) = self.textures.get(&draw.image) else {
                 continue;
             };
             let mut mesh = egui::Mesh::with_texture(texture.id());
-            for (point, uv) in
-                draw.vertices
-                    .into_iter()
-                    .zip([[0., 1.], [1., 1.], [1., 0.], [0., 0.]])
-            {
+            for (&point, &uv) in draw.vertices.iter().zip(&draw.uvs) {
                 mesh.vertices.push(egui::epaint::Vertex {
                     pos: screen(point),
                     uv: pos2(uv[0], uv[1]),
                     color: Color32::WHITE,
                 });
             }
-            mesh.indices = vec![0, 1, 2, 0, 2, 3];
+            mesh.indices = draw.triangles.clone();
             painter.add(egui::Shape::mesh(mesh));
+        }
+        let mut nearest_vertex: Option<(AttachmentRef, usize, usize, [f32; 2], f32)> = None;
+        if self.tool == Tool::Mesh && self.setup_mode {
+            for draw in &scene.attachments {
+                let Some(Attachment::Mesh(m)) = doc.attachment(&draw.attachment) else {
+                    continue;
+                };
+                let selected = self.mesh_attachment.as_ref() == Some(&draw.attachment);
+                if selected {
+                    self.mesh_handles = draw
+                        .vertices
+                        .iter()
+                        .map(|&p| {
+                            let p = screen(p);
+                            [p.x, p.y]
+                        })
+                        .collect();
+                    for t in draw.triangles.as_chunks::<3>().0 {
+                        for (a, b) in [(t[0], t[1]), (t[1], t[2]), (t[2], t[0])] {
+                            painter.line_segment(
+                                [
+                                    screen(draw.vertices[a as usize]),
+                                    screen(draw.vertices[b as usize]),
+                                ],
+                                Stroke::new(1.0, MINT.gamma_multiply(0.65)),
+                            );
+                        }
+                    }
+                }
+                for (i, &p) in draw.vertices.iter().enumerate() {
+                    let p = screen(p);
+                    if selected {
+                        painter.circle_filled(
+                            p,
+                            if i == self.mesh_vertex { 5.0 } else { 3.5 },
+                            if i == self.mesh_vertex { ACCENT } else { MINT },
+                        );
+                        painter.text(
+                            p + vec2(7.0, -7.0),
+                            egui::Align2::LEFT_BOTTOM,
+                            i.to_string(),
+                            FontId::monospace(11.0),
+                            MINT,
+                        );
+                    }
+                    if let Some(mouse) = response.interact_pointer_pos() {
+                        let distance = mouse.distance(p);
+                        if distance < 12.0
+                            && nearest_vertex.as_ref().is_none_or(|hit| distance < hit.4)
+                        {
+                            nearest_vertex = Some((
+                                draw.attachment.clone(),
+                                i,
+                                doc.slots[draw.slot].bone,
+                                m.vertices[i],
+                                distance,
+                            ));
+                        }
+                    }
+                }
+            }
         }
         let mut nearest: Option<(usize, f32)> = None;
         for (i, (bone, matrix)) in doc.bones.iter().zip(world).enumerate() {
@@ -152,10 +215,64 @@ impl Editor {
         painter.text(
             rect.left_bottom() + vec2(16.0, -18.0),
             egui::Align2::LEFT_BOTTOM,
-            "Drag a bone to pose · scroll to zoom · right-drag to pan",
+            if self.tool == Tool::Mesh {
+                "Setup vertices · drag to deform · Escape cancels · UVs stay fixed"
+            } else {
+                "Drag a bone to pose · scroll to zoom · right-drag to pan"
+            },
             FontId::proportional(12.0),
             MUTED,
         );
+        if self.tool == Tool::Mesh {
+            if (response.clicked() || response.drag_started_by(egui::PointerButton::Primary))
+                && let Some((key, vertex, bone, position, _)) = nearest_vertex
+            {
+                self.selected = bone;
+                self.mesh_attachment = Some(key.clone());
+                self.mesh_vertex = vertex;
+                if response.drag_started_by(egui::PointerButton::Primary)
+                    && let Some(pointer) = response.interact_pointer_pos()
+                {
+                    self.mesh_drag = Some(MeshDrag {
+                        attachment: key,
+                        vertex,
+                        position,
+                        pointer,
+                    });
+                    self.session.begin_transaction();
+                }
+            }
+            let mut edit = None;
+            if response.dragged_by(egui::PointerButton::Primary)
+                && self.setup_mode
+                && let Some(drag) = &self.mesh_drag
+                && let Some(mouse) = response.interact_pointer_pos()
+            {
+                let matrix = world[self.selected];
+                let to_local = |p: Pos2| {
+                    matrix
+                        .inverse_point((p.x - origin.x) / self.zoom, -(p.y - origin.y) / self.zoom)
+                };
+                if let (Some(a), Some(b)) = (to_local(drag.pointer), to_local(mouse)) {
+                    edit = Some(Command::SetMeshVertex {
+                        attachment: drag.attachment.clone(),
+                        vertex: drag.vertex,
+                        position: [
+                            drag.position[0] + b[0] - a[0],
+                            drag.position[1] + b[1] - a[1],
+                        ],
+                    });
+                }
+            }
+            if let Some(command) = edit {
+                self.dispatch(command);
+            }
+            if response.drag_stopped() {
+                self.session.commit_transaction();
+                self.mesh_drag = None;
+            }
+            return;
+        }
         if response.clicked()
             && let Some((i, _)) = nearest
         {
@@ -191,6 +308,7 @@ impl Editor {
                             preview.y -= delta.y;
                         }
                     }
+                    Tool::Mesh => {}
                     Tool::Rotate => {
                         let matrix = world[self.selected];
                         let pivot = screen(matrix.point(0.0, 0.0));

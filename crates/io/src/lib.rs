@@ -25,7 +25,33 @@ pub fn load(path: &Path) -> Result<Document, String> {
 }
 
 pub fn decode_project(text: &str) -> Result<Document, String> {
-    let doc: Document = serde_json::from_str(text).map_err(|e| e.to_string())?;
+    let mut value: serde_json::Value = serde_json::from_str(text).map_err(|e| e.to_string())?;
+    // Version 1 had only regions and no attachment discriminator. Add that tag,
+    // then let the strict v2 schema validate every field before accepting the file.
+    if value["format"].as_u64() == Some(1) {
+        if let Some(skins) = value["skins"].as_object_mut() {
+            for skin in skins.values_mut() {
+                if let Some(slots) = skin.as_object_mut() {
+                    for attachments in slots.values_mut() {
+                        if let Some(attachments) = attachments.as_object_mut() {
+                            for attachment in attachments.values_mut() {
+                                let object =
+                                    attachment.as_object_mut().ok_or("Invalid v1 region")?;
+                                if object.contains_key("type") {
+                                    return Err(
+                                        "Version 1 attachments cannot have a type field".into()
+                                    );
+                                }
+                                object.insert("type".into(), "region".into());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        value["format"] = peachy_document::FORMAT_VERSION.into();
+    }
+    let doc: Document = serde_json::from_value(value).map_err(|e| e.to_string())?;
     doc.validate()?;
     Ok(doc)
 }
@@ -218,6 +244,29 @@ pub fn export_bundle(parent: &Path, doc: &Document, asset_root: &Path) -> Result
 mod tests {
     use super::*;
     #[test]
+    fn migrates_v1_regions_without_weakening_the_strict_native_schema() {
+        let doc = load(
+            &PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("../../examples/peach-bot/peach-bot.peachy"),
+        )
+        .unwrap();
+        let mut v = serde_json::to_value(&doc).unwrap();
+        v["format"] = 1.into();
+        for skin in v["skins"].as_object_mut().unwrap().values_mut() {
+            for slot in skin.as_object_mut().unwrap().values_mut() {
+                for attachment in slot.as_object_mut().unwrap().values_mut() {
+                    attachment.as_object_mut().unwrap().remove("type");
+                }
+            }
+        }
+        assert_eq!(decode_project(&v.to_string()).unwrap(), doc);
+        let mut bad = v.clone();
+        bad["skins"]["default"]["hand.R"]["hand.R"]["vertices"] = serde_json::json!([]);
+        assert!(decode_project(&bad.to_string()).is_err());
+        v["format"] = 3.into();
+        assert!(decode_project(&v.to_string()).is_err());
+    }
+    #[test]
     fn native_projects_reject_unknown_fields_instead_of_losing_future_features() {
         let mut value: serde_json::Value =
             serde_json::from_str(include_str!("../../../examples/peach-bot/peach-bot.peachy"))
@@ -242,7 +291,7 @@ mod tests {
     #[test]
     fn saves_reopens_backs_up_and_exports_original_fixture() {
         let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../examples/peach-bot");
-        let doc = load(&root.join("peach-bot.peachy")).unwrap();
+        let doc = load(&root.join("mesh-bot.peachy")).unwrap();
         let folder = std::env::temp_dir().join(format!("peachy-files-{}", stamp()));
         fs::create_dir(&folder).unwrap();
         let path = folder.join("test.peachy");

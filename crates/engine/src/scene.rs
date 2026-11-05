@@ -1,6 +1,11 @@
 //! Evaluated geometry shared by rendering, fit-to-view and future headless export.
-use crate::{Affine, local_pose, world_pose};
-use peachy_document::{Document, Transform};
+use crate::{
+    Affine, local_pose,
+    mesh::{REGION_TRIANGLES, REGION_UVS, region_vertices},
+    world_pose,
+};
+use peachy_document::{Attachment, AttachmentRef, Document, Transform};
+use serde::Serialize;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Bounds {
@@ -22,17 +27,20 @@ impl Bounds {
     }
 }
 
-#[derive(Clone, Debug)]
-pub struct RegionDraw {
+#[derive(Clone, Debug, Serialize)]
+pub struct AttachmentDraw {
     pub slot: usize,
+    pub attachment: AttachmentRef,
     pub image: String,
-    /// Bottom-left, bottom-right, top-right, top-left in world space.
-    pub vertices: [[f32; 2]; 4],
+    pub vertices: Vec<[f32; 2]>,
+    pub uvs: Vec<[f32; 2]>,
+    pub triangles: Vec<u32>,
+    pub hull: usize,
 }
 pub struct Scene {
     pub locals: Vec<Transform>,
     pub world: Vec<Affine>,
-    pub regions: Vec<RegionDraw>,
+    pub attachments: Vec<AttachmentDraw>,
     pub bounds: Option<Bounds>,
 }
 
@@ -52,16 +60,31 @@ pub fn evaluate_scene(
         *local = transform;
     }
     let world = world_pose(doc, &locals);
-    let mut regions = vec![];
+    let mut attachments = vec![];
     let mut bounds: Option<Bounds> = None;
     for (slot_index, slot) in doc.slots.iter().enumerate() {
-        let Some(region) = doc.region(skin, slot_index) else {
+        let Some((key, attachment)) = doc.resolved_attachment(skin, slot_index) else {
             continue;
         };
-        let matrix = world[slot.bone].then(Affine::from_transform(region.transform));
-        let (w, h) = (region.width * 0.5, region.height * 0.5);
-        let vertices = [[-w, -h], [w, -h], [w, h], [-w, h]].map(|p| matrix.point(p[0], p[1]));
-        for point in vertices {
+        let (vertices, uvs, triangles, hull) = match attachment {
+            Attachment::Region(r) => (
+                region_vertices(r).to_vec(),
+                REGION_UVS.to_vec(),
+                REGION_TRIANGLES.to_vec(),
+                4,
+            ),
+            Attachment::Mesh(m) => (
+                m.vertices.clone(),
+                m.uvs.clone(),
+                m.triangles.clone(),
+                m.hull,
+            ),
+        };
+        let vertices: Vec<_> = vertices
+            .into_iter()
+            .map(|p| world[slot.bone].point(p[0], p[1]))
+            .collect();
+        for &point in &vertices {
             let bounds = bounds.get_or_insert(Bounds {
                 min: point,
                 max: point,
@@ -71,16 +94,20 @@ pub fn evaluate_scene(
                 bounds.max[i] = bounds.max[i].max(value);
             }
         }
-        regions.push(RegionDraw {
+        attachments.push(AttachmentDraw {
             slot: slot_index,
-            image: region.path.clone(),
+            attachment: key,
+            image: attachment.path().into(),
             vertices,
+            uvs,
+            triangles,
+            hull,
         });
     }
     Scene {
         locals,
         world,
-        regions,
+        attachments,
         bounds,
     }
 }

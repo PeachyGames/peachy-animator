@@ -177,7 +177,7 @@ def main():
     def region(name, b, part, x=0, y=0, rotation=0):
         slots.append(dict(name=name, bone=b, attachment=name))
         c = parts[part]
-        skin[name] = {name: dict(path=part, width=c.width, height=c.height, transform=transform(x, y, rotation))}
+        skin[name] = {name: dict(type="region", path=part, width=c.width, height=c.height, transform=transform(x, y, rotation))}
     for label, leg, shin, foot in [("L", leg_l, shin_l, foot_l), ("R", leg_r, shin_r, foot_r)]:
         region("thigh."+label, leg, "thigh", 38)
         region("shin."+label, shin, "shin", 33)
@@ -204,7 +204,7 @@ def main():
         peach[slot] = {slot: {**skin[slot][slot], "name": slot+".peach"}}
     # Skin placeholders must not collide with direct attachments in default.
     shared = {slot: entries for slot, entries in skin.items() if slot not in peach}
-    doc = dict(format=1, name="Peach Bot", fps=30, bones=bones, slots=slots, skins={"default":shared,"peach":peach,"mint":mint}, animations=[dict(name="wave",duration=2.4,tracks=wave),dict(name="idle",duration=2,tracks=idle)])
+    doc = dict(format=2, name="Peach Bot", fps=30, bones=bones, slots=slots, skins={"default":shared,"peach":peach,"mint":mint}, animations=[dict(name="wave",duration=2.4,tracks=wave),dict(name="idle",duration=2,tracks=idle)])
     (ROOT/"peach-bot.peachy").write_text(json.dumps(doc, indent=2)+"\n")
     contract = json.loads(json.dumps(doc))
     contract["name"] = "Transform Contract"
@@ -219,6 +219,32 @@ def main():
         dict(bone=2, property="rotation", keys=contract_keys(0, 400, "linear")),
     ])]
     (ROOT/"contract-cases.peachy").write_text(json.dumps(contract, indent=2)+"\n")
+    # A separate mesh fixture keeps the region fixture as a regression reference.
+    mesh_doc = json.loads(json.dumps(doc))
+    mesh_doc["name"] = "Peach Bot Mesh Lab"
+    import math
+    for skin_name, slot_name in [("default", "hand.R"), ("peach", "body"), ("mint", "body")]:
+        r = mesh_doc["skins"][skin_name][slot_name][slot_name]
+        w, h = r["width"]/2, r["height"]/2
+        t = r["transform"]
+        angle = math.radians(t["rotation"])
+        def local(x, y):
+            x *= t["scale_x"]; y *= t["scale_y"]
+            return [t["x"]+x*math.cos(angle)-y*math.sin(angle), t["y"]+x*math.sin(angle)+y*math.cos(angle)]
+        vertices = [local(-w,-h),local(w,-h),local(w,h),local(-w,h),local(0,0)]
+        # Setup deformation: the UVs stay fixed while the center moves.
+        vertices[4][0] += 8
+        mesh = dict(type="mesh",path=r["path"],width=r["width"],height=r["height"],vertices=vertices,
+                    uvs=[[0,1],[1,1],[1,0],[0,0],[.5,.5]],triangles=[0,1,4,1,2,4,2,3,4,3,0,4],
+                    hull=4,edges=[0,2,2,4,4,6,6,0])
+        if "name" in r: mesh["name"]=r["name"]
+        mesh_doc["skins"][skin_name][slot_name][slot_name]=mesh
+    (ROOT/"mesh-bot.peachy").write_text(json.dumps(mesh_doc,indent=2)+"\n")
+    mesh_contract = json.loads(json.dumps(mesh_doc))
+    mesh_contract["name"] = "Mesh Transform Contract"
+    mesh_contract["bones"][0]["setup"].update(rotation=37,scale_x=-1.3,scale_y=.8)
+    mesh_contract["animations"] = contract["animations"]
+    (ROOT/"mesh-contract.peachy").write_text(json.dumps(mesh_contract,indent=2)+"\n")
     print(f"Wrote original fixture: {len(bones)} bones, {len(slots)} slots, 2 animations, {len(parts)} textures")
 
 

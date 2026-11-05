@@ -2,7 +2,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
-pub const FORMAT_VERSION: u32 = 1;
+pub const FORMAT_VERSION: u32 = 2;
 pub const KEY_TIME_EPSILON: f32 = 0.00001;
 pub fn same_key_time(a: f32, b: f32) -> bool {
     (a - b).abs() < KEY_TIME_EPSILON
@@ -59,8 +59,130 @@ pub struct Slot {
     pub attachment: Option<String>,
 }
 
-/// Slot name -> attachment placeholder -> region. Draw order is the slot vector.
-pub type Skin = BTreeMap<String, BTreeMap<String, Region>>;
+/// Slot name -> attachment placeholder -> attachment. Draw order is the slot vector.
+pub type Skin = BTreeMap<String, BTreeMap<String, Attachment>>;
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "camelCase")]
+pub enum Attachment {
+    Region(Region),
+    Mesh(Mesh),
+}
+
+impl Attachment {
+    pub fn name(&self) -> Option<&str> {
+        match self {
+            Self::Region(r) => r.name.as_deref(),
+            Self::Mesh(m) => m.name.as_deref(),
+        }
+    }
+    pub fn path(&self) -> &str {
+        match self {
+            Self::Region(r) => &r.path,
+            Self::Mesh(m) => &m.path,
+        }
+    }
+    pub fn validate(&self) -> Result<(), String> {
+        if !safe_asset_path(self.path()) || self.name().is_some_and(|n| n.trim().is_empty()) {
+            return Err("Invalid attachment name or asset path".into());
+        }
+        match self {
+            Self::Region(r) => {
+                if !r.width.is_finite()
+                    || !r.height.is_finite()
+                    || r.width <= 0.0
+                    || r.height <= 0.0
+                    || !finite_transform(r.transform)
+                {
+                    return Err("Invalid region dimensions or transform".into());
+                }
+                Ok(())
+            }
+            Self::Mesh(m) => m.validate(),
+        }
+    }
+}
+
+/// Unweighted setup vertices in the slot bone's local space. UV origin is top-left.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Mesh {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    pub path: String,
+    pub vertices: Vec<[f32; 2]>,
+    pub uvs: Vec<[f32; 2]>,
+    pub triangles: Vec<u32>,
+    pub hull: usize,
+    /// Optional source-image size, zero when absent from a runtime-only export.
+    #[serde(default)]
+    pub width: f32,
+    #[serde(default)]
+    pub height: f32,
+    /// Nonessential Spine edge data, in pairs of coordinate offsets (2 * vertex index).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub edges: Vec<u32>,
+}
+
+impl Mesh {
+    pub fn validate(&self) -> Result<(), String> {
+        let n = self.vertices.len();
+        if n < 3
+            || n > u32::MAX as usize / 2
+            || self.uvs.len() != n
+            || !(3..=n).contains(&self.hull)
+            || self.vertices.iter().flatten().any(|v| !v.is_finite())
+            || self
+                .uvs
+                .iter()
+                .flatten()
+                .any(|v| !v.is_finite() || !(0.0..=1.0).contains(v))
+            || !self.width.is_finite()
+            || !self.height.is_finite()
+            || self.width < 0.0
+            || self.height < 0.0
+        {
+            return Err("Mesh requires finite vertices, matching UVs in 0–1, a valid hull and nonnegative image size".into());
+        }
+        if self.triangles.is_empty() || !self.triangles.len().is_multiple_of(3) {
+            return Err("Mesh triangles must contain index triplets".into());
+        }
+        let mut used = BTreeSet::new();
+        let mut triangles = BTreeSet::new();
+        for t in self.triangles.as_chunks::<3>().0 {
+            if t.iter().any(|&i| i as usize >= n) || t[0] == t[1] || t[1] == t[2] || t[0] == t[2] {
+                return Err("Invalid mesh triangle indices".into());
+            }
+            let mut sorted = [t[0], t[1], t[2]];
+            sorted.sort_unstable();
+            if !triangles.insert(sorted) {
+                return Err("Duplicate mesh triangle".into());
+            }
+            used.extend(t.iter().copied());
+        }
+        if used.len() != n {
+            return Err("Every mesh vertex must belong to a triangle".into());
+        }
+        if !self.edges.len().is_multiple_of(2)
+            || self
+                .edges
+                .iter()
+                .any(|&i| !i.is_multiple_of(2) || i as usize / 2 >= n)
+        {
+            return Err("Mesh edges must contain pairs of valid coordinate offsets".into());
+        }
+        Ok(())
+    }
+}
+
+/// Explicit key used by commands; named skin references never silently edit a fallback.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AttachmentRef {
+    pub skin: String,
+    pub slot: String,
+    pub placeholder: String,
+}
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -184,20 +306,15 @@ impl Document {
                 if !self.slots.iter().any(|s| &s.name == slot) {
                     return Err(format!("Unknown slot {slot}"));
                 }
-                for (placeholder, region) in attachments {
-                    let name = region.name.as_ref().unwrap_or(placeholder);
+                for (placeholder, attachment) in attachments {
+                    let name = attachment.name().unwrap_or(placeholder);
                     if name.trim().is_empty() {
                         return Err("Attachment names must be nonempty".into());
                     }
-                    if !region.width.is_finite()
-                        || !region.height.is_finite()
-                        || region.width <= 0.0
-                        || region.height <= 0.0
-                        || !finite_transform(region.transform)
-                        || !safe_asset_path(&region.path)
-                    {
-                        return Err("Invalid region dimensions, transform or asset path".into());
+                    if placeholder.trim().is_empty() {
+                        return Err("Attachment placeholders must be nonempty".into());
                     }
+                    attachment.validate()?;
                 }
             }
         }
@@ -245,22 +362,39 @@ impl Document {
             .values()
             .flat_map(|s| s.values())
             .flat_map(|a| a.values())
-            .map(|r| r.path.as_str())
+            .map(Attachment::path)
             .collect()
     }
-    pub fn region(&self, skin: &str, slot: usize) -> Option<&Region> {
+    pub fn attachment(&self, key: &AttachmentRef) -> Option<&Attachment> {
+        self.skins
+            .get(&key.skin)?
+            .get(&key.slot)?
+            .get(&key.placeholder)
+    }
+    pub fn attachment_mut(&mut self, key: &AttachmentRef) -> Option<&mut Attachment> {
+        self.skins
+            .get_mut(&key.skin)?
+            .get_mut(&key.slot)?
+            .get_mut(&key.placeholder)
+    }
+    pub fn resolved_attachment(
+        &self,
+        skin: &str,
+        slot: usize,
+    ) -> Option<(AttachmentRef, &Attachment)> {
         let slot = self.slots.get(slot)?;
         let attachment = slot.attachment.as_ref()?;
-        self.skins
-            .get(skin)
-            .and_then(|s| s.get(&slot.name))
-            .and_then(|r| r.get(attachment))
-            .or_else(|| {
-                self.skins
-                    .get("default")
-                    .and_then(|s| s.get(&slot.name))
-                    .and_then(|r| r.get(attachment))
-            })
+        for name in [skin, "default"] {
+            let key = AttachmentRef {
+                skin: name.into(),
+                slot: slot.name.clone(),
+                placeholder: attachment.clone(),
+            };
+            if let Some(value) = self.attachment(&key) {
+                return Some((key, value));
+            }
+        }
+        None
     }
 }
 

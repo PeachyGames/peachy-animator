@@ -1,4 +1,4 @@
-use peachy_engine::{Command, apply_command, evaluate};
+use peachy_engine::{Command, apply_command, evaluate_scene};
 use serde_json::{Value, json};
 use std::{env, fs, path::Path, process};
 
@@ -11,7 +11,7 @@ fn main() {
 
 fn run() -> Result<(), String> {
     let args: Vec<_> = env::args().skip(1).collect();
-    let usage = "Peachy Animator CLI\n  validate PROJECT.peachy\n  inspect SPINE.json\n  import SPINE.json OUTPUT.peachy\n  export PROJECT.peachy OUTPUT.json\n  bundle PROJECT.peachy PARENT_FOLDER\n  pose PROJECT.peachy ANIMATION SECONDS\n  apply PROJECT.peachy COMMANDS.json OUTPUT.peachy\n\nAll mutation commands write a new output. Artist source files are never edited.";
+    let usage = "Peachy Animator CLI\n  validate PROJECT.peachy\n  inspect SPINE.json\n  import SPINE.json OUTPUT.peachy\n  export PROJECT.peachy OUTPUT.json\n  bundle PROJECT.peachy PARENT_FOLDER\n  pose PROJECT.peachy ANIMATION SECONDS [SKIN]\n  apply PROJECT.peachy COMMANDS.json OUTPUT.peachy\n\nAll mutation commands write a new output. Artist source files are never edited.";
     if args.is_empty() || args[0] == "--help" {
         println!("{usage}");
         return Ok(());
@@ -79,8 +79,12 @@ fn run() -> Result<(), String> {
             if !time.is_finite() {
                 return Err("Time must be finite".into());
             }
-            let pose = evaluate(&doc, Some(animation), time);
-            println!("{}",serde_json::to_string_pretty(&json!({"time":time,"bones":doc.bones.iter().zip(pose).map(|(b,p)|json!({"name":b.name,"world":p})).collect::<Vec<_>>()})).unwrap());
+            let skin = args.get(4).map(String::as_str).unwrap_or("default");
+            if !doc.skins.is_empty() && !doc.skins.contains_key(skin) {
+                return Err("Unknown skin".into());
+            }
+            let scene = evaluate_scene(&doc, Some(animation), time, skin, None);
+            println!("{}",serde_json::to_string_pretty(&json!({"time":time,"bones":doc.bones.iter().zip(scene.world).map(|(b,p)|json!({"name":b.name,"world":p})).collect::<Vec<_>>(),"attachments":scene.attachments})).unwrap());
         }
         "apply" => {
             let doc = peachy_io::decode_project(&contents)?;

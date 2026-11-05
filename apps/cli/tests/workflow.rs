@@ -91,3 +91,62 @@ fn serialized_pose_command_uses_the_shared_domain_transition() {
     assert_eq!(edited.bones[0].setup.rotation, 0.0);
     fs::remove_dir_all(folder).unwrap();
 }
+
+#[test]
+fn serialized_mesh_edits_export_and_evaluate_the_shared_scene() {
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let source = root.join("examples/peach-bot/peach-bot.peachy");
+    let folder = std::env::temp_dir().join(format!(
+        "peachy-mesh-cli-{}",
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
+    fs::create_dir(&folder).unwrap();
+    let key = serde_json::json!({"skin":"default","slot":"hand.R","placeholder":"hand.R"});
+    let commands = serde_json::json!([
+        {"command":"convertRegionToMesh","attachment":key},
+        {"command":"splitMeshTriangle","attachment":key,"triangle":0},
+        {"command":"setMeshVertex","attachment":key,"vertex":4,"position":[16,4]}
+    ]);
+    let command = folder.join("commands.json");
+    fs::write(&command, commands.to_string()).unwrap();
+    let edited = folder.join("edited.peachy");
+    let export = folder.join("mesh.json");
+    let cli = env!("CARGO_BIN_EXE_peachy-cli");
+    for args in [
+        vec!["apply".into(), source, command, edited.clone()],
+        vec!["export".into(), edited.clone(), export.clone()],
+    ] {
+        let output = Command::new(cli).args(args).output().unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+    let value: serde_json::Value = serde_json::from_slice(&fs::read(export).unwrap()).unwrap();
+    assert_eq!(
+        value["skins"][0]["attachments"]["hand.R"]["hand.R"]["vertices"][8].as_f64(),
+        Some(16.0)
+    );
+    let output = Command::new(cli)
+        .arg("pose")
+        .arg(&edited)
+        .args(["wave", "0.3", "mint"])
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    let scene: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    let hand = scene["attachments"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|a| a["attachment"]["slot"] == "hand.R")
+        .unwrap();
+    assert_eq!(hand["vertices"].as_array().unwrap().len(), 5);
+    assert_eq!(hand["triangles"].as_array().unwrap().len(), 12);
+    assert_eq!(hand["attachment"]["skin"], "default");
+    fs::remove_dir_all(folder).unwrap();
+}

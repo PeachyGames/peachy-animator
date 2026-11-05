@@ -33,6 +33,18 @@ pub enum Command {
         name: String,
         duration: f32,
     },
+    ConvertRegionToMesh {
+        attachment: AttachmentRef,
+    },
+    SetMeshVertex {
+        attachment: AttachmentRef,
+        vertex: usize,
+        position: [f32; 2],
+    },
+    SplitMeshTriangle {
+        attachment: AttachmentRef,
+        triangle: usize,
+    },
     Batch {
         commands: Vec<Command>,
     },
@@ -109,6 +121,34 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
         }
         Command::SetSetup { bone, transform } => {
             doc.bones.get_mut(bone).ok_or("Unknown bone")?.setup = transform
+        }
+        Command::ConvertRegionToMesh { attachment } => {
+            let value = doc
+                .attachment_mut(&attachment)
+                .ok_or("Unknown attachment")?;
+            let Attachment::Region(region) = value else {
+                return Err("Attachment is already a mesh".into());
+            };
+            *value = Attachment::Mesh(crate::region_to_mesh(region));
+        }
+        Command::SetMeshVertex {
+            attachment,
+            vertex,
+            position,
+        } => {
+            let Some(Attachment::Mesh(mesh)) = doc.attachment_mut(&attachment) else {
+                return Err("Unknown mesh attachment".into());
+            };
+            *mesh.vertices.get_mut(vertex).ok_or("Unknown mesh vertex")? = position;
+        }
+        Command::SplitMeshTriangle {
+            attachment,
+            triangle,
+        } => {
+            let Some(Attachment::Mesh(mesh)) = doc.attachment_mut(&attachment) else {
+                return Err("Unknown mesh attachment".into());
+            };
+            crate::mesh::split_triangle(mesh, triangle)?;
         }
         Command::AddBone { bone } => doc.bones.push(bone),
         Command::AddAnimation { name, duration } => doc.animations.push(Animation {

@@ -1,0 +1,10 @@
+{
+  "realNativeEvents": true,
+  "conversion": true,
+  "subdivision": true,
+  "vertexDrag": true,
+  "uvsFixed": true,
+  "oneUndoPerDrag": true,
+  "redo": true,
+  "documentRestored": true
+}

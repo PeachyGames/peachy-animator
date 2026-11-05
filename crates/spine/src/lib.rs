@@ -1,4 +1,6 @@
 //! Independently written Spine 4.3 JSON adapter. No runtime implementation dependency.
+mod attachments;
+use attachments::{inspect_attachment, read_attachment, write_attachment};
 use peachy_document::*;
 use serde::Serialize;
 use serde_json::{Value, json};
@@ -139,28 +141,7 @@ pub fn inspect(value: &Value) -> Inspection {
                 if let Some(regions) = regions.as_object() {
                     for (name, region) in regions {
                         attachments += 1;
-                        inspect_numbers(
-                            region,
-                            &["x", "y", "rotation", "scaleX", "scaleY", "width", "height"],
-                            &format!("Attachment {slot}/{name}"),
-                            &mut unsupported,
-                        );
-                        if region["type"].as_str().is_some_and(|t| t != "region") {
-                            unsupported
-                                .push(format!("Attachment {slot}/{name}: {}", region["type"]));
-                        }
-                        if region.get("sequence").is_some() {
-                            unsupported.push(format!("Attachment {slot}/{name}: image sequence"));
-                        }
-                        unknown_fields(
-                            region,
-                            &[
-                                "type", "name", "path", "x", "y", "rotation", "scaleX", "scaleY",
-                                "width", "height",
-                            ],
-                            &format!("Attachment {slot}/{name}"),
-                            &mut unsupported,
-                        );
+                        inspect_attachment(region, slot, name, &mut unsupported);
                     }
                 }
             }
@@ -301,20 +282,7 @@ pub fn import_json(value: &Value, name: &str) -> Result<Document, String> {
             for (slot, regions) in attachments {
                 let mut mapped_regions = BTreeMap::new();
                 for (name, region) in regions.as_object().ok_or("Invalid attachments")? {
-                    mapped_regions.insert(
-                        name.clone(),
-                        Region {
-                            name: region["name"].as_str().map(str::to_owned),
-                            path: region["path"]
-                                .as_str()
-                                .or_else(|| region["name"].as_str())
-                                .unwrap_or(name)
-                                .into(),
-                            width: number(region, "width", 0.0),
-                            height: number(region, "height", 0.0),
-                            transform: transform(region),
-                        },
-                    );
+                    mapped_regions.insert(name.clone(), read_attachment(region, name)?);
                 }
                 mapped.insert(slot.clone(), mapped_regions);
             }
@@ -461,14 +429,7 @@ pub fn export_json(doc: &Document) -> Result<Value, String> {
             for (slot, regions) in skin {
                 attachments[slot] = json!({});
                 for (name, region) in regions {
-                    let mut r = transform_json(region.transform);
-                    r["path"] = json!(region.path);
-                    r["width"] = json!(region.width);
-                    r["height"] = json!(region.height);
-                    if let Some(name) = &region.name {
-                        r["name"] = json!(name);
-                    }
-                    attachments[slot][name] = r;
+                    attachments[slot][name] = write_attachment(region);
                 }
             }
             json!({"name":name,"attachments":attachments})
@@ -541,7 +502,7 @@ fn validate_export_names(doc: &Document) -> Result<(), String> {
     for (skin_name, skin) in &doc.skins {
         for (slot, attachments) in skin {
             for (placeholder, region) in attachments {
-                if !names.insert(region.name.as_ref().unwrap_or(placeholder)) {
+                if !names.insert(region.name().unwrap_or(placeholder)) {
                     return Err(
                         "Spine Editor export requires distinct attachment names across skins"
                             .into(),
@@ -717,6 +678,53 @@ fn inspect_numbers(value: &Value, fields: &[&str], context: &str, issues: &mut V
 #[cfg(test)]
 mod tests {
     use super::*;
+    fn mesh_fixture() -> Document {
+        serde_json::from_str(include_str!("../../../examples/peach-bot/mesh-bot.peachy")).unwrap()
+    }
+    #[test]
+    fn unweighted_meshes_roundtrip_topology_uvs_edges_and_image_metadata() {
+        let doc = mesh_fixture();
+        let output = export_json(&doc).unwrap();
+        assert!(inspect(&output).supported);
+        let imported = import_json(&output, &doc.name).unwrap();
+        assert_eq!(imported.skins, doc.skins);
+        assert_eq!(imported.bones, doc.bones);
+        let mut runtime_only = output;
+        let m = &mut runtime_only["skins"][0]["attachments"]["hand.R"]["hand.R"];
+        for field in ["width", "height", "edges"] {
+            m.as_object_mut().unwrap().remove(field);
+        }
+        assert!(import_json(&runtime_only, "runtime").is_ok());
+    }
+    #[test]
+    fn invalid_or_unsupported_mesh_semantics_never_get_silently_imported() {
+        let fixture = export_json(&mesh_fixture()).unwrap();
+        for (field, bad) in [
+            (
+                "vertices",
+                json!([
+                    1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1
+                ]),
+            ),
+            ("uvs", json!([0, 0, 1])),
+            ("triangles", json!([0, 1, 99])),
+            ("triangles", json!([0, 0, 1])),
+            ("hull", json!(99)),
+            ("uvs", json!([0, 0, 1, 0, 1, 1, 0, 1, "bad", 0.5])),
+            ("edges", json!([0, 3])),
+            ("color", json!("ff0000ff")),
+            ("type", json!("linkedmesh")),
+            ("sequence", json!({"count":2})),
+        ] {
+            let mut v = fixture.clone();
+            v["skins"][0]["attachments"]["hand.R"]["hand.R"][field] = bad;
+            assert!(!inspect(&v).supported, "{field}");
+            assert!(import_json(&v, "bad").is_err(), "{field}");
+        }
+        let mut v = fixture;
+        v["animations"]["wave"]["attachments"] = json!({"default":{}});
+        assert!(import_json(&v, "deform").is_err());
+    }
     fn fixture() -> Value {
         json!({"skeleton":{"spine":"4.3.26"},"bones":[{"name":"root"}],"slots":[],"skins":[],"animations":{"test":{"bones":{"root":{"rotate":[{"time":0,"value":0,"curve":[0.1,0,0.4,90]},{"time":0.5,"value":90}]}}}}})
     }
@@ -732,7 +740,7 @@ mod tests {
         assert_eq!(d, d2);
     }
     #[test]
-    fn refuses_meshes_constraints_and_unknown_semantics() {
+    fn refuses_constraints_and_unknown_semantics() {
         let mut v = fixture();
         v["constraints"] = json!([{"type":"physics"}]);
         assert!(import_json(&v, "test").is_err());
@@ -799,7 +807,10 @@ mod tests {
             height: 10.0,
             transform: Transform::default(),
         };
-        let skin = BTreeMap::from([("body".into(), BTreeMap::from([("shared".into(), region)]))]);
+        let skin = BTreeMap::from([(
+            "body".into(),
+            BTreeMap::from([("shared".into(), Attachment::Region(region))]),
+        )]);
         doc.skins.insert("default".into(), skin.clone());
         doc.skins.insert("variant".into(), skin);
         assert!(doc.validate().is_ok());

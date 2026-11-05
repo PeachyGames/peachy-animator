@@ -130,13 +130,17 @@ fn scene_uses_skin_fallback_draw_order_and_one_geometry_for_bounds() {
     fixture.validate().unwrap();
     let peach = evaluate_scene(&fixture, Some(0), 0.3, "peach", None);
     let mint = evaluate_scene(&fixture, Some(0), 0.3, "mint", None);
-    assert_eq!(peach.regions.len(), 14);
-    assert_eq!(mint.regions.len(), 14);
-    assert!(mint.regions.iter().any(|r| r.image == "torso-mint"));
-    assert!(mint.regions.iter().any(|r| r.image == "foot"));
-    assert!(mint.regions.windows(2).all(|w| w[0].slot < w[1].slot));
+    assert_eq!(peach.attachments.len(), 14);
+    assert_eq!(mint.attachments.len(), 14);
+    assert!(mint.attachments.iter().any(|r| r.image == "torso-mint"));
+    assert!(mint.attachments.iter().any(|r| r.image == "foot"));
+    assert!(mint.attachments.windows(2).all(|w| w[0].slot < w[1].slot));
     let bounds = mint.bounds.unwrap();
-    for p in mint.regions.iter().flat_map(|r| r.vertices) {
+    for p in mint
+        .attachments
+        .iter()
+        .flat_map(|r| r.vertices.iter().copied())
+    {
         for (i, value) in p.into_iter().enumerate() {
             assert!(value >= bounds.min[i] && value <= bounds.max[i]);
         }
@@ -145,13 +149,14 @@ fn scene_uses_skin_fallback_draw_order_and_one_geometry_for_bounds() {
     changed.x += 20.0;
     let preview = evaluate_scene(&fixture, Some(0), 0.3, "mint", Some((0, changed)));
     assert!(
-        (preview.regions[0].vertices[0][0] - mint.regions[0].vertices[0][0] - 20.0).abs() < 0.001
+        (preview.attachments[0].vertices[0][0] - mint.attachments[0].vertices[0][0] - 20.0).abs()
+            < 0.001
     );
     assert_eq!(fixture.bones[0].setup.x, 0.0);
 }
 fn doc() -> Document {
     Document {
-        format: 1,
+        format: FORMAT_VERSION,
         name: "fixture".into(),
         fps: 30,
         bones: vec![Bone {
@@ -253,4 +258,133 @@ fn validates_cycles_and_nonfinite_transforms() {
     d.bones[0].parent = None;
     d.bones[0].setup.x = f32::INFINITY;
     assert!(d.validate().is_err());
+}
+
+fn original() -> Document {
+    serde_json::from_str(include_str!("../../../examples/peach-bot/peach-bot.peachy")).unwrap()
+}
+fn hand() -> AttachmentRef {
+    AttachmentRef {
+        skin: "default".into(),
+        slot: "hand.R".into(),
+        placeholder: "hand.R".into(),
+    }
+}
+
+#[test]
+fn mesh_conversion_preserves_textured_geometry_under_animation_and_reflection() {
+    let mut before = original();
+    before.bones[0].setup.rotation = 37.0;
+    before.bones[0].setup.scale_x = -1.3;
+    before.bones[0].setup.scale_y = 0.8;
+    let after =
+        apply_command(&before, Command::ConvertRegionToMesh { attachment: hand() }).unwrap();
+    assert!(matches!(
+        before.attachment(&hand()),
+        Some(Attachment::Region(_))
+    ));
+    assert!(matches!(
+        after.attachment(&hand()),
+        Some(Attachment::Mesh(_))
+    ));
+    for time in [0.0, 0.3, 1.1, 2.4] {
+        let a = evaluate_scene(&before, Some(0), time, "peach", None);
+        let b = evaluate_scene(&after, Some(0), time, "peach", None);
+        for (a, b) in a.attachments.iter().zip(b.attachments) {
+            assert_eq!(a.vertices, b.vertices);
+            assert_eq!(a.uvs, b.uvs);
+            assert_eq!(a.triangles, b.triangles);
+        }
+        assert_eq!(a.bounds, b.bounds);
+    }
+}
+
+#[test]
+fn subdivision_preserves_uv_mapping_hull_and_undo_and_rejects_invalid_batches() {
+    let mut session = Session::new(original()).unwrap();
+    session
+        .dispatch(Command::ConvertRegionToMesh { attachment: hand() })
+        .unwrap();
+    let converted = session.document().clone();
+    session
+        .dispatch(Command::SplitMeshTriangle {
+            attachment: hand(),
+            triangle: 0,
+        })
+        .unwrap();
+    let Some(Attachment::Mesh(mesh)) = session.document().attachment(&hand()) else {
+        panic!()
+    };
+    assert_eq!(mesh.hull, 4);
+    assert_eq!(mesh.vertices.len(), 5);
+    assert_eq!(mesh.triangles.len(), 12);
+    assert_eq!(mesh.uvs[4], [2.0 / 3.0, 2.0 / 3.0]);
+    let split = session.document().clone();
+    session.begin_transaction();
+    for x in [2.0, 4.0, 9.0] {
+        session
+            .dispatch(Command::SetMeshVertex {
+                attachment: hand(),
+                vertex: 4,
+                position: [x, 2.0],
+            })
+            .unwrap();
+    }
+    session.commit_transaction();
+    session.undo();
+    assert_eq!(session.document(), &split);
+    session.undo();
+    assert_eq!(session.document(), &converted);
+    session.redo();
+    assert_eq!(session.document(), &split);
+    for command in [
+        Command::SetMeshVertex {
+            attachment: hand(),
+            vertex: 99,
+            position: [0., 0.],
+        },
+        Command::SetMeshVertex {
+            attachment: hand(),
+            vertex: 0,
+            position: [f32::NAN, 0.],
+        },
+        Command::SplitMeshTriangle {
+            attachment: hand(),
+            triangle: usize::MAX,
+        },
+        Command::Batch {
+            commands: vec![
+                Command::SetMeshVertex {
+                    attachment: hand(),
+                    vertex: 0,
+                    position: [4., 5.],
+                },
+                Command::SplitMeshTriangle {
+                    attachment: hand(),
+                    triangle: 99,
+                },
+            ],
+        },
+    ] {
+        assert!(session.dispatch(command).is_err());
+        assert_eq!(session.document(), &split);
+    }
+}
+
+#[test]
+fn explicit_attachment_keys_do_not_edit_named_skin_fallbacks() {
+    let before = original();
+    let (_, fallback) = before.resolved_attachment("mint", 13).unwrap();
+    assert_eq!(fallback.path(), "hand");
+    let key = AttachmentRef {
+        skin: "mint".into(),
+        ..hand()
+    };
+    assert!(apply_command(&before, Command::ConvertRegionToMesh { attachment: key }).is_err());
+    let after =
+        apply_command(&before, Command::ConvertRegionToMesh { attachment: hand() }).unwrap();
+    assert!(matches!(
+        after.resolved_attachment("mint", 13).unwrap().1,
+        Attachment::Mesh(_)
+    ));
 }

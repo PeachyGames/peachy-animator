@@ -1,8 +1,8 @@
 # Peachy Animator
 
 A native 2D skeletal animation editor from Team Peachy, with an independent Rust
-core and Spine-compatible exports. This is the first working slice, not a full
-Spine replacement.
+core and Spine-compatible exports. The current slice adds editable unweighted
+meshes; this is still a bounded subset of Spine.
 
 ![Peach Bot in the editor](docs/editor.png)
 
@@ -19,6 +19,21 @@ animations and peach/mint skins. Its artwork is generated from original geometri
 shapes; no game assets or third-party example characters are included.
 The demo uses the named `peach` or `mint` appearance in a consuming runtime;
 `default` contains the shared parts that those skins inherit.
+
+For the mesh demo, open **Mesh Lab.command**, or run:
+
+```sh
+cargo run -p peachy-animator -- examples/peach-bot/mesh-bot.peachy
+```
+
+Select **Mesh [M]** to enter Setup, then drag a numbered vertex. The attachment
+inspector can convert a region to a four-corner mesh or split a triangle at its
+center. Setup vertex movement deforms the image while UVs stay fixed; each canvas
+drag is one undo step, and Escape cancels the current drag.
+This corresponds to Spine's setup vertex transforms. UV editing, freeform hull
+creation, weights and animated deform keys are not implemented yet.
+
+![Setup vertex editing](docs/mesh-editor.png)
 
 1. Press **Space** to play/pause, or click the timeline to scrub.
 2. Select a bone in the scene or hierarchy. Drag in **Rotate** or **Move** mode.
@@ -37,6 +52,8 @@ bundled-resource packaging are later work.
 
 - Hierarchical bones with position, rotation and nonuniform scale.
 - Layered region attachments, draw order, skins and default-skin fallback.
+- Unweighted meshes with explicit UVs, triangles and hulls, setup vertex editing,
+  region conversion and triangle subdivision.
 - Deterministic timeline playback, scrubbing, frame stepping and looping.
 - Scalar keys with linear, stepped and editable Bezier interpolation.
 - Canvas manipulation, transform controls and adding child bones.
@@ -47,7 +64,7 @@ bundled-resource packaging are later work.
   creates a fresh directory with JSON, an atlas and its PNG page.
 - A headless CLI that uses the same document, command and pose engine.
 
-Meshes, weights, IK, physics, path/transform constraints, clipping, slot animation,
+Weights, linked meshes, IK, physics, path/transform constraints, clipping, slot animation,
 events, image sequences, packed-atlas import, native `.spine` files and animation
 mixing are not implemented. Unsupported imports are blocked with a feature report;
 the source remains untouched. See [the compatibility contract](docs/COMPATIBILITY.md).
@@ -67,7 +84,10 @@ cargo run -p peachy-cli -- apply input.peachy commands.json edited.peachy
 CLI outputs must be new files; it refuses to overwrite existing output. The CLI
 `export` command writes JSON only. Use the desktop exporter for a packed bundle.
 The CLI `bundle` command uses that same shared exporter.
-Native projects reference loose images in `images/` beside the project.
+Native projects reference loose images in `images/` beside the project. Native
+format v2 uses tagged attachments; the loader migrates v1 region projects in memory.
+Saving writes v2 and backs up the previous file. Older binaries cannot open v2.
+`pose` accepts an optional skin name and also emits evaluated attachment geometry.
 
 ## Architecture and verification
 
@@ -76,6 +96,8 @@ serializable documents, an independent animation engine, format adapters, and th
 desktop/CLI clients. No PhotoCraft application code was copied. See
 [architecture](docs/ARCHITECTURE.md), [implementation provenance](docs/PROVENANCE.md),
 and [the next slices](docs/ROADMAP.md).
+The [Spine parity matrix](docs/PARITY.md) records implemented behavior, evidence,
+and the remaining gaps by feature area.
 
 ```sh
 cargo fmt --all -- --check
