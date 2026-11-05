@@ -1,0 +1,13 @@
+{
+  "nextPreviousKeyWS": true,
+  "endUsesLastKeyNotDuration": true,
+  "backwardAForwardD": true,
+  "directionSwitchWhilePlaying": true,
+  "reverseLoopWrap": true,
+  "nonloopingBothBoundaries": true,
+  "directionalButtons": true,
+  "keyNavigationStopsAndClearsUnkeyed": true,
+  "undoPoseRecoveryAtKey": true,
+  "documentUnchanged": true,
+  "capture": "editor-1793922182675304000.json"
+}

@@ -11,6 +11,22 @@ impl Editor {
             self.time = time;
         }
     }
+    pub(super) fn toggle_playback(&mut self, direction: PlayDirection) {
+        let playing = !(self.playing && self.play_direction == direction);
+        self.play_direction = direction;
+        self.set_playing(playing);
+    }
+    pub(super) fn jump_key(&mut self, direction: PlayDirection) {
+        self.playing = false;
+        if let Some(time) = peachy_engine::adjacent_key_time(
+            self.session.document(),
+            self.animation,
+            self.time,
+            direction,
+        ) {
+            self.set_time(time);
+        }
+    }
     pub(super) fn set_playing(&mut self, playing: bool) {
         if playing {
             self.cancel_gesture();

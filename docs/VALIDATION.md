@@ -253,3 +253,28 @@ and verifies the owned foreground PID through native process APIs, checks its no
 window, calibrates pointer coordinates against its F12 diagnostics before clicking,
 and asserts each expected target type. Task-owned processes and temporary login
 credentials are cleaned up; other applications and retained user handoffs are preserved.
+
+## Animation transport slice — November 5, 2026
+
+The workspace passes **46 Rust tests** (desktop 6, CLI 3, engine 25, I/O 4, adapter 8).
+New core tests cover forward/backward wrapping, exact boundaries, multi-loop elapsed
+time, invalid inputs, finite large-step results, duplicate key times, strict nearest-
+key queries and last-key versus reserved clip duration. Formatting, warnings-denied
+Clippy, workspace build and architecture checks pass. Changed core modules were
+reviewed for filesystem/process/clock/GUI effects; none were introduced.
+
+Final native verification passes W/S and Q/E, A/D, switching direction while playing,
+reverse looping from zero, both nonlooping boundaries and reverse/stop buttons. Its
+original rig reserves extra clip time after the last key, confirming E uses the key
+rather than duration. Key navigation clears unkeyed edits, and Undo restores the pose
+at the new key position. The document remains exactly unchanged and is not dirty.
+See [transport-native.json](evidence/transport-native.json) and
+[transport-editor.png](transport-editor.png).
+
+Early review attempts stopped during hover calibration/startup window detection;
+no clicks were sent before successful owned-window/foreground/pointer verification.
+The final review process and temporary launch authorization were cleaned up. No
+private artwork, game code, format schema or export adapter changed in this slice.
+The geometry/export evidence from the transform slice remains applicable; this slice
+changes transient transport state and uses the same deterministic pose evaluator.
+Bounded nonlooping playback and current navigation scope remain explicit UI parity gaps.

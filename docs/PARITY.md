@@ -20,6 +20,7 @@ comparison. The native `.peachy` format is our own editable model.
 | Deform animation and linked meshes | Pending | Requires explicit model, interpolation, shared-mesh semantics and round-trip cases |
 | Bone animation and curves | Scalar transform keys, linear/stepped/Bezier, playback and scrubbing | External runtime boundaries, backwards scrubbing, full-turn rotation, native key/history checks |
 | Unkeyed poses and Auto Key | Transient multi-bone poses, K/Tree/transform keying, colored state, paired XY defaults and unified undo | Bone-transform subset; slot/deform/constraint keying remains pending |
+| Animation transport | A/D reverse/forward play, bidirectional loops, W/S key navigation and Q/E start/last key | Native/engine boundary checks; nonlooping playback stays within native duration; extended playback/view preferences pending |
 | Timeline authoring | Basic key insertion/removal and curve controls | Still needs selection, retiming, copy/paste, richer animation management and mixing |
 | Rig/artwork authoring | Add child bones; work with existing loose PNGs | Still needs image import, attachment creation, pivots, stable IDs before delete/reparent |
 | IK/transform/path/physics constraints | Pending | Each needs controlled inputs, public behavior specification and runtime boundary checks |

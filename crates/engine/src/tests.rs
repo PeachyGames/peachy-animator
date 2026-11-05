@@ -948,3 +948,84 @@ fn tool_edits_and_relative_numeric_entry_keep_full_turns_and_share_animation_his
     assert_eq!(session.local_pose(Some(0), 0.5)[0].rotation, 405.);
     assert_eq!(session.document(), &doc());
 }
+
+#[test]
+fn playback_handles_reverse_wrap_boundaries_large_steps_and_invalid_input() {
+    for (time, elapsed, looping, direction, want, playing) in [
+        (0.95, 0.1, true, PlayDirection::Forward, 0.05, true),
+        (0.05, 0.1, true, PlayDirection::Backward, 0.95, true),
+        (0., 0.1, true, PlayDirection::Backward, 0.9, true),
+        (0.5, 2.25, true, PlayDirection::Forward, 0.75, true),
+        (0.95, 0.1, false, PlayDirection::Forward, 1., false),
+        (0.05, 0.1, false, PlayDirection::Backward, 0., false),
+        (1., 0., true, PlayDirection::Backward, 1., true),
+    ] {
+        let result = advance_playback(time, elapsed, 1., looping, direction);
+        assert!((result.time - want).abs() < 0.00001);
+        assert_eq!(result.playing, playing);
+    }
+    for elapsed in [-1., f32::NAN, f32::INFINITY] {
+        assert!(!advance_playback(0., elapsed, 1., true, PlayDirection::Forward).playing);
+    }
+    assert!(!advance_playback(0., 1., 0., true, PlayDirection::Forward).playing);
+    assert!(
+        advance_playback(f32::MAX, f32::MAX, f32::MAX, true, PlayDirection::Forward)
+            .time
+            .is_finite()
+    );
+}
+
+#[test]
+fn key_navigation_uses_nearest_distinct_key_and_last_key_not_reserved_duration() {
+    let fixture = apply_command(
+        &doc(),
+        Command::Batch {
+            commands: vec![
+                key(0., 0.),
+                key(0.25, 20.),
+                key(0.75, 40.),
+                Command::SetKey {
+                    animation: 0,
+                    bone: 0,
+                    property: Property::X,
+                    key: Keyframe {
+                        time: 0.25,
+                        value: 4.,
+                        curve: Curve::Linear,
+                    },
+                },
+            ],
+        },
+    )
+    .unwrap();
+    assert_eq!(
+        adjacent_key_time(&fixture, 0, 0., PlayDirection::Forward),
+        Some(0.25)
+    );
+    assert_eq!(
+        adjacent_key_time(&fixture, 0, 0.25, PlayDirection::Forward),
+        Some(0.75)
+    );
+    assert_eq!(
+        adjacent_key_time(&fixture, 0, 0.5, PlayDirection::Backward),
+        Some(0.25)
+    );
+    assert_eq!(
+        adjacent_key_time(&fixture, 0, 0., PlayDirection::Backward),
+        None
+    );
+    assert_eq!(
+        adjacent_key_time(&fixture, 0, 1., PlayDirection::Forward),
+        None
+    );
+    assert_eq!(
+        adjacent_key_time(&fixture, 99, 0., PlayDirection::Forward),
+        None
+    );
+    assert_eq!(
+        adjacent_key_time(&fixture, 0, f32::NAN, PlayDirection::Forward),
+        None
+    );
+    assert_eq!(last_key_time(&fixture, 0), 0.75);
+    assert_eq!(last_key_time(&doc(), 0), 0.);
+}

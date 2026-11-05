@@ -47,8 +47,8 @@ attachment properties. Interpolation labels are Linear, Stepped and Bezier.
   Rotate/Translate/Scale and the axis selectors now cover the supported transform subset.
 - Add movable tabs, docking, saved workspace state and the Graph view. Tree and
   Dopesheet currently provide resizers/visibility controls only.
-- Add multiple/box selection, reverse play, key navigation and
-  view-dependent input focus. Extend Auto Key/unkeyed editing to new keyable types
+- Add multiple/box selection and complete view-dependent input focus/navigation
+  preferences. Extend Auto Key/unkeyed editing to new keyable types
   as their model and adapters are implemented.
 - Match Dopesheet key selection, dragging, clipboard, pan/zoom and selection tools.
 - Implement Edit Mesh UV/topology controls with their own reference semantics.
@@ -160,3 +160,20 @@ history changes. Recalled items use the same Tree reveal, properties and viewpor
 selection path as ordinary selection. Document undo never navigates selection.
 Text fields retain digit input. Clicking a transform number stops playback before
 entry; idle playback frames do not allocate numeric-edit state.
+
+## Animation transport slice
+
+A plays backward/stops and D plays forward/stops. Pressing the other direction while
+playing switches direction. Independently drawn reverse/forward buttons use the same
+transition. Looping wraps in either direction, including reversing from frame zero.
+
+W/S navigate the nearest next/previous distinct key in the active animation's supported
+tracks, and stop playback. Q goes to zero; E goes to the actual last key, including when
+native clip duration reserves additional time after it. Key navigation uses the same
+unkeyed-pose discard/recovery path as ordinary timeline movement. Selection and document
+data do not change. Text-entry focus retains priority over these shortcuts.
+
+Playback remains bounded to the native clip duration when Loop is off. Spine can play
+outside the keyed range; that behavior, loop ranges, playback preferences, selected/
+filtered timeline navigation policies and multiple active skeletons remain pending.
+Current key navigation searches all supported bone tracks of the active animation.

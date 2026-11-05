@@ -150,3 +150,12 @@ restores it through the same selection effects path. Invalid targets are pruned 
 document changes, and groups/history reset when opening another document. They do
 not enter Session, document history, project saves or exports. Keyboard focus prevents
 number entry from invoking group shortcuts.
+
+## Animation transport
+
+`engine/playback.rs` owns deterministic forward/reverse stepping, bounded loop
+wrapping and nearest/last-key queries. The desktop supplies elapsed time, duration
+and direction, and applies the returned playhead/playing state. The engine reads no
+clock and mutates no document. Transport buttons and hotkeys share the same shell
+transition; manual key navigation goes through `set_time`, preserving transient pose
+discard and Undo recovery. Playback state is not serialized into runtime exports.

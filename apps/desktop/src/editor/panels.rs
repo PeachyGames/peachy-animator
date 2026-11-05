@@ -333,12 +333,23 @@ impl Editor {
         self.record_target("dopesheet", ui.max_rect());
         ui.horizontal(|ui| {
             ui.label(RichText::new("Dopesheet").small().color(MUTED));
-            if ui
-                .button(if self.playing { "Pause" } else { "Play" })
-                .on_hover_text("Play forward/stop · D")
-                .clicked()
-            {
-                self.set_playing(!self.playing);
+            for (direction, name) in [
+                (PlayDirection::Backward, "playBackward"),
+                (PlayDirection::Forward, "playForward"),
+            ] {
+                let active = self.playing && self.play_direction == direction;
+                let response = transport_button(ui, direction, active);
+                self.record_target(name, response.rect);
+                if response
+                    .on_hover_text(if direction == PlayDirection::Forward {
+                        "Play forward/stop · D"
+                    } else {
+                        "Play backward/stop · A"
+                    })
+                    .clicked()
+                {
+                    self.toggle_playback(direction);
+                }
             }
             if ui.small_button("|◀").clicked() {
                 self.set_time(0.0);
@@ -379,7 +390,7 @@ impl Editor {
             );
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 ui.label(
-                    RichText::new("D: play · R / F: frames · L: key active transform")
+                    RichText::new("A / D: play · W / S: keys · R / F: frames")
                         .small()
                         .color(MUTED),
                 );
@@ -479,4 +490,33 @@ impl Editor {
             self.set_time((time * fps).round() / fps);
         }
     }
+}
+
+fn transport_button(ui: &mut egui::Ui, direction: PlayDirection, active: bool) -> egui::Response {
+    let response = ui.add_sized([25., 22.], egui::Button::selectable(active, ""));
+    let center = response.rect.center();
+    let color = if active { ACCENT } else { Color32::LIGHT_GRAY };
+    if active {
+        ui.painter().rect_filled(
+            egui::Rect::from_center_size(center, vec2(8., 8.)),
+            0.,
+            color,
+        );
+    } else {
+        let sign = if direction == PlayDirection::Forward {
+            1.
+        } else {
+            -1.
+        };
+        ui.painter().add(egui::Shape::convex_polygon(
+            vec![
+                center + vec2(-4. * sign, -5.),
+                center + vec2(-4. * sign, 5.),
+                center + vec2(5. * sign, 0.),
+            ],
+            color,
+            Stroke::NONE,
+        ));
+    }
+    response
 }

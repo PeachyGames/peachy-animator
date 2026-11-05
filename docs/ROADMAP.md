@@ -8,7 +8,7 @@ Spine runtime. Subsequent work should grow that working loop.
    The workspace and shortcut alignment is followed by a typed Tree, contextual
    selection, filters, activation dots, viewport picking and unkeyed/Auto Key posing.
    Rotate/Translate/Scale and axis controls now follow the public reference.
-   Selection history and single-item groups are also available.
+   Selection history, single-item groups, reverse playback and key navigation are also available.
    Next complete Graph/view tabs and multi-selection in
    [UI parity](UI_PARITY.md) before expanding the authoring UI.
 

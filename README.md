@@ -39,15 +39,16 @@ drag is one undo step, and Escape cancels the current drag.
 This corresponds to Spine's setup vertex transforms. UV editing, freeform hull
 creation, weights and animated deform keys are not implemented yet.
 
-![Transform tools, axes and selection workflow](docs/selection-editor.png)
+![Animation transport, transform tools and selection workflow](docs/transport-editor.png)
 
-1. Switch to **Animate** at the viewport's upper left; press **D** to play/stop.
+1. Switch to **Animate** at the viewport's upper left; press **D** to play forward/stop, **A** backward/stop.
 2. Select a bone or region attachment in the viewport or Tree; **C** rotates, **V**
    translates, and **X** scales. Attachment transforms are available in Setup.
 3. Use the transform fields below the viewport. **L** keys the active transform;
    **Cmd/Ctrl+L** keys all supported transforms for the selected bone. With **Auto Key**
    off, pose first and press **K** to key every edited bone.
-4. Scrub the Dopesheet; use **R/F** for next/previous frame and **Shift+R/F** for ten.
+4. Scrub the Dopesheet; **W/S** jumps to next/previous key, **Q/E** to start/last key.
+   Use **R/F** for next/previous frame and **Shift+R/F** for ten.
 5. Undo/redo with **Cmd/Ctrl+Z** / **Cmd/Ctrl+Shift+Z**. Space deselects.
 6. Save a `.peachy` project and use **Peachy → Export** or **Cmd/Ctrl+E**.
 

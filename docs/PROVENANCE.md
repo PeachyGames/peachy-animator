@@ -132,3 +132,9 @@ Selection history and numbered selection groups follow the public Tools guide an
 shortcut sheet. Their typed, bounded model was independently written; verification
 uses original fixtures, including recalling slots and skins without activating or
 editing unrelated entities. No proprietary selection implementation was inspected.
+
+Reverse playback and key navigation use the public shortcut sheet's A/D, W/S and
+Q/E conventions. Stepping is independently implemented signed elapsed time and
+Euclidean wrapping; nearest-key queries use our document timelines. No official
+transport code was read. The bounded nonlooping behavior and navigation scope are
+recorded explicitly in UI_PARITY.md rather than claimed as full playback parity.

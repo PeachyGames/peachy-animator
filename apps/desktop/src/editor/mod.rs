@@ -14,7 +14,8 @@ mod viewport;
 use eframe::egui::{self, Color32, FontId, Pos2, RichText, Sense, Stroke, Vec2, pos2, vec2};
 use peachy_document::*;
 use peachy_engine::{
-    Affine, Axes, Command, EditTarget, KeyState, Session, TransformTool, scene_from_locals,
+    Affine, Axes, Command, EditTarget, KeyState, PlayDirection, Session, TransformTool,
+    scene_from_locals,
 };
 use peachy_io as files;
 use std::{
@@ -64,6 +65,7 @@ pub(crate) struct Editor {
     skin: String,
     setup_mode: bool,
     playing: bool,
+    play_direction: PlayDirection,
     looping: bool,
     auto_key: bool,
     time: f32,
@@ -170,6 +172,7 @@ impl Editor {
             skin,
             setup_mode: true,
             playing: false,
+            play_direction: PlayDirection::Forward,
             looping: true,
             auto_key: true,
             time: 0.0,
@@ -541,16 +544,15 @@ impl eframe::App for Editor {
         self.shortcuts(&ctx);
         self.reconcile_selection();
         if self.playing {
-            self.time += ctx.input(|i| i.stable_dt).min(0.1);
-            let duration = self.duration();
-            if self.time > duration {
-                if self.looping {
-                    self.time %= duration;
-                } else {
-                    self.time = duration;
-                    self.playing = false;
-                }
-            }
+            let step = peachy_engine::advance_playback(
+                self.time,
+                ctx.input(|i| i.stable_dt).min(0.1),
+                self.duration(),
+                self.looping,
+                self.play_direction,
+            );
+            self.time = step.time;
+            self.playing = step.playing;
             ctx.request_repaint();
         }
         egui::Panel::top("toolbar")
@@ -677,7 +679,7 @@ impl eframe::App for Editor {
                     "selectedBone":self.selected_bone(),"hasSelection":self.selection.is_some(),
                     "tool":match self.tool {Tool::Rotate=>"rotate",Tool::Move=>"translate",Tool::Scale=>"scale",Tool::Mesh=>"vertices"},
                     "treeVisible":self.show_tree,"dopesheetVisible":!self.setup_mode && self.show_dopesheet,
-                    "animation":self.animation,"skin":self.skin,"time":self.time,"playing":self.playing,"looping":self.looping,"zoom":self.zoom,
+                    "animation":self.animation,"skin":self.skin,"time":self.time,"playing":self.playing,"playDirection":self.play_direction,"looping":self.looping,"zoom":self.zoom,
                     "axes":self.axes,"toolValues":self.selected_transform().zip(self.selected_parent()).map(|(local,parent)|peachy_engine::transform_values(local,parent,self.axes)),
                     "autoKey":self.auto_key,"unkeyedPose":self.session.pose_edits(),"selectedTransform":self.selected_transform(),"locals":self.session.local_pose(self.active_animation(),self.time),
                     "keyStates":self.selected_bone().map(|bone| [Property::Rotation,Property::X,Property::ScaleX].map(|p| self.key_state(bone,&peachy_engine::transform_group(&[p])))),

@@ -190,8 +190,17 @@ impl Editor {
             if ctx.input(|i| i.key_pressed(egui::Key::K)) {
                 self.key_edited(None);
             }
+            if ctx.input(|i| i.key_pressed(egui::Key::A)) {
+                self.toggle_playback(PlayDirection::Backward);
+            }
+            if ctx.input(|i| i.key_pressed(egui::Key::W)) {
+                self.jump_key(PlayDirection::Forward);
+            }
+            if ctx.input(|i| i.key_pressed(egui::Key::S)) {
+                self.jump_key(PlayDirection::Backward);
+            }
             if ctx.input(|i| i.key_pressed(egui::Key::D)) {
-                self.set_playing(!self.playing);
+                self.toggle_playback(PlayDirection::Forward);
             }
             for (key, delta) in [(egui::Key::F, -1.0), (egui::Key::R, 1.0)] {
                 if ctx.input(|i| i.key_pressed(key)) {
@@ -203,7 +212,10 @@ impl Editor {
                 self.playing = false;
             }
             if ctx.input(|i| i.key_pressed(egui::Key::E)) {
-                self.set_time(self.duration());
+                self.set_time(peachy_engine::last_key_time(
+                    self.session.document(),
+                    self.animation,
+                ));
                 self.playing = false;
             }
             if self.selected_bone().is_some() && ctx.input(|i| i.key_pressed(egui::Key::L)) {
