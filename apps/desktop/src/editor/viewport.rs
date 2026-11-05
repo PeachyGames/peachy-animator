@@ -1,5 +1,5 @@
 use super::*;
-use peachy_engine::{Affine, attachment_bounds, pick_attachment};
+use peachy_engine::{attachment_bounds, pick_attachment};
 
 impl Editor {
     pub(super) fn canvas(&mut self, ui: &mut egui::Ui) {
@@ -294,39 +294,81 @@ impl Editor {
                 ],
             })
         });
-        let transform_edit = self.drag.as_ref().and_then(|drag| {
-            let parent = match &drag.item {
-                TreeItem::Bone(b) => doc.bones[*b]
-                    .parent
-                    .map(|p| scene.world[p])
-                    .unwrap_or_else(|| Affine::from_transform(Transform::default())),
-                TreeItem::Attachment(k) => {
-                    scene.world[doc.slots.iter().find(|s| s.name == k.slot)?.bone]
-                }
-                _ => return None,
-            };
-            let mouse = response.interact_pointer_pos()?;
-            let start = world_point(drag.pointer);
-            let end = world_point(mouse);
-            let a = parent.inverse_point(start[0], start[1])?;
-            let b = parent.inverse_point(end[0], end[1])?;
-            let mut transform = drag.initial;
-            if self.tool == Tool::Move {
-                transform.x += b[0] - a[0];
-                transform.y += b[1] - a[1];
-            } else {
-                let a = vec2(a[0] - transform.x, a[1] - transform.y);
-                let b = vec2(b[0] - transform.x, b[1] - transform.y);
-                if a.length() * zoom > 6. {
-                    let delta = (b.y.atan2(b.x) - a.y.atan2(a.x)).to_degrees();
-                    transform.rotation += (delta + 180.).rem_euclid(360.) - 180.;
+        let mut handle_axis = None;
+        if self.transform_editable()
+            && matches!(self.tool, Tool::Move | Tool::Scale)
+            && let Some(local) = self.selected_transform()
+            && let Some(parent) = self
+                .selection
+                .as_ref()
+                .and_then(|item| super::tools::item_parent(item, doc, &scene.world))
+        {
+            let pivot = screen(parent.point(local.x, local.y));
+            let basis = peachy_engine::transform_axes(
+                local,
+                parent,
+                self.axes,
+                self.tool.transform_tool().unwrap(),
+            );
+            for (axis, direction) in basis.into_iter().enumerate() {
+                let color = if axis == 0 {
+                    Color32::from_rgb(225, 92, 85)
                 } else {
-                    transform.rotation += (mouse.x - drag.pointer.x) * 0.5;
+                    Color32::from_rgb(100, 195, 115)
+                };
+                let unit = vec2(direction[0], -direction[1]);
+                let tip = pivot + unit * 56.;
+                painter.line_segment([pivot + unit * 15., tip], Stroke::new(2., color));
+                if self.tool == Tool::Scale {
+                    painter.rect_filled(egui::Rect::from_center_size(tip, vec2(8., 8.)), 0., color);
+                } else {
+                    let normal = vec2(-unit.y, unit.x);
+                    painter.add(egui::Shape::convex_polygon(
+                        vec![
+                            tip + unit * 3.,
+                            tip - unit * 6. + normal * 4.,
+                            tip - unit * 6. - normal * 4.,
+                        ],
+                        color,
+                        Stroke::NONE,
+                    ));
                 }
-                if ui.input(|i| i.modifiers.shift) {
-                    transform.rotation = (transform.rotation / 15.).round() * 15.;
+                painter.text(
+                    tip + vec2(7., -7.),
+                    egui::Align2::LEFT_BOTTOM,
+                    if axis == 0 { "X" } else { "Y" },
+                    FontId::proportional(11.),
+                    color,
+                );
+                self.capture_targets.insert(
+                    format!("gizmo:{}", if axis == 0 { "X" } else { "Y" }),
+                    [tip.x - 4., tip.y - 4., tip.x + 4., tip.y + 4.],
+                );
+                if ui
+                    .input(|i| i.pointer.press_origin())
+                    .or(response.interact_pointer_pos())
+                    .is_some_and(|mouse| distance_to_segment(mouse, pivot + unit * 20., tip) < 7.)
+                {
+                    handle_axis = Some(axis);
                 }
             }
+        }
+        let transform_edit = self.drag.as_ref().and_then(|drag| {
+            let tool = self.tool.transform_tool()?;
+            let mouse = response.interact_pointer_pos()?;
+            let transform = peachy_engine::drag_transform(
+                drag.initial,
+                drag.parent,
+                peachy_engine::TransformGesture {
+                    tool,
+                    axes: self.axes,
+                    axis: drag.axis,
+                    start: world_point(drag.pointer),
+                    end: world_point(mouse),
+                    snap_rotation: ui.input(|i| i.modifiers.shift),
+                },
+            )
+            .ok()?;
             Some((drag.item.clone(), transform))
         });
         painter.text(
@@ -351,7 +393,9 @@ impl Editor {
                 self.select(TreeItem::Attachment(key.clone()));
                 self.mesh_vertex = vertex;
                 if response.drag_started_by(egui::PointerButton::Primary)
-                    && let Some(pointer) = response.interact_pointer_pos()
+                    && let Some(pointer) = ui
+                        .input(|i| i.pointer.press_origin())
+                        .or(response.interact_pointer_pos())
                 {
                     self.mesh_drag = Some(MeshDrag {
                         attachment: key,
@@ -369,7 +413,7 @@ impl Editor {
                 }
             }
         } else {
-            if response.clicked() {
+            if response.clicked() && handle_axis.is_none() {
                 if let Some(item) = picked.clone() {
                     self.select(item);
                 } else {
@@ -377,20 +421,30 @@ impl Editor {
                 }
             }
             if response.drag_started_by(egui::PointerButton::Primary) {
-                if let Some(item) = picked {
+                if handle_axis.is_none()
+                    && let Some(item) = picked
+                {
                     self.select(item);
                 }
                 if self.transform_editable()
                     && let (Some(item), Some(initial), Some(pointer)) = (
                         self.selection.clone(),
                         self.selected_transform(),
-                        response.interact_pointer_pos(),
+                        ui.input(|i| i.pointer.press_origin())
+                            .or(response.interact_pointer_pos()),
                     )
                 {
                     self.playing = false;
                     self.drag = Some(TransformDrag {
                         item,
                         initial,
+                        parent: super::tools::item_parent(
+                            self.selection.as_ref().unwrap(),
+                            self.session.document(),
+                            &scene.world,
+                        )
+                        .unwrap(),
+                        axis: handle_axis,
                         pointer,
                     });
                     self.session.begin_transaction();
@@ -402,11 +456,7 @@ impl Editor {
                 self.dispatch(command);
             }
             if let Some((item, transform)) = transform_edit {
-                let properties = if self.tool == Tool::Rotate {
-                    &[Property::Rotation][..]
-                } else {
-                    &[Property::X, Property::Y][..]
-                };
+                let properties = self.tool.properties();
                 self.edit_item_transform(item, transform, properties);
             }
         }

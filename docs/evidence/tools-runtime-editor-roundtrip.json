@@ -1,0 +1,41 @@
+{
+  "regionComparisons": 28560,
+  "maxRegionError": 0.0000457763671875,
+  "meshComparisons": 5100,
+  "maxMeshError": 0.00006103515625,
+  "uvComparisons": 10200,
+  "maxUVError": 0,
+  "runtime": "Spine 4.3 external oracle",
+  "bones": 15,
+  "slots": 14,
+  "skins": [
+    "default",
+    "mint",
+    "peach"
+  ],
+  "clips": [
+    {
+      "name": "idle",
+      "samplesPerSkin": 51,
+      "skins": [
+        "default",
+        "mint",
+        "peach"
+      ],
+      "maxWorldError": 0.000030088166127484328
+    },
+    {
+      "name": "wave",
+      "samplesPerSkin": 51,
+      "skins": [
+        "default",
+        "mint",
+        "peach"
+      ],
+      "maxWorldError": 0.000036084715844708626
+    }
+  ],
+  "tolerance": 0.001,
+  "maxWorldError": 0.000036084715844708626,
+  "comparisons": 27540
+}

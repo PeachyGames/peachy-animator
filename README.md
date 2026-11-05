@@ -1,8 +1,8 @@
 # Peachy Animator
 
 A native 2D skeletal animation editor from Team Peachy, with an independent Rust
-core and Spine-compatible exports. The current slice adds Spine-style unkeyed
-posing and Auto Key; this is still a bounded subset of Spine.
+core and Spine-compatible exports. The current slice adds Spine-style transform
+tools and axes; this is still a bounded subset of Spine.
 
 ![Peach Bot in the editor](docs/tree-editor.png)
 
@@ -39,11 +39,11 @@ drag is one undo step, and Escape cancels the current drag.
 This corresponds to Spine's setup vertex transforms. UV editing, freeform hull
 creation, weights and animated deform keys are not implemented yet.
 
-![Unkeyed animation pose](docs/keying-editor.png)
+![Transform tools and axes](docs/tools-editor.png)
 
 1. Switch to **Animate** at the viewport's upper left; press **D** to play/stop.
 2. Select a bone or region attachment in the viewport or Tree; **C** rotates, **V**
-   translates. Attachment transforms are available in Setup.
+   translates, and **X** scales. Attachment transforms are available in Setup.
 3. Use the transform fields below the viewport. **L** keys the active transform;
    **Cmd/Ctrl+L** keys all supported transforms for the selected bone. With **Auto Key**
    off, pose first and press **K** to key every edited bone.
@@ -61,7 +61,9 @@ new frame. Switching animation or mode clears the pending pose.
 Save/export include setup data and animation keys; **unkeyed poses are excluded**.
 The status bar calls out a pending pose even if the document itself is saved.
 **Setup** edits change the underlying rig.
-Arrows nudge the selection; the **Fit** button fits the scene. Scroll zooms,
+Local/Parent/World select transform coordinates. Numeric entry accepts relative
+`+value`, `+-value`, `*factor` and `/divisor` on Enter/Tab. World scale entry uses
+local values. Arrows nudge the active transform; Shift uses smaller steps; the **Fit** button fits the scene. Scroll zooms,
 right-drag pans, and right-click switches the last two tools. **F9** hides/restores views.
 **F12** captures the editor and a diagnostic project snapshot to a local temporary
 capture folder. The app currently runs from its source checkout; an installer and

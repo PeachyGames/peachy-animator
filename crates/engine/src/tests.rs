@@ -776,3 +776,175 @@ fn returning_to_sampled_values_clears_orange_state_and_clip_switch_drops_old_pos
     assert!(session.pose_edits().is_empty());
     assert_eq!(session.document(), &doc());
 }
+
+#[test]
+fn tool_coordinates_roundtrip_under_rotated_reflected_nonuniform_parents() {
+    let local = Transform {
+        x: 23.,
+        y: -17.,
+        rotation: 410.,
+        scale_x: -1.3,
+        scale_y: 0.7,
+    };
+    for parent in [
+        Transform::default(),
+        Transform {
+            x: 40.,
+            y: -30.,
+            rotation: 37.,
+            scale_x: -2.,
+            scale_y: 0.4,
+        },
+    ] {
+        let parent = Affine::from_transform(parent);
+        for axes in [Axes::Local, Axes::Parent, Axes::World] {
+            let shown = transform_values(local, parent, axes);
+            for property in [Property::X, Property::Y, Property::Rotation] {
+                let back = set_transform_value(local, parent, axes, property, property.read(shown))
+                    .unwrap();
+                assert_eq!(
+                    back, local,
+                    "Same displayed value must not change document bits"
+                );
+            }
+            let translated =
+                set_transform_value(local, parent, axes, Property::X, shown.x + 12.).unwrap();
+            let actual = transform_values(translated, parent, axes);
+            assert!((actual.x - shown.x - 12.).abs() < 0.0001);
+            assert!((actual.y - shown.y).abs() < 0.0001);
+            let rotated = set_transform_value(
+                local,
+                parent,
+                axes,
+                Property::Rotation,
+                shown.rotation + 25.,
+            )
+            .unwrap();
+            let actual = transform_values(rotated, parent, axes);
+            let difference =
+                (actual.rotation - shown.rotation - 25. + 180.).rem_euclid(360.) - 180.;
+            assert!(difference.abs() < 0.0001, "{axes:?} angle {difference}");
+            assert_eq!(
+                (rotated.x, rotated.y, rotated.scale_x, rotated.scale_y),
+                (local.x, local.y, local.scale_x, local.scale_y)
+            );
+        }
+    }
+}
+
+#[test]
+fn axis_gestures_restrict_world_motion_and_scale_without_changing_other_properties() {
+    let local = Transform {
+        x: 10.,
+        y: 20.,
+        rotation: 45.,
+        scale_x: 1.5,
+        scale_y: -0.8,
+    };
+    let parent = Affine::from_transform(Transform {
+        rotation: 35.,
+        scale_x: 2.,
+        scale_y: 0.5,
+        ..Default::default()
+    });
+    let origin = parent.point(local.x, local.y);
+    let translated = drag_transform(
+        local,
+        parent,
+        TransformGesture {
+            tool: TransformTool::Translate,
+            axes: Axes::World,
+            axis: Some(0),
+            start: origin,
+            end: [origin[0] + 15., origin[1] + 25.],
+            snap_rotation: false,
+        },
+    )
+    .unwrap();
+    let world = parent.point(translated.x, translated.y);
+    assert!((world[0] - origin[0] - 15.).abs() < 0.0001);
+    assert!((world[1] - origin[1]).abs() < 0.0001);
+    assert_eq!(
+        (translated.rotation, translated.scale_x, translated.scale_y),
+        (local.rotation, local.scale_x, local.scale_y)
+    );
+    let basis = transform_axes(local, parent, Axes::World, TransformTool::Scale)[0];
+    let start = [origin[0] + basis[0] * 40., origin[1] + basis[1] * 40.];
+    let end = [origin[0] - basis[0] * 20., origin[1] - basis[1] * 20.];
+    let scaled = drag_transform(
+        local,
+        parent,
+        TransformGesture {
+            tool: TransformTool::Scale,
+            axes: Axes::World,
+            axis: Some(0),
+            start,
+            end,
+            snap_rotation: false,
+        },
+    )
+    .unwrap();
+    assert!((scaled.scale_x + 0.75).abs() < 0.0001);
+    assert_eq!(scaled.scale_y, local.scale_y);
+    assert_eq!(
+        (scaled.x, scaled.y, scaled.rotation),
+        (local.x, local.y, local.rotation)
+    );
+    let zero = Affine::from_transform(Transform {
+        scale_x: 0.,
+        ..Default::default()
+    });
+    assert!(set_transform_value(local, zero, Axes::World, Property::X, 1.).is_err());
+    assert!(set_transform_value(local, zero, Axes::World, Property::Rotation, 1.).is_err());
+    assert_eq!(
+        set_transform_value(local, zero, Axes::World, Property::ScaleX, -2.)
+            .unwrap()
+            .scale_x,
+        -2.
+    );
+}
+
+#[test]
+fn tool_edits_and_relative_numeric_entry_keep_full_turns_and_share_animation_history() {
+    for (input, base, want) in [
+        ("+360", 45., 405.),
+        ("+-20", 45., 25.),
+        ("*2", -3., -6.),
+        ("/2", 6., 3.),
+        ("-12", 50., -12.),
+    ] {
+        assert_eq!(parse_transform_input(input, base), Some(want));
+    }
+    for input in ["/0", "NaN", "inf", "+", "*bad", "1+2"] {
+        assert_eq!(parse_transform_input(input, 1.), None);
+    }
+    let mut session = Session::new(doc()).unwrap();
+    let pose = set_transform_value(
+        Transform::default(),
+        Affine::from_transform(Transform::default()),
+        Axes::Local,
+        Property::Rotation,
+        405.,
+    )
+    .unwrap();
+    session
+        .edit_pose(
+            0,
+            EditTarget::Animate {
+                animation: 0,
+                time: 0.5,
+            },
+            pose,
+            &[Property::Rotation],
+            false,
+        )
+        .unwrap();
+    session.key_edited(0, 0.5, None).unwrap();
+    assert_eq!(
+        local_pose(session.document(), Some(0), 0.5)[0].rotation,
+        405.
+    );
+    session.undo();
+    assert_eq!(session.local_pose(Some(0), 0.5)[0].rotation, 405.);
+    assert_eq!(session.document(), &doc());
+}

@@ -117,3 +117,13 @@ The implementation uses our own sparse local-property edits and unified Session
 snapshots; no editor/runtime implementation source or UI assets were read/copied.
 Native input verification uses only original Peach Bot artwork. Export acceptance is
 checked separately with installed Spine 4.3.26 and the external runtime.
+
+## Transform tools and axes
+
+Read the public [Tools guide](https://esotericsoftware.com/spine-tools) and
+[shortcut sheet](https://esotericsoftware.com/spine-cheat-sheet), and inspected the
+published toolbar/axis reference images. A task-owned original project was opened in
+installed Spine 4.3.26; its window was verified on screen, but macOS refused capture.
+No proprietary screenshot or UI asset entered the repository. Axis math uses ordinary
+affine inverses, rotation vectors, projection and vector lengths, independently written
+here. Native inputs and external geometry checks use original Peach Bot artwork only.

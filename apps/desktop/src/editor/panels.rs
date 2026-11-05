@@ -79,7 +79,26 @@ impl Editor {
                     &[Property::X, Property::Y],
                     Some(Tool::Move),
                 );
-                self.transform_row(ui, "Scale", &[Property::ScaleX, Property::ScaleY], None);
+                self.transform_row(
+                    ui,
+                    "Scale  [X]",
+                    &[Property::ScaleX, Property::ScaleY],
+                    Some(Tool::Scale),
+                );
+            });
+            ui.separator();
+            ui.vertical(|ui| {
+                for (axes, label) in [
+                    (Axes::Local, "Local"),
+                    (Axes::Parent, "Parent"),
+                    (Axes::World, "World"),
+                ] {
+                    let r = ui.selectable_label(self.axes == axes, label);
+                    self.record_target(&format!("axes:{label}"), r.rect);
+                    if r.clicked() {
+                        self.set_axes(axes);
+                    }
+                }
             });
             ui.separator();
             ui.vertical(|ui| {
@@ -88,12 +107,6 @@ impl Editor {
                 } else {
                     ui.label(RichText::new("No selection").color(MUTED));
                 }
-                ui.label(RichText::new("Translate: Parent axes").small().color(MUTED));
-                ui.label(
-                    RichText::new("Rotate / Scale: Local axes")
-                        .small()
-                        .color(MUTED),
-                );
                 if !self.setup_mode {
                     let auto_key = ui.checkbox(&mut self.auto_key, "Auto Key");
                     self.record_target("autoKey", auto_key.rect);
@@ -118,19 +131,30 @@ impl Editor {
         properties: &[Property],
         tool: Option<Tool>,
     ) {
-        let mut pose = self.selected_transform().unwrap_or_default();
+        let local = self.selected_transform().unwrap_or_default();
+        let parent = self
+            .selected_parent()
+            .unwrap_or_else(|| Affine::from_transform(Transform::default()));
+        let mut shown = peachy_engine::transform_values(local, parent, self.axes);
+        if self.setup_mode {
+            shown.rotation = shown.rotation.rem_euclid(360.);
+        }
         let editable = self.transform_editable();
-        ui.horizontal(|ui| {
+        let scope = (
+            self.selection.as_ref().map(TreeItem::key),
+            format!("{:?}", self.axes),
+            self.setup_mode,
+            self.animation,
+            self.time.to_bits(),
+            label,
+        );
+        ui.push_id(scope, |ui| { ui.horizontal(|ui| {
             if let Some(tool) = tool {
                 let response = ui.add_sized(
                     [112.0, 22.0],
                     egui::Button::selectable(self.tool == tool, label),
                 );
-                let target = if tool == Tool::Rotate {
-                    "rotateTool"
-                } else {
-                    "translateTool"
-                };
+                let target = match tool { Tool::Rotate=>"rotateTool",Tool::Move=>"translateTool",Tool::Scale=>"scaleTool",Tool::Mesh=>"meshTool" };
                 self.capture_targets.insert(
                     target.into(),
                     [
@@ -148,7 +172,7 @@ impl Editor {
             }
             ui.add_enabled_ui(editable, |ui| {
                 for &property in properties {
-                    let mut value = property.read(pose);
+                    let mut value = property.read(if property.is_scale(){local}else{shown});
                     if property != Property::Rotation {
                         ui.label(if matches!(property, Property::X | Property::ScaleX) {
                             "X"
@@ -156,18 +180,36 @@ impl Editor {
                             "Y"
                         });
                     }
+                    let id=ui.next_auto_id();
+                    // egui may parse on two focus-loss frames. Keep relative entry idempotent.
+                    let entry_id=id.with("entry-base");
+                    let focused=ui.memory(|m|m.has_focus(id));
+                    let base=ui.data_mut(|data| {
+                        let (previous,was_focused,committed)=data.get_temp::<(f32,bool,Option<f32>)>(entry_id).unwrap_or((value,false,None));
+                        let new_entry=focused && !was_focused;
+                        let base=if new_entry {value}else{previous};
+                        data.insert_temp(entry_id,(base,focused,if new_entry {None}else{committed})); base
+                    });
+                    let local_scale_edit=ui.memory(|m|m.has_focus(id)) || ui.ctx().is_being_dragged(id);
+                    let world_scale=property.is_scale() && self.axes==Axes::World && !local_scale_edit;
+                    let display=property.read(shown);
                     let response = ui.add(
                         egui::DragValue::new(&mut value)
                             .speed(if property.is_scale() { 0.01 } else { 0.25 })
-                            .max_decimals(2),
+                            .max_decimals(2)
+                            .update_while_editing(false)
+                            .custom_parser(move |text| peachy_engine::parse_transform_input(text,base).map(f64::from))
+                            .custom_formatter(move |v,_| format!("{:.2}",if world_scale{f64::from(display)}else{v})),
                     );
                     self.record_target(&format!("value:{property:?}"), response.rect);
+                    if property.is_scale() && self.axes==Axes::World { response.clone().on_hover_text("World scale is shown; entry and dragging edit Local scale."); }
                     if response.drag_started() {
+                        ui.data_mut(|data|data.insert_temp(entry_id,(base,focused,None::<f32>)));
                         self.session.begin_transaction();
                     }
-                    if response.changed() {
-                        property.write(&mut pose, value);
-                        self.edit_transform(pose, &[property]);
+                    if response.changed() && ui.data(|data|data.get_temp::<(f32,bool,Option<f32>)>(entry_id).and_then(|entry|entry.2))!=Some(value) {
+                        self.edit_display_value(property,value);
+                        ui.data_mut(|data|data.insert_temp(entry_id,(base,focused,Some(value))));
                     }
                     if response.drag_stopped() {
                         self.session.commit_transaction();
@@ -182,7 +224,7 @@ impl Editor {
                     }
                 }
             });
-        });
+        }); });
     }
 
     pub(super) fn bone_curves(&mut self, ui: &mut egui::Ui, bone: usize) {

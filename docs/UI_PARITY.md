@@ -25,12 +25,12 @@ The baseline is the documented default workspace; user layouts/hotkeys can diffe
 | Main transform tools below viewport | Rotate/Translate selectors; numeric rotation, translation and scale |
 | Animation views below viewport | Frame-based Dopesheet below main tools, beside the full-height Tree |
 | Dense neutral dark UI, orange emphasis | Initial independent styling; detailed metrics/icons remain to align |
-| C / V tools | Rotate / Translate; right-click switches the last two tools, right-drag pans |
+| C / V / X tools | Rotate / Translate / Scale; right-click switches the last two tools, right-drag pans |
 | D playback; R / F frames | Forward play/stop, next/previous frame; Shift advances ten frames |
 | Space / Escape selection | Deselect; Escape first cancels an active mesh drag |
 | L / Cmd/Ctrl+L keying | Active supported transform / all supported transforms for selected bone |
 | Cmd/Ctrl+R looping | Toggle loop without also stepping a frame |
-| Arrows nudge | Selected bone's parent-space translation or selected setup mesh vertex |
+| Arrows nudge | Active transform in the selected axes; Shift fine steps; explicit setup mesh vertices |
 
 This removes the prototype's conflicting R-to-rotate, F-to-fit, Space-to-play,
 arrow-to-step and custom M-to-mesh bindings. Fixed-UV setup vertices remain in
@@ -43,8 +43,8 @@ attachment properties. Interpolation labels are Linear, Stepped and Bezier.
 - Extend the typed Tree with multi/range selection, selection history, rename/create
   workflows and drag/drop parenting/draw order. Introduce stable IDs before deletion
   or reparenting. Exact glyphs, spacing and every Tree preference remain to align.
-- Match main tool organization, Scale/Shear/Pose/Create tools and axis selectors.
-  Numeric scale controls currently have no canvas Scale tool.
+- Complete main tool organization with Shear/Pose/Create/Weights and compensation.
+  Rotate/Translate/Scale and the axis selectors now cover the supported transform subset.
 - Add movable tabs, docking, saved workspace state and the Graph view. Tree and
   Dopesheet currently provide resizers/visibility controls only.
 - Add selection history, multiple/box selection, reverse play, key navigation and
@@ -121,3 +121,25 @@ dialog distinguish them from saved keys. Toggling Auto Key alone does not key a 
 This completes bone transform keying for the current supported subset. Slot/deform/
 constraint keying, fractional-frame authoring, complete Dopesheet behavior and exact
 matched-size reference screenshots remain future parity gates.
+
+## Transform tools and axes slice
+
+The main toolbar now has Rotate (C), Translate (V), Scale (X), and the adjacent
+vertical Local/Parent/World axis selectors. Translate and Scale draw independently
+implemented red X / green Y handles; the drag target is captured at pointer press.
+Scale handles always use local axes, including reflected scale. Parent/local/world
+numeric conversion and gesture geometry live in the engine. World scale is displayed
+for inspection; focused entry and numeric dragging use local scale, as documented by
+Spine. World rotation entry specifies a direction while local animation rotation can
+retain full turns. A zero-scale parent blocks inverse world translation/rotation.
+
+Numeric entry commits on Enter/Tab and supports +value, +-value, *factor and /divisor.
+Arrow keys now edit the active transform; Shift reduces the step. This corrects the
+prototype's translation-only arrow behavior. Rotate gestures retain 15-degree Shift
+snapping. Scale and axis edits use the existing Auto Key/unkeyed/undo paths.
+
+The installed reference project opened as a task-owned on-screen Spine 4.3.26 window;
+macOS refused its window screenshot. The public Tools toolbar and axes images were
+visually inspected instead, and remain outside Git. Their layout places the transform
+column next to the vertical axis selectors. Full matched-size visual comparison,
+Shear/Pose/Create/Weights, compensation and all transform preferences remain pending.

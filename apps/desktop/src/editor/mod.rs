@@ -4,6 +4,7 @@ mod panels;
 mod properties;
 mod selection;
 mod shortcuts;
+mod tools;
 mod tree;
 mod tree_model;
 use selection::{Folder, TreeItem};
@@ -11,7 +12,9 @@ use tree_model::TreeState;
 mod viewport;
 use eframe::egui::{self, Color32, FontId, Pos2, RichText, Sense, Stroke, Vec2, pos2, vec2};
 use peachy_document::*;
-use peachy_engine::{Command, EditTarget, KeyState, Session, scene_from_locals};
+use peachy_engine::{
+    Affine, Axes, Command, EditTarget, KeyState, Session, TransformTool, scene_from_locals,
+};
 use peachy_io as files;
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -27,6 +30,7 @@ const PANEL: Color32 = Color32::from_rgb(53, 53, 53);
 enum Tool {
     Rotate,
     Move,
+    Scale,
     Mesh,
 }
 
@@ -40,6 +44,8 @@ struct MeshDrag {
 struct TransformDrag {
     item: TreeItem,
     initial: Transform,
+    parent: Affine,
+    axis: Option<usize>,
     pointer: Pos2,
 }
 
@@ -65,6 +71,7 @@ pub(crate) struct Editor {
     fit: bool,
     tool: Tool,
     last_tool: Tool,
+    axes: Axes,
     show_tree: bool,
     show_dopesheet: bool,
     hidden_views: Option<(bool, bool)>,
@@ -167,6 +174,7 @@ impl Editor {
             fit: true,
             tool: Tool::Rotate,
             last_tool: Tool::Move,
+            axes: Axes::Parent,
             show_tree: true,
             show_dopesheet: true,
             hidden_views: None,
@@ -302,7 +310,15 @@ impl Editor {
             self.edit_item_transform(item, local, properties);
         }
     }
-    fn edit_item_transform(&mut self, item: TreeItem, local: Transform, properties: &[Property]) {
+    fn edit_item_transform(
+        &mut self,
+        item: TreeItem,
+        mut local: Transform,
+        properties: &[Property],
+    ) {
+        if self.setup_mode && properties.contains(&Property::Rotation) {
+            local.rotation = local.rotation.rem_euclid(360.);
+        }
         self.playing = false;
         match item {
             TreeItem::Bone(bone) => {
@@ -642,9 +658,10 @@ impl eframe::App for Editor {
                 let report = serde_json::json!({
                     "document":self.session.document(),"selection":self.selection.as_ref().map(TreeItem::diagnostic),
                     "selectedBone":self.selected_bone(),"hasSelection":self.selection.is_some(),
-                    "tool":match self.tool {Tool::Rotate=>"rotate",Tool::Move=>"translate",Tool::Mesh=>"vertices"},
+                    "tool":match self.tool {Tool::Rotate=>"rotate",Tool::Move=>"translate",Tool::Scale=>"scale",Tool::Mesh=>"vertices"},
                     "treeVisible":self.show_tree,"dopesheetVisible":!self.setup_mode && self.show_dopesheet,
                     "animation":self.animation,"skin":self.skin,"time":self.time,"playing":self.playing,"looping":self.looping,"zoom":self.zoom,
+                    "axes":self.axes,"toolValues":self.selected_transform().zip(self.selected_parent()).map(|(local,parent)|peachy_engine::transform_values(local,parent,self.axes)),
                     "autoKey":self.auto_key,"unkeyedPose":self.session.pose_edits(),"selectedTransform":self.selected_transform(),"locals":self.session.local_pose(self.active_animation(),self.time),
                     "keyStates":self.selected_bone().map(|bone| [Property::Rotation,Property::X,Property::ScaleX].map(|p| self.key_state(bone,&peachy_engine::transform_group(&[p])))),
                     "setupMode":self.setup_mode,"dirty":self.session.is_dirty(),"imageCount":self.textures.len(),

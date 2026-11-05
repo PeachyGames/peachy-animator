@@ -1,0 +1,19 @@
+{
+  "scaleXShortcut": true,
+  "activeToolArrowKeys": true,
+  "fineScaleArrow": true,
+  "scaleHandleRestrictsX": true,
+  "singleUndoPerGesture": true,
+  "axesAreViewState": true,
+  "worldScaleUsesLocalEntry": true,
+  "relativeNumericMultiply": true,
+  "worldTranslationEntryAndHandle": true,
+  "localFullTurnEntry": true,
+  "autoKeyOffAndExplicitScaleKey": true,
+  "worldRotationEntry": true,
+  "saveVerified": true,
+  "captures": {
+    "setup": "editor-1793920886268574000.json",
+    "animate": "editor-1793920907739483000.json"
+  }
+}

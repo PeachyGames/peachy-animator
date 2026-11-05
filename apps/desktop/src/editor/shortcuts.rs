@@ -47,7 +47,7 @@ impl Editor {
         self.set_time(self.snapped_time() + delta / self.session.document().fps as f32);
     }
 
-    fn nudge(&mut self, delta: [f32; 2]) {
+    fn nudge(&mut self, delta: [f32; 2], fine: bool) {
         if self.tool == Tool::Mesh {
             if self.setup_mode
                 && let Some(key) = self.selected_attachment().cloned()
@@ -61,14 +61,11 @@ impl Editor {
                     position: [p[0] + delta[0], p[1] + delta[1]],
                 });
             }
-        } else if self.transform_editable()
-            && let Some(mut pose) = self.selected_transform()
-        {
-            pose.x += delta[0];
-            pose.y += delta[1];
-            self.edit_transform(pose, &[Property::X, Property::Y]);
+        } else if self.transform_editable() {
+            self.nudge_transform(delta, fine);
         }
     }
+
     pub(super) fn shortcuts(&mut self, ctx: &egui::Context) {
         if ctx.input(|i| i.viewport().close_requested()) && !self.confirm_discard() {
             ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
@@ -132,6 +129,9 @@ impl Editor {
         if ctx.input(|i| i.key_pressed(egui::Key::C)) {
             self.set_tool(Tool::Rotate);
         }
+        if ctx.input(|i| i.key_pressed(egui::Key::X)) {
+            self.set_tool(Tool::Scale);
+        }
         if ctx.input(|i| i.key_pressed(egui::Key::V)) {
             self.set_tool(Tool::Move);
         }
@@ -166,11 +166,7 @@ impl Editor {
                 self.playing = false;
             }
             if self.selected_bone().is_some() && ctx.input(|i| i.key_pressed(egui::Key::L)) {
-                let properties = match self.tool {
-                    Tool::Rotate => &[Property::Rotation][..],
-                    Tool::Move => &[Property::X, Property::Y][..],
-                    Tool::Mesh => &[][..],
-                };
+                let properties = self.tool.properties();
                 if !properties.is_empty() && self.selected_transform().is_some() {
                     self.key_transform(properties);
                 }
@@ -183,7 +179,7 @@ impl Editor {
             (egui::Key::ArrowDown, [0., -1.]),
         ] {
             if ctx.input(|i| i.key_pressed(key)) {
-                self.nudge(delta);
+                self.nudge(delta, modifiers.shift);
             }
         }
     }

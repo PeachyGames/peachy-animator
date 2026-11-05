@@ -193,3 +193,34 @@ supported; all input hashes match the initial audit. Weighted meshes occur in te
 those reports, alongside linked meshes, constraints and unsupported timelines.
 No artist file was edited or copied into Git. [Workflow milestones](WORKFLOWS.md)
 track the remaining production-character and actual-game acceptance gates.
+
+## Transform tools and axes slice — November 5, 2026
+
+**41 Rust tests** pass, including new coordinate round trips under rotated/reflected/
+nonuniform parents, restricted translation/scaling, singular parents, relative numeric
+operators and full-turn keying. Unchanged display entry is an exact transform no-op.
+Formatting, Clippy with warnings denied, workspace build and architecture checks pass.
+
+Native mouse/keyboard verification passes on an original rig with a reflected,
+nonuniform, rotated root: Scale X shortcut, active-tool arrows, .001 fine scale steps,
+X-only handles, one-step gesture undo, Local/Parent/World view state, World scale using
+local entry, *2 exactly once, World translation entry/handles, +360 animation entry,
+Auto Key off, explicit scale keys, World rotation and saved native data.
+
+Native QA caught and fixed handle picking after the drag threshold, double parsing of
+relative expressions during focus loss, and unchanged World entry causing float drift
+after Undo. A focus check also safely aborted a review without sending mouse input to
+another process. All attempt records stay outside Git. The final review passes exact
+setup-document restoration. Numeric widget state is scoped to item, axes, mode and frame.
+
+Installed Spine 4.3.26 imported/re-exported the saved GUI edit. The external 4.3.13
+runtime checks the GUI export and editor re-export across three skins/two clips,
+including 27,540 bone values, 28,560 region coordinates and 5,100 mesh coordinates
+per case, with the existing 0.001 tolerance. Original-only evidence:
+[tools-native.json](evidence/tools-native.json),
+[GUI runtime](evidence/tools-runtime-edited.json),
+[editor runtime](evidence/tools-runtime-editor-roundtrip.json), and
+[tools-editor.png](tools-editor.png).
+
+The separate installed-editor reference window was on screen, but macOS refused its
+capture. Public toolbar/axes images were inspected; pixel parity remains unverified.

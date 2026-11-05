@@ -127,3 +127,16 @@ fields and the viewport query Session's posed locals. `scene_from_locals` feeds 
 locals through the existing shared geometry pipeline; rendering/picking/bounds do not
 reimplement pose rules. The CLI's document evaluator intentionally ignores transient
 poses, just like save/export. No runtime or platform dependency entered the core.
+
+## Transform tools
+
+`engine/tools.rs` owns coordinate display/conversion, axis directions, transform
+gestures and relative numeric parsing. UI code supplies world points and an explicit
+axis lock; there are no screen, pointer or egui types in this module. The desktop
+snapshots the parent frame and pressed handle when a gesture starts. World edits
+convert through the actual parent affine transform, including reflection and
+nonuniform scale, then go through Session's existing editing/keying boundary.
+
+`editor/tools.rs` is the shell adapter. Axis choice is transient view state. Numeric
+entry commits on focus loss/Enter rather than dispatching intermediate keystrokes.
+World scale is presentation data; the value passed for editing remains local.
