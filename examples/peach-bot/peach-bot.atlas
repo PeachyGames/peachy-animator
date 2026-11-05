@@ -1,0 +1,24 @@
+peach-bot.png
+size: 512,512
+filter: Linear,Linear
+pma: false
+torso
+  bounds: 2,2,140,148
+head
+  bounds: 146,2,142,134
+upper-arm
+  bounds: 292,2,82,42
+forearm
+  bounds: 378,2,78,40
+thigh
+  bounds: 2,154,100,49
+shin
+  bounds: 106,154,88,45
+hand
+  bounds: 198,154,54,56
+foot
+  bounds: 256,154,81,45
+torso-mint
+  bounds: 341,154,140,148
+head-mint
+  bounds: 2,306,142,134

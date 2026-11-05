@@ -1,0 +1,20 @@
+{
+  "runtime": "Spine 4.3 external oracle",
+  "bones": 15,
+  "slots": 14,
+  "skins": [
+    "default",
+    "mint",
+    "peach"
+  ],
+  "clips": [
+    {
+      "name": "contract",
+      "samples": 51,
+      "maxWorldError": 0.000048118722475010145
+    }
+  ],
+  "tolerance": 0.001,
+  "maxWorldError": 0.000048118722475010145,
+  "comparisons": 4590
+}

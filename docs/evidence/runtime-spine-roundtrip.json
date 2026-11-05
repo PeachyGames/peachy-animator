@@ -1,0 +1,25 @@
+{
+  "runtime": "Spine 4.3 external oracle",
+  "bones": 15,
+  "slots": 14,
+  "skins": [
+    "default",
+    "mint",
+    "peach"
+  ],
+  "clips": [
+    {
+      "name": "idle",
+      "samples": 51,
+      "maxWorldError": 0.00002610741984199194
+    },
+    {
+      "name": "wave",
+      "samples": 51,
+      "maxWorldError": 0.000027366272476569975
+    }
+  ],
+  "tolerance": 0.001,
+  "maxWorldError": 0.000027366272476569975,
+  "comparisons": 9180
+}

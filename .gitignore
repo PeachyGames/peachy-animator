@@ -1,0 +1,8 @@
+/target/
+/.local/
+/.DS_Store
+/exports/
+/scratch/
+*.peachy.tmp
+*.peachy.tmp-*
+*.peachy.backup-*

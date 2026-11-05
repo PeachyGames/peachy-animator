@@ -1,0 +1,18 @@
+{
+  "realNativeKeyboardEvents": true,
+  "loadedTextures": 10,
+  "keyframeInsertion": true,
+  "undo": true,
+  "redo": true,
+  "playPause": true,
+  "frameStep": true,
+  "documentRestored": true,
+  "captures": [
+    "editor-1793902557995307000.json",
+    "editor-1793902558941356000.json",
+    "editor-1793902560001261000.json",
+    "editor-1793902561061339000.json",
+    "editor-1793902563234433000.json",
+    "editor-1793902564260511000.json"
+  ]
+}
