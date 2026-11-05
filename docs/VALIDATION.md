@@ -142,3 +142,54 @@ The test windows are closed; a clean native handoff is retained separately.
 Full visual parity, multi/range selection, alpha-aware picking, all Tree preferences,
 rename/reparent/delete, mesh-wide transforms, unkeyed poses, cross-platform builds
 and hosted CI remain outside this slice. Native format and export target are unchanged.
+
+## Unkeyed pose and Auto Key slice — November 5, 2026
+
+The expanded workspace passes **38 Rust tests**: desktop 3, CLI integration 3,
+engine 20, I/O 4 and format adapter 8. Formatting, warnings-denied Clippy, workspace
+build and all six dependency-layer checks pass locally. The changed core modules
+were reviewed for filesystem/process/clock/GUI effects; none were introduced.
+Hosted CI was not run.
+
+Six new engine scenarios cover transient multi-bone poses, paired key groups,
+setup-relative reflected scale, atomic keying failure, unified undo/redo, gesture
+cancellation with redo preservation, saved-state separation, manual versus automatic
+keying, return-to-sampled values and frame-change pose recovery. Native format remains
+v2; no unkeyed state enters the serialized document.
+
+Real native mouse and keyboard verification passes on the final build:
+
+- Auto Key off preserves document/setup/key data while canvas, numeric and arrow
+  input changes the evaluated pose; Save excludes pending values.
+- Frame movement drops edits; Undo restores them at the new frame. K keying is one
+  undoable transition, and Redo restores committed keys.
+- Transform buttons/L key explicitly with Auto Key off. Tree keys consume one bone;
+  K consumes edits on unselected bones too. Auto Key on keys changes immediately.
+- A canvas pose gesture has one undo entry. Playback and clip/mode switches clear
+  pending edits. Native save output matches the diagnostic document after f32
+  normalization. The final screenshot shows independently drawn colored indicators.
+
+The final GUI-edited native file was saved, exported, imported into installed Spine
+Editor **4.3.26** as a fresh `.spine`, re-exported and reimported into our native model.
+External runtime **4.3.13** comparisons pass for the GUI export, editor re-export and
+shared packed bundle. Each case checks all three demo skins and both clips at 51
+sample times per skin: **27,540 bone values**, **28,560 region coordinates**,
+**5,100 mesh coordinates**, and **10,200 UV values**. Maximum sampled geometry error
+is **0.00006103515625** units, below 0.001; UV error is zero. These are finite fixture
+checks, not complete format, pixel or game-engine parity.
+
+Committed evidence contains original fixtures only:
+[keying-native.json](evidence/keying-native.json),
+[edited runtime](evidence/keying-runtime-edited.json),
+[editor round trip](evidence/keying-runtime-editor-roundtrip.json),
+[packed runtime](evidence/keying-runtime-packed.json), and
+[keying-editor.png](keying-editor.png).
+Detailed native captures, working copies, verified backups, Spine logs and cleanup
+records stay in the task's timestamped workspace backup directory. Both task-owned
+review processes were closed; earlier intentional user handoffs were left alone.
+
+A fresh read-only audit of the same 11 private artist exports finds **0/11** fully
+supported; all input hashes match the initial audit. Weighted meshes occur in ten of
+those reports, alongside linked meshes, constraints and unsupported timelines.
+No artist file was edited or copied into Git. [Workflow milestones](WORKFLOWS.md)
+track the remaining production-character and actual-game acceptance gates.

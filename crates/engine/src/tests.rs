@@ -511,3 +511,268 @@ fn explicit_attachment_keys_do_not_edit_named_skin_fallbacks() {
         Attachment::Mesh(_)
     ));
 }
+
+#[test]
+fn unkeyed_multi_bone_pose_keys_atomically_without_touching_setup() {
+    let mut fixture = doc();
+    fixture.bones[0].setup.x = 10.0;
+    fixture.bones[0].setup.scale_x = -2.0;
+    fixture.bones.push(Bone {
+        name: "child".into(),
+        parent: Some(0),
+        length: 10.0,
+        setup: Transform::default(),
+    });
+    let mut session = Session::new(fixture.clone()).unwrap();
+    let target = EditTarget::Animate {
+        animation: 0,
+        time: 0.5,
+    };
+    let mut pose = session.local_pose(Some(0), 0.5)[0];
+    pose.x = 15.0;
+    pose.scale_x = -3.0;
+    session
+        .edit_pose(0, target, pose, &[Property::X, Property::ScaleX], false)
+        .unwrap();
+    let child = Transform {
+        rotation: 75.0,
+        ..Default::default()
+    };
+    session
+        .edit_pose(1, target, child, &[Property::Rotation], false)
+        .unwrap();
+    assert_eq!(session.document(), &fixture);
+    assert!(!session.is_dirty());
+    assert_eq!(session.local_pose(Some(0), 0.5)[0], pose);
+    assert_eq!(session.local_pose(None, 0.5)[0], fixture.bones[0].setup);
+    let scene = scene_from_locals(
+        session.document(),
+        "default",
+        session.local_pose(Some(0), 0.5),
+    );
+    assert_eq!(scene.locals[1].rotation, 75.0);
+    assert_eq!(
+        session
+            .pose_edits()
+            .key_state(session.document(), 0, 0.5, 0, &[Property::X, Property::Y]),
+        KeyState::Edited
+    );
+    session.key_edited(0, 0.5, None).unwrap();
+    let keyed = session.document().clone();
+    assert_eq!(keyed.bones, fixture.bones);
+    assert_eq!(keyed.animations[0].tracks.len(), 5); // XY, scale XY, child's rotation.
+    assert_eq!(local_pose(&keyed, Some(0), 0.5)[0], pose);
+    assert_eq!(local_pose(&keyed, Some(0), 0.5)[1], child);
+    assert!(session.pose_edits().is_empty());
+    assert_eq!(
+        session
+            .pose_edits()
+            .key_state(&keyed, 0, 0.5, 0, &[Property::X, Property::Y]),
+        KeyState::Keyed
+    );
+    session.undo();
+    assert_eq!(session.document(), &fixture);
+    assert!(session.pose_edits().has_bone(0, 0) && session.pose_edits().has_bone(0, 1));
+    session.redo();
+    assert_eq!(session.document(), &keyed);
+    assert!(session.pose_edits().is_empty());
+}
+
+#[test]
+fn timeline_discards_pose_and_undo_recovers_at_new_frame_except_on_redo_branch() {
+    let mut fixture = doc();
+    fixture = apply_command(
+        &fixture,
+        Command::Batch {
+            commands: vec![key(0.0, 0.0), key(1.0, 90.0)],
+        },
+    )
+    .unwrap();
+    let mut session = Session::new(fixture).unwrap();
+    let target = EditTarget::Animate {
+        animation: 0,
+        time: 0.0,
+    };
+    let pose = Transform {
+        rotation: 20.0,
+        ..Default::default()
+    };
+    session
+        .edit_pose(0, target, pose, &[Property::Rotation], false)
+        .unwrap();
+    session.discard_pose(true);
+    assert_eq!(session.local_pose(Some(0), 0.5)[0].rotation, 45.0);
+    session.undo();
+    assert_eq!(session.local_pose(Some(0), 0.5)[0].rotation, 20.0);
+    session.key_edited(0, 0.5, None).unwrap();
+    assert_eq!(
+        local_pose(session.document(), Some(0), 0.5)[0].rotation,
+        20.0
+    );
+    session.undo();
+    assert!(!session.pose_edits().is_empty());
+    session.discard_pose(true); // Existing redo prevents pose recovery.
+    assert!(session.pose_edits().is_empty());
+    session.undo();
+    assert!(session.pose_edits().is_empty());
+}
+
+#[test]
+fn transient_gestures_cancel_and_undo_without_losing_redo_or_saved_state() {
+    let mut session = Session::new(doc()).unwrap();
+    session.dispatch(key(0.0, 10.0)).unwrap();
+    session.mark_saved();
+    session.undo();
+    let target = EditTarget::Animate {
+        animation: 0,
+        time: 0.5,
+    };
+    session.begin_transaction();
+    for x in [1.0, 2.0, 3.0] {
+        session
+            .edit_pose(
+                0,
+                target,
+                Transform {
+                    x,
+                    ..Default::default()
+                },
+                &[Property::X],
+                false,
+            )
+            .unwrap();
+    }
+    assert!(!session.can_redo());
+    session.cancel_transaction();
+    assert!(session.can_redo());
+    assert!(session.pose_edits().is_empty());
+    session.redo();
+    assert!(!session.is_dirty());
+    session.begin_transaction();
+    for x in [1.0, 2.0, 3.0] {
+        session
+            .edit_pose(
+                0,
+                target,
+                Transform {
+                    x,
+                    ..Default::default()
+                },
+                &[Property::X],
+                false,
+            )
+            .unwrap();
+    }
+    session.commit_transaction();
+    session.undo();
+    assert!(session.pose_edits().is_empty());
+    assert!(!session.is_dirty());
+    session.redo();
+    assert_eq!(session.local_pose(Some(0), 0.5)[0].x, 3.0);
+    session.mark_saved();
+    assert!(!session.is_dirty());
+    assert!(!session.pose_edits().is_empty()); // Saving must not pretend to key/discard the pose.
+}
+
+#[test]
+fn manual_key_is_independent_of_auto_key_and_does_not_consume_other_edits() {
+    let mut session = Session::new(doc()).unwrap();
+    let target = EditTarget::Animate {
+        animation: 0,
+        time: 0.5,
+    };
+    let pose = Transform {
+        x: 5.0,
+        rotation: 20.0,
+        ..Default::default()
+    };
+    session
+        .edit_pose(0, target, pose, &[Property::X, Property::Rotation], false)
+        .unwrap();
+    session.key_pose(0, 0.5, 0, &[Property::Rotation]).unwrap();
+    assert_eq!(session.document().animations[0].tracks.len(), 1);
+    assert_eq!(
+        session
+            .pose_edits()
+            .key_state(session.document(), 0, 0.5, 0, &[Property::Rotation]),
+        KeyState::Keyed
+    );
+    assert_eq!(
+        session
+            .pose_edits()
+            .key_state(session.document(), 0, 0.5, 0, &[Property::X, Property::Y]),
+        KeyState::Edited
+    );
+    let mut translated = pose;
+    translated.x += 1.0;
+    session
+        .edit_pose(0, target, translated, &[Property::X], true)
+        .unwrap();
+    assert!(session.pose_edits().is_empty());
+    assert_eq!(session.document().animations[0].tracks.len(), 3);
+    assert_eq!(local_pose(session.document(), Some(0), 0.5)[0], translated);
+    session.undo();
+    assert_eq!(session.local_pose(Some(0), 0.5)[0], pose);
+    assert!(!session.pose_edits().is_empty());
+}
+
+#[test]
+fn failed_key_edited_keeps_every_bone_pose_and_history_intact() {
+    let mut fixture = doc();
+    fixture.bones[0].setup.scale_y = 0.0;
+    let mut session = Session::new(fixture.clone()).unwrap();
+    let target = EditTarget::Animate {
+        animation: 0,
+        time: 0.5,
+    };
+    let pose = Transform {
+        scale_x: 2.0,
+        scale_y: 0.0,
+        ..Default::default()
+    };
+    session
+        .edit_pose(0, target, pose, &[Property::ScaleX], false)
+        .unwrap();
+    let pending = session.pose_edits().clone();
+    assert!(session.key_edited(0, 0.5, None).is_err()); // Default paired scale includes singular Y.
+    assert_eq!(session.document(), &fixture);
+    assert_eq!(session.pose_edits(), &pending);
+    let invalid = Transform {
+        x: f32::NAN,
+        ..pose
+    };
+    assert!(
+        session
+            .edit_pose(0, target, invalid, &[Property::X], false)
+            .is_err()
+    );
+    assert_eq!(session.pose_edits(), &pending);
+    session.undo();
+    assert!(session.pose_edits().is_empty()); // Failure added no undo entry.
+}
+
+#[test]
+fn returning_to_sampled_values_clears_orange_state_and_clip_switch_drops_old_pose_history() {
+    let mut session = Session::new(doc()).unwrap();
+    let target = EditTarget::Animate {
+        animation: 0,
+        time: 0.5,
+    };
+    let pose = Transform {
+        x: 4.0,
+        ..Default::default()
+    };
+    session
+        .edit_pose(0, target, pose, &[Property::X], false)
+        .unwrap();
+    session
+        .edit_pose(0, target, Transform::default(), &[Property::X], false)
+        .unwrap();
+    assert!(session.pose_edits().is_empty());
+    session.undo();
+    assert!(!session.pose_edits().is_empty());
+    session.discard_pose(false);
+    session.undo();
+    assert!(session.pose_edits().is_empty());
+    assert_eq!(session.document(), &doc());
+}

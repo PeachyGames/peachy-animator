@@ -39,3 +39,12 @@ Never claim full Spine compatibility. Reject unsupported features on import and 
 For headed browser verification, follow the workspace's `ab-headed`/`ab-cdp` isolation rules. Use a unique task session and the approved browser.
 
 The Tree and viewport share one typed `Option<TreeItem>` presentation selection. A slot, skin, animation or attachment must never use a cached bone as an edit target. Selecting a name and activating its visibility dot are separate actions. Skin/animation activation and temporary bone/slot visibility stay outside document history; setup attachment visibility is an explicit `SetSlotAttachment` command. Reconcile invalid selections by clearing them, not redirecting an edit to another entity. Keep outline/search/filter rules pure in `tree_model.rs`, controls in the shell, and picking/bounds in the engine.
+
+Unkeyed animation poses belong to `engine::PoseEdits`, outside `Document`. Session
+snapshots the document and transient pose together; its saved baseline/dirty flag
+compares only document data. Query pending edits separately for UI/discard notices.
+Use `Session::edit_pose`, `key_pose` and `key_edited` for interactive bone authoring;
+never implement key conversion, pending-pose rules or a second undo stack in the UI.
+Both numeric controls and viewport geometry must use Session's posed locals.
+Timeline movement/playback clears pending edits; context switches clear stale pose
+history. Save/export must never silently serialize or key a transient pose.

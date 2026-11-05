@@ -1,0 +1,23 @@
+{
+  "autoKeyOffLeavesDocumentUntouched": true,
+  "saveExcludesUnkeyedPose": true,
+  "timelineDiscardsUnkeyedPose": true,
+  "undoRecoversPoseAtNewFrame": true,
+  "keyEditedAtomicUndoRedo": true,
+  "numericInputRespectsAutoKey": true,
+  "explicitTransformKey": true,
+  "perBoneTreeKey": true,
+  "keyEditedAcrossUnselectedBones": true,
+  "canvasGestureOneUndo": true,
+  "activeToolKeyShortcut": true,
+  "autoKeyOn": true,
+  "toolbarKeyEdited": true,
+  "playbackClearsPose": true,
+  "clipAndModeSwitchClearsPose": true,
+  "savedProjectVerified": true,
+  "captures": {
+    "unkeyed": "editor-1793919008714809000.json",
+    "keyed": "editor-1793919016334677000.json",
+    "final": "editor-1793919095204430000.json"
+  }
+}

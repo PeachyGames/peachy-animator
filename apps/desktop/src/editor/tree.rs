@@ -2,6 +2,7 @@ use super::*;
 use tree_model::{Entry, Filters, project, row_visible};
 
 enum Action {
+    Key(usize),
     Select(TreeItem),
     Dot(TreeItem, bool),
     Branch(usize, bool),
@@ -186,6 +187,19 @@ impl Editor {
                             row.scroll_to_me(Some(egui::Align::Center));
                             self.tree.reveal = None;
                         }
+                        if !self.setup_mode
+                            && let TreeItem::Bone(bone) = e.item
+                            && self.session.pose_edits().has_bone(self.animation, bone)
+                        {
+                            let key = super::animation::pose_key_button(ui, KeyState::Edited);
+                            self.record_target(&format!("keyBone:{bone}"), key.rect);
+                            if key
+                                .on_hover_text("Key this bone's edited transforms")
+                                .clicked()
+                            {
+                                actions.push(Action::Key(bone));
+                            }
+                        }
                         if let Some(k) = e.item.attachment() {
                             row.on_hover_text(format!(
                                 "Skin: {}\nSlot: {}\nPlaceholder: {}",
@@ -197,6 +211,7 @@ impl Editor {
             });
         for action in actions {
             match action {
+                Action::Key(bone) => self.key_edited(Some(bone)),
                 Action::Select(item) => self.select(item),
                 Action::Dot(item, branch) => self.toggle_tree_dot(item, branch, &entries),
                 Action::All(collapsed) => {

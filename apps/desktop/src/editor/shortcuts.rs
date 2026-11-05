@@ -44,8 +44,7 @@ impl Editor {
     }
     fn step_frames(&mut self, delta: f32) {
         self.playing = false;
-        self.time = (self.snapped_time() + delta / self.session.document().fps as f32)
-            .clamp(0.0, self.duration());
+        self.set_time(self.snapped_time() + delta / self.session.document().fps as f32);
     }
 
     fn nudge(&mut self, delta: [f32; 2]) {
@@ -99,9 +98,9 @@ impl Editor {
         if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::L))
             && !self.setup_mode
             && self.selected_bone().is_some()
-            && let Some(pose) = self.selected_transform()
+            && self.selected_transform().is_some()
         {
-            self.edit_transform(pose, &Property::ALL);
+            self.key_transform(&Property::ALL);
         }
         if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::R)) {
             self.looping = !self.looping;
@@ -147,8 +146,11 @@ impl Editor {
             }
         }
         if !self.setup_mode {
+            if ctx.input(|i| i.key_pressed(egui::Key::K)) {
+                self.key_edited(None);
+            }
             if ctx.input(|i| i.key_pressed(egui::Key::D)) {
-                self.playing = !self.playing;
+                self.set_playing(!self.playing);
             }
             for (key, delta) in [(egui::Key::F, -1.0), (egui::Key::R, 1.0)] {
                 if ctx.input(|i| i.key_pressed(key)) {
@@ -156,11 +158,11 @@ impl Editor {
                 }
             }
             if ctx.input(|i| i.key_pressed(egui::Key::Q)) {
-                self.time = 0.0;
+                self.set_time(0.0);
                 self.playing = false;
             }
             if ctx.input(|i| i.key_pressed(egui::Key::E)) {
-                self.time = self.duration();
+                self.set_time(self.duration());
                 self.playing = false;
             }
             if self.selected_bone().is_some() && ctx.input(|i| i.key_pressed(egui::Key::L)) {
@@ -169,10 +171,8 @@ impl Editor {
                     Tool::Move => &[Property::X, Property::Y][..],
                     Tool::Mesh => &[][..],
                 };
-                if !properties.is_empty()
-                    && let Some(pose) = self.selected_transform()
-                {
-                    self.edit_transform(pose, properties);
+                if !properties.is_empty() && self.selected_transform().is_some() {
+                    self.key_transform(properties);
                 }
             }
         }

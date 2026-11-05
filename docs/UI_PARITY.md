@@ -47,9 +47,9 @@ attachment properties. Interpolation labels are Linear, Stepped and Bezier.
   Numeric scale controls currently have no canvas Scale tool.
 - Add movable tabs, docking, saved workspace state and the Graph view. Tree and
   Dopesheet currently provide resizers/visibility controls only.
-- Add Auto Key off/unkeyed poses, Key Changed (K), selection history, multiple/box
-  selection, reverse play, key navigation and view-dependent input focus. Auto Key
-  currently remains enabled; implemented shortcuts cover the supported subset.
+- Add selection history, multiple/box selection, reverse play, key navigation and
+  view-dependent input focus. Extend Auto Key/unkeyed editing to new keyable types
+  as their model and adapters are implemented.
 - Match Dopesheet key selection, dragging, clipboard, pan/zoom and selection tools.
 - Implement Edit Mesh UV/topology controls with their own reference semantics.
   Fixed-UV setup deformation must retain its distinct behavior.
@@ -98,3 +98,26 @@ Mesh vertex controls require selecting the mesh itself. Pointer gestures commit 
 one history entry and Escape cancels them. Viewport picking uses triangles in reverse
 slot order; transparent pixels are not sampled. Pixel-aware picking, mesh-wide
 transforms, multi-selection and full Tree parity remain future work.
+
+## Unkeyed pose and Auto Key slice
+
+The main transform toolbar has **Auto Key** and **Key Edited**; **K** keys edited
+properties across all bones, including unselected ones. This is called `Key Edited`
+in the current [keying guide](https://esotericsoftware.com/spine-keys). Each supported
+transform group has a green (absent), orange (edited), or red (keyed) key button.
+Bones with pending edits have an orange Tree key button that keys only that bone.
+**L**, **Cmd/Ctrl+L**, and explicit transform buttons key regardless of Auto Key.
+Translation and scale key both axes by default; the underlying scalar model and
+imported timelines remain intact. Separate-axis authoring preferences remain pending.
+
+With Auto Key off, numeric/canvas/arrow edits change a transient multi-bone pose,
+never setup data or animation keys. Gestures still have one-step undo and cancellation.
+Moving the timeline clears pending edits; with no redo branch, Undo recovers their
+absolute local values at the new frame. Starting playback also clears them. Switching
+animation or Setup/Animate clears transient pose history to avoid stale edits crossing
+contexts. Save/export exclude pending values; the status bar and close/open discard
+dialog distinguish them from saved keys. Toggling Auto Key alone does not key a pose.
+
+This completes bone transform keying for the current supported subset. Slot/deform/
+constraint keying, fractional-frame authoring, complete Dopesheet behavior and exact
+matched-size reference screenshots remain future parity gates.

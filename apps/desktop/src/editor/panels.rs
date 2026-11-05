@@ -73,21 +73,39 @@ impl Editor {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
                 self.transform_row(ui, "Rotate  [C]", &[Property::Rotation], Some(Tool::Rotate));
-                self.transform_row(ui, "Translate  [V]", &[Property::X, Property::Y], Some(Tool::Move));
+                self.transform_row(
+                    ui,
+                    "Translate  [V]",
+                    &[Property::X, Property::Y],
+                    Some(Tool::Move),
+                );
                 self.transform_row(ui, "Scale", &[Property::ScaleX, Property::ScaleY], None);
             });
             ui.separator();
             ui.vertical(|ui| {
-                if let Some(item)=&self.selection {
+                if let Some(item) = &self.selection {
                     ui.label(RichText::new(item.label(self.session.document())).color(ACCENT));
                 } else {
                     ui.label(RichText::new("No selection").color(MUTED));
                 }
                 ui.label(RichText::new("Translate: Parent axes").small().color(MUTED));
-                ui.label(RichText::new("Rotate / Scale: Local axes").small().color(MUTED));
+                ui.label(
+                    RichText::new("Rotate / Scale: Local axes")
+                        .small()
+                        .color(MUTED),
+                );
                 if !self.setup_mode {
-                    ui.label(RichText::new("Auto Key enabled").small().color(ACCENT))
-                        .on_hover_text("Transform edits create keys. Unkeyed pose editing is a later parity task.");
+                    let auto_key = ui.checkbox(&mut self.auto_key, "Auto Key");
+                    self.record_target("autoKey", auto_key.rect);
+                    auto_key.on_hover_text("Set keys automatically when a transform changes.");
+                    let key = ui.add_enabled(
+                        !self.session.pose_edits().is_empty(),
+                        egui::Button::new("Key Edited  [K]").small(),
+                    );
+                    self.record_target("keyEdited", key.rect);
+                    if key.clicked() {
+                        self.key_edited(None);
+                    }
                 }
             });
         });
@@ -143,6 +161,7 @@ impl Editor {
                             .speed(if property.is_scale() { 0.01 } else { 0.25 })
                             .max_decimals(2),
                     );
+                    self.record_target(&format!("value:{property:?}"), response.rect);
                     if response.drag_started() {
                         self.session.begin_transaction();
                     }
@@ -154,13 +173,13 @@ impl Editor {
                         self.session.commit_transaction();
                     }
                 }
-                if !self.setup_mode
-                    && ui
-                        .small_button("◇")
-                        .on_hover_text("Key this transform · L keys the active tool")
-                        .clicked()
-                {
-                    self.edit_transform(pose, properties);
+                if !self.setup_mode {
+                    let state = self.selected_bone().map_or(KeyState::Absent, |b| self.key_state(b, properties));
+                    let key = super::animation::pose_key_button(ui, state);
+                    self.record_target(&format!("key:{:?}", properties[0]), key.rect);
+                    if key.on_hover_text("Green: no key · Orange: unkeyed change · Red: keyed\nClick to key this transform; L keys the active tool.").clicked() {
+                        self.key_transform(properties);
+                    }
                 }
             });
         });
@@ -275,11 +294,10 @@ impl Editor {
                 .on_hover_text("Play forward/stop · D")
                 .clicked()
             {
-                self.playing = !self.playing;
-                self.setup_mode = false;
+                self.set_playing(!self.playing);
             }
             if ui.small_button("|◀").clicked() {
-                self.time = 0.0;
+                self.set_time(0.0);
                 self.playing = false;
             }
             egui::ComboBox::from_id_salt("animation")
@@ -332,6 +350,10 @@ impl Editor {
         let start = rect.left() + label_width;
         let width = rect.width() - label_width - 18.0;
         let duration = self.duration();
+        self.record_target(
+            "timelineTrack",
+            egui::Rect::from_min_max(pos2(start, rect.top()), pos2(start + width, rect.bottom())),
+        );
         for i in 0..=12 {
             let x = start + width * i as f32 / 12.0;
             painter.line_segment(
@@ -355,7 +377,7 @@ impl Editor {
             .document()
             .animations
             .get(self.animation)
-            .map_or(&[][..], |a| a.tracks.as_slice());
+            .map_or_else(Vec::new, |a| a.tracks.clone());
         for (i, property) in Property::ALL.into_iter().enumerate() {
             let y = rect.top() + 38.0 + i as f32 * 24.0;
             painter.text(
@@ -388,7 +410,7 @@ impl Editor {
                             .interact_pointer_pos()
                             .is_some_and(|mouse| mouse.distance(p) < 10.0)
                     {
-                        self.time = key.time;
+                        self.set_time(key.time);
                         self.playing = false;
                     }
                 }
@@ -408,9 +430,9 @@ impl Editor {
             && p.x >= start
         {
             self.playing = false;
-            self.setup_mode = false;
-            self.time = ((p.x - start) / width * duration).clamp(0.0, duration);
-            self.time = self.snapped_time().min(duration);
+            let fps = self.session.document().fps as f32;
+            let time = ((p.x - start) / width * duration).clamp(0.0, duration);
+            self.set_time((time * fps).round() / fps);
         }
     }
 }

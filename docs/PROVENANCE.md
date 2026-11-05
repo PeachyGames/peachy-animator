@@ -107,3 +107,13 @@ The public RegionAttachment declaration from the separately installed runtime wa
 to call getOffsets, computeWorldVertices and Sequence UV access in the oracle. The
 extended harness identifies region corners by UV rather than assuming vertex order.
 All compatibility inputs remain our original Peach Bot artwork and rigs.
+
+## Unkeyed pose behavior
+
+Auto Key, Key Edited (K), green/orange/red key indicators, default paired transform
+axes and Undo recovery of a cleared unkeyed pose follow the public
+[keying guide](https://esotericsoftware.com/spine-keys), read November 5, 2026.
+The implementation uses our own sparse local-property edits and unified Session
+snapshots; no editor/runtime implementation source or UI assets were read/copied.
+Native input verification uses only original Peach Bot artwork. Export acceptance is
+checked separately with installed Spine 4.3.26 and the external runtime.

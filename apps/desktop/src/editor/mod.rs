@@ -1,3 +1,4 @@
+mod animation;
 mod mesh;
 mod panels;
 mod properties;
@@ -10,7 +11,7 @@ use tree_model::TreeState;
 mod viewport;
 use eframe::egui::{self, Color32, FontId, Pos2, RichText, Sense, Stroke, Vec2, pos2, vec2};
 use peachy_document::*;
-use peachy_engine::{Command, EditTarget, Session, evaluate_scene, local_pose};
+use peachy_engine::{Command, EditTarget, KeyState, Session, scene_from_locals};
 use peachy_io as files;
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -56,6 +57,7 @@ pub(crate) struct Editor {
     setup_mode: bool,
     playing: bool,
     looping: bool,
+    auto_key: bool,
     time: f32,
     show_bones: bool,
     zoom: f32,
@@ -157,6 +159,7 @@ impl Editor {
             setup_mode: true,
             playing: false,
             looping: true,
+            auto_key: true,
             time: 0.0,
             show_bones: true,
             zoom: 1.0,
@@ -276,7 +279,9 @@ impl Editor {
     fn selected_transform(&self) -> Option<Transform> {
         let doc = self.session.document();
         match self.selection.as_ref()? {
-            TreeItem::Bone(i) => local_pose(doc, self.active_animation(), self.time)
+            TreeItem::Bone(i) => self
+                .session
+                .local_pose(self.active_animation(), self.time)
                 .get(*i)
                 .copied(),
             TreeItem::Attachment(key) if self.attachment_editable(key) => {
@@ -299,32 +304,35 @@ impl Editor {
     }
     fn edit_item_transform(&mut self, item: TreeItem, local: Transform, properties: &[Property]) {
         self.playing = false;
-        let command = match item {
-            TreeItem::Bone(bone) => Command::SetPose {
-                bone,
-                target: if self.setup_mode {
+        match item {
+            TreeItem::Bone(bone) => {
+                let target = if self.setup_mode {
                     EditTarget::Setup
                 } else {
                     EditTarget::Animate {
                         animation: self.animation,
                         time: self.time.clamp(0.0, self.duration()),
                     }
-                },
-                transform: local,
-                properties: properties.to_vec(),
-            },
+                };
+                if let Err(error) =
+                    self.session
+                        .edit_pose(bone, target, local, properties, self.auto_key)
+                {
+                    self.error = Some(error);
+                }
+            }
             TreeItem::Attachment(attachment)
                 if self.setup_mode && self.attachment_editable(&attachment) =>
             {
-                Command::SetRegionTransform {
+                self.dispatch(Command::SetRegionTransform {
                     attachment,
                     transform: local,
-                }
+                });
             }
-            _ => return,
-        };
-        self.dispatch(command);
+            _ => {}
+        }
     }
+
     fn select(&mut self, item: TreeItem) {
         self.cancel_gesture();
         if !item.exists(self.session.document()) {
@@ -355,6 +363,7 @@ impl Editor {
     fn activate_animation(&mut self, animation: usize) {
         if animation < self.session.document().animations.len() {
             self.cancel_gesture();
+            self.session.discard_pose(false);
             self.animation = animation;
             self.time = 0.0;
             self.setup_mode = false;
@@ -393,10 +402,10 @@ impl Editor {
     }
 
     fn confirm_discard(&self) -> bool {
-        !self.session.is_dirty()
+        (!self.session.is_dirty() && self.session.pose_edits().is_empty())
             || rfd::MessageDialog::new()
                 .set_title("Unsaved changes")
-                .set_description("Discard the changes in this project?")
+                .set_description("Discard unsaved project changes and any unkeyed pose?")
                 .set_buttons(rfd::MessageButtons::YesNo)
                 .show()
                 == rfd::MessageDialogResult::Yes
@@ -455,7 +464,12 @@ impl Editor {
                     self.asset_root = path.parent().unwrap().to_path_buf();
                     self.project_path = Some(path);
                     self.session.mark_saved();
-                    self.status = "Project and images saved".into();
+                    self.status = if self.session.pose_edits().is_empty() {
+                        "Project and images saved"
+                    } else {
+                        "Project saved; unkeyed pose is not saved. Press K to key it."
+                    }
+                    .into();
                 }
                 Err(e) => self.error = Some(e),
             }
@@ -468,7 +482,17 @@ impl Editor {
             .pick_folder()
         {
             match files::export_bundle(&folder, self.session.document(), &self.asset_root) {
-                Ok(path) => self.status = format!("Spine 4.3 export saved to {}", path.display()),
+                Ok(path) => {
+                    self.status = format!(
+                        "Spine 4.3 export saved to {}{}",
+                        path.display(),
+                        if self.session.pose_edits().is_empty() {
+                            ""
+                        } else {
+                            "; unkeyed pose excluded — press K to key it"
+                        }
+                    )
+                }
                 Err(e) => self.error = Some(e),
             }
         }
@@ -520,6 +544,13 @@ impl eframe::App for Editor {
                             MUTED
                         }),
                     );
+                    if !self.session.pose_edits().is_empty() {
+                        ui.label(
+                            RichText::new("Unkeyed pose · K to key")
+                                .small()
+                                .color(ACCENT),
+                        );
+                    }
                     ui.separator();
                     ui.label(RichText::new(&self.status).small().color(MUTED));
                 });
@@ -614,6 +645,8 @@ impl eframe::App for Editor {
                     "tool":match self.tool {Tool::Rotate=>"rotate",Tool::Move=>"translate",Tool::Mesh=>"vertices"},
                     "treeVisible":self.show_tree,"dopesheetVisible":!self.setup_mode && self.show_dopesheet,
                     "animation":self.animation,"skin":self.skin,"time":self.time,"playing":self.playing,"looping":self.looping,"zoom":self.zoom,
+                    "autoKey":self.auto_key,"unkeyedPose":self.session.pose_edits(),"selectedTransform":self.selected_transform(),"locals":self.session.local_pose(self.active_animation(),self.time),
+                    "keyStates":self.selected_bone().map(|bone| [Property::Rotation,Property::X,Property::ScaleX].map(|p| self.key_state(bone,&peachy_engine::transform_group(&[p])))),
                     "setupMode":self.setup_mode,"dirty":self.session.is_dirty(),"imageCount":self.textures.len(),
                     "selectedAttachment":self.selected_attachment(),"selectedVertex":self.mesh_vertex,"hiddenSlots":self.hidden_slots,
                     "targets":self.capture_targets,"meshHandles":self.mesh_handles,"innerSize":[ctx.content_rect().width(),ctx.content_rect().height()]

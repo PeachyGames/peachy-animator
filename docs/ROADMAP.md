@@ -6,15 +6,17 @@ Spine runtime. Subsequent work should grow that working loop.
 
 1. **Spine UI parity.** Match Spine's layout, controls, terminology and conventions.
    The workspace and shortcut alignment is followed by a typed Tree, contextual
-   selection, filters, activation dots and viewport picking. Next complete unkeyed/
-   Auto Key behavior, tool/axis controls, Graph/view tabs and multi-selection in
+   selection, filters, activation dots, viewport picking and unkeyed/Auto Key posing.
+   Next complete tool/axis controls, Graph/view tabs and multi-selection in
    [UI parity](UI_PARITY.md) before expanding the authoring UI.
 
 2. **Weights and broader mesh editing.** Unweighted mesh import/export, rendering,
    region conversion, fixed-UV setup vertex transforms and triangle subdivision now
    work. Next add typed bone influences and deterministic weighted evaluation, then
    binding/weight editing. Follow with UV/hull editing and controlled triangulation.
-   These remain major gaps for our existing characters. Refuse unsupported imports
+   These remain major gaps for our existing characters.
+   Use the [workflow milestones](WORKFLOWS.md) and private asset inventory to select
+   the smallest representative production character and track its missing features. Refuse unsupported imports
    without changing their source files.
 3. **Artwork and rig creation.** Import layered/loose images, create attachments,
    edit pivots and draw order, rename/delete/reparent with stable IDs. Add robust

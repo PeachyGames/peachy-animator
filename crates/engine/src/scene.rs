@@ -59,6 +59,12 @@ pub fn evaluate_scene(
     {
         *local = transform;
     }
+    scene_from_locals(doc, skin, locals)
+}
+
+/// Evaluate an already posed rig, including transient multi-bone authoring edits.
+pub fn scene_from_locals(doc: &Document, skin: &str, locals: Vec<Transform>) -> Scene {
+    assert_eq!(locals.len(), doc.bones.len());
     let world = world_pose(doc, &locals);
     let mut attachments = vec![];
     for (slot_index, slot) in doc.slots.iter().enumerate() {

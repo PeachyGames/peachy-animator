@@ -12,8 +12,7 @@ impl Editor {
             self.record_target("mode", mode.rect);
             if mode.clicked() {
                 self.cancel_gesture();
-                self.setup_mode = !self.setup_mode;
-                self.playing = false;
+                self.set_setup_mode(!self.setup_mode);
             }
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 ui.label(
@@ -34,7 +33,11 @@ impl Editor {
         let painter = ui.painter_at(rect);
         painter.rect_filled(rect, 0., Color32::from_gray(43));
         let doc = self.session.document();
-        let mut scene = evaluate_scene(doc, self.active_animation(), self.time, &self.skin, None);
+        let mut scene = scene_from_locals(
+            doc,
+            &self.skin,
+            self.session.local_pose(self.active_animation(), self.time),
+        );
         scene
             .attachments
             .retain(|a| !self.hidden_slots.contains(&a.slot));

@@ -81,8 +81,7 @@ compilation, a web frontend and additional platform builds have not been verifie
 The user requires Spine's visual layout, controls and conventions. The native shell
 must follow [UI parity](UI_PARITY.md), independently of export/runtime compatibility.
 UI layout and shortcuts stay in the desktop, while pose/key changes still use shared
-commands. Deselecting clears transient view selection; the remembered bone index stays
-valid for history reconciliation. It does not edit the document. Tree/properties are
+commands. Deselecting clears transient view selection without editing the document. Tree/properties are
 on the right; the viewport, main transform toolbar and Animate-mode Dopesheet occupy
 the left. UI presentation changes do not change the file/engine adapters.
 
@@ -106,3 +105,25 @@ slot's available placeholders. The engine's triangle picking and attachment boun
 are shared geometry queries, also used after temporary viewport visibility filtering.
 The small macOS application-menu adjustment lives in `apps/desktop/src/platform.rs`,
 using safe AppKit bindings; those dependencies are allowed only in the desktop shell.
+
+## Transient animation authoring
+
+`engine/authoring.rs` holds sparse absolute local `PoseEdits`, transform grouping,
+key-state queries and posed-local evaluation. These are engine state, never fields in
+`Document`, native files, or exports. `Session` snapshots document plus transient pose
+in a single bounded history; its saved baseline/dirty comparison includes only the
+document. Clients query pending edits separately. No secondary UI undo stack exists.
+
+`Session::edit_pose` validates both keyed and unkeyed edits through the same pure
+command boundary. `key_pose` explicitly keys supported properties; `key_edited`
+constructs one atomic batch across edited bones, preserving setup-relative conversion
+and existing curves. Failure changes neither document, pending pose nor history.
+Transactions cover both kinds of state. Timeline discard can be recovered with Undo
+at the new frame if no redo branch exists; context switches clear stale pose snapshots
+without erasing document history. Timeline/mode/playback transitions are shell events.
+
+The desktop's `animation.rs` coordinates those events and reports errors. Both numeric
+fields and the viewport query Session's posed locals. `scene_from_locals` feeds those
+locals through the existing shared geometry pipeline; rendering/picking/bounds do not
+reimplement pose rules. The CLI's document evaluator intentionally ignores transient
+poses, just like save/export. No runtime or platform dependency entered the core.

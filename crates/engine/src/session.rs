@@ -1,12 +1,18 @@
-use crate::{Command, apply_command};
-use peachy_document::Document;
+use crate::{Command, EditTarget, PoseEdits, apply_command, transform_group};
+use peachy_document::{Document, Property, Transform};
+
+#[derive(Clone, PartialEq)]
+struct WorkingState {
+    document: Document,
+    pose: PoseEdits,
+}
 
 pub struct Session {
-    document: Document,
-    undo: Vec<Document>,
-    redo: Vec<Document>,
+    state: WorkingState,
+    undo: Vec<WorkingState>,
+    redo: Vec<WorkingState>,
     saved: Document,
-    transaction: Option<Document>,
+    transaction: Option<WorkingState>,
 }
 
 impl Session {
@@ -14,46 +20,174 @@ impl Session {
         document.validate()?;
         Ok(Self {
             saved: document.clone(),
-            document,
+            state: WorkingState {
+                document,
+                pose: PoseEdits::default(),
+            },
             undo: vec![],
             redo: vec![],
             transaction: None,
         })
     }
     pub fn document(&self) -> &Document {
-        &self.document
+        &self.state.document
     }
+    pub fn pose_edits(&self) -> &PoseEdits {
+        &self.state.pose
+    }
+    pub fn local_pose(&self, animation: Option<usize>, time: f32) -> Vec<Transform> {
+        self.state.pose.locals(self.document(), animation, time)
+    }
+    /// Only committed animation keys and setup data belong to a saved project.
     pub fn is_dirty(&self) -> bool {
-        self.document != self.saved
+        self.document() != &self.saved
     }
     pub fn mark_saved(&mut self) {
         self.commit_transaction();
-        self.saved = self.document.clone();
+        self.saved = self.document().clone();
     }
     pub fn can_undo(&self) -> bool {
         !self.undo.is_empty()
             || self
                 .transaction
                 .as_ref()
-                .is_some_and(|base| base != &self.document)
+                .is_some_and(|base| base != &self.state)
     }
     pub fn can_redo(&self) -> bool {
         !self.redo.is_empty()
             && self
                 .transaction
                 .as_ref()
-                .is_none_or(|base| base == &self.document)
+                .is_none_or(|base| base == &self.state)
     }
     /// Apply to a candidate first. Failed commands change neither data nor history.
     pub fn dispatch(&mut self, command: Command) -> Result<(), String> {
-        let candidate = apply_command(&self.document, command)?;
-        if candidate != self.document {
-            let previous = std::mem::replace(&mut self.document, candidate);
-            if self.transaction.is_none() {
-                self.record(previous);
+        let document = apply_command(self.document(), command)?;
+        self.replace(WorkingState {
+            document,
+            pose: self.state.pose.clone(),
+        });
+        Ok(())
+    }
+    /// Pose with Auto Key on or off through the same validation/undo boundary.
+    pub fn edit_pose(
+        &mut self,
+        bone: usize,
+        target: EditTarget,
+        transform: Transform,
+        properties: &[Property],
+        auto_key: bool,
+    ) -> Result<(), String> {
+        match target {
+            EditTarget::Setup => self.dispatch(Command::SetPose {
+                bone,
+                target,
+                transform,
+                properties: properties.to_vec(),
+            }),
+            EditTarget::Animate { animation, time } => {
+                let pose = self.state.pose.edit(
+                    self.document(),
+                    animation,
+                    time,
+                    bone,
+                    transform,
+                    properties,
+                )?;
+                let mut candidate = WorkingState {
+                    document: self.document().clone(),
+                    pose,
+                };
+                if auto_key {
+                    let properties = transform_group(properties);
+                    let transform =
+                        candidate
+                            .pose
+                            .locals(&candidate.document, Some(animation), time)[bone];
+                    candidate.document = apply_command(
+                        &candidate.document,
+                        Command::SetPose {
+                            bone,
+                            target,
+                            transform,
+                            properties: properties.clone(),
+                        },
+                    )?;
+                    candidate.pose.remove(animation, bone, &properties);
+                }
+                self.replace(candidate);
+                Ok(())
             }
         }
+    }
+    /// Explicit key buttons and L always key, independent of Auto Key.
+    pub fn key_pose(
+        &mut self,
+        animation: usize,
+        time: f32,
+        bone: usize,
+        properties: &[Property],
+    ) -> Result<(), String> {
+        let transform = *self
+            .local_pose(Some(animation), time)
+            .get(bone)
+            .ok_or("Unknown bone")?;
+        let document = apply_command(
+            self.document(),
+            Command::SetPose {
+                bone,
+                target: EditTarget::Animate { animation, time },
+                transform,
+                properties: properties.to_vec(),
+            },
+        )?;
+        let mut pose = self.state.pose.clone();
+        pose.remove(animation, bone, properties);
+        self.replace(WorkingState { document, pose });
         Ok(())
+    }
+    /// K keys every edited bone, including bones outside the current selection.
+    /// A Tree bone's orange key button supplies an explicit bone instead.
+    pub fn key_edited(
+        &mut self,
+        animation: usize,
+        time: f32,
+        bone: Option<usize>,
+    ) -> Result<(), String> {
+        let targets = self.state.pose.targets(animation, bone);
+        let locals = self.local_pose(Some(animation), time);
+        let commands = targets
+            .iter()
+            .map(|(&bone, properties)| Command::SetPose {
+                bone,
+                target: EditTarget::Animate { animation, time },
+                transform: locals[bone],
+                properties: properties.clone(),
+            })
+            .collect();
+        let document = apply_command(self.document(), Command::Batch { commands })?;
+        let mut pose = self.state.pose.clone();
+        for (bone, properties) in targets {
+            pose.remove(animation, bone, &properties);
+        }
+        self.replace(WorkingState { document, pose });
+        Ok(())
+    }
+    /// Moving the timeline drops unkeyed edits. With no redo branch, Undo recovers
+    /// that pose at the new position, matching Spine's documented recovery workflow.
+    /// Clip/mode changes pass false and remove stale pose snapshots from history.
+    pub fn discard_pose(&mut self, recoverable: bool) {
+        self.commit_transaction();
+        if recoverable && self.redo.is_empty() {
+            let mut next = self.state.clone();
+            next.pose = PoseEdits::default();
+            self.replace(next);
+        } else {
+            self.state.pose = PoseEdits::default();
+            for state in self.undo.iter_mut().chain(&mut self.redo) {
+                state.pose = PoseEdits::default();
+            }
+        }
     }
     pub fn undo(&mut self) {
         if self.transaction.is_some() {
@@ -61,36 +195,42 @@ impl Session {
             return;
         }
         if let Some(previous) = self.undo.pop() {
-            self.redo
-                .push(std::mem::replace(&mut self.document, previous));
+            self.redo.push(std::mem::replace(&mut self.state, previous));
         }
     }
     pub fn redo(&mut self) {
         self.commit_transaction();
         if let Some(next) = self.redo.pop() {
-            self.undo.push(std::mem::replace(&mut self.document, next));
+            self.undo.push(std::mem::replace(&mut self.state, next));
         }
     }
-
-    /// UI gestures may dispatch many updates but create one undo entry.
+    /// UI gestures may make many changes but create one undo entry, keyed or unkeyed.
     pub fn begin_transaction(&mut self) {
         if self.transaction.is_none() {
-            self.transaction = Some(self.document.clone());
+            self.transaction = Some(self.state.clone());
         }
     }
     pub fn commit_transaction(&mut self) {
         if let Some(previous) = self.transaction.take()
-            && previous != self.document
+            && previous != self.state
         {
             self.record(previous);
         }
     }
     pub fn cancel_transaction(&mut self) {
         if let Some(previous) = self.transaction.take() {
-            self.document = previous;
+            self.state = previous;
         }
     }
-    fn record(&mut self, previous: Document) {
+    fn replace(&mut self, candidate: WorkingState) {
+        if candidate != self.state {
+            let previous = std::mem::replace(&mut self.state, candidate);
+            if self.transaction.is_none() {
+                self.record(previous);
+            }
+        }
+    }
+    fn record(&mut self, previous: WorkingState) {
         self.undo.push(previous);
         if self.undo.len() > 128 {
             self.undo.remove(0);

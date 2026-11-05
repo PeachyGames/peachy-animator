@@ -10,7 +10,7 @@ impl Editor {
             )
         {
             self.set_tool(Tool::Mesh);
-            self.setup_mode = true;
+            self.set_setup_mode(true);
             self.playing = false;
         }
     }

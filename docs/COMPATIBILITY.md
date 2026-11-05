@@ -106,3 +106,18 @@ The external harness now compares region world corners too, identifying corner p
 by their UVs through the official public RegionAttachment API. The unmodified mesh
 fixture passes 28,560 region coordinates (maximum error 0.000030518), alongside its
 existing 5,100 mesh and 27,540 bone values across all three skins and two clips.
+
+## Unkeyed pose and Auto Key slice
+
+Auto Key off changes a transient engine pose; explicit keying converts it into the
+same supported transform timelines. Default authoring keys translation/scale axes
+as pairs; imported scalar tracks and the low-level command API remain supported.
+Native format remains v2 and Spine target remains 4.3.x JSON. Unkeyed poses are not
+serialized or exported. Save is not a substitute for pressing K to preserve a pose.
+The UI distinguishes unkeyed edits from document dirty state and warns on discard.
+
+A fresh read-only audit of the same 11 artist exports still finds none fully supported;
+all source hashes are unchanged. This slice changes authoring, not the accepted
+production feature set. See [workflow milestones](WORKFLOWS.md) for every hurdle,
+including the distinction between editable `.peachy`, Spine runtime JSON/atlas, and
+unsupported native `.spine`/binary `.skel` files.

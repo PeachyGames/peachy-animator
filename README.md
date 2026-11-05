@@ -1,8 +1,8 @@
 # Peachy Animator
 
 A native 2D skeletal animation editor from Team Peachy, with an independent Rust
-core and Spine-compatible exports. The current slice adds editable unweighted
-meshes; this is still a bounded subset of Spine.
+core and Spine-compatible exports. The current slice adds Spine-style unkeyed
+posing and Auto Key; this is still a bounded subset of Spine.
 
 ![Peach Bot in the editor](docs/tree-editor.png)
 
@@ -39,18 +39,28 @@ drag is one undo step, and Escape cancels the current drag.
 This corresponds to Spine's setup vertex transforms. UV editing, freeform hull
 creation, weights and animated deform keys are not implemented yet.
 
-![Animate workspace](docs/tree-animate.png)
+![Unkeyed animation pose](docs/keying-editor.png)
 
 1. Switch to **Animate** at the viewport's upper left; press **D** to play/stop.
 2. Select a bone or region attachment in the viewport or Tree; **C** rotates, **V**
    translates. Attachment transforms are available in Setup.
 3. Use the transform fields below the viewport. **L** keys the active transform;
-   **Cmd/Ctrl+L** keys all supported transforms for the selected bone.
+   **Cmd/Ctrl+L** keys all supported transforms for the selected bone. With **Auto Key**
+   off, pose first and press **K** to key every edited bone.
 4. Scrub the Dopesheet; use **R/F** for next/previous frame and **Shift+R/F** for ten.
 5. Undo/redo with **Cmd/Ctrl+Z** / **Cmd/Ctrl+Shift+Z**. Space deselects.
 6. Save a `.peachy` project and use **Peachy → Export** or **Cmd/Ctrl+E**.
 
-**Animate** edits create keys. **Setup** edits change the underlying rig.
+**Animate** edits create keys while **Auto Key** is on. With it off, orange key
+buttons mark unkeyed edits; click a transform's key button, a bone's orange Tree
+button, or press **K** (Key Edited). Green means no key; red means keyed at this frame.
+Translate and scale use paired X/Y keys by default. Moving the timeline or starting
+playback clears unkeyed edits. With no redo branch, Undo recovers the pose at the
+new frame. Switching animation or mode clears the pending pose.
+
+Save/export include setup data and animation keys; **unkeyed poses are excluded**.
+The status bar calls out a pending pose even if the document itself is saved.
+**Setup** edits change the underlying rig.
 Arrows nudge the selection; the **Fit** button fits the scene. Scroll zooms,
 right-drag pans, and right-click switches the last two tools. **F9** hides/restores views.
 **F12** captures the editor and a diagnostic project snapshot to a local temporary
@@ -80,6 +90,8 @@ supported controls can edit it. Inactive skin attachments remain inspectable.
   region conversion and triangle subdivision.
 - Deterministic timeline playback, scrubbing, frame stepping and looping.
 - Scalar keys with linear, stepped and editable Bezier interpolation.
+- Auto Key, unkeyed multi-bone posing, Key Edited (K), colored key indicators,
+  explicit transform/Tree key buttons and pose-aware transactional history.
 - Canvas manipulation, transform controls and adding child bones.
 - Shared commands, atomic batch edits and undo/redo.
 - JSON project saves with atomic replacement, verified timestamped backups and
@@ -120,6 +132,8 @@ serializable documents, an independent animation engine, format adapters, and th
 desktop/CLI clients. No PhotoCraft application code was copied. See
 [architecture](docs/ARCHITECTURE.md), [implementation provenance](docs/PROVENANCE.md),
 and [the next slices](docs/ROADMAP.md).
+The [workflow milestones](docs/WORKFLOWS.md) track import, edit, pose, animate, slots,
+save and game-export hurdles against the current limitations.
 The [Spine parity matrix](docs/PARITY.md) records implemented behavior, evidence,
 and the remaining gaps by feature area.
 
