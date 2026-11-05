@@ -5,9 +5,9 @@ scrub/play, edit curves, undo/redo, save/reopen and export to a separately suppl
 Spine runtime. Subsequent work should grow that working loop.
 
 1. **Spine UI parity.** Match Spine's layout, controls, terminology and conventions.
-   The first pass moves the Tree/properties right, tools below the viewport and the
-   Dopesheet below those, and corrects conflicting shortcuts. Finish the typed Tree,
-   tool/axis controls, view tabs and unkeyed/Auto Key behavior in
+   The workspace and shortcut alignment is followed by a typed Tree, contextual
+   selection, filters, activation dots and viewport picking. Next complete unkeyed/
+   Auto Key behavior, tool/axis controls, Graph/view tabs and multi-selection in
    [UI parity](UI_PARITY.md) before expanding the authoring UI.
 
 2. **Weights and broader mesh editing.** Unweighted mesh import/export, rendering,

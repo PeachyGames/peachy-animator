@@ -1,12 +1,21 @@
 mod mesh;
 mod panels;
+mod properties;
+mod selection;
 mod shortcuts;
+mod tree;
+mod tree_model;
+use selection::{Folder, TreeItem};
+use tree_model::TreeState;
 mod viewport;
 use eframe::egui::{self, Color32, FontId, Pos2, RichText, Sense, Stroke, Vec2, pos2, vec2};
 use peachy_document::*;
 use peachy_engine::{Command, EditTarget, Session, evaluate_scene, local_pose};
 use peachy_io as files;
-use std::{collections::BTreeMap, path::PathBuf};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    path::PathBuf,
+};
 
 const ACCENT: Color32 = Color32::from_rgb(235, 133, 44);
 const MINT: Color32 = Color32::from_rgb(149, 188, 150);
@@ -27,13 +36,21 @@ struct MeshDrag {
     pointer: Pos2,
 }
 
+struct TransformDrag {
+    item: TreeItem,
+    initial: Transform,
+    pointer: Pos2,
+}
+
 pub(crate) struct Editor {
     session: Session,
     project_path: Option<PathBuf>,
     asset_root: PathBuf,
     textures: BTreeMap<String, egui::TextureHandle>,
-    selected: usize,
-    has_selection: bool,
+    selection: Option<TreeItem>,
+    tree: TreeState,
+    hidden_bones: BTreeSet<usize>,
+    hidden_slots: BTreeSet<usize>,
     animation: usize,
     skin: String,
     setup_mode: bool,
@@ -49,9 +66,7 @@ pub(crate) struct Editor {
     show_tree: bool,
     show_dopesheet: bool,
     hidden_views: Option<(bool, bool)>,
-    drag: Option<(Transform, Pos2)>,
-    drag_preview: Option<Transform>,
-    mesh_attachment: Option<AttachmentRef>,
+    drag: Option<TransformDrag>,
     mesh_vertex: usize,
     mesh_triangle: usize,
     mesh_drag: Option<MeshDrag>,
@@ -77,6 +92,7 @@ impl Editor {
         project: Option<PathBuf>,
         capture: Option<PathBuf>,
     ) -> Self {
+        crate::platform::configure_shortcuts();
         cc.egui_ctx.set_theme(egui::ThemePreference::Dark);
         let mut style = (*cc.egui_ctx.style_of(egui::Theme::Dark)).clone();
         style.visuals = egui::Visuals::dark();
@@ -125,13 +141,17 @@ impl Editor {
         } else {
             None
         };
+        let tree = TreeState::for_document(&doc, &skin);
+        let initial_bone = 8.min(doc.bones.len() - 1);
         let mut editor = Self {
             session: Session::new(doc).expect("Validated fixture"),
             project_path,
             asset_root,
             textures: BTreeMap::new(),
-            selected: 8,
-            has_selection: true,
+            selection: Some(TreeItem::Bone(initial_bone)),
+            tree,
+            hidden_bones: BTreeSet::new(),
+            hidden_slots: BTreeSet::new(),
             animation: 0,
             skin,
             setup_mode: true,
@@ -148,8 +168,7 @@ impl Editor {
             show_dopesheet: true,
             hidden_views: None,
             drag: None,
-            drag_preview: None,
-            mesh_attachment: None,
+
             mesh_vertex: 0,
             mesh_triangle: 0,
             mesh_drag: None,
@@ -162,9 +181,7 @@ impl Editor {
             capture_directory,
             frames: 0,
         };
-        editor.selected = editor
-            .selected
-            .min(editor.session.document().bones.len() - 1);
+        editor.reconcile_selection();
         editor.load_textures(&cc.egui_ctx);
         editor
     }
@@ -236,48 +253,141 @@ impl Editor {
         (self.time * fps).round() / fps
     }
 
+    fn selected_bone(&self) -> Option<usize> {
+        self.selection.as_ref().and_then(TreeItem::bone)
+    }
+    fn selected_attachment(&self) -> Option<&AttachmentRef> {
+        self.selection.as_ref().and_then(TreeItem::attachment)
+    }
+    fn transform_editable(&self) -> bool {
+        match &self.selection {
+            Some(TreeItem::Bone(_)) => true,
+            Some(TreeItem::Attachment(k)) => {
+                self.setup_mode
+                    && self.attachment_editable(k)
+                    && matches!(
+                        self.session.document().attachment(k),
+                        Some(Attachment::Region(_))
+                    )
+            }
+            _ => false,
+        }
+    }
+    fn selected_transform(&self) -> Option<Transform> {
+        let doc = self.session.document();
+        match self.selection.as_ref()? {
+            TreeItem::Bone(i) => local_pose(doc, self.active_animation(), self.time)
+                .get(*i)
+                .copied(),
+            TreeItem::Attachment(key) if self.attachment_editable(key) => {
+                if let Some(Attachment::Region(r)) = doc.attachment(key) {
+                    Some(r.transform)
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        }
+    }
+    fn attachment_editable(&self, key: &AttachmentRef) -> bool {
+        key.skin == "default" || key.skin == self.skin
+    }
     fn edit_transform(&mut self, local: Transform, properties: &[Property]) {
-        if !self.has_selection {
+        if let Some(item) = self.selection.clone() {
+            self.edit_item_transform(item, local, properties);
+        }
+    }
+    fn edit_item_transform(&mut self, item: TreeItem, local: Transform, properties: &[Property]) {
+        self.playing = false;
+        let command = match item {
+            TreeItem::Bone(bone) => Command::SetPose {
+                bone,
+                target: if self.setup_mode {
+                    EditTarget::Setup
+                } else {
+                    EditTarget::Animate {
+                        animation: self.animation,
+                        time: self.time.clamp(0.0, self.duration()),
+                    }
+                },
+                transform: local,
+                properties: properties.to_vec(),
+            },
+            TreeItem::Attachment(attachment)
+                if self.setup_mode && self.attachment_editable(&attachment) =>
+            {
+                Command::SetRegionTransform {
+                    attachment,
+                    transform: local,
+                }
+            }
+            _ => return,
+        };
+        self.dispatch(command);
+    }
+    fn select(&mut self, item: TreeItem) {
+        self.cancel_gesture();
+        if !item.exists(self.session.document()) {
             return;
         }
-        self.playing = false;
-        let target = if self.setup_mode {
-            EditTarget::Setup
-        } else {
-            EditTarget::Animate {
-                animation: self.animation,
-                time: self.time.clamp(0.0, self.duration()),
-            }
-        };
-        let _ = self.dispatch(Command::SetPose {
-            bone: self.selected,
-            target,
-            transform: local,
-            properties: properties.to_vec(),
-        });
+        self.selection = Some(item.clone());
+        self.mesh_vertex = 0;
+        self.mesh_triangle = 0;
+        if self.tool == Tool::Mesh
+            && !matches!(
+                item.attachment()
+                    .and_then(|k| self.session.document().attachment(k)),
+                Some(Attachment::Mesh(_))
+            )
+        {
+            self.tool = self.last_tool;
+        }
+        self.tree
+            .reveal(self.session.document(), &self.skin, self.setup_mode, &item);
     }
-
+    fn activate_skin(&mut self, skin: String) {
+        if selection::active_skin_exists(self.session.document(), &skin) {
+            self.cancel_gesture();
+            self.skin = skin;
+            self.reconcile_selection();
+        }
+    }
+    fn activate_animation(&mut self, animation: usize) {
+        if animation < self.session.document().animations.len() {
+            self.cancel_gesture();
+            self.animation = animation;
+            self.time = 0.0;
+            self.setup_mode = false;
+        }
+    }
     fn reconcile_selection(&mut self) {
-        (self.selected, self.animation) =
-            reconciled_indices(self.session.document(), self.selected, self.animation);
+        selection::reconcile(&mut self.selection, self.session.document());
+        self.animation = self
+            .animation
+            .min(self.session.document().animations.len().saturating_sub(1));
+        if !selection::active_skin_exists(self.session.document(), &self.skin) {
+            self.skin = preferred_skin(self.session.document());
+        }
         self.time = self.time.clamp(0.0, self.duration());
         if self.session.document().animations.is_empty() {
             self.playing = false;
             self.setup_mode = true;
         }
+        self.hidden_bones
+            .retain(|&i| i < self.session.document().bones.len());
+        self.hidden_slots
+            .retain(|&i| i < self.session.document().slots.len());
         self.reconcile_attachment();
     }
     fn undo(&mut self) {
         self.session.undo();
         self.drag = None;
-        self.drag_preview = None;
         self.mesh_drag = None;
         self.reconcile_selection();
     }
     fn redo(&mut self) {
         self.session.redo();
         self.drag = None;
-        self.drag_preview = None;
         self.mesh_drag = None;
         self.reconcile_selection();
     }
@@ -310,14 +420,15 @@ impl Editor {
                         } else {
                             None
                         };
-                    self.selected = 0;
-                    self.has_selection = true;
+                    self.selection = Some(TreeItem::Skeleton);
                     self.animation = 0;
                     self.time = 0.0;
                     self.playing = false;
                     self.fit = true;
                     self.skin = preferred_skin(self.session.document());
-                    self.mesh_attachment = None;
+                    self.tree = TreeState::for_document(self.session.document(), &self.skin);
+                    self.hidden_bones.clear();
+                    self.hidden_slots.clear();
                     self.mesh_drag = None;
                     self.reconcile_selection();
                     self.error = None;
@@ -497,7 +608,16 @@ impl eframe::App for Editor {
                 ) {
                     eprintln!("Capture failed: {e}");
                 }
-                let report = serde_json::json!({"document":self.session.document(),"selectedBone":self.selected,"hasSelection":self.has_selection,"tool":match self.tool {Tool::Rotate=>"rotate",Tool::Move=>"translate",Tool::Mesh=>"vertices"},"treeVisible":self.show_tree,"dopesheetVisible":!self.setup_mode && self.show_dopesheet,"animation":self.animation,"time":self.time,"playing":self.playing,"looping":self.looping,"zoom":self.zoom,"setupMode":self.setup_mode,"dirty":self.session.is_dirty(),"imageCount":self.textures.len(),"selectedAttachment":self.mesh_attachment,"selectedVertex":self.mesh_vertex,"targets":self.capture_targets,"meshHandles":self.mesh_handles,"innerSize":[ctx.content_rect().width(),ctx.content_rect().height()]});
+                let report = serde_json::json!({
+                    "document":self.session.document(),"selection":self.selection.as_ref().map(TreeItem::diagnostic),
+                    "selectedBone":self.selected_bone(),"hasSelection":self.selection.is_some(),
+                    "tool":match self.tool {Tool::Rotate=>"rotate",Tool::Move=>"translate",Tool::Mesh=>"vertices"},
+                    "treeVisible":self.show_tree,"dopesheetVisible":!self.setup_mode && self.show_dopesheet,
+                    "animation":self.animation,"skin":self.skin,"time":self.time,"playing":self.playing,"looping":self.looping,"zoom":self.zoom,
+                    "setupMode":self.setup_mode,"dirty":self.session.is_dirty(),"imageCount":self.textures.len(),
+                    "selectedAttachment":self.selected_attachment(),"selectedVertex":self.mesh_vertex,"hiddenSlots":self.hidden_slots,
+                    "targets":self.capture_targets,"meshHandles":self.mesh_handles,"innerSize":[ctx.content_rect().width(),ctx.content_rect().height()]
+                });
                 let _ = std::fs::write(
                     path.with_extension("json"),
                     serde_json::to_vec_pretty(&report).unwrap_or_default(),
@@ -522,13 +642,6 @@ fn preferred_skin(doc: &Document) -> String {
         .unwrap_or_default()
 }
 
-fn reconciled_indices(doc: &Document, bone: usize, animation: usize) -> (usize, usize) {
-    (
-        bone.min(doc.bones.len().saturating_sub(1)),
-        animation.min(doc.animations.len().saturating_sub(1)),
-    )
-}
-
 trait PropertyLabel {
     fn label(self) -> &'static str;
 }
@@ -541,34 +654,5 @@ impl PropertyLabel for Property {
             Self::ScaleX => "Scale X",
             Self::ScaleY => "Scale Y",
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn selection_is_valid_after_undoing_a_selected_bone_addition() {
-        let doc: Document = serde_json::from_str(include_str!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/../../examples/peach-bot/peach-bot.peachy"
-        )))
-        .unwrap();
-        let mut session = Session::new(doc).unwrap();
-        session
-            .dispatch(Command::AddBone {
-                bone: Bone {
-                    name: "new".into(),
-                    parent: Some(0),
-                    length: 30.0,
-                    setup: Transform::default(),
-                },
-            })
-            .unwrap();
-        let selected = session.document().bones.len() - 1;
-        session.undo();
-        let (bone, animation) = reconciled_indices(session.document(), selected, 999);
-        assert!(session.document().bones.get(bone).is_some());
-        assert!(session.document().animations.get(animation).is_some());
     }
 }

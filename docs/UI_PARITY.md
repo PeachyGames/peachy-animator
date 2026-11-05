@@ -40,8 +40,9 @@ attachment properties. Interpolation labels are Linear, Stepped and Bezier.
 
 - Align detailed spacing, fonts, control sizing, tool glyphs and visual states using
   Setup/Animate reference screenshots at matched viewport sizes.
-- Complete the typed Tree for bones, slots, attachments, skins and animations,
-  with reference selection/filter/visibility behavior and contextual properties.
+- Extend the typed Tree with multi/range selection, selection history, rename/create
+  workflows and drag/drop parenting/draw order. Introduce stable IDs before deletion
+  or reparenting. Exact glyphs, spacing and every Tree preference remain to align.
 - Match main tool organization, Scale/Shear/Pose/Create tools and axis selectors.
   Numeric scale controls currently have no canvas Scale tool.
 - Add movable tabs, docking, saved workspace state and the Graph view. Tree and
@@ -64,3 +65,36 @@ Export/runtime checks establish separate data compatibility, not UI parity.
 Local reference captures stay outside Git. Repository screenshots contain our own
 application and original artwork. No proprietary implementation or UI assets are
 extracted or copied into the project.
+
+## Tree and selection slice
+
+The Tree now distinguishes skeleton, bones, slots, skin placeholders, attachments,
+skins and animations. Names select their own properties. A skin/animation's visibility
+dot activates it separately, following the public
+[Tree](https://en.esotericsoftware.com/spine-tree),
+[Skins view](https://esotericsoftware.com/spine-skins-view), and
+[Animations view](https://en.esotericsoftware.com/spine-animations-view) behavior.
+Named skin placeholders show the active attachment; default attachments remain
+available through fallback. Show all skin attachments exposes inactive appearances
+for inspection, with editing blocked until their skin is active.
+
+Search retains ancestors and reveals matches through collapsed branches. Type filters
+include quick Bones/Slots/Attachments views. Slots without bones are projected in
+draw order. Attachment-filtered viewport picking selects a slot; a selected slot has
+no implicit bone transform target. Branch arrows toggle a node, right-click toggles
+its descendants, and expand/collapse-all controls are available.
+
+Bone/slot visibility dots are temporary editor state. Setup attachment dots change
+which placeholder the slot shows and are undoable document edits. That distinction
+follows the [slots guide](https://en.esotericsoftware.com/spine-slots/) and
+[keying guide](https://en.esotericsoftware.com/spine-keys). Attachment timelines in
+Animate remain unsupported; these controls do not silently change the setup pose.
+On macOS, the app's own standard Hide menu relinquishes Cmd+H so Show All can receive
+it; the menu action remains available. No other application's menu is changed.
+
+Setup region transforms, bone length and slot setup attachment use shared commands.
+The transform toolbar acts only on the selected bone or an editable setup region.
+Mesh vertex controls require selecting the mesh itself. Pointer gestures commit as
+one history entry and Escape cancels them. Viewport picking uses triangles in reverse
+slot order; transparent pixels are not sampled. Pixel-aware picking, mesh-wide
+transforms, multi-selection and full Tree parity remain future work.

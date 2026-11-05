@@ -83,3 +83,26 @@ pass after the installed Spine Editor 4.3.26 round trip and the shared packed ex
 The editor retained all three meshes' vertices, UVs, triangles, hulls and edges exactly.
 These checks establish sampled geometry/format agreement; they do not establish pixel
 rendering equivalence, weight/deform behavior or complete Spine parity.
+
+## Tree editing slice
+
+The native Tree and viewport now share typed selection for bones, slots, placeholders,
+attachments, skins and animations. Setup region transforms, bone lengths and slot
+setup attachments are shared commands, used by both frontends. Native format stays v2;
+export remains the same bounded Spine 4.3 JSON target.
+
+Skin/animation activation, search, type filtering and temporary visibility are editor
+state and do not change exported data. Attachment visibility in Setup changes the
+slot's saved setup attachment and supports undo. Attachment timelines in Animate remain
+unsupported. Inactive appearances can be inspected, while GUI editing requires their
+skin to be active. CLI commands address explicit attachment keys and can edit any skin.
+
+Viewport picking uses triangulated geometry and slot draw order; it does not sample
+image alpha. Only selected bones and editable setup regions expose transform controls;
+slots have no implicit bone transform target. Full Tree/selection parity and other
+interaction limits remain in UI_PARITY.md.
+
+The external harness now compares region world corners too, identifying corner pairs
+by their UVs through the official public RegionAttachment API. The unmodified mesh
+fixture passes 28,560 region coordinates (maximum error 0.000030518), alongside its
+existing 5,100 mesh and 27,540 bone values across all three skins and two clips.

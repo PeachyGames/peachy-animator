@@ -263,6 +263,129 @@ fn validates_cycles_and_nonfinite_transforms() {
 fn original() -> Document {
     serde_json::from_str(include_str!("../../../examples/peach-bot/peach-bot.peachy")).unwrap()
 }
+
+#[test]
+fn contextual_edits_change_only_the_addressed_entity_and_undo_atomically() {
+    let before = original();
+    let mut session = Session::new(before.clone()).unwrap();
+    let head = AttachmentRef {
+        skin: "peach".into(),
+        slot: "head".into(),
+        placeholder: "head".into(),
+    };
+    session.begin_transaction();
+    for x in [2., 4., 9.] {
+        session
+            .dispatch(Command::SetRegionTransform {
+                attachment: head.clone(),
+                transform: Transform {
+                    x,
+                    rotation: 25.,
+                    ..Default::default()
+                },
+            })
+            .unwrap();
+    }
+    session.commit_transaction();
+    let edited = session.document().clone();
+    assert_eq!(edited.bones, before.bones);
+    assert_eq!(edited.slots, before.slots);
+    assert_eq!(edited.skins["mint"], before.skins["mint"]);
+    session.undo();
+    assert_eq!(session.document(), &before);
+    session.redo();
+    assert_eq!(session.document(), &edited);
+    let slot = before.slots.iter().position(|s| s.name == "head").unwrap();
+    session
+        .dispatch(Command::SetSlotAttachment {
+            slot,
+            attachment: None,
+        })
+        .unwrap();
+    assert!(
+        session
+            .document()
+            .resolved_attachment("peach", slot)
+            .is_none()
+    );
+    session.undo();
+    assert_eq!(session.document(), &edited);
+    for command in [
+        Command::SetSlotAttachment {
+            slot,
+            attachment: Some("unknown".into()),
+        },
+        Command::SetBoneLength {
+            bone: 0,
+            length: -1.,
+        },
+        Command::SetBoneLength {
+            bone: 0,
+            length: f32::NAN,
+        },
+        Command::SetRegionTransform {
+            attachment: head.clone(),
+            transform: Transform {
+                x: f32::INFINITY,
+                ..Default::default()
+            },
+        },
+        Command::Batch {
+            commands: vec![
+                Command::SetSlotAttachment {
+                    slot,
+                    attachment: None,
+                },
+                Command::SetRegionTransform {
+                    attachment: hand(),
+                    transform: Transform::default(),
+                },
+                Command::SetSlotAttachment {
+                    slot: 99,
+                    attachment: None,
+                },
+            ],
+        },
+    ] {
+        assert!(session.dispatch(command).is_err());
+        assert_eq!(session.document(), &edited);
+    }
+}
+
+#[test]
+fn picking_respects_triangles_draw_order_reflections_and_visibility_bounds() {
+    let make = |slot, vertices: Vec<[f32; 2]>, triangles: Vec<u32>| AttachmentDraw {
+        slot,
+        attachment: hand(),
+        image: "original".into(),
+        hull: vertices.len(),
+        uvs: vec![[0., 0.]; vertices.len()],
+        vertices,
+        triangles,
+    };
+    let mut draws = vec![
+        make(
+            0,
+            vec![[-1., -1.], [1., -1.], [1., 1.], [-1., 1.]],
+            vec![0, 1, 2, 0, 2, 3],
+        ),
+        make(1, vec![[0., 0.], [2., 0.], [0., 2.]], vec![0, 1, 2]),
+    ];
+    assert_eq!(pick_attachment(&draws, [0.2, 0.2]).unwrap().slot, 1);
+    assert_eq!(pick_attachment(&draws, [-0.5, -0.5]).unwrap().slot, 0);
+    assert!(pick_attachment(&draws, [1.5, 1.5]).is_none());
+    assert!(pick_attachment(&draws, [f32::NAN, 0.]).is_none());
+    for draw in &mut draws {
+        for p in &mut draw.vertices {
+            p[0] *= -1.;
+        }
+    }
+    assert_eq!(pick_attachment(&draws, [-0.2, 0.2]).unwrap().slot, 1);
+    let visible = &draws[..1];
+    assert_eq!(pick_attachment(visible, [-0.2, 0.2]).unwrap().slot, 0);
+    assert_eq!(attachment_bounds(visible).unwrap().max, [1., 1.]);
+    assert_eq!(attachment_bounds(&draws).unwrap().min, [-2., -1.]);
+}
 fn hand() -> AttachmentRef {
     AttachmentRef {
         skin: "default".into(),

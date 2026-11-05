@@ -14,6 +14,18 @@ pub enum Command {
         bone: usize,
         transform: Transform,
     },
+    SetBoneLength {
+        bone: usize,
+        length: f32,
+    },
+    SetRegionTransform {
+        attachment: AttachmentRef,
+        transform: Transform,
+    },
+    SetSlotAttachment {
+        slot: usize,
+        attachment: Option<String>,
+    },
     SetKey {
         animation: usize,
         bone: usize,
@@ -121,6 +133,30 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
         }
         Command::SetSetup { bone, transform } => {
             doc.bones.get_mut(bone).ok_or("Unknown bone")?.setup = transform
+        }
+        Command::SetBoneLength { bone, length } => {
+            doc.bones.get_mut(bone).ok_or("Unknown bone")?.length = length;
+        }
+        Command::SetRegionTransform {
+            attachment,
+            transform,
+        } => {
+            let Some(Attachment::Region(region)) = doc.attachment_mut(&attachment) else {
+                return Err("Unknown region attachment".into());
+            };
+            region.transform = transform;
+        }
+        Command::SetSlotAttachment { slot, attachment } => {
+            let target = doc.slots.get(slot).ok_or("Unknown slot")?;
+            if let Some(placeholder) = &attachment
+                && !doc.skins.values().any(|skin| {
+                    skin.get(&target.name)
+                        .is_some_and(|entries| entries.contains_key(placeholder))
+                })
+            {
+                return Err("Unknown attachment placeholder for slot".into());
+            }
+            doc.slots[slot].attachment = attachment;
         }
         Command::ConvertRegionToMesh { attachment } => {
             let value = doc

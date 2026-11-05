@@ -1,4 +1,5 @@
 mod editor;
+mod platform;
 use editor::Editor;
 use eframe::egui;
 use std::path::PathBuf;

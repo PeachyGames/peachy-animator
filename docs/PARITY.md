@@ -7,7 +7,7 @@ comparison. The native `.peachy` format is our own editable model.
 
 | Spine capability | Current implementation | Evidence or remaining gate |
 | --- | --- | --- |
-| Workspace, controls and conventions | First alignment pass; explicit ongoing requirement | See [UI parity](UI_PARITY.md); finish interaction gaps before weight-painting UI |
+| Workspace, controls and conventions | Layout/shortcut alignment plus typed Tree, contextual selection, filters, activation dots and picking | See [UI parity](UI_PARITY.md); unkeyed poses, multi-selection, tool axes and docking remain before weight-painting UI |
 | Bone hierarchy and transforms | Normal inheritance, translation, rotation, scale | Sampled world matrices; still needs shear and other inheritance modes |
 | Region attachments and skins | Image transforms, named skins, default fallback, fixed slot draw order | Native editor round trip and external runtime |
 | Unweighted mesh attachments | Import/export explicit UVs, topology, hull, setup vertices | Three original meshes round-trip through editor with identical data; runtime world vertices and atlas UVs agree |

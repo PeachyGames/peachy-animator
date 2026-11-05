@@ -90,3 +90,20 @@ No proprietary interface source, font, icon or other UI asset was extracted.
 The local Spine reference was opened with our original project using its documented
 CLI project argument. UI_PARITY.md records acceptance requirements and outstanding
 visual/behavioral differences, independently of data-format compatibility.
+
+## Tree and selection behavior
+
+The typed Tree follows public descriptions of
+[Tree nodes and filters](https://en.esotericsoftware.com/spine-tree),
+[slot visibility](https://en.esotericsoftware.com/spine-slots/),
+[skin activation](https://esotericsoftware.com/spine-skins-view), and
+[animation activation](https://en.esotericsoftware.com/spine-animations-view).
+Node selection and visibility-dot activation are implemented as distinct view actions.
+Slot setup attachments, bone lengths and region transforms use our independent engine
+commands. Triangle picking uses general signed-area geometry and inverse slot draw
+order; no official selection or rendering implementation was read.
+
+The public RegionAttachment declaration from the separately installed runtime was read
+to call getOffsets, computeWorldVertices and Sequence UV access in the oracle. The
+extended harness identifies region corners by UV rather than assuming vertex order.
+All compatibility inputs remain our original Peach Bot artwork and rigs.

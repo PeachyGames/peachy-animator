@@ -1,0 +1,17 @@
+{
+  "typedTreeSelection": true,
+  "contextualRegionEdit": true,
+  "viewportAttachmentPick": true,
+  "singleUndoPerRegionDrag": true,
+  "slotFilterRoutesViewportSelection": true,
+  "slotNudgeCannotEditBone": true,
+  "temporaryVisibilityDoesNotDirty": true,
+  "skinInspectionSeparateFromActivation": true,
+  "inactiveSkinEditBlocked": true,
+  "setupAttachmentVisibility": true,
+  "animationInspectionSeparateFromActivation": true,
+  "playback": true,
+  "saveAndReopen": true,
+  "verifiedSaveBackups": 4,
+  "originalDocumentRestored": true
+}

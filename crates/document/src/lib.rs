@@ -382,13 +382,23 @@ impl Document {
         skin: &str,
         slot: usize,
     ) -> Option<(AttachmentRef, &Attachment)> {
+        let attachment = self.slots.get(slot)?.attachment.as_ref()?;
+        self.resolve_attachment(skin, slot, attachment)
+    }
+
+    /// Resolve any placeholder, including ones not currently shown by the slot.
+    pub fn resolve_attachment(
+        &self,
+        skin: &str,
+        slot: usize,
+        placeholder: &str,
+    ) -> Option<(AttachmentRef, &Attachment)> {
         let slot = self.slots.get(slot)?;
-        let attachment = slot.attachment.as_ref()?;
         for name in [skin, "default"] {
             let key = AttachmentRef {
                 skin: name.into(),
                 slot: slot.name.clone(),
-                placeholder: attachment.clone(),
+                placeholder: placeholder.into(),
             };
             if let Some(value) = self.attachment(&key) {
                 return Some((key, value));

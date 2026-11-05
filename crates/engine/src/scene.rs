@@ -61,7 +61,6 @@ pub fn evaluate_scene(
     }
     let world = world_pose(doc, &locals);
     let mut attachments = vec![];
-    let mut bounds: Option<Bounds> = None;
     for (slot_index, slot) in doc.slots.iter().enumerate() {
         let Some((key, attachment)) = doc.resolved_attachment(skin, slot_index) else {
             continue;
@@ -84,16 +83,6 @@ pub fn evaluate_scene(
             .into_iter()
             .map(|p| world[slot.bone].point(p[0], p[1]))
             .collect();
-        for &point in &vertices {
-            let bounds = bounds.get_or_insert(Bounds {
-                min: point,
-                max: point,
-            });
-            for (i, value) in point.into_iter().enumerate() {
-                bounds.min[i] = bounds.min[i].min(value);
-                bounds.max[i] = bounds.max[i].max(value);
-            }
-        }
         attachments.push(AttachmentDraw {
             slot: slot_index,
             attachment: key,
@@ -104,6 +93,7 @@ pub fn evaluate_scene(
             hull,
         });
     }
+    let bounds = crate::attachment_bounds(&attachments);
     Scene {
         locals,
         world,

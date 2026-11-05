@@ -4,7 +4,7 @@ A native 2D skeletal animation editor from Team Peachy, with an independent Rust
 core and Spine-compatible exports. The current slice adds editable unweighted
 meshes; this is still a bounded subset of Spine.
 
-![Peach Bot in the editor](docs/workspace-setup.png)
+![Peach Bot in the editor](docs/tree-editor.png)
 
 ## Try it
 
@@ -31,18 +31,19 @@ properties right, transform controls below the viewport, and Dopesheet below tho
 in Animate mode. UI parity is an ongoing acceptance requirement; see the
 [UI parity contract](docs/UI_PARITY.md) for remaining differences.
 
-In Setup, select the hand.R bone in the Tree, then **Vertices** in its attachment
-properties and drag a numbered vertex. The **Mesh** checkbox converts a region
+In Setup, expand the hand.R bone and slot, select its mesh attachment, then choose
+**Vertices** in the attachment properties and drag a numbered vertex. The **Mesh** checkbox converts a region
 to a four-corner mesh; existing mesh triangles can be split at their centers.
 Setup vertex movement deforms the image while UVs stay fixed; each canvas
 drag is one undo step, and Escape cancels the current drag.
 This corresponds to Spine's setup vertex transforms. UV editing, freeform hull
 creation, weights and animated deform keys are not implemented yet.
 
-![Animate workspace](docs/workspace-animate.png)
+![Animate workspace](docs/tree-animate.png)
 
 1. Switch to **Animate** at the viewport's upper left; press **D** to play/stop.
-2. Select a bone in the viewport or right-side Tree; **C** rotates, **V** translates.
+2. Select a bone or region attachment in the viewport or Tree; **C** rotates, **V**
+   translates. Attachment transforms are available in Setup.
 3. Use the transform fields below the viewport. **L** keys the active transform;
    **Cmd/Ctrl+L** keys all supported transforms for the selected bone.
 4. Scrub the Dopesheet; use **R/F** for next/previous frame and **Shift+R/F** for ten.
@@ -56,10 +57,25 @@ right-drag pans, and right-click switches the last two tools. **F9** hides/resto
 capture folder. The app currently runs from its source checkout; an installer and
 bundled-resource packaging are later work.
 
+## Tree workflow
+
+Select an item's **name** to inspect it. Use a skin or animation's **visibility dot**
+to make it active. Activating a skin or animation does not dirty the project. Slot
+visibility dots temporarily hide artwork; Cmd/Ctrl+H restores hidden items.
+Attachment dots in Setup change the slot's saved setup attachment and support undo.
+
+Search reveals matching branches. The Bones, Slots and Attachments filters provide
+quick views; Slots lists the rig in draw order. When attachments are filtered out,
+clicking artwork in the viewport selects its slot. Only the selected entity's
+supported controls can edit it. Inactive skin attachments remain inspectable.
+
 ## What works
 
 - Hierarchical bones with position, rotation and nonuniform scale.
 - Layered region attachments, draw order, skins and default-skin fallback.
+- A typed Tree for bones, slots, skin placeholders, attachments, skins and animations,
+  with search, type filters, branch controls, temporary visibility and contextual properties.
+- Shared commands for bone length, region setup transforms and a slot’s setup attachment.
 - Unweighted meshes with explicit UVs, triangles and hulls, setup vertex editing,
   region conversion and triangle subdivision.
 - Deterministic timeline playback, scrubbing, frame stepping and looping.

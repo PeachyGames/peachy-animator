@@ -37,3 +37,5 @@ Track concrete Spine behavior and gaps in `docs/PARITY.md`. Check new geometry a
 Never claim full Spine compatibility. Reject unsupported features on import and preserve the input unchanged. List supported version and feature subset in `docs/COMPATIBILITY.md`. New export fixtures belong here, not in the artist repository.
 
 For headed browser verification, follow the workspace's `ab-headed`/`ab-cdp` isolation rules. Use a unique task session and the approved browser.
+
+The Tree and viewport share one typed `Option<TreeItem>` presentation selection. A slot, skin, animation or attachment must never use a cached bone as an edit target. Selecting a name and activating its visibility dot are separate actions. Skin/animation activation and temporary bone/slot visibility stay outside document history; setup attachment visibility is an explicit `SetSlotAttachment` command. Reconcile invalid selections by clearing them, not redirecting an edit to another entity. Keep outline/search/filter rules pure in `tree_model.rs`, controls in the shell, and picking/bounds in the engine.

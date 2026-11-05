@@ -2,29 +2,21 @@ use super::*;
 
 impl Editor {
     pub(super) fn enter_mesh_tool(&mut self) {
-        self.set_tool(Tool::Mesh);
-        self.has_selection = true;
-        self.setup_mode = true;
-        self.playing = false;
-        self.drag = None;
-        self.drag_preview = None;
-        self.reconcile_attachment();
-    }
-
-    pub(super) fn reconcile_attachment(&mut self) {
-        let choices = self.attachment_choices();
-        if !self
-            .mesh_attachment
-            .as_ref()
-            .is_some_and(|key| choices.contains(key))
+        if let Some(key) = self.selected_attachment().cloned()
+            && self.attachment_editable(&key)
+            && matches!(
+                self.session.document().attachment(&key),
+                Some(Attachment::Mesh(_))
+            )
         {
-            self.mesh_attachment = choices.into_iter().next();
-            self.mesh_vertex = 0;
-            self.mesh_triangle = 0;
+            self.set_tool(Tool::Mesh);
+            self.setup_mode = true;
+            self.playing = false;
         }
+    }
+    pub(super) fn reconcile_attachment(&mut self) {
         if let Some(Attachment::Mesh(m)) = self
-            .mesh_attachment
-            .as_ref()
+            .selected_attachment()
             .and_then(|k| self.session.document().attachment(k))
         {
             self.mesh_vertex = self.mesh_vertex.min(m.vertices.len() - 1);
@@ -34,49 +26,14 @@ impl Editor {
             self.mesh_triangle = 0;
         }
     }
-
-    fn attachment_choices(&self) -> Vec<AttachmentRef> {
-        self.session
-            .document()
-            .slots
-            .iter()
-            .enumerate()
-            .filter(|(_, s)| s.bone == self.selected)
-            .filter_map(|(i, _)| {
-                self.session
-                    .document()
-                    .resolved_attachment(&self.skin, i)
-                    .map(|(key, _)| key)
-            })
-            .collect()
-    }
     pub(super) fn attachment_panel(&mut self, ui: &mut egui::Ui) {
-        self.reconcile_attachment();
-        let choices = self.attachment_choices();
-        if choices.is_empty() {
-            return;
-        }
-        ui.label(RichText::new("ATTACHMENT").small().color(MUTED));
-        egui::ComboBox::from_id_salt("attachment")
-            .selected_text(
-                self.mesh_attachment
-                    .as_ref()
-                    .map_or("", |k| k.slot.as_str()),
-            )
-            .show_ui(ui, |ui| {
-                for key in choices {
-                    let label = key.slot.clone();
-                    ui.selectable_value(&mut self.mesh_attachment, Some(key), label);
-                }
-            });
-        let Some(key) = self.mesh_attachment.clone() else {
+        let Some(key) = self.selected_attachment().cloned() else {
             return;
         };
-        ui.label(
-            RichText::new(format!("Skin: {}", key.skin))
-                .small()
-                .color(MUTED),
-        );
+        if !self.attachment_editable(&key) {
+            ui.label("Activate this skin to edit the attachment.");
+            return;
+        }
         let Some(attachment) = self.session.document().attachment(&key) else {
             return;
         };

@@ -68,40 +68,6 @@ impl Editor {
         });
     }
 
-    pub(super) fn hierarchy(&mut self, ui: &mut egui::Ui) {
-        self.record_target("tree", ui.max_rect());
-        ui.label(RichText::new("Tree").strong());
-        ui.separator();
-        ui.label(RichText::new(&self.session.document().name).color(ACCENT));
-        let bones = &self.session.document().bones;
-        egui::ScrollArea::vertical()
-            .id_salt("tree-scroll")
-            .show(ui, |ui| {
-                for (i, bone) in bones.iter().enumerate() {
-                    let mut depth = 0;
-                    let mut parent = bone.parent;
-                    while let Some(p) = parent {
-                        depth += 1;
-                        parent = bones[p].parent;
-                    }
-                    ui.horizontal(|ui| {
-                        ui.add_space(depth as f32 * 12.0);
-                        let row = ui.selectable_label(
-                            self.has_selection && i == self.selected,
-                            format!("◇  {}", bone.name),
-                        );
-                        let r = row.rect;
-                        self.capture_targets
-                            .insert(format!("bone:{i}"), [r.min.x, r.min.y, r.max.x, r.max.y]);
-                        if row.clicked() {
-                            self.selected = i;
-                            self.has_selection = true;
-                        }
-                    });
-                }
-            });
-    }
-
     pub(super) fn main_tools(&mut self, ui: &mut egui::Ui) {
         self.record_target("mainTools", ui.max_rect());
         ui.horizontal(|ui| {
@@ -112,8 +78,8 @@ impl Editor {
             });
             ui.separator();
             ui.vertical(|ui| {
-                if self.has_selection {
-                    ui.label(RichText::new(&self.session.document().bones[self.selected].name).color(ACCENT));
+                if let Some(item)=&self.selection {
+                    ui.label(RichText::new(item.label(self.session.document())).color(ACCENT));
                 } else {
                     ui.label(RichText::new("No selection").color(MUTED));
                 }
@@ -134,8 +100,8 @@ impl Editor {
         properties: &[Property],
         tool: Option<Tool>,
     ) {
-        let mut pose =
-            local_pose(self.session.document(), self.active_animation(), self.time)[self.selected];
+        let mut pose = self.selected_transform().unwrap_or_default();
+        let editable = self.transform_editable();
         ui.horizontal(|ui| {
             if let Some(tool) = tool {
                 let response = ui.add_sized(
@@ -162,7 +128,7 @@ impl Editor {
             } else {
                 ui.add_sized([112.0, 22.0], egui::Label::new(label));
             }
-            ui.add_enabled_ui(self.has_selection, |ui| {
+            ui.add_enabled_ui(editable, |ui| {
                 for &property in properties {
                     let mut value = property.read(pose);
                     if property != Property::Rotation {
@@ -200,156 +166,105 @@ impl Editor {
         });
     }
 
-    pub(super) fn inspector(&mut self, ui: &mut egui::Ui) {
-        self.record_target("properties", ui.clip_rect());
-        ui.label(RichText::new("Properties").strong());
+    pub(super) fn bone_curves(&mut self, ui: &mut egui::Ui, bone: usize) {
+        ui.add_space(10.0);
         ui.separator();
-        if !self.has_selection {
-            ui.label(RichText::new("Select an item in the Tree or viewport.").color(MUTED));
-            return;
-        }
-        ui.label(
-            RichText::new(format!(
-                "Bone: {}",
-                self.session.document().bones[self.selected].name
-            ))
-            .color(ACCENT),
-        );
-        self.attachment_panel(ui);
-        if self.setup_mode {
-            ui.collapsing("New bone", |ui| {
-                ui.text_edit_singleline(&mut self.new_bone);
-                if ui.button("Create child bone").clicked() {
-                    let parent = self.selected;
-                    if self.dispatch(Command::AddBone {
-                        bone: Bone {
-                            name: self.new_bone.trim().to_owned(),
-                            parent: Some(parent),
-                            length: 60.0,
-                            setup: Transform {
-                                x: self.session.document().bones[parent].length,
-                                ..Default::default()
-                            },
-                        },
-                    }) {
-                        self.selected = self.session.document().bones.len() - 1;
-                        self.new_bone.clear();
-                    }
+        ui.label(RichText::new("Key interpolation").small().color(MUTED));
+        let time = self.snapped_time();
+        let keys: Vec<_> = self
+            .session
+            .document()
+            .animations
+            .get(self.animation)
+            .into_iter()
+            .flat_map(|a| a.tracks.iter())
+            .filter(|t| t.bone == bone)
+            .filter_map(|track| {
+                track
+                    .keys
+                    .iter()
+                    .find(|k| same_key_time(k.time, time))
+                    .map(|key| (track.property, *key))
+            })
+            .collect();
+        let mut found = false;
+        for (property, key) in keys {
+            found = true;
+            let mut curve = key.curve;
+            ui.label(property.label());
+            ui.horizontal(|ui| {
+                if ui
+                    .selectable_label(curve == Curve::Linear, "Linear")
+                    .clicked()
+                {
+                    curve = Curve::Linear;
+                }
+                if ui
+                    .selectable_label(curve == Curve::Stepped, "Stepped")
+                    .clicked()
+                {
+                    curve = Curve::Stepped;
+                }
+                if ui
+                    .selectable_label(matches!(curve, Curve::Bezier(_)), "Bezier")
+                    .clicked()
+                {
+                    curve = Curve::Bezier([0.42, 0.0, 0.58, 1.0]);
                 }
             });
-        }
-        if !self.setup_mode {
-            ui.add_space(10.0);
-            ui.separator();
-            ui.label(RichText::new("Key interpolation").small().color(MUTED));
-            let time = self.snapped_time();
-            let keys: Vec<_> = self
-                .session
-                .document()
-                .animations
-                .get(self.animation)
-                .into_iter()
-                .flat_map(|a| a.tracks.iter())
-                .filter(|t| t.bone == self.selected)
-                .filter_map(|track| {
-                    track
-                        .keys
-                        .iter()
-                        .find(|k| same_key_time(k.time, time))
-                        .map(|key| (track.property, *key))
-                })
-                .collect();
-            let mut found = false;
-            for (property, key) in keys {
-                found = true;
-                let mut curve = key.curve;
-                ui.label(property.label());
-                ui.horizontal(|ui| {
-                    if ui
-                        .selectable_label(curve == Curve::Linear, "Linear")
-                        .clicked()
-                    {
-                        curve = Curve::Linear;
+            if let Curve::Bezier(ref mut handles) = curve {
+                for (i, label) in ["Time 1", "Value 1", "Time 2", "Value 2"]
+                    .iter()
+                    .enumerate()
+                {
+                    let range = if i % 2 == 0 { 0.0..=1.0 } else { -1.0..=2.0 };
+                    let response = ui.add(egui::Slider::new(&mut handles[i], range).text(*label));
+                    if response.drag_started() {
+                        self.session.begin_transaction();
                     }
-                    if ui
-                        .selectable_label(curve == Curve::Stepped, "Stepped")
-                        .clicked()
-                    {
-                        curve = Curve::Stepped;
-                    }
-                    if ui
-                        .selectable_label(matches!(curve, Curve::Bezier(_)), "Bezier")
-                        .clicked()
-                    {
-                        curve = Curve::Bezier([0.42, 0.0, 0.58, 1.0]);
-                    }
+                }
+                if handles[0] > handles[2] {
+                    handles.swap(0, 2);
+                }
+                let (r, _) =
+                    ui.allocate_exact_size(vec2(ui.available_width(), 66.0), Sense::hover());
+                let points: Vec<_> = (0..=40)
+                    .map(|i| {
+                        let t = i as f32 / 40.0;
+                        pos2(
+                            r.left() + r.width() * t,
+                            r.bottom() - r.height() * peachy_engine::curve_progress(curve, t),
+                        )
+                    })
+                    .collect();
+                ui.painter()
+                    .rect_filled(r, 4.0, Color32::from_rgb(21, 26, 33));
+                ui.painter()
+                    .add(egui::Shape::line(points, Stroke::new(2.0, MINT)));
+            }
+            if curve != key.curve {
+                self.playing = false;
+                self.dispatch(Command::SetKey {
+                    animation: self.animation,
+                    bone,
+                    property,
+                    key: Keyframe { curve, ..key },
                 });
-                if let Curve::Bezier(ref mut handles) = curve {
-                    for (i, label) in ["Time 1", "Value 1", "Time 2", "Value 2"]
-                        .iter()
-                        .enumerate()
-                    {
-                        let range = if i % 2 == 0 { 0.0..=1.0 } else { -1.0..=2.0 };
-                        let response =
-                            ui.add(egui::Slider::new(&mut handles[i], range).text(*label));
-                        if response.drag_started() {
-                            self.session.begin_transaction();
-                        }
-                    }
-                    if handles[0] > handles[2] {
-                        handles.swap(0, 2);
-                    }
-                    let (r, _) =
-                        ui.allocate_exact_size(vec2(ui.available_width(), 66.0), Sense::hover());
-                    let points: Vec<_> = (0..=40)
-                        .map(|i| {
-                            let t = i as f32 / 40.0;
-                            pos2(
-                                r.left() + r.width() * t,
-                                r.bottom() - r.height() * peachy_engine::curve_progress(curve, t),
-                            )
-                        })
-                        .collect();
-                    ui.painter()
-                        .rect_filled(r, 4.0, Color32::from_rgb(21, 26, 33));
-                    ui.painter()
-                        .add(egui::Shape::line(points, Stroke::new(2.0, MINT)));
-                }
-                if curve != key.curve {
-                    self.playing = false;
-                    self.dispatch(Command::SetKey {
-                        animation: self.animation,
-                        bone: self.selected,
-                        property,
-                        key: Keyframe { curve, ..key },
-                    });
-                }
-                if ui.small_button("Remove key").clicked() {
-                    self.dispatch(Command::DeleteKey {
-                        animation: self.animation,
-                        bone: self.selected,
-                        property,
-                        time,
-                    });
-                }
             }
-            if !found {
-                ui.label(
-                    RichText::new("Select a diamond on the timeline to edit its curve.")
-                        .color(MUTED),
-                );
+            if ui.small_button("Remove key").clicked() {
+                self.dispatch(Command::DeleteKey {
+                    animation: self.animation,
+                    bone,
+                    property,
+                    time,
+                });
             }
         }
-        ui.add_space(14.0);
-        ui.separator();
-        ui.label(RichText::new("SKIN").small().color(MUTED));
-        egui::ComboBox::from_id_salt("skin")
-            .selected_text(&self.skin)
-            .show_ui(ui, |ui| {
-                for skin in self.session.document().skins.keys() {
-                    ui.selectable_value(&mut self.skin, skin.clone(), skin);
-                }
-            });
+        if !found {
+            ui.label(
+                RichText::new("Select a diamond on the timeline to edit its curve.").color(MUTED),
+            );
+        }
     }
     pub(super) fn timeline(&mut self, ui: &mut egui::Ui) {
         self.record_target("dopesheet", ui.max_rect());
@@ -376,12 +291,16 @@ impl Editor {
                         .map_or("No animation", |a| a.name.as_str()),
                 )
                 .show_ui(ui, |ui| {
-                    for (i, animation) in self.session.document().animations.iter().enumerate() {
-                        if ui
-                            .selectable_value(&mut self.animation, i, &animation.name)
-                            .changed()
-                        {
-                            self.time = 0.0;
+                    let names: Vec<_> = self
+                        .session
+                        .document()
+                        .animations
+                        .iter()
+                        .map(|a| a.name.clone())
+                        .collect();
+                    for (i, name) in names.iter().enumerate() {
+                        if ui.selectable_label(self.animation == i, name).clicked() {
+                            self.activate_animation(i);
                         }
                     }
                 });
@@ -448,7 +367,7 @@ impl Editor {
             );
             if let Some(track) = tracks
                 .iter()
-                .find(|t| self.has_selection && t.bone == self.selected && t.property == property)
+                .find(|t| self.selected_bone() == Some(t.bone) && t.property == property)
             {
                 for key in &track.keys {
                     let x = start + width * key.time / duration;

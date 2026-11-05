@@ -94,3 +94,51 @@ interactive native handoff is retained separately.
 
 Detailed styling, Graph/docking, full Tree entity types, all tool axes and selection
 semantics, unkeyed poses and other controls remain required work in UI_PARITY.md.
+
+## Tree and contextual selection — November 5, 2026
+
+32 Rust tests pass, together with formatting, warnings-denied Clippy, workspace build
+and the six-crate dependency guard. New checks cover placeholder/fallback projection,
+slot filtering in draw order, search ancestors, stale selection clearing, triangle
+picking under reflection, visibility bounds, isolated contextual edits and invalid
+batch atomicity. The previous cache-clamping selection check is replaced by tests
+that require invalid typed selections to clear instead of changing their edit target.
+
+A task-owned native window verifies real mouse/key interactions for Tree search and
+selection, setup region nudging/dragging with one-step undo, attachment picking, slot
+selection when attachments are filtered, disabled bone edits for a selected slot,
+temporary slot hiding, Cmd+H restoration, skin inspection versus activation,
+inactive-skin edit refusal, setup attachment visibility, animation inspection versus
+activation, playback and deselection. The original document is restored at the end.
+
+The native working copy is saved and checked through four verified Save backups.
+Region and slot edits are retained as separate original-art test projects; the CLI
+reopens/exports them. Saved data and diagnostics are compared at the native model's
+f32 precision, rather than requiring identical decimal spellings of the same value.
+The first comparison exposed that harness distinction. A later native run exposed
+macOS's standard Cmd+H Hide menu conflict; the app now relinquishes that menu shortcut
+through safe, app-local AppKit calls. The completed mouse run verifies exact-PID focus
+before every click so other open editor windows cannot receive the interaction.
+
+| Runtime input, all three skins and two clips | Region values | Mesh values | Bone values |
+| --- | --- | --- | --- |
+| Unmodified mesh fixture | 28,560 | 5,100 | 27,540 |
+| GUI-edited region project | 28,560 | 5,100 | 27,540 |
+| GUI-edited slot visibility project | 26,928 | 5,100 | 27,540 |
+| Spine Editor 4.3.26 re-export of GUI edits | 28,560 | 5,100 | 27,540 |
+| Shared packed export of GUI edits | 28,560 | 5,100 | 27,540 |
+
+Maximum region error is 0.000030518 units, mesh error 0.000038147, with a 0.001
+acceptance tolerance. Local/packed mesh UV agreement retains zero observed error.
+The installed editor imports/re-exports the GUI-edited project, and our importer
+accepts that output. The oracle now asserts native regions remain actual region
+attachments and compares their world corners by UV identity through public APIs.
+
+Public original-only reports are `docs/evidence/tree-*`. Current screenshots are
+`docs/tree-editor.png` and `docs/tree-animate.png`. Local working projects, native
+logs, the installed editor's `.spine` output and recovery evidence remain outside Git.
+The test windows are closed; a clean native handoff is retained separately.
+
+Full visual parity, multi/range selection, alpha-aware picking, all Tree preferences,
+rename/reparent/delete, mesh-wide transforms, unkeyed poses, cross-platform builds
+and hosted CI remain outside this slice. Native format and export target are unchanged.

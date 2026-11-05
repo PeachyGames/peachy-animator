@@ -23,8 +23,9 @@ and automated clients. Session adds bounded snapshot history, dirty state and ge
 transactions around that transition. Cancelled gestures preserve the prior redo branch.
 
 Evaluation starts from setup on every call. `evaluate_scene` resolves skins and returns
-world transforms, textured vertex/UV/index buffers in draw order and their common bounds. Its bone drag
-preview is transient input rather than a document edit. Rendering and fit-to-view use
+world transforms, textured vertex/UV/index buffers in draw order and their common bounds. Its optional
+preview remains available to pure callers; the desktop now uses cancellable command
+transactions for both bone and region pointer gestures. Rendering and fit-to-view use
 those same vertices; frontends never rebuild attachment geometry. The external 4.3
 curve observations are recorded in PROVENANCE.md.
 
@@ -84,3 +85,24 @@ commands. Deselecting clears transient view selection; the remembered bone index
 valid for history reconciliation. It does not edit the document. Tree/properties are
 on the right; the viewport, main transform toolbar and Animate-mode Dopesheet occupy
 the left. UI presentation changes do not change the file/engine adapters.
+
+## Typed Tree selection
+
+`editor/selection.rs` holds pure presentation identities. The Tree and viewport use
+one `Option<TreeItem>`; there is no remembered bone index behind a selected slot,
+skin or attachment. Reconciliation clears invalid identities after document changes
+instead of redirecting a later edit. Active animation/skin and temporary visibility
+are separate view state and do not enter document history.
+
+`tree_model.rs` projects the document into an outline without egui, file or GPU calls.
+It resolves placeholders through the document's shared `resolve_attachment` method,
+retains search ancestors, and projects slot-only views in draw order. `tree.rs`
+paints that outline and sends selection/activation/visibility actions; `properties.rs`
+chooses controls for the selected entity. No frontend directly mutates the document.
+
+`SetBoneLength`, `SetRegionTransform` and `SetSlotAttachment` extend the same pure
+command boundary used by the CLI. Slot attachment names are validated against that
+slot's available placeholders. The engine's triangle picking and attachment bounds
+are shared geometry queries, also used after temporary viewport visibility filtering.
+The small macOS application-menu adjustment lives in `apps/desktop/src/platform.rs`,
+using safe AppKit bindings; those dependencies are allowed only in the desktop shell.

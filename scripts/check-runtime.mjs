@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const runtimePath = process.argv[2];
 if (!runtimePath) throw new Error('Supply an absolute path to your separately licensed Spine 4.3 runtime module.');
-const { Texture, TextureAtlas, AtlasAttachmentLoader, SkeletonJson, Skeleton, AnimationState, AnimationStateData, Physics, MeshAttachment } = await import(pathToFileURL(resolve(runtimePath)));
+const { Texture, TextureAtlas, AtlasAttachmentLoader, SkeletonJson, Skeleton, AnimationState, AnimationStateData, Physics, MeshAttachment, RegionAttachment } = await import(pathToFileURL(resolve(runtimePath)));
 class OracleTexture extends Texture {
   constructor(width, height) { super({ width, height }); }
   setFilters() {}
@@ -38,7 +38,7 @@ for (const page of atlas.pages) {
 const sourceProject = JSON.parse(readFileSync(source, 'utf8'));
 const data = new SkeletonJson(new AtlasAttachmentLoader(atlas)).readSkeletonData(readFileSync(exportPath, 'utf8'));
 assert.equal(data.version.split('.').slice(0, 2).join('.'), '4.3');
-const report = { meshComparisons: 0, maxMeshError: 0, uvComparisons: 0, maxUVError: 0, runtime: 'Spine 4.3 external oracle', bones: data.bones.length, slots: data.slots.length, skins:data.skins.map(s=>s.name), clips: [], tolerance: 0.001, maxWorldError: 0, comparisons: 0 };
+const report = { regionComparisons: 0, maxRegionError: 0, meshComparisons: 0, maxMeshError: 0, uvComparisons: 0, maxUVError: 0, runtime: 'Spine 4.3 external oracle', bones: data.bones.length, slots: data.slots.length, skins:data.skins.map(s=>s.name), clips: [], tolerance: 0.001, maxWorldError: 0, comparisons: 0 };
 for (const animation of data.animations) {
   let maxError = 0;
   // Include the exact last frame, boundaries and backwards scrubbing.
@@ -66,18 +66,37 @@ for (const animation of data.animations) {
           report.comparisons++;
         }
       }
-      const actualMeshes = new Map(ours.attachments.map(a=>[a.slot,a]));
+      const actualDraws = new Map(ours.attachments.map(a=>[a.slot,a]));
       for (const draw of ours.attachments) {
         const key=draw.attachment;
         const native=sourceProject.skins[key.skin][key.slot][key.placeholder];
         assert.equal(skeleton.slots[draw.slot].data.name,key.slot,'Slot identity');
         if (native.type==='mesh') assert.ok(skeleton.slots[draw.slot].appliedPose.attachment instanceof MeshAttachment,'Native mesh remains a mesh in the external runtime');
+        if (native.type==='region' || sourceProject.format===1) assert.ok(skeleton.slots[draw.slot].appliedPose.attachment instanceof RegionAttachment,'Native region remains a region in the external runtime');
       }
       for (let slotIndex=0;slotIndex<skeleton.slots.length;slotIndex++) {
         const slot=skeleton.slots[slotIndex];
         const attachment=slot.appliedPose.attachment;
+        if (attachment instanceof RegionAttachment) {
+          const actual=actualDraws.get(slotIndex);
+          assert.ok(actual,`Missing region at slot ${slotIndex}`);
+          const vertices=new Float32Array(8);
+          attachment.computeWorldVertices(slot,attachment.getOffsets(slot.appliedPose),vertices,0,2);
+          const uvs=attachment.sequence.getUVs(0),region=attachment.sequence.regions[0];
+          assert.ok(region);assert.equal(region.degrees ?? 0,0,'Unrotated region fixture');
+          for (let i=0;i<4;i++) {
+            const local=[(uvs[i*2]-region.u)/(region.u2-region.u),(uvs[i*2+1]-region.v)/(region.v2-region.v)];
+            const ours=actual.uvs.findIndex(uv=>Math.abs(uv[0]-local[0])<1e-6 && Math.abs(uv[1]-local[1])<1e-6);
+            assert.ok(ours>=0,'Region corner identified by UV');
+            for (let axis=0;axis<2;axis++) {
+              const error=Math.abs(actual.vertices[ours][axis]-vertices[i*2+axis]);
+              assert.ok(Number.isFinite(error) && error<=report.tolerance,`${animation.name} skin=${skin?.name} region=${slotIndex} error=${error}`);
+              report.regionComparisons++;report.maxRegionError=Math.max(report.maxRegionError,error);
+            }
+          }
+        }
         if (!(attachment instanceof MeshAttachment)) continue;
-        const actual=actualMeshes.get(slotIndex);
+        const actual=actualDraws.get(slotIndex);
         assert.ok(actual,`Missing mesh at slot ${slotIndex}`);
         assert.equal(actual.image,attachment.path);
         assert.deepEqual(actual.triangles,Array.from(attachment.triangles),'Triangle order');
