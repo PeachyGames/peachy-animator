@@ -39,7 +39,7 @@ drag is one undo step, and Escape cancels the current drag.
 This corresponds to Spine's setup vertex transforms. UV editing, freeform hull
 creation, weights and animated deform keys are not implemented yet.
 
-![Transform tools and axes](docs/tools-editor.png)
+![Transform tools, axes and selection workflow](docs/selection-editor.png)
 
 1. Switch to **Animate** at the viewport's upper left; press **D** to play/stop.
 2. Select a bone or region attachment in the viewport or Tree; **C** rotates, **V**
@@ -75,6 +75,10 @@ Select an item's **name** to inspect it. Use a skin or animation's **visibility 
 to make it active. Activating a skin or animation does not dirty the project. Slot
 visibility dots temporarily hide artwork; Cmd/Ctrl+H restores hidden items.
 Attachment dots in Setup change the slot's saved setup attachment and support undo.
+
+Page Up/Page Down browse selection history. Cmd/Ctrl+0–9 stores the selected item;
+0–9 recalls it. Storing an empty selection clears a group. These session groups
+currently hold one item each. Document Undo remains separate from selection history.
 
 Search reveals matching branches. The Bones, Slots and Attachments filters provide
 quick views; Slots lists the rig in draw order. When attachments are filtered out,

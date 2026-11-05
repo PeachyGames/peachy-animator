@@ -145,7 +145,7 @@ impl Editor {
             format!("{:?}", self.axes),
             self.setup_mode,
             self.animation,
-            self.time.to_bits(),
+            self.pose_view_generation,
             label,
         );
         ui.push_id(scope, |ui| { ui.horizontal(|ui| {
@@ -188,7 +188,8 @@ impl Editor {
                         let (previous,was_focused,committed)=data.get_temp::<(f32,bool,Option<f32>)>(entry_id).unwrap_or((value,false,None));
                         let new_entry=focused && !was_focused;
                         let base=if new_entry {value}else{previous};
-                        data.insert_temp(entry_id,(base,focused,if new_entry {None}else{committed})); base
+                        if focused || data.get_temp::<(f32,bool,Option<f32>)>(entry_id).is_some() {data.insert_temp(entry_id,(base,focused,if new_entry {None}else{committed}));}
+                        base
                     });
                     let local_scale_edit=ui.memory(|m|m.has_focus(id)) || ui.ctx().is_being_dragged(id);
                     let world_scale=property.is_scale() && self.axes==Axes::World && !local_scale_edit;
@@ -202,6 +203,7 @@ impl Editor {
                             .custom_formatter(move |v,_| format!("{:.2}",if world_scale{f64::from(display)}else{v})),
                     );
                     self.record_target(&format!("value:{property:?}"), response.rect);
+                    if response.clicked(){self.playing=false;}
                     if property.is_scale() && self.axes==Axes::World { response.clone().on_hover_text("World scale is shown; entry and dragging edit Local scale."); }
                     if response.drag_started() {
                         ui.data_mut(|data|data.insert_temp(entry_id,(base,focused,None::<f32>)));

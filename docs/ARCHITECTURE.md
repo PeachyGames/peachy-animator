@@ -140,3 +140,13 @@ nonuniform scale, then go through Session's existing editing/keying boundary.
 `editor/tools.rs` is the shell adapter. Axis choice is transient view state. Numeric
 entry commits on focus loss/Enter rather than dispatching intermediate keystrokes.
 World scale is presentation data; the value passed for editing remains local.
+
+## Selection navigation
+
+`editor/selection_history.rs` is a pure, bounded presentation model for typed previous/
+next selections and ten single-item groups. It has no egui, filesystem or document
+mutation calls. The active `Option<TreeItem>` remains authoritative; navigation
+restores it through the same selection effects path. Invalid targets are pruned after
+document changes, and groups/history reset when opening another document. They do
+not enter Session, document history, project saves or exports. Keyboard focus prevents
+number entry from invoking group shortcuts.

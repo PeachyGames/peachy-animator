@@ -40,6 +40,7 @@ impl Editor {
 
     pub(super) fn deselect(&mut self) {
         self.cancel_gesture();
+        self.selection_history.record(&self.selection, &None);
         self.selection = None;
     }
     fn step_frames(&mut self, delta: f32) {
@@ -83,6 +84,35 @@ impl Editor {
             return;
         }
         // Consume modified keys first so Cmd+R never also advances a frame.
+        for (index, key) in [
+            (0, egui::Key::Num0),
+            (1, egui::Key::Num1),
+            (2, egui::Key::Num2),
+            (3, egui::Key::Num3),
+            (4, egui::Key::Num4),
+            (5, egui::Key::Num5),
+            (6, egui::Key::Num6),
+            (7, egui::Key::Num7),
+            (8, egui::Key::Num8),
+            (9, egui::Key::Num9),
+        ] {
+            if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, key)) {
+                self.selection_history.store(index, &self.selection);
+                self.status = format!(
+                    "Selection group {index} {}",
+                    if self.selection.is_some() {
+                        "stored"
+                    } else {
+                        "cleared"
+                    }
+                );
+            } else if ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, key))
+                && let Some(item) = self.selection_history.recall(index)
+            {
+                self.select(item);
+            }
+        }
+
         if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::O)) {
             self.open_project(ctx);
         }
@@ -122,6 +152,17 @@ impl Editor {
         let modifiers = ctx.input(|i| i.modifiers);
         if modifiers.command || modifiers.ctrl || modifiers.alt {
             return;
+        }
+
+        if ctx.input(|i| i.key_pressed(egui::Key::PageUp))
+            && let Some(item) = self.selection_history.previous(&self.selection)
+        {
+            self.restore_selection(item);
+        }
+        if ctx.input(|i| i.key_pressed(egui::Key::PageDown))
+            && let Some(item) = self.selection_history.next(&self.selection)
+        {
+            self.restore_selection(item);
         }
         if ctx.input(|i| i.key_pressed(egui::Key::F9)) {
             self.toggle_views();

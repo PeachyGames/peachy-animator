@@ -3,6 +3,7 @@ mod mesh;
 mod panels;
 mod properties;
 mod selection;
+mod selection_history;
 mod shortcuts;
 mod tools;
 mod tree;
@@ -55,6 +56,7 @@ pub(crate) struct Editor {
     asset_root: PathBuf,
     textures: BTreeMap<String, egui::TextureHandle>,
     selection: Option<TreeItem>,
+    selection_history: selection_history::SelectionHistory,
     tree: TreeState,
     hidden_bones: BTreeSet<usize>,
     hidden_slots: BTreeSet<usize>,
@@ -65,6 +67,7 @@ pub(crate) struct Editor {
     looping: bool,
     auto_key: bool,
     time: f32,
+    pose_view_generation: u64,
     show_bones: bool,
     zoom: f32,
     pan: Vec2,
@@ -102,6 +105,7 @@ impl Editor {
         capture: Option<PathBuf>,
     ) -> Self {
         crate::platform::configure_shortcuts();
+        cc.egui_ctx.options_mut(|o| o.zoom_with_keyboard = false);
         cc.egui_ctx.set_theme(egui::ThemePreference::Dark);
         let mut style = (*cc.egui_ctx.style_of(egui::Theme::Dark)).clone();
         style.visuals = egui::Visuals::dark();
@@ -158,6 +162,7 @@ impl Editor {
             asset_root,
             textures: BTreeMap::new(),
             selection: Some(TreeItem::Bone(initial_bone)),
+            selection_history: Default::default(),
             tree,
             hidden_bones: BTreeSet::new(),
             hidden_slots: BTreeSet::new(),
@@ -168,6 +173,7 @@ impl Editor {
             looping: true,
             auto_key: true,
             time: 0.0,
+            pose_view_generation: 0,
             show_bones: true,
             zoom: 1.0,
             pan: Vec2::ZERO,
@@ -354,7 +360,14 @@ impl Editor {
         if !item.exists(self.session.document()) {
             return;
         }
-        self.selection = Some(item.clone());
+        self.selection_history
+            .record(&self.selection, &Some(item.clone()));
+        self.restore_selection(Some(item));
+    }
+    fn restore_selection(&mut self, item: Option<TreeItem>) {
+        self.cancel_gesture();
+        self.selection = item.clone();
+        let Some(item) = item else { return };
         self.mesh_vertex = 0;
         self.mesh_triangle = 0;
         if self.tool == Tool::Mesh
@@ -380,6 +393,7 @@ impl Editor {
         if animation < self.session.document().animations.len() {
             self.cancel_gesture();
             self.session.discard_pose(false);
+            self.pose_view_generation = self.pose_view_generation.wrapping_add(1);
             self.animation = animation;
             self.time = 0.0;
             self.setup_mode = false;
@@ -387,6 +401,7 @@ impl Editor {
     }
     fn reconcile_selection(&mut self) {
         selection::reconcile(&mut self.selection, self.session.document());
+        self.selection_history.reconcile(self.session.document());
         self.animation = self
             .animation
             .min(self.session.document().animations.len().saturating_sub(1));
@@ -438,6 +453,7 @@ impl Editor {
             match files::load(&path).and_then(Session::new) {
                 Ok(session) => {
                     self.session = session;
+                    self.pose_view_generation = self.pose_view_generation.wrapping_add(1);
                     self.asset_root = path.parent().unwrap().to_path_buf();
                     self.project_path =
                         if path.extension().and_then(|s| s.to_str()) == Some("peachy") {
@@ -445,6 +461,7 @@ impl Editor {
                         } else {
                             None
                         };
+                    self.selection_history = Default::default();
                     self.selection = Some(TreeItem::Skeleton);
                     self.animation = 0;
                     self.time = 0.0;
@@ -666,6 +683,7 @@ impl eframe::App for Editor {
                     "keyStates":self.selected_bone().map(|bone| [Property::Rotation,Property::X,Property::ScaleX].map(|p| self.key_state(bone,&peachy_engine::transform_group(&[p])))),
                     "setupMode":self.setup_mode,"dirty":self.session.is_dirty(),"imageCount":self.textures.len(),
                     "selectedAttachment":self.selected_attachment(),"selectedVertex":self.mesh_vertex,"hiddenSlots":self.hidden_slots,
+                    "pointer":ctx.input(|i|i.pointer.hover_pos().map(|p|[p.x,p.y])),
                     "targets":self.capture_targets,"meshHandles":self.mesh_handles,"innerSize":[ctx.content_rect().width(),ctx.content_rect().height()]
                 });
                 let _ = std::fs::write(

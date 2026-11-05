@@ -40,14 +40,14 @@ attachment properties. Interpolation labels are Linear, Stepped and Bezier.
 
 - Align detailed spacing, fonts, control sizing, tool glyphs and visual states using
   Setup/Animate reference screenshots at matched viewport sizes.
-- Extend the typed Tree with multi/range selection, selection history, rename/create
+- Extend the typed Tree with multi/range selection, rename/create
   workflows and drag/drop parenting/draw order. Introduce stable IDs before deletion
   or reparenting. Exact glyphs, spacing and every Tree preference remain to align.
 - Complete main tool organization with Shear/Pose/Create/Weights and compensation.
   Rotate/Translate/Scale and the axis selectors now cover the supported transform subset.
 - Add movable tabs, docking, saved workspace state and the Graph view. Tree and
   Dopesheet currently provide resizers/visibility controls only.
-- Add selection history, multiple/box selection, reverse play, key navigation and
+- Add multiple/box selection, reverse play, key navigation and
   view-dependent input focus. Extend Auto Key/unkeyed editing to new keyable types
   as their model and adapters are implemented.
 - Match Dopesheet key selection, dragging, clipboard, pan/zoom and selection tools.
@@ -143,3 +143,20 @@ macOS refused its window screenshot. The public Tools toolbar and axes images we
 visually inspected instead, and remain outside Git. Their layout places the transform
 column next to the vertical axis selectors. Full matched-size visual comparison,
 Shear/Pose/Create/Weights, compensation and all transform preferences remain pending.
+
+## Selection history and groups slice
+
+Page Up restores the previous selection and Page Down advances through selection
+history. Deselecting is a remembered state; making a new selection branches history.
+Cmd/Ctrl+0–9 stores a selection and 0–9 recalls it, following the public Tools guide.
+Storing no selection clears that number. These are single-item groups until multiple
+selection is implemented. Groups/history belong to the current editor session and
+reset on opening a different document; persistent group/workspace preferences remain
+pending.
+
+History and groups retain typed items: recalling a slot cannot edit a bone; recalling
+a skin inspects it without activating it. Invalid items are pruned after document
+history changes. Recalled items use the same Tree reveal, properties and viewport
+selection path as ordinary selection. Document undo never navigates selection.
+Text fields retain digit input. Clicking a transform number stops playback before
+entry; idle playback frames do not allocate numeric-edit state.

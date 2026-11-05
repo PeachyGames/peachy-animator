@@ -1,0 +1,15 @@
+{
+  "previousNextSelection": true,
+  "deselectionInHistory": true,
+  "numberedGroups": true,
+  "groupZeroDoesNotChangeUiZoom": true,
+  "typedSlotRecallCannotEditBone": true,
+  "skinRecallDoesNotActivate": true,
+  "attachmentRecallAndDocumentUndoIndependent": true,
+  "emptyGroupClears": true,
+  "typingDigitsDoesNotRecall": true,
+  "numericEntryStopsPlayback": true,
+  "relativeEntryAppliesOnce": true,
+  "documentRestored": true,
+  "capture": "editor-1793921807260696000.json"
+}

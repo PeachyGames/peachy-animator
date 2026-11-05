@@ -7,6 +7,7 @@ impl Editor {
         if self.time != time {
             self.cancel_gesture();
             self.session.discard_pose(true);
+            self.pose_view_generation = self.pose_view_generation.wrapping_add(1);
             self.time = time;
         }
     }

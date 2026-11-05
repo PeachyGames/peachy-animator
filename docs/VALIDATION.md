@@ -224,3 +224,32 @@ per case, with the existing 0.001 tolerance. Original-only evidence:
 
 The separate installed-editor reference window was on screen, but macOS refused its
 capture. Public toolbar/axes images were inspected; pixel parity remains unverified.
+
+## Selection history and groups slice — November 5, 2026
+
+The workspace passes **44 Rust tests**: desktop 6, CLI integration 3, engine 23,
+I/O 4 and adapter 8. Three new presentation-model scenarios cover selection history
+branching/deselection, typed numbered groups, invalid references and bounded storage.
+Formatting, warnings-denied Clippy, workspace build and the six-crate architecture
+check pass locally. No document schema, export adapter or core dependency changed.
+
+Final native verification passes Page Up/Down, remembered deselection, numbered
+storage/recall (including 0 without UI zoom), bone/slot/skin/attachment identity,
+read-only slot behavior, skin inspection without activation, independent document
+Undo, empty group clearing and digit entry in text fields. It also verifies that
+clicking a number stops playback and relative *2 entry applies once. The final
+original document is restored exactly and is not dirty. See
+[selection-native.json](evidence/selection-native.json) and
+[selection-editor.png](selection-editor.png).
+
+Input state now stays stable during playback and changes identity on deliberate
+frame changes. Idle frames do not allocate edit state; groups reset on opening a
+new document. Framework keyboard zoom is disabled locally so numbered group shortcuts
+belong to the editor. Selection groups currently hold one typed item and are not
+persisted in project files.
+
+Review runs stopped on failed exact-PID foreground checks. The final run activates
+and verifies the owned foreground PID through native process APIs, checks its normal
+window, calibrates pointer coordinates against its F12 diagnostics before clicking,
+and asserts each expected target type. Task-owned processes and temporary login
+credentials are cleaned up; other applications and retained user handoffs are preserved.

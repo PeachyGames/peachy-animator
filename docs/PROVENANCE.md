@@ -127,3 +127,8 @@ installed Spine 4.3.26; its window was verified on screen, but macOS refused cap
 No proprietary screenshot or UI asset entered the repository. Axis math uses ordinary
 affine inverses, rotation vectors, projection and vector lengths, independently written
 here. Native inputs and external geometry checks use original Peach Bot artwork only.
+
+Selection history and numbered selection groups follow the public Tools guide and
+shortcut sheet. Their typed, bounded model was independently written; verification
+uses original fixtures, including recalling slots and skins without activating or
+editing unrelated entities. No proprietary selection implementation was inspected.
