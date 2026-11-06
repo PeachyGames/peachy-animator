@@ -306,8 +306,10 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
                 .animations
                 .get_mut(animation)
                 .ok_or("Unknown animation")?;
-            if !time.is_finite() || time < 0.0 {
-                return Err("Key time must be finite and nonnegative".into());
+            // This is a source query, not an authoring cursor. Reject a query
+            // past the end before a nearby final key could satisfy tolerance.
+            if !time.is_finite() || time < 0.0 || time > a.duration() {
+                return Err("Delete time must be finite and inside the animation".into());
             }
             for track in &mut a.tracks {
                 if track.bone == bone

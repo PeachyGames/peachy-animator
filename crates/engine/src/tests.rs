@@ -66,7 +66,7 @@ fn invalid_delete_times_cannot_erase_keys_or_change_history() {
         })
         .unwrap();
     let before = session.document().clone();
-    for time in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY, -1.0] {
+    for time in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY, -1.0, 2.0] {
         assert!(
             session
                 .dispatch(Command::DeleteKey {
