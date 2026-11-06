@@ -86,9 +86,9 @@ impl Editor {
             ui.checkbox(&mut self.looping, "Loop");
             ui.label(
                 RichText::new(format!(
-                    "{:03} / {:03}  ·  {} fps",
-                    (self.time * self.session.document().fps as f32).round() as u32,
-                    (self.duration() * self.session.document().fps as f32).round() as u32,
+                    "{:03.0} / {:03.0}  ·  {} fps",
+                    animation::frame_at(self.time, self.session.document().fps),
+                    animation::frame_at(self.animation_end(), self.session.document().fps),
                     self.session.document().fps
                 ))
                 .monospace()
@@ -130,15 +130,15 @@ impl Editor {
         let geometry = self.key_drag.as_ref().map_or(
             ChartGeometry {
                 start: rect.left() + label_width,
-                width: rect.width() - label_width - 18.0,
-                duration: self.duration(),
+                width: (rect.width() - label_width - 18.0).max(1.0),
+                extent: self.display_extent(),
             },
             |drag| drag.geometry,
         );
         let ChartGeometry {
             start,
             width,
-            duration,
+            extent,
         } = geometry;
         self.record_target(
             "timelineTrack",
@@ -154,9 +154,10 @@ impl Editor {
                 pos2(x, rect.top() + 11.0),
                 egui::Align2::CENTER_CENTER,
                 format!(
-                    "{}",
-                    (duration * self.session.document().fps as f32 * i as f32 / 12.0).round()
-                        as u32
+                    "{:.0}",
+                    (f64::from(extent) * f64::from(self.session.document().fps) * f64::from(i)
+                        / 12.0)
+                        .round()
                 ),
                 FontId::monospace(11.0),
                 MUTED,
@@ -218,7 +219,7 @@ impl Editor {
                 .find(|t| self.selected_bone() == Some(t.bone) && t.property == property)
             {
                 for (index, key) in track.keys.iter().enumerate() {
-                    let x = start + width * key.time / duration;
+                    let x = geometry.x_at(key.time);
                     let p = pos2(x, y);
                     let key_id = KeyId {
                         property,
@@ -244,7 +245,7 @@ impl Editor {
                 }
             }
         }
-        let playhead = start + width * self.time / duration;
+        let playhead = geometry.x_at(self.time);
         painter.line_segment(
             [
                 pos2(playhead, rect.top() + 22.0),
@@ -344,7 +345,7 @@ impl Editor {
             } else {
                 self.key_selection.clear();
                 if let Some(pointer) = response.interact_pointer_pos() {
-                    self.scrub_dopesheet(pointer, start, width, duration);
+                    self.scrub_dopesheet(pointer, geometry);
                 }
             }
         } else if released {
@@ -358,7 +359,7 @@ impl Editor {
             && let Some(pointer) = response.interact_pointer_pos()
         {
             response.request_focus();
-            self.scrub_dopesheet(pointer, start, width, duration);
+            self.scrub_dopesheet(pointer, geometry);
         }
         // Keep one line reserved: selection changes must not resize the view and move key targets.
         let footer = ui.add(
@@ -374,12 +375,12 @@ impl Editor {
         );
         self.record_target("timelineFooter", footer.rect);
     }
-    fn scrub_dopesheet(&mut self, pointer: Pos2, start: f32, width: f32, duration: f32) {
-        if pointer.x >= start {
+    fn scrub_dopesheet(&mut self, pointer: Pos2, geometry: ChartGeometry) {
+        if pointer.x >= geometry.start
+            && let Some(time) = geometry.time_at(pointer.x)
+        {
             self.playing = false;
-            let fps = self.session.document().fps as f32;
-            let time = ((pointer.x - start) / width * duration).clamp(0.0, duration);
-            self.set_time((time * fps).round() / fps);
+            self.set_time(animation::snap_time(time, self.session.document().fps));
         }
     }
 }

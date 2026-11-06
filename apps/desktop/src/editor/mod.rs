@@ -11,6 +11,8 @@ mod rename;
 mod selection;
 mod selection_history;
 mod shortcuts;
+#[cfg(test)]
+mod test_support;
 mod timeline_clipboard;
 mod tools;
 mod tree;
@@ -280,16 +282,20 @@ impl Editor {
             Some(self.animation)
         }
     }
-    fn duration(&self) -> f32 {
+    fn animation_end(&self) -> f32 {
         self.session
             .document()
             .animations
             .get(self.animation)
-            .map_or(1.0, |a| a.duration)
+            .map_or(0.0, Animation::duration)
+    }
+    fn display_extent(&self) -> f32 {
+        // Bounded view policy until timeline pan/zoom: show at least one second and
+        // include the authoring cursor without adding document keys or a reserve.
+        self.animation_end().max(self.time).max(1.0)
     }
     fn snapped_time(&self) -> f32 {
-        let fps = self.session.document().fps as f32;
-        (self.time * fps).round() / fps
+        animation::snap_time(self.time, self.session.document().fps)
     }
 
     fn selected_bone(&self) -> Option<usize> {
@@ -355,7 +361,7 @@ impl Editor {
                 } else {
                     EditTarget::Animate {
                         animation: self.animation,
-                        time: self.time.clamp(0.0, self.duration()),
+                        time: self.time,
                     }
                 };
                 if let Err(error) =
@@ -438,7 +444,11 @@ impl Editor {
         if !selection::active_skin_exists(self.session.document(), &self.skin) {
             self.skin = preferred_skin(self.session.document());
         }
-        self.time = self.time.clamp(0.0, self.duration());
+        self.time = if self.time.is_finite() {
+            self.time.max(0.0)
+        } else {
+            0.0
+        };
         if self.session.document().animations.is_empty() {
             self.playing = false;
             self.setup_mode = true;
@@ -598,7 +608,7 @@ impl eframe::App for Editor {
             let step = peachy_engine::advance_playback(
                 self.time,
                 ctx.input(|i| i.stable_dt).min(0.1),
-                self.duration(),
+                self.animation_end(),
                 self.looping,
                 self.play_direction,
             );
@@ -727,7 +737,7 @@ impl eframe::App for Editor {
                 ) {
                     eprintln!("Capture failed: {e}");
                 }
-                let report = serde_json::json!({
+                let mut report = serde_json::json!({
                     "document":self.session.document(),"selection":self.selection.as_ref().map(TreeItem::diagnostic),
                     "selectedBone":self.selected_bone(),"hasSelection":self.selection.is_some(),
                     "tool":match self.tool {Tool::Rotate=>"rotate",Tool::Move=>"translate",Tool::Scale=>"scale",Tool::Mesh=>"vertices"},
@@ -746,6 +756,12 @@ impl eframe::App for Editor {
                     "pointer":ctx.input(|i|i.pointer.hover_pos().map(|p|[p.x,p.y])),
                     "targets":self.capture_targets,"meshHandles":self.mesh_handles,"innerSize":[ctx.content_rect().width(),ctx.content_rect().height()]
                 });
+                report["animationEnd"] = self.animation_end().into();
+                report["displayExtent"] = self
+                    .key_drag
+                    .as_ref()
+                    .map_or_else(|| self.display_extent(), |drag| drag.geometry.extent)
+                    .into();
                 let _ = std::fs::write(
                     path.with_extension("json"),
                     serde_json::to_vec_pretty(&report).unwrap_or_default(),
