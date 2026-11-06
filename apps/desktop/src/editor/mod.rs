@@ -3,6 +3,7 @@ mod icons;
 mod mesh;
 mod panels;
 mod properties;
+mod rename;
 mod selection;
 mod selection_history;
 mod shortcuts;
@@ -90,6 +91,7 @@ pub(crate) struct Editor {
     status: String,
     error: Option<String>,
     new_bone: String,
+    rename: Option<rename::RenameState>,
     capture: Option<PathBuf>,
     capture_directory: PathBuf,
     frames: usize,
@@ -198,6 +200,7 @@ impl Editor {
             status: "Original Peach Bot • select a bone and make it yours".into(),
             error: initial_error,
             new_bone: String::new(),
+            rename: None,
             capture,
             capture_directory,
             frames: 0,
@@ -652,6 +655,7 @@ impl eframe::App for Editor {
                     }
                 });
         }
+        self.rename_dialog(&ctx);
         ctx.send_viewport_cmd(egui::ViewportCommand::Title(format!(
             "{}{} — Peachy Animator",
             if self.session.is_dirty() { "* " } else { "" },

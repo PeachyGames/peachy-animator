@@ -80,7 +80,7 @@ impl Editor {
             self.capture = Some(self.capture_directory.join(format!("editor-{stamp}.png")));
             ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
         }
-        if ctx.egui_wants_keyboard_input() {
+        if self.rename.is_some() || ctx.egui_wants_keyboard_input() {
             return;
         }
         // Consume modified keys first so Cmd+R never also advances a frame.

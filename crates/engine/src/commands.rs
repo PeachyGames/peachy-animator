@@ -14,6 +14,14 @@ pub enum Command {
         bone: usize,
         transform: Transform,
     },
+    RenameBone {
+        bone: usize,
+        name: String,
+    },
+    RenameSlot {
+        slot: usize,
+        name: String,
+    },
     SetBoneLength {
         bone: usize,
         length: f32,
@@ -134,6 +142,8 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
         Command::SetSetup { bone, transform } => {
             doc.bones.get_mut(bone).ok_or("Unknown bone")?.setup = transform
         }
+        Command::RenameBone { bone, name } => crate::names::rename_bone(doc, bone, name)?,
+        Command::RenameSlot { slot, name } => crate::names::rename_slot(doc, slot, name)?,
         Command::SetBoneLength { bone, length } => {
             doc.bones.get_mut(bone).ok_or("Unknown bone")?.length = length;
         }

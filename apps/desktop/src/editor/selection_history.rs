@@ -111,3 +111,55 @@ mod tests {
         assert_eq!(before, doc());
     }
 }
+
+#[cfg(test)]
+mod rename_tests {
+    use super::*;
+    use peachy_document::AttachmentRef;
+    use peachy_engine::{Command, apply_command};
+
+    #[test]
+    fn slot_rename_prunes_old_attachment_identity_before_name_reuse() {
+        let before: Document = serde_json::from_str(include_str!(
+            "../../../../examples/peach-bot/mesh-bot.peachy"
+        ))
+        .unwrap();
+        let slot = before.slots.iter().position(|s| s.name == "head").unwrap();
+        let attachment = Some(TreeItem::Attachment(AttachmentRef {
+            skin: "peach".into(),
+            slot: "head".into(),
+            placeholder: "head".into(),
+        }));
+        let mut selection = attachment.clone();
+        let mut history = SelectionHistory::default();
+        history.store(1, &attachment);
+        history.record(&attachment, &Some(TreeItem::Slot(slot)));
+        let after = apply_command(
+            &before,
+            Command::RenameSlot {
+                slot,
+                name: "face-slot".into(),
+            },
+        )
+        .unwrap();
+        super::super::selection::reconcile(&mut selection, &after);
+        history.reconcile(&after);
+        assert_eq!(selection, None);
+        assert_eq!(history.recall(1), None);
+        assert_eq!(history.previous(&Some(TreeItem::Slot(slot))), None);
+        assert!(TreeItem::Slot(slot).exists(&after));
+        // Reusing the name for another slot cannot revive a pruned target/group.
+        let another = if slot == 0 { 1 } else { 0 };
+        let reused = apply_command(
+            &after,
+            Command::RenameSlot {
+                slot: another,
+                name: "head".into(),
+            },
+        )
+        .unwrap();
+        history.reconcile(&reused);
+        assert_eq!(history.recall(1), None);
+        assert_eq!(selection, None);
+    }
+}
