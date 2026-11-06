@@ -26,6 +26,9 @@ pub fn load(path: &Path) -> Result<Document, String> {
 
 pub fn decode_project(text: &str) -> Result<Document, String> {
     let mut value: serde_json::Value = serde_json::from_str(text).map_err(|e| e.to_string())?;
+    if matches!(value["format"].as_u64(), Some(1..=4)) {
+        reject_legacy_shear(&value)?;
+    }
     // Version 1 had only regions and no attachment discriminator. Add that tag,
     // then take the same migration path as tagged legacy attachments.
     if value["format"].as_u64() == Some(1) {
@@ -60,7 +63,11 @@ pub fn decode_project(text: &str) -> Result<Document, String> {
     };
     if value["format"].as_u64() == Some(3) {
         wrap_v3_mesh_vertices(&mut value)?;
-        value["format"] = peachy_document::FORMAT_VERSION.into();
+        value["format"] = 4.into();
+    }
+    if value["format"].as_u64() == Some(4) {
+        add_v4_bone_shear(&mut value)?;
+        value["format"] = 5.into();
     }
     let mut doc: Document = serde_json::from_value(value).map_err(|e| e.to_string())?;
     // Wrapping vertices preserves their values and all surrounding fields. Decode
@@ -70,6 +77,47 @@ pub fn decode_project(text: &str) -> Result<Document, String> {
         materialize_v2_holds(&mut doc, durations)?;
     }
     Ok(doc)
+}
+
+fn reject_legacy_shear(value: &serde_json::Value) -> Result<(), String> {
+    if let Some(bones) = value["bones"].as_array() {
+        for bone in bones {
+            if let Some(setup) = bone["setup"].as_object()
+                && ["shear_x", "shear_y"]
+                    .iter()
+                    .any(|field| setup.contains_key(*field))
+            {
+                return Err("Legacy project formats cannot contain bone shear fields".into());
+            }
+        }
+    }
+    if let Some(animations) = value["animations"].as_array() {
+        for animation in animations {
+            if let Some(tracks) = animation["tracks"].as_array()
+                && tracks
+                    .iter()
+                    .any(|track| matches!(track["property"].as_str(), Some("shearX" | "shearY")))
+            {
+                return Err("Legacy project formats cannot contain shear tracks".into());
+            }
+        }
+    }
+    Ok(())
+}
+
+fn add_v4_bone_shear(value: &mut serde_json::Value) -> Result<(), String> {
+    let bones = value["bones"]
+        .as_array_mut()
+        .ok_or("Legacy bones must be an array")?;
+    for bone in bones {
+        let setup = bone
+            .get_mut("setup")
+            .and_then(serde_json::Value::as_object_mut)
+            .ok_or("Legacy bone setup must be an object")?;
+        setup.insert("shear_x".into(), 0.0.into());
+        setup.insert("shear_y".into(), 0.0.into());
+    }
+    Ok(())
 }
 
 fn take_v2_durations(value: &mut serde_json::Value) -> Result<Vec<f32>, String> {
@@ -372,6 +420,12 @@ mod tests {
         .unwrap();
         let mut v = serde_json::to_value(&doc).unwrap();
         v["format"] = 1.into();
+        for bone in v["bones"].as_array_mut().unwrap() {
+            for field in ["shear_x", "shear_y"] {
+                assert_eq!(bone["setup"][field].as_f64(), Some(0.0));
+                bone["setup"].as_object_mut().unwrap().remove(field);
+            }
+        }
         for (animation, source) in v["animations"]
             .as_array_mut()
             .unwrap()

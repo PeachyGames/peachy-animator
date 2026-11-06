@@ -262,7 +262,7 @@ def exercise(check, sources):
     overflow_pose = copy.deepcopy(pose)
     overflow_pose[a]["scale_x"] = 10
     bad_bone = {"name": "invalid batch hierarchy", "parent": len(pose) + 10, "length": 1,
-                "setup": {"x": 0, "y": 0, "rotation": 0, "scale_x": 1, "scale_y": 1}}
+                "setup": H.bone_transform()}
     expanded_pose = copy.deepcopy(pose) + [bad_bone["setup"]]
     repeat_path = imported["weighted-repeated"]
     repeat_doc = H.read_json(repeat_path)
@@ -321,7 +321,8 @@ def main():
     check = H.Acceptance(cli, evidence, 0.001)
     report = {"status": "failed", "started": datetime.now(timezone.utc).isoformat(),
               "cli": str(cli), "cliSHA256": H.file_digest(cli), "scriptSHA256": H.file_digest(Path(__file__)),
-              "helperSHA256": H.file_digest(HELPER_PATH), "nativeFormat": 4, "tolerance": check.tolerance,
+              "schemaHelperSHA256": H.file_digest(H.SCHEMA_HELPER),
+              "helperSHA256": H.file_digest(HELPER_PATH), "nativeFormat": H.NATIVE_FORMAT, "tolerance": check.tolerance,
               "coreSessionTests": {"status": "not-run"}, "limitations": [
                   "Direct may deform geometry; scene checks compare edited data with its own adapter/packed roundtrip.",
                   "CLI creates new outputs; overwrite Save/backup and native pointer/keyboard behavior are not checked.",

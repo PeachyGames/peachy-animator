@@ -9,6 +9,7 @@ import math
 from pathlib import Path
 import struct
 import zlib
+from native_schema import NATIVE_FORMAT, bone_transform, region_transform
 
 ROOT = Path(__file__).resolve().parents[1] / "examples" / "peach-bot"
 INK = (28, 39, 47, 255)
@@ -198,10 +199,6 @@ def artwork():
     return parts
 
 
-def transform(x=0, y=0, rotation=0):
-    return dict(x=x, y=y, rotation=rotation, scale_x=1, scale_y=1)
-
-
 def main():
     (ROOT/"images").mkdir(parents=True, exist_ok=True)
     parts = artwork()
@@ -226,7 +223,7 @@ def main():
     (ROOT/"peach-bot.atlas").write_text("\n".join(atlas)+"\n")
     bones = []
     def bone(name, parent, x, y, angle=0, length=0):
-        bones.append(dict(name=name, parent=parent, length=length, setup=transform(x, y, angle)))
+        bones.append(dict(name=name, parent=parent, length=length, setup=bone_transform(x, y, angle)))
         return len(bones)-1
     root = bone("root", None, 0, 0)
     body = bone("body", root, 0, 125, 0, 95)
@@ -247,7 +244,7 @@ def main():
     def region(name, b, part, x=0, y=0, rotation=0):
         slots.append(dict(name=name, bone=b, attachment=name))
         c = parts[part]
-        skin[name] = {name: dict(type="region", path=part, width=c.width, height=c.height, transform=transform(x, y, rotation))}
+        skin[name] = {name: dict(type="region", path=part, width=c.width, height=c.height, transform=region_transform(x, y, rotation))}
     for label, leg, shin, foot in [("L", leg_l, shin_l, foot_l), ("R", leg_r, shin_r, foot_r)]:
         region("thigh."+label, leg, "thigh", 38)
         region("shin."+label, shin, "shin", 33)
@@ -274,7 +271,7 @@ def main():
         peach[slot] = {slot: {**skin[slot][slot], "name": slot+".peach"}}
     # Skin placeholders must not collide with direct attachments in default.
     shared = {slot: entries for slot, entries in skin.items() if slot not in peach}
-    doc = dict(format=4, name="Peach Bot", fps=30, bones=bones, slots=slots, skins={"default":shared,"peach":peach,"mint":mint}, animations=[dict(name="wave",tracks=wave),dict(name="idle",tracks=idle)])
+    doc = dict(format=NATIVE_FORMAT, name="Peach Bot", fps=30, bones=bones, slots=slots, skins={"default":shared,"peach":peach,"mint":mint}, animations=[dict(name="wave",tracks=wave),dict(name="idle",tracks=idle)])
     (ROOT/"peach-bot.peachy").write_text(json.dumps(doc, indent=2)+"\n")
     contract = json.loads(json.dumps(doc))
     contract["name"] = "Transform Contract"

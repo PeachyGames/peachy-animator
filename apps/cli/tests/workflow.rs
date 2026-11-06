@@ -72,7 +72,21 @@ fn serialized_pose_command_uses_the_shared_domain_transition() {
     fs::create_dir(&folder).unwrap();
     let command = folder.join("commands.json");
     let output = folder.join("edited.peachy");
-    fs::write(&command,serde_json::to_vec(&serde_json::json!([{"command":"setPose","bone":0,"target":{"mode":"animate","animation":0,"time":0.301},"transform":{"x":0,"y":0,"rotation":15,"scale_x":1,"scale_y":1},"properties":["rotation"]}])).unwrap()).unwrap();
+    let mut commands = serde_json::json!([{"command":"setPose","bone":0,"target":{"mode":"animate","animation":0,"time":0.301},"transform":{"x":0,"y":0,"rotation":15,"scale_x":1,"scale_y":1},"properties":["rotation","shearX","shearY"]}]);
+    fs::write(&command, serde_json::to_vec(&commands).unwrap()).unwrap();
+    let rejected = Command::new(env!("CARGO_BIN_EXE_peachy-cli"))
+        .arg("apply")
+        .arg(&source)
+        .arg(&command)
+        .arg(&output)
+        .output()
+        .unwrap();
+    assert!(!rejected.status.success());
+    assert!(String::from_utf8_lossy(&rejected.stderr).contains("missing field `shear_x`"));
+    assert!(!output.exists());
+    commands[0]["transform"]["shear_x"] = serde_json::json!(17);
+    commands[0]["transform"]["shear_y"] = serde_json::json!(-11);
+    fs::write(&command, serde_json::to_vec(&commands).unwrap()).unwrap();
     let result = Command::new(env!("CARGO_BIN_EXE_peachy-cli"))
         .arg("apply")
         .arg(&source)
@@ -88,7 +102,11 @@ fn serialized_pose_command_uses_the_shared_domain_transition() {
     let edited = peachy_io::load(&output).unwrap();
     let pose = peachy_engine::local_pose(&edited, Some(0), 0.3);
     assert_eq!(pose[0].rotation, 15.0);
+    assert_eq!(pose[0].shear_x, 17.0);
+    assert_eq!(pose[0].shear_y, -11.0);
     assert_eq!(edited.bones[0].setup.rotation, 0.0);
+    assert_eq!(edited.bones[0].setup.shear_x, 0.0);
+    assert_eq!(edited.bones[0].setup.shear_y, 0.0);
     fs::remove_dir_all(folder).unwrap();
 }
 
