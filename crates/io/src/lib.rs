@@ -26,6 +26,9 @@ pub fn load(path: &Path) -> Result<Document, String> {
 
 pub fn decode_project(text: &str) -> Result<Document, String> {
     let mut value: serde_json::Value = serde_json::from_str(text).map_err(|e| e.to_string())?;
+    if matches!(value["format"].as_u64(), Some(1..=5)) && value.get("constraints").is_some() {
+        return Err("Legacy project formats cannot contain constraints".into());
+    }
     if matches!(value["format"].as_u64(), Some(1..=4)) {
         reject_legacy_shear(&value)?;
     }
@@ -68,6 +71,10 @@ pub fn decode_project(text: &str) -> Result<Document, String> {
     if value["format"].as_u64() == Some(4) {
         add_v4_bone_shear(&mut value)?;
         value["format"] = 5.into();
+    }
+    if value["format"].as_u64() == Some(5) {
+        value["constraints"] = serde_json::json!([]);
+        value["format"] = 6.into();
     }
     let mut doc: Document = serde_json::from_value(value).map_err(|e| e.to_string())?;
     // Wrapping vertices preserves their values and all surrounding fields. Decode
@@ -419,6 +426,10 @@ mod tests {
         )
         .unwrap();
         let mut v = serde_json::to_value(&doc).unwrap();
+        assert_eq!(
+            v.as_object_mut().unwrap().remove("constraints"),
+            Some(serde_json::json!([]))
+        );
         v["format"] = 1.into();
         for bone in v["bones"].as_array_mut().unwrap() {
             for field in ["shear_x", "shear_y"] {
