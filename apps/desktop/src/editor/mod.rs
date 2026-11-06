@@ -3,6 +3,7 @@ mod animation_management;
 mod dopesheet;
 mod dopesheet_selection;
 mod icons;
+mod key_drag;
 mod mesh;
 mod panels;
 mod properties;
@@ -64,6 +65,7 @@ pub(crate) struct Editor {
     selection: Option<TreeItem>,
     selection_history: selection_history::SelectionHistory,
     key_selection: dopesheet_selection::KeySelection,
+    key_drag: Option<key_drag::KeyDrag>,
     tree: TreeState,
     hidden_bones: BTreeSet<usize>,
     hidden_slots: BTreeSet<usize>,
@@ -174,6 +176,7 @@ impl Editor {
             selection: Some(TreeItem::Bone(initial_bone)),
             selection_history: Default::default(),
             key_selection: Default::default(),
+            key_drag: None,
             tree,
             hidden_bones: BTreeSet::new(),
             hidden_slots: BTreeSet::new(),
@@ -414,6 +417,14 @@ impl Editor {
         }
     }
     fn reconcile_selection(&mut self) {
+        if self.key_drag.as_ref().is_some_and(|drag| {
+            self.setup_mode
+                || !self.show_dopesheet
+                || self.animation != drag.animation
+                || self.selected_bone() != Some(drag.bone)
+        }) {
+            self.cancel_dopesheet_drag();
+        }
         selection::reconcile(&mut self.selection, self.session.document());
         self.selection_history.reconcile(self.session.document());
         self.animation = self
@@ -435,13 +446,23 @@ impl Editor {
         self.reconcile_dopesheet_selection();
     }
     fn undo(&mut self) {
+        if self.key_drag.is_some() {
+            self.cancel_dopesheet_drag();
+            return;
+        }
         self.session.undo();
+        self.key_selection.clear();
         self.drag = None;
         self.mesh_drag = None;
         self.reconcile_selection();
     }
     fn redo(&mut self) {
+        if self.key_drag.is_some() {
+            self.cancel_dopesheet_drag();
+            return;
+        }
         self.session.redo();
+        self.key_selection.clear();
         self.drag = None;
         self.mesh_drag = None;
         self.reconcile_selection();
@@ -458,6 +479,7 @@ impl Editor {
     }
 
     fn open_project(&mut self, ctx: &egui::Context) {
+        self.cancel_dopesheet_drag();
         if !self.confirm_discard() {
             return;
         }
@@ -478,6 +500,7 @@ impl Editor {
                         };
                     self.selection_history = Default::default();
                     self.key_selection = Default::default();
+                    self.key_drag = None;
                     self.selection = Some(TreeItem::Skeleton);
                     self.animation = 0;
                     self.time = 0.0;
@@ -501,6 +524,7 @@ impl Editor {
     }
 
     fn save_project(&mut self) {
+        self.cancel_dopesheet_drag();
         let path = match &self.project_path {
             Some(path) => Some(path.clone()),
             None => rfd::FileDialog::new()
@@ -528,6 +552,7 @@ impl Editor {
     }
 
     fn export(&mut self) {
+        self.cancel_dopesheet_drag();
         if let Some(folder) = rfd::FileDialog::new()
             .set_title("Choose parent folder for a new Spine export")
             .pick_folder()
@@ -553,6 +578,9 @@ impl Editor {
 impl eframe::App for Editor {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let ctx = ui.ctx().clone();
+        if !ctx.input(|input| input.focused) {
+            self.cancel_dopesheet_drag();
+        }
         self.capture_targets.clear();
         self.mesh_handles.clear();
         self.reconcile_selection();
@@ -702,6 +730,7 @@ impl eframe::App for Editor {
                     "keyStates":self.selected_bone().map(|bone| [Property::Rotation,Property::X,Property::ScaleX].map(|p| self.key_state(bone,&peachy_engine::transform_group(&[p])))),
                     "setupMode":self.setup_mode,"dirty":self.session.is_dirty(),"canUndo":self.session.can_undo(),"canRedo":self.session.can_redo(),"imageCount":self.textures.len(),
                     "selectedKeys":self.key_selection.diagnostic(),"dopesheetFocused":self.dopesheet_has_focus(&ctx),
+                    "keyDrag":self.key_drag.as_ref().map(key_drag::KeyDrag::diagnostic),
                     "selectedAttachment":self.selected_attachment(),"selectedVertex":self.mesh_vertex,"hiddenSlots":self.hidden_slots,
                     "pointer":ctx.input(|i|i.pointer.hover_pos().map(|p|[p.x,p.y])),
                     "targets":self.capture_targets,"meshHandles":self.mesh_handles,"innerSize":[ctx.content_rect().width(),ctx.content_rect().height()]
