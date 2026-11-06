@@ -3,7 +3,7 @@
 A native 2D skeletal animation editor from Team Peachy, with an independent Rust
 core and Spine-compatible exports. The current slices include Spine-style naming,
 Dopesheet selection/retiming/clipboard actions, key-derived animation duration, and
-weighted mesh import, bone-driven preview, initial one-bone binding and influence inspection.
+weighted mesh import, bone-driven preview, binding and single-vertex Direct weights.
 This is still a bounded subset of Spine.
 
 ![Weighted Peach Bot in the editor](docs/weighted-editor.png)
@@ -37,8 +37,9 @@ cargo run -p peachy-animator -- examples/peach-bot/weighted-bot.peachy
 Select its hand.R mesh attachment, then **Vertices**, to inspect the selected
 vertex's bone influences. Weighted inspection works in Setup and Animate, including
 an unkeyed pose. It stops playback and preserves the current pose and mode. Bone
-transforms and animation move the weighted artwork; editing weights, weighted
-vertices and weighted topology remains pending.
+transforms and animation move the weighted artwork. Press **G** for the Weights
+view to bind bones or adjust one vertex's weights. Weighted vertex-position and
+topology editing remain pending.
 
 File/history shortcuts use compact icons with named shortcut tooltips. The Views
 menu and view headings share the same visual cues; see the
@@ -69,8 +70,7 @@ to a four-corner mesh; existing mesh triangles can be split at their centers.
 Setup vertex movement deforms the image while UVs stay fixed; each canvas
 drag is one undo step, and Escape cancels the current drag.
 This corresponds to Spine's setup vertex transforms. UV editing, freeform hull
-creation, adding bindings to weighted meshes, Direct weight editing and animated
-deform keys are not implemented yet.
+creation and animated deform keys are not implemented yet.
 Weighted vertex dragging, nudging, local-coordinate fields and subdivision are
 blocked; selecting them never converts or normalizes their data.
 
@@ -124,13 +124,37 @@ mesh data; key the bone pose separately if it must survive save/reopen or playba
 The Weights mesh/vertex selection survives switching to bone transform tools and
 back with G. Normal bone edits still target the normal Tree selection.
 
-Only initial one-bone Bind and Remove-all are implemented. Adding bones to an
-already weighted mesh, Direct/brush weight adjustment, Auto and Update are pending.
+For an already weighted mesh, **Bind** adds a genuinely new bone at 0% on every
+vertex, preserving the old entries and current shape. A bone already present
+anywhere in the mesh, including at 0%, is rejected; this does not repair sparse
+imported bindings.
+
+Select one vertex and one bound bone in Weights. **Mode: Direct** exposes a
+**Weight** slider and percentage field. Starting with A=100%, Bind B=0%, then set
+B to 30: only that vertex becomes A=70%, B=30%. Other positive weights share the
+remainder proportionally; bind positions and influence order stay unchanged.
+An explicit edit can normalize an imported nonunit total on that vertex and may
+deform it. Import, inspection, focusing a rounded value, and adding a zero binding
+do not normalize the data.
+
+Release the slider or use Enter/Tab to commit one undo step. Escape or Undo/Redo
+cancels an active preview; Save/Export and context changes cancel before continuing.
+Direct captures one pose for the gesture and preserves pending bone edits without
+keying them. Save excludes that unkeyed pose as before. Ambiguous repeated bones,
+missing selected-vertex bindings and reducing the sole positive weight without a
+recipient are guarded limits of this slice.
+
+Brush painting, Auto, locks, Update, multiple vertex/bone selection and individual
+bone removal remain pending.
 The resizable Weights pane uses the existing right column; exact Spine dock
-placement is provisional. See [the slice contract](docs/slices/weight-authoring.md)
-and [binding acceptance](docs/VALIDATION.md#initial-bind-and-remove-all--november-6-2026-utc).
+placement is provisional. See the [binding contract](docs/slices/weight-authoring.md),
+[Direct command contract](docs/slices/weight-direct-design.md),
+[controls and gesture contract](docs/slices/weight-direct.md), and
+[validation](docs/VALIDATION.md#additional-binding-and-direct--november-6-2026-utc).
 
 ![Initial one-bone binding in the Weights view](docs/binding-editor.png)
+
+![Direct weight entry on the original mesh](docs/direct-editor.png)
 
 ## Tree workflow
 
@@ -161,6 +185,8 @@ supported controls can edit it. Inactive skin attachments remain inspectable.
   rendering/picking/bounds, read-only inspection and preserved import/export data.
 - A G Weights tool/view, initial one-bone Bind and Remove all at the current pose,
   preserving shape, pending bone pose and time through shared engine commands.
+- Additional zero-weight bindings and Direct percentage editing of one vertex and
+  one bound bone, with proportional redistribution and transactional previews.
 - Deterministic timeline playback, scrubbing, frame stepping and looping.
 - Scalar keys with linear, stepped and editable Bezier interpolation.
 - Auto Key, unkeyed multi-bone posing, Key Edited (K), colored key indicators,
@@ -173,15 +199,16 @@ supported controls can edit it. Inactive skin attachments remain inspectable.
   creates a fresh directory with JSON, an atlas and its PNG page.
 - A headless CLI that uses the same document, command and pose engine.
 
-Additional binding bones, Direct/brush weight editing, Update bindings, linked meshes,
+Brush weight editing, multi-vertex/multi-bone weights, Update bindings, linked meshes,
 IK, physics, path/transform constraints,
 clipping, slot animation,
 events, image sequences, packed-atlas import, native `.spine` files and animation
 mixing are not implemented. Unsupported imports are blocked with a feature report;
 the source remains untouched. The latest read-only artist audit still finds 0/11
 fully supported characters: weighted-mesh refusals are gone, but all 11 require
-constraints. Installed-editor re-export can quantize bind coordinates, remove zero
-entries and reorder influences, so lossless editor round trips are not claimed.
+constraints. Installed-editor re-export can quantize bind coordinates and positive
+weights, remove zero entries and reorder influences, so lossless editor round trips
+are not claimed.
 See [the compatibility contract](docs/COMPATIBILITY.md).
 
 ## CLI

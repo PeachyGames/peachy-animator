@@ -48,9 +48,10 @@ Unweighted subdivision inserts a triangle centroid and interpolates its UV while
 preserving the hull and existing indices. Both operations and setup vertex movement
 are shared serializable commands. Weighted `SetMeshVertex` and subdivision fail
 atomically, preserving pending pose/history/redo. Initial Bind and Remove-all use
-the shared commands described below; Direct/brush weight edits and Update remain
-pending. The desktop shows influence values and posed handles without implementing
-weighted vertex editing or inverse-bind math in the UI.
+the shared commands described below. Additional zero bindings and single-vertex
+Direct use separate explicit commands. Brushes and Update remain pending. The
+desktop shows influence values and posed handles without implementing weighted
+vertex-position editing or inverse-bind math in the UI.
 
 `peachy-spine` converts the supported 4.3 JSON subset. It owns Spine-specific naming
 and placeholder restrictions, separate from native invariants. Inspection returns a
@@ -86,8 +87,8 @@ an explicit allowlist, including a negative probe for an engine-to-UI dependency
 core was also reviewed for standard-library filesystem/clock/process calls; the graph
 check alone cannot establish their absence. See [the quality review](CODE_QUALITY.md).
 
-1. Extend initial Bind/Remove-all with explicit additional-binding, Direct/brush
-   and deform commands; retain imported values until an accepted edit changes them.
+1. Extend explicit Bind/Remove-all/Add/Direct with Update, brush and deform
+   commands; retain imported values until an accepted edit changes them.
 2. Introduce stable entity IDs before deletion/reparenting and animation merging.
 3. Extend the shared I/O shell for formats/destinations; keep dialogs in the frontend.
 4. Add schemas and MCP around the existing serializable commands when needed.
@@ -299,3 +300,56 @@ The real G tool participates in ordinary last-two-tool switching. Temporary Mesh
 inspection keeps its independent return tracking. Weights is a named resizable
 right-column view with shared independent icon cues and visibility state. This is
 provisional placement, not an implemented arbitrary docking system.
+
+## Additional bindings and Direct weights
+
+Native v4 is unchanged. `AddMeshBoneBinding` and `SetMeshBoneWeight` carry an exact
+attachment reference and `MeshBindPose`. Thin Session methods capture Setup locals
+or actual Animate locals, including pending edits at the supplied time. Pose
+snapshots are command inputs, never saved mesh fields. Neither operation keys or
+discards pending bone edits.
+
+Add requires a new bone absent from every vertex, including zero entries. It
+evaluates the current weighted point, uses the existing checked inverse for the
+new bone and appends its bone-local position at weight zero. Every old entry stays
+unchanged, including signed zeros, repeated bones, nonunit sums and order. Only
+the new inverse is required. The shared finite and absolute 0.001 forward-residual
+checks also apply to a zero entry: transforming it before multiplication must not
+produce infinity or NaN. The initialized position is our approved mathematical
+policy; the public zero-weight convention does not establish Spine's exact storage
+choice. Add does not repair a bone present on only some vertices.
+
+Direct addresses one vertex and one existing bone. For requested f32 weight `t`
+and f64 sum `O` of the other strictly positive weights, keep the chosen value `t`
+and store each other positive value as `f32(f64(old) * (1 - f64(t)) / O)`.
+Existing zero entries and all bind positions/order are untouched. There is no
+second normalization or residual assignment after f32 rounding. An explicit edit
+can normalize an imported nonunit selected vertex even if its chosen value was
+unchanged. Import, display, Add and unselected vertices do not normalize anything.
+
+When `O` is zero, only `t == 1` is allowed. Repeated bones anywhere on the selected
+vertex are ambiguous and reject; repeats elsewhere remain valid and untouched.
+Missing selected-vertex targets and out-of-range/nonfinite payloads reject. These
+are bounded authoring policies, not a relaxation of native data preservation or a
+claim that Spine rejects the same inputs. A genuinely unchanged result retains
+the existing Session no-op behavior and redo branch.
+
+Direct uses forward evaluation to reject a newly nonfinite selected point at the
+captured pose. It requires no inverse, so a singular transform alone need not
+reject. It intentionally permits deformation and never runs Add's 0.001 shape
+residual guard or compensates positions. Atomic candidate validation and Batch
+publication preserve document, pending pose, saved state and history on failure.
+
+The Weight control freezes attachment, vertex, bone, Setup/Animate, animation,
+actual time and one pose snapshot. Every preview starts from Session's transaction
+baseline, avoiding cumulative redistribution. A failed preview retains the last
+valid preview. Pointer release, Enter/Tab and ordinary blur settle one undo step
+after frame actions and pointer-up; a context or Save action can cancel first.
+Escape, application focus loss, tool/selection/context/history/Open/Save/Export
+and view-hide actions restore the baseline and suppress stale field responses or
+held-pointer movement until release. Numeric text owns text undo; owned-field
+Save cancels then saves. No new history stack or preview math lives in the UI.
+
+See the [approved command contract](slices/weight-direct-design.md). Multi-vertex/
+multi-bone Direct, brushes, locks, individual removal, sparse repair and Update
+remain separate model, interaction and acceptance work.

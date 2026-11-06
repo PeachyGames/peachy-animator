@@ -714,3 +714,129 @@ Exact installed-editor docking, Direct/brush editing, additional bindings, Auto,
 Update, broader production-character/game-engine acceptance, other platforms and
 hosted CI remain pending. The new authoring commands do not change the prior
 **0/11** fully supported production-character result or remove constraint blockers.
+
+## Additional binding and Direct — November 6, 2026 UTC
+
+This is a separate extension of the historical 140-test weighted and 162-test
+binding checkpoints above; those sections retain their original scope. The
+combined Direct build at `694576a` passes **184 Rust tests**: desktop **63**, CLI
+**4**, engine **87**, I/O **15**, adapter **15**, plus formatting, warnings-denied
+workspace Clippy, workspace build and the six-crate architecture guard. The engine
+includes **11 Direct tests** alongside the prior **13 binding tests**; the desktop
+adds **11 Direct input/lifecycle regressions**. Hosted CI and other platforms are
+not checked by this local macOS result.
+
+Core cases cover initial A=1 → Add B=0 → Direct B=0.3/A=0.7, proportional known
+vectors, nonunit selected-vertex normalization, signed-zero/order/position and
+unselected-repeat preservation, subnormal recipients, retained underflow entries,
+singular-but-finite Direct poses, required Add inverse and precision guards,
+nonfinite candidates and malformed payloads/Batches. Fixed-base previews, failure,
+cancel, one-step Undo/Redo, pending locals and no-op redo preservation are explicit
+checks. Native v4 and the adapters are unchanged; normalization occurs only through
+an explicit Direct edit of its selected vertex.
+
+The reusable `scripts/check-direct-weights.py` imports the existing Bind harness
+helpers for guarded files, command invocations, poses and roundtrips. The accepted
+main-CLI run passes **10 success cases**, **19 expected failures**, **471 scene
+comparisons** and **51,774 vertex coordinates**, with maximum vertex error
+**0.000030517578125** and zero UV error. Optional Cargo execution passes the
+**24 Bind/Direct Session tests**. All **19 original fixture files and retained
+baselines remain byte-for-byte unchanged**. An existing evidence directory and
+output inside original fixtures are refused without changing them.
+See [CLI acceptance](evidence/direct-cli.json).
+
+The cases retain both ordinary limb influence orders **[8,7]** and **[7,8]** without
+sorting. Add leaves original/nonunit/repeated/zero entries untouched; Direct only
+changes its selected vertex. A moved-bone case verifies intentional deformation
+without allowing changes to unrelated vertices. Failures check the stated reason,
+unchanged input and no published output, including sparse/repeated/zero-recipient
+limits, existing-global Add bones, singular/precision/nonfinite cases, invalid
+payloads, partially successful Batches and overwrite refusal.
+
+All **eight bundled results** also pass the separately supplied Spine 4.3 runtime
+oracle, with **52 samples per clip/skin**, exact ends, held poses and backward
+scrubbing. Every result is compared against its own edited native document and
+packed JSON/atlas/PNG; Direct is not assumed to preserve its original shape.
+
+| Result | Weighted coordinates | Maximum mesh error |
+| --- | ---: | ---: |
+| Scratch A1/B0 → B0.3/A0.7 | 3,120 | 0.000030517578125 |
+| Scratch moved-bone Direct | 3,120 | 0.000030517578125 |
+| Scratch order [8,7] | 3,120 | 0.00006103515625 |
+| Scratch order [7,8] | 3,120 | 0.0000400543212890625 |
+| Imported weighted-bot Direct | 4,680 | 0.00006103515625 |
+| Imported nonunit contract Direct | 3,120 | 0.00006866455078125 |
+| Repeated/zero/order-preserving Add | 4,680 | 0.00006103515625 |
+| Known proportional Direct vector | 3,120 | 0.000030517578125 |
+| Total | **28,080** | **0.00006866455078125** |
+
+The full runtime totals are **252,720 bone values**, **262,080 region coordinates**,
+**46,800 mesh coordinates** and **93,600 UV comparisons**. Maximum world error is
+**0.00005064427244860781**, maximum region error **0.0000762939453125**, and UV error
+is zero. Tolerance remains **0.001**. The accepted-report CLI hash matches before
+execution; CLI, native, standalone export, packed JSON, atlas, image, harness and
+source-report hashes are unchanged afterward. Two concurrent jobs were used; all
+eight synchronous Node children exit with code zero. No runtime implementation was
+read and no GUI/source/target writes occur in this runtime check.
+See [external-runtime acceptance](evidence/direct-runtime.json).
+
+Installed Spine Editor **4.3.26** CLI imports/re-exports **seven of eight** Direct
+results, and our adapter accepts all seven outputs. The repeated-influence Add
+fixture fails with `Index -2 out of bounds for length 16` while passing the runtime
+oracle. Both ordinary limb orders **[8,7]** and **[7,8]** pass editor interchange;
+this does not establish a universal parent-first influence order. No data was
+sorted, merged or normalized to obtain those results; every source hash is unchanged.
+
+Canonicalization comparison of the seven editor outputs measures maximum bind-
+coordinate change **0.00476837158203125** and positive-weight change
+**0.0000044405460357666016** on weighted-bot Direct. Other measured positive weights
+are unchanged or within one f32 ULP. Thus the earlier weighted fixtures' positive-
+weight preservation is not generalized to Direct outputs. Import/re-export and
+adapter acceptance prove neither lossless original-data roundtrips nor interactive
+Spine Weights behavior. Original-source shape preservation through this editor
+roundtrip is not claimed. The editor removes one to four zero entries per accepted
+result; reimport can expose sparse targets that our current authoring guards do not
+repair. Native/imported raw entries are not pruned by our codec to imitate that loss.
+See [editor interchange and canonicalization](evidence/direct-spine-editor.json).
+
+Headless UI regressions exercise actual egui input frames for numeric previews,
+pointer-idle retention, Enter/Tab, rounded nonunit focus/blur, invalid text, text undo
+and tool-key priority, application focus loss, real toolbar Save press/release,
+owned-field Cmd/Ctrl+S, and held-slider Escape/Save/history followed by further
+movement/release. Direct context and one pose snapshot remain frozen; canceled
+input cannot return on stale blur or mouse-up. These checks pass in the combined
+build; native text/pointer delivery is checked separately below.
+
+The full native run at **`694576a`** passes on its first complete execution. It
+starts with an unweighted mesh, binds A=hand.R (bone 8), adds B=forearm.R (bone 7),
+and verifies all old influence entries plus a zero B entry on every vertex. Initial
+Bind and Add show **zero observed world error** at the captured pose. Vertex **4**
+then receives an actual typed **30% B / 70% A** result, with verified Save and
+Undo/Redo. Numeric Escape and a real toolbar Save click cancel a live preview.
+Held-slider Escape/Cmd+S, continued pointer movement and release produce no ghost
+edit or history entry; a committed slider edit is one Undo/Redo step.
+
+Animate Direct **45%** activates genuine Weights from Rotate and preserves the
+exact pending **13-degree rotation**, locals and time, with no new keys. Save
+excludes that pending pose. The working document/file is restored semantically at
+f32 precision, and the original system clipboard is restored. **Five Save backups**
+are audited: the first matches the retained initial raw copy exactly, the next
+three match the 30% document at f32 precision, and the last matches the 45% document
+at f32 precision. This is not a claim that final saved bytes equal the initial raw
+copy. All **19 repository source files remain unchanged**. See
+[full native acceptance](evidence/direct-native.json).
+
+The [visual review](evidence/direct-visual.json) uses two captures from that same
+accepted native run, verifying loaded original artwork, independent Weights
+icon/bone colors, actual 30%/45% controls/data and the unkeyed Animate pose. It is
+not a second full functional run or an interactive Spine UI comparison. See the
+[Setup Direct capture](direct-editor.png) and [posed Direct capture](direct-posed.png).
+The cleanup audit confirms **16 recorded native/editor CLI processes exited**;
+the eight Node oracle jobs above were separately waited/reaped. Two fresh-launch
+cleanup records retain no temporary authorization, keys, command directories or
+interactive handoff.
+
+Exact Weights docking, pixel and full interaction parity, brushes, locks,
+multi-selection, Update, other platforms, hosted CI and broader production/game-
+engine acceptance remain pending. No production inputs are changed or newly
+claimed supported: **0/11** remain fully supported, all 11 still require constraints.

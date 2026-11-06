@@ -382,3 +382,56 @@ full functional run rather than a second full-run claim.
 Direct/brush editing, additional bindings, Auto, Update, locks, weight clipboard,
 multiple vertex/bone selection, pies/overlay and weighted vertex/topology editing
 remain pending. No fake active controls advertise those features.
+
+## Additional Bind and Direct controls — November 6, 2026 UTC
+
+The existing Weights pane extends Bind to a genuinely new bone on an already
+weighted mesh. A concrete target click appends that bone at 0% on every vertex;
+already-bound bones fail explicitly and end the attempt without retry. Initial
+Bind and Remove all keep their prior behavior. The pane retains its independent
+icon/swatches and explicit mesh/vertex/bone context.
+
+**Mode: Direct** is a static label for the sole implemented mode. **Weight** has a
+percentage slider and numeric entry for one vertex and one existing bound bone.
+The remaining positive weights share the remainder proportionally. Sparse or
+repeated selected-vertex bindings show an unavailable reason. Imported percentages
+are display-rounded without changing raw values merely on focus/Tab/blur; invalid
+numeric text alone also leaves them and redo intact. Starting a Weight control
+from a normal transform tool activates genuine Weights with coherent tool history.
+
+A gesture freezes target, Setup/Animate mode, clip, actual time and one posed-local
+snapshot. Each preview uses the same transaction baseline. Pointer release,
+Enter/Tab or ordinary blur commits a valid change as one undo step after frame
+actions and pointer-up. Escape, application focus loss, tool/mesh/vertex/bone/skin/
+time/mode/clip changes, history, Open/Save/Export and view hide cancel first. Stale
+numeric responses and held-pointer movement stay suppressed until release, so a
+canceled weight cannot return on mouse-up. Undo/Redo during a preview cancels it
+without consuming older history. Weight text retains text undo; owned-field
+Cmd/Ctrl+S cancels then saves.
+
+Edits preserve pending bone pose and create no keys. Time/context actions keep
+their established pending-pose policy after canceling Direct. Changing weights
+may deform a vertex; the UI does not compensate its bind position. The pane is
+still provisionally docked in the right column. Exact installed-Spine placement,
+vertical viewport weight dragging, multiple vertices/bones, brushes, Auto, locks,
+Update, individual removal, pies/overlay and weight clipboard remain pending.
+
+Core/CLI/runtime checks and headless input regressions do not establish native
+pointer/text behavior or visual parity. The full native run at `694576a` separately
+verifies scratch A=hand.R/B=forearm.R Bind/Add0 with zero observed current-shape
+error, selected vertex 4's exact 30%/70% numeric result, Save and Undo/Redo, numeric
+Escape and a real toolbar Save click, held-slider Escape/Cmd+S followed by further
+movement/release without a ghost edit, and one-step slider history.
+
+In Animate, Direct automatically activates genuine Weights from Rotate. The 45%
+edit retains an unkeyed 13-degree rotation, exact pending locals/time and existing
+keys; Save excludes that pending pose. The full run restores the working document
+and file semantically at f32 precision and restores the original clipboard. Five
+Save backups are verified, including the exact initial raw working copy.
+See [native acceptance](evidence/direct-native.json).
+
+[Visual review](evidence/direct-visual.json) of the same run verifies loaded
+original artwork, independent Weights icon/bone colors and actual 30%/45% data and
+controls. [Setup capture](direct-editor.png) and [posed capture](direct-posed.png)
+show our editor only. This is neither a separate second full native run nor exact
+installed-Spine docking, pixel-equivalence or full interaction-parity acceptance.
