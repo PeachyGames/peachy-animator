@@ -39,17 +39,18 @@ const sourceProject = JSON.parse(readFileSync(source, 'utf8'));
 const data = new SkeletonJson(new AtlasAttachmentLoader(atlas)).readSkeletonData(readFileSync(exportPath, 'utf8'));
 assert.equal(data.version.split('.').slice(0, 2).join('.'), '4.3');
 assert.equal(data.animations.length, sourceProject.animations.length, 'Every native clip is exported, including empty clips');
-const report = { regionComparisons: 0, maxRegionError: 0, meshComparisons: 0, weightedMeshComparisons: 0, maxMeshError: 0, uvComparisons: 0, maxUVError: 0, runtime: 'Spine 4.3 external oracle', bones: data.bones.length, slots: data.slots.length, skins:data.skins.map(s=>s.name), clips: [], tolerance: 0.001, maxWorldError: 0, comparisons: 0 };
+assert.equal(data.constraints.length, (sourceProject.constraints ?? []).length, 'Every native constraint retains its ordered identity');
+const report = { regionComparisons: 0, maxRegionError: 0, meshComparisons: 0, weightedMeshComparisons: 0, maxMeshError: 0, uvComparisons: 0, maxUVError: 0, runtime: 'Spine 4.3 external oracle', bones: data.bones.length, slots: data.slots.length, skins:data.skins.map(s=>s.name), clips: [], tolerance: 0.001, maxWorldError: 0, comparisons: 0, ikPoseComparisons: 0, maxIKMixError: 0, ikMixTolerance: 1e-6 };
 for (const animation of data.animations) {
   const native = sourceProject.animations.find(clip => clip.name === animation.name);
   assert.ok(native, 'Exported clip has a native source');
   const nativeEnd = sourceProject.format >= 3
-    ? native.tracks.reduce((end, track) => track.keys.reduce((end, key) => Math.max(end, Math.fround(key.time)), end), 0)
+    ? [...native.tracks, ...(native.ik_tracks ?? [])].reduce((end, track) => track.keys.reduce((end, key) => Math.max(end, Math.fround(key.time)), end), 0)
     : Math.fround(native.duration);
   assert.equal(animation.duration, nativeEnd, `${animation.name}: runtime end matches native end`);
   let maxError = 0;
   // Include the exact last frame, held poses beyond the end, and backwards scrubbing.
-  const times = [...Array.from({ length: 49 }, (_, i) => animation.duration * i / 48), animation.duration * 0.31, animation.duration + 1, 0];
+  const times = [...Array.from({ length: 49 }, (_, i) => animation.duration * i / 48), animation.duration * 0.31, animation.duration + 1, 0].map(Math.fround);
   for (const skin of data.skins.length ? data.skins : [null]) {
     for (const time of times) {
       const skeleton = new Skeleton(data);
@@ -61,6 +62,22 @@ for (const animation of data.animations) {
       state.apply(skeleton);
       skeleton.updateWorldTransform(Physics.none);
       const ours = JSON.parse(execFileSync(cli, ['pose', source, animation.name, String(time), skin?.name ?? 'default'], { encoding: 'utf8' }));
+      assert.ok(Array.isArray(ours.ikPoses), 'CLI exposes the sampled IK settings independently of bone locals');
+      assert.equal(ours.ikPoses.length, skeleton.constraints.length, 'IK pose group count');
+      for (let i = 0; i < skeleton.constraints.length; i++) {
+        const constraint = skeleton.constraints[i];
+        const actual = ours.ikPoses[i];
+        const nativeConstraint = sourceProject.constraints[i];
+        assert.equal(actual.constraint, i, 'Typed constraint index');
+        assert.equal(actual.name, nativeConstraint.name, 'Native IK group identity');
+        assert.equal(actual.name, constraint.data.name, 'Runtime IK group identity');
+        const error = Math.abs(actual.mix - constraint.pose.mix);
+        assert.ok(Number.isFinite(error) && error <= report.ikMixTolerance,
+          `${animation.name} t=${time} IK=${actual.name} Mix error=${error}`);
+        assert.equal(actual.bendPositive, constraint.pose.bendDirection > 0, 'Discrete IK bend');
+        report.ikPoseComparisons++;
+        report.maxIKMixError = Math.max(report.maxIKMixError, error);
+      }
       for (let i = 0; i < skeleton.bones.length; i++) {
         const official = skeleton.bones[i].appliedPose;
         const actual = ours.bones[i].world;

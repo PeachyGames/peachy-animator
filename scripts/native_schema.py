@@ -36,3 +36,8 @@ def require_fk_document(document, purpose):
     """
     if document.get("constraints"):
         raise RuntimeError(f"{purpose} requires an unconstrained document; use an explicit checked applied pose")
+
+
+def animation(name, tracks=(), ik_tracks=()):
+    """Construct the current required animation shape with independent lists."""
+    return dict(name=name, tracks=list(tracks), ik_tracks=list(ik_tracks))
