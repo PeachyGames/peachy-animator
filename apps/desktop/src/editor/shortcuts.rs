@@ -81,6 +81,7 @@ impl Editor {
             ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
         }
         if self.rename.is_some()
+            || self.duplicate_animation.is_some()
             || (ctx.egui_wants_keyboard_input() && !self.dopesheet_has_focus(ctx))
         {
             return;

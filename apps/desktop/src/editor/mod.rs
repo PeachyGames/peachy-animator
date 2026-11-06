@@ -1,4 +1,5 @@
 mod animation;
+mod animation_management;
 mod dopesheet;
 mod dopesheet_selection;
 mod icons;
@@ -95,6 +96,7 @@ pub(crate) struct Editor {
     error: Option<String>,
     new_bone: String,
     rename: Option<rename::RenameState>,
+    duplicate_animation: Option<animation_management::DuplicateAnimationState>,
     capture: Option<PathBuf>,
     capture_directory: PathBuf,
     frames: usize,
@@ -205,6 +207,7 @@ impl Editor {
             error: initial_error,
             new_bone: String::new(),
             rename: None,
+            duplicate_animation: None,
             capture,
             capture_directory,
             frames: 0,
@@ -485,6 +488,8 @@ impl Editor {
                     self.hidden_bones.clear();
                     self.hidden_slots.clear();
                     self.mesh_drag = None;
+                    self.rename = None;
+                    self.duplicate_animation = None;
                     self.reconcile_selection();
                     self.error = None;
                     self.load_textures(ctx);
@@ -662,6 +667,7 @@ impl eframe::App for Editor {
                 });
         }
         self.rename_dialog(&ctx);
+        self.duplicate_animation_dialog(&ctx);
         ctx.send_viewport_cmd(egui::ViewportCommand::Title(format!(
             "{}{} — Peachy Animator",
             if self.session.is_dirty() { "* " } else { "" },
