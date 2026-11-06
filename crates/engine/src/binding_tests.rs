@@ -351,6 +351,111 @@ fn finite_inverse_coordinates_that_overflow_when_rendered_are_rejected_atomicall
 }
 
 #[test]
+fn finite_inverse_precision_loss_cannot_shorten_a_ten_unit_edge_during_bind_or_unbind() {
+    for weighted in [false, true] {
+        let mut original = if weighted { rig() } else { slot_local_rig() };
+        original.bones[0].setup = Transform::default();
+        original.bones[1].parent = None;
+        original.bones[1].setup = Transform {
+            x: if weighted { 0. } else { 1e8 },
+            ..Default::default()
+        };
+        original.bones[2].parent = None;
+        original.bones[2].setup = Transform {
+            x: if weighted { 1e8 } else { 0. },
+            ..Default::default()
+        };
+        let points = vec![[0., 0.], [10., 0.], [0., 10.]];
+        mesh_mut(&mut original).vertices = if weighted {
+            MeshVertices::Weighted {
+                influences: points
+                    .iter()
+                    .map(|&position| {
+                        vec![BoneInfluence {
+                            bone: 1,
+                            position,
+                            weight: 1.,
+                        }]
+                    })
+                    .collect(),
+            }
+        } else {
+            MeshVertices::SlotLocal {
+                positions: points.clone(),
+            }
+        };
+        let local_pose = setup_pose(&original);
+        assert_eq!(vertices(&original, local_pose.locals.clone()), points);
+        // The inverse's finite x coordinate rounds to -99_999_992, which
+        // reconstructs world x=8 instead of the original x=10.
+        assert_eq!((10f64 - f64::from(1e8f32)) as f32 + 1e8f32, 8.);
+        let mut session = pending_with_redo(original.clone());
+        let pending = session.pose_edits().clone();
+        let undo_available = session.can_undo();
+        let result = if weighted {
+            session.unbind_mesh(reference("weighted"), EditTarget::Setup)
+        } else {
+            session.bind_mesh_to_bone(reference("weighted"), 1, EditTarget::Setup)
+        };
+        assert!(result.unwrap_err().contains("coordinate precision"));
+        assert_eq!(session.document(), &original);
+        assert_eq!(session.pose_edits(), &pending);
+        assert!(!session.is_dirty());
+        assert_eq!(session.can_undo(), undo_available);
+        assert!(session.can_redo());
+    }
+}
+
+#[test]
+fn exactly_recoverable_large_bind_poses_are_accepted_without_a_position_cutoff() {
+    for weighted in [false, true] {
+        let mut original = if weighted { rig() } else { slot_local_rig() };
+        original.bones[0].setup = Transform::default();
+        original.bones[1].parent = None;
+        original.bones[1].setup = Transform {
+            x: if weighted { 0. } else { 1e8 },
+            ..Default::default()
+        };
+        original.bones[2].parent = None;
+        original.bones[2].setup = Transform {
+            x: if weighted { 1e8 } else { 0. },
+            ..Default::default()
+        };
+        let points = vec![[0., 0.], [16., 0.], [0., 16.]];
+        mesh_mut(&mut original).vertices = if weighted {
+            MeshVertices::Weighted {
+                influences: points
+                    .iter()
+                    .map(|&position| {
+                        vec![BoneInfluence {
+                            bone: 1,
+                            position,
+                            weight: 1.,
+                        }]
+                    })
+                    .collect(),
+            }
+        } else {
+            MeshVertices::SlotLocal {
+                positions: points.clone(),
+            }
+        };
+        let pose = setup_pose(&original);
+        let result = apply_command(
+            &original,
+            if weighted {
+                unbind(pose.clone())
+            } else {
+                bind(1, pose.clone())
+            },
+        )
+        .unwrap();
+        assert_eq!(vertices(&result, pose.locals), points);
+        assert_metadata(&original, &result);
+    }
+}
+
+#[test]
 fn invalid_bind_commands_and_batches_preserve_document_pose_saved_state_and_redo() {
     let original = slot_local_rig();
     let mut session = pending_with_redo(original.clone());
