@@ -477,6 +477,14 @@ fn invalid_bind_commands_and_batches_preserve_document_pose_saved_state_and_redo
         placeholder: "missing".into(),
         ..reference("weighted")
     };
+    let invalid_bone = Bone {
+        name: "invalid batch hierarchy".into(),
+        parent: Some(usize::MAX),
+        length: 1.,
+        setup: Transform::default(),
+    };
+    let mut hierarchy_pose = pose.clone();
+    hierarchy_pose.locals.push(Transform::default());
     for command in [
         bind(usize::MAX, pose.clone()),
         bind(1, bad_length),
@@ -500,6 +508,20 @@ fn invalid_bind_commands_and_batches_preserve_document_pose_saved_state_and_redo
         },
         Command::Batch {
             commands: vec![bind(1, pose.clone()), bind(1, pose.clone())],
+        },
+        Command::Batch {
+            commands: vec![
+                Command::AddBone {
+                    bone: invalid_bone.clone(),
+                },
+                bind(1, hierarchy_pose.clone()),
+            ],
+        },
+        Command::Batch {
+            commands: vec![
+                Command::AddBone { bone: invalid_bone },
+                unbind(hierarchy_pose),
+            ],
         },
     ] {
         assert!(session.dispatch(command).is_err());

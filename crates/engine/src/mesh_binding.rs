@@ -24,6 +24,16 @@ fn bind_world(document: &Document, pose: &MeshBindPose) -> Result<Vec<Affine>, S
     {
         return Err("Bind pose needs one finite local transform per bone".into());
     }
+    // A Batch may contain an invalid AddBone before final document validation.
+    // Do not pass an invalid intermediate hierarchy to world_pose's index lookup.
+    if document
+        .bones
+        .iter()
+        .enumerate()
+        .any(|(index, bone)| bone.parent.is_some_and(|parent| parent >= index))
+    {
+        return Err("Bind pose requires a valid bone hierarchy".into());
+    }
     Ok(world_pose(document, &pose.locals))
 }
 
