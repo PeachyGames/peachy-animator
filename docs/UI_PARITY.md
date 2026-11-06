@@ -319,8 +319,9 @@ and subdivision is disabled. The same operations are rejected by the shared engi
 Returning to bone tools restores the normal pose/key/history paths. Native save
 retains native v4 influences and excludes an unkeyed pose as before.
 
-The properties body now uses a bounded scroll area so a long influence list does
-not push the main toolbar or Dopesheet outside its requested panel height. Native
+The properties scroll area retains its requested pane height as content changes.
+Short initial bone properties no longer collapse the pane before a longer influence
+list is selected. Native
 verification exercised posed inspection, edit guards, restored bone tools, keying,
 Undo/Redo and two save backups, then unweighted drag/subdivision. The working document
 and original clipboard were restored. See [acceptance](evidence/weighted-native.json),
