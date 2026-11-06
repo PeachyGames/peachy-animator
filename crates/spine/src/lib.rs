@@ -141,7 +141,13 @@ pub fn inspect(value: &Value) -> Inspection {
                 if let Some(regions) = regions.as_object() {
                     for (name, region) in regions {
                         attachments += 1;
-                        inspect_attachment(region, slot, name, &mut unsupported);
+                        inspect_attachment(
+                            region,
+                            slot,
+                            name,
+                            array(&value["bones"]).len(),
+                            &mut unsupported,
+                        );
                     }
                 }
             }
@@ -282,7 +288,8 @@ pub fn import_json(value: &Value, name: &str) -> Result<Document, String> {
             for (slot, regions) in attachments {
                 let mut mapped_regions = BTreeMap::new();
                 for (name, region) in regions.as_object().ok_or("Invalid attachments")? {
-                    mapped_regions.insert(name.clone(), read_attachment(region, name)?);
+                    mapped_regions
+                        .insert(name.clone(), read_attachment(region, name, bones.len())?);
                 }
                 mapped.insert(slot.clone(), mapped_regions);
             }
@@ -690,7 +697,7 @@ mod tests {
             (
                 "vertices",
                 json!([
-                    1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1
+                    1, 99, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1
                 ]),
             ),
             ("uvs", json!([0, 0, 1])),

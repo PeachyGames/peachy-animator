@@ -17,7 +17,7 @@ fn decode(value: &Value) -> Result<Document, String> {
 #[test]
 fn migration_materializes_exactly_the_previous_export_without_reordering_tracks() {
     let doc = decode_project(LEGACY).unwrap();
-    assert_eq!(doc.format, 3);
+    assert_eq!(doc.format, peachy_document::FORMAT_VERSION);
     assert_eq!(
         peachy_spine::export_json(&doc).unwrap(),
         serde_json::from_str::<Value>(GOLDEN).unwrap()
@@ -168,7 +168,7 @@ fn migration_keeps_unknown_fields_strict_even_on_final_curves_and_empty_tracks()
             .unwrap_err()
             .contains("unknown field `duration`")
     );
-    native["format"] = json!(4);
+    native["format"] = json!(peachy_document::FORMAT_VERSION + 1);
     native["animations"][0]
         .as_object_mut()
         .unwrap()
@@ -246,7 +246,7 @@ fn legacy_load_is_read_only_then_explicit_save_backs_up_original_and_keeps_the_r
     let mut reopened = load(&path).unwrap();
     assert_eq!(reopened, doc);
     let written: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
-    assert_eq!(written["format"], 3);
+    assert_eq!(written["format"], peachy_document::FORMAT_VERSION);
     assert!(written["animations"][0].get("duration").is_none());
     reopened.animations[0].tracks[0].keys.pop();
     assert_eq!(reopened.animations[0].duration(), 4.0);

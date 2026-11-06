@@ -27,7 +27,7 @@ pub fn load(path: &Path) -> Result<Document, String> {
 pub fn decode_project(text: &str) -> Result<Document, String> {
     let mut value: serde_json::Value = serde_json::from_str(text).map_err(|e| e.to_string())?;
     // Version 1 had only regions and no attachment discriminator. Add that tag,
-    // then take the same v2-to-v3 path as tagged legacy attachments.
+    // then take the same migration path as tagged legacy attachments.
     if value["format"].as_u64() == Some(1) {
         if let Some(skins) = value["skins"].as_object_mut() {
             for skin in skins.values_mut() {
@@ -51,15 +51,28 @@ pub fn decode_project(text: &str) -> Result<Document, String> {
         }
         value["format"] = 2.into();
     }
-    if value["format"].as_u64() == Some(2) {
-        return migrate_v2(value);
+    let durations = if value["format"].as_u64() == Some(2) {
+        let durations = take_v2_durations(&mut value)?;
+        value["format"] = 3.into();
+        Some(durations)
+    } else {
+        None
+    };
+    if value["format"].as_u64() == Some(3) {
+        wrap_v3_mesh_vertices(&mut value)?;
+        value["format"] = peachy_document::FORMAT_VERSION.into();
     }
-    let doc: Document = serde_json::from_value(value).map_err(|e| e.to_string())?;
+    let mut doc: Document = serde_json::from_value(value).map_err(|e| e.to_string())?;
+    // Wrapping vertices preserves their values and all surrounding fields. Decode
+    // the strict schema and validate every legacy field before adding duration holds.
     doc.validate()?;
+    if let Some(durations) = durations {
+        materialize_v2_holds(&mut doc, durations)?;
+    }
     Ok(doc)
 }
 
-fn migrate_v2(mut value: serde_json::Value) -> Result<Document, String> {
+fn take_v2_durations(value: &mut serde_json::Value) -> Result<Vec<f32>, String> {
     let animations = value["animations"]
         .as_array_mut()
         .ok_or("Legacy animations must be an array")?;
@@ -76,11 +89,37 @@ fn migrate_v2(mut value: serde_json::Value) -> Result<Document, String> {
         }
         durations.push(duration);
     }
-    value["format"] = peachy_document::FORMAT_VERSION.into();
-    let mut doc: Document = serde_json::from_value(value).map_err(|e| e.to_string())?;
-    // Validate the entire input before normalizing an unused curve or adding keys.
-    // The v3 schema is identical apart from duration; unknown fields stay errors.
-    doc.validate()?;
+    Ok(durations)
+}
+
+fn wrap_v3_mesh_vertices(value: &mut serde_json::Value) -> Result<(), String> {
+    if let Some(skins) = value["skins"].as_object_mut() {
+        for skin in skins.values_mut() {
+            if let Some(slots) = skin.as_object_mut() {
+                for attachments in slots.values_mut() {
+                    if let Some(attachments) = attachments.as_object_mut() {
+                        for attachment in attachments.values_mut() {
+                            if attachment["type"].as_str() == Some("mesh") {
+                                let vertices = attachment
+                                    .get_mut("vertices")
+                                    .ok_or("Legacy mesh is missing vertices")?;
+                                if !vertices.is_array() {
+                                    return Err("Legacy mesh vertices must be an array".into());
+                                }
+                                *vertices = serde_json::json!({
+                                    "mode":"slotLocal", "positions":vertices.take()
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+fn materialize_v2_holds(doc: &mut Document, durations: Vec<f32>) -> Result<(), String> {
     for (animation, &duration) in doc.animations.iter().zip(&durations) {
         if animation
             .tracks
@@ -134,7 +173,7 @@ fn migrate_v2(mut value: serde_json::Value) -> Result<Document, String> {
         }
     }
     doc.validate()?;
-    Ok(doc)
+    Ok(())
 }
 
 pub fn create_project(path: &Path, doc: &Document) -> Result<(), String> {
@@ -352,7 +391,7 @@ mod tests {
         let mut bad = v.clone();
         bad["skins"]["default"]["hand.R"]["hand.R"]["vertices"] = serde_json::json!([]);
         assert!(decode_project(&bad.to_string()).is_err());
-        v["format"] = 4.into();
+        v["format"] = (peachy_document::FORMAT_VERSION + 1).into();
         assert!(decode_project(&v.to_string()).is_err());
     }
     #[test]
