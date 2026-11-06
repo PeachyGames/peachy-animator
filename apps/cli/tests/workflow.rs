@@ -236,6 +236,19 @@ fn finite_extreme_curve_intermediates_roundtrip_and_pose_without_null_output() {
     assert!(String::from_utf8_lossy(&rejected.stderr).contains("Bezier export handle exceeds"));
     assert!(!unpublished_json.exists());
     assert_eq!(fs::read(&native).unwrap(), original);
+    let rejected_pose = Command::new(cli)
+        .args([
+            "pose".as_ref(),
+            native.as_os_str(),
+            "range".as_ref(),
+            "0.5".as_ref(),
+        ])
+        .output()
+        .unwrap();
+    assert!(!rejected_pose.status.success());
+    assert!(String::from_utf8_lossy(&rejected_pose.stderr).contains("nonfinite"));
+    assert!(rejected_pose.stdout.is_empty());
+    assert_eq!(fs::read(&native).unwrap(), original);
     fs::remove_dir_all(folder).unwrap();
 }
 
