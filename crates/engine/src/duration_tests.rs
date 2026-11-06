@@ -212,7 +212,7 @@ fn explicit_holds_survive_extension_native_roundtrip_and_deleting_the_extension(
     .unwrap();
     assert_eq!(extended.animations[1].duration(), 6.);
     let native = serde_json::to_value(&extended).unwrap();
-    assert_eq!(native["format"], 3);
+    assert_eq!(native["format"], FORMAT_VERSION);
     assert!(native["animations"][1].get("duration").is_none());
     let reopened: Document = serde_json::from_value(native).unwrap();
     assert_eq!(reopened, extended);
@@ -513,7 +513,7 @@ fn zero_transport_stops_at_zero_and_tiny_positive_intervals_still_loop_and_stop_
 }
 
 #[test]
-fn native_v3_rejects_stored_duration_and_old_format_and_keeps_fixture_keys_valid() {
+fn native_rejects_stored_duration_and_old_format_and_keeps_fixture_keys_valid() {
     let before = with_keys();
     let mut value = serde_json::to_value(&before).unwrap();
     value["animations"][0]["duration"] = 4.into();
@@ -549,7 +549,7 @@ fn native_v3_rejects_stored_duration_and_old_format_and_keeps_fixture_keys_valid
     ] {
         let fixture: Document = serde_json::from_str(source).unwrap();
         fixture.validate().unwrap();
-        assert_eq!(fixture.format, 3);
+        assert_eq!(fixture.format, FORMAT_VERSION);
         assert_eq!(
             fixture
                 .animations
