@@ -296,7 +296,6 @@ pub fn import_json(value: &Value, name: &str) -> Result<Document, String> {
     if let Some(entries) = value["animations"].as_object() {
         for (name, animation) in entries {
             let mut tracks = vec![];
-            let mut duration: f32 = 0.0;
             if let Some(entries) = animation["bones"].as_object() {
                 for (bone, timelines) in entries {
                     let bone = *indices.get(bone).ok_or("Unknown animated bone")?;
@@ -316,7 +315,6 @@ pub fn import_json(value: &Value, name: &str) -> Result<Document, String> {
                             let mut mapped_keys = vec![];
                             for (i, key) in keys.iter().enumerate() {
                                 let time = number(key, "time", 0.0);
-                                duration = duration.max(time);
                                 let value = number(key, field, property.neutral());
                                 let curve = match key.get("curve") {
                                     None => Curve::Linear,
@@ -372,7 +370,6 @@ pub fn import_json(value: &Value, name: &str) -> Result<Document, String> {
             }
             animations.push(Animation {
                 name: name.clone(),
-                duration: duration.max(1.0 / 30.0),
                 tracks,
             });
         }
@@ -470,20 +467,10 @@ pub fn export_json(doc: &Document) -> Result<Value, String> {
                 }
                 keys.push(k);
             }
-            // Preserve authored clip length when the last visible key occurs earlier.
-            if let Some(last) = track.keys.last()
-                && last.time < animation.duration
-            {
-                keys.push(json!({"time":animation.duration,"value":last.value}));
-            }
             if bone_timelines.get(bone).is_none() {
                 bone_timelines[bone] = json!({});
             }
             bone_timelines[bone][timeline] = json!(keys);
-        }
-        if bone_timelines.as_object().is_some_and(|v| v.is_empty()) {
-            bone_timelines[&doc.bones[0].name] =
-                json!({"rotate":[{"time":animation.duration,"value":0.0}]});
         }
         animations[&animation.name] = json!({"bones":bone_timelines});
     }
@@ -738,6 +725,81 @@ mod tests {
         let out = export_json(&d).unwrap();
         let d2 = import_json(&out, "test").unwrap();
         assert_eq!(d, d2);
+    }
+
+    #[test]
+    fn empty_frame_zero_and_tiny_animations_have_no_duration_floor_or_synthetic_keys() {
+        for (keys, duration) in [
+            (json!([]), 0.0),
+            (json!([{"time":0,"value":7}]), 0.0),
+            (
+                json!([{"time":0,"value":7},{"time":0.001,"value":9}]),
+                0.001,
+            ),
+        ] {
+            let mut value = fixture();
+            value["animations"]["test"]["bones"]["root"]["rotate"] = keys.clone();
+            let doc = import_json(&value, "duration").unwrap();
+            assert_eq!(doc.animations[0].duration(), duration);
+            let output = export_json(&doc).unwrap();
+            let bones = &output["animations"]["test"]["bones"];
+            if keys.as_array().unwrap().is_empty() {
+                assert_eq!(bones, &json!({}));
+            } else {
+                assert_eq!(
+                    bones["root"]["rotate"].as_array().unwrap().len(),
+                    keys.as_array().unwrap().len()
+                );
+                assert_eq!(
+                    bones["root"]["rotate"].as_array().unwrap().last().unwrap()["time"]
+                        .as_f64()
+                        .unwrap() as f32,
+                    duration
+                );
+            }
+            let reopened = import_json(&output, "duration").unwrap();
+            assert_eq!(reopened.animations[0].duration(), duration);
+        }
+        let mut value = fixture();
+        value["animations"]["test"] = json!({});
+        let empty = import_json(&value, "empty").unwrap();
+        assert_eq!(empty.animations[0].duration(), 0.0);
+        assert!(empty.animations[0].tracks.is_empty());
+        assert_eq!(
+            export_json(&empty).unwrap()["animations"]["test"],
+            json!({"bones":{}})
+        );
+    }
+
+    #[test]
+    fn export_keeps_only_authored_keys_for_tracks_with_different_ends() {
+        let mut value = fixture();
+        value["animations"]["test"]["bones"]["root"] = json!({
+            "rotate":[{"time":0,"value":0},{"time":4,"value":20}],
+            "translatex":[{"time":0,"value":1,"curve":"stepped"},{"time":1,"value":2,"curve":"stepped"}],
+            "translatey":[]
+        });
+        let doc = import_json(&value, "different ends").unwrap();
+        assert_eq!(doc.animations[0].duration(), 4.0);
+        let output = export_json(&doc).unwrap();
+        let timelines = &output["animations"]["test"]["bones"]["root"];
+        assert_eq!(timelines["rotate"].as_array().unwrap().len(), 2);
+        assert_eq!(
+            timelines["translatex"],
+            json!([
+                {"time":0.0,"value":1.0,"curve":"stepped"},
+                {"time":1.0,"value":2.0,"curve":"stepped"}
+            ])
+        );
+        assert!(timelines.get("translatey").is_none());
+        let reopened = import_json(&output, "different ends").unwrap();
+        assert_eq!(reopened.animations[0].duration(), 4.0);
+        let x = reopened.animations[0]
+            .tracks
+            .iter()
+            .find(|track| track.property == Property::X)
+            .unwrap();
+        assert_eq!(x.keys.last().unwrap().time, 1.0);
     }
     #[test]
     fn refuses_constraints_and_unknown_semantics() {
