@@ -166,13 +166,12 @@ pub(super) fn read(
         .collect()
 }
 
-fn absolute_time(start: f32, end: f32, ratio: f64) -> Result<f32, String> {
+fn absolute_time(start: f32, end: f32, ratio: f64) -> Result<f64, String> {
     let value = f64::from(start) + (f64::from(end) - f64::from(start)) * ratio;
-    let native = value as f32;
-    if !value.is_finite() || !native.is_finite() {
-        return Err("IK Bezier export time exceeds the finite native range".into());
+    if !value.is_finite() || value < f64::from(start) || value > f64::from(end) {
+        return Err("IK Bezier export time must be finite and within its key segment".into());
     }
-    Ok(native)
+    Ok(value)
 }
 
 pub(super) fn write(doc: &Document, animation: &Animation) -> Result<Value, String> {

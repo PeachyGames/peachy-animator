@@ -1,0 +1,102 @@
+{
+  "format": 7,
+  "name": "Original export time fidelity 12246",
+  "fps": 30,
+  "bones": [
+    {
+      "name": "root",
+      "parent": null,
+      "length": 0.0,
+      "setup": {
+        "x": 0.0,
+        "y": 0.0,
+        "rotation": 0.0,
+        "scale_x": 1.0,
+        "scale_y": 1.0,
+        "shear_x": 0.0,
+        "shear_y": 0.0
+      }
+    },
+    {
+      "name": "arm",
+      "parent": 0,
+      "length": 10.0,
+      "setup": {
+        "x": 0.0,
+        "y": 0.0,
+        "rotation": 0.0,
+        "scale_x": 1.0,
+        "scale_y": 1.0,
+        "shear_x": 0.0,
+        "shear_y": 0.0
+      }
+    },
+    {
+      "name": "target",
+      "parent": 0,
+      "length": 0.0,
+      "setup": {
+        "x": 10.0,
+        "y": 10.0,
+        "rotation": 0.0,
+        "scale_x": 1.0,
+        "scale_y": 1.0,
+        "shear_x": 0.0,
+        "shear_y": 0.0
+      }
+    }
+  ],
+  "constraints": [
+    {
+      "type": "ik",
+      "name": "aim",
+      "bones": [
+        1
+      ],
+      "target": 2,
+      "setup": {
+        "mix": 0.0,
+        "bend_positive": true
+      }
+    }
+  ],
+  "slots": [],
+  "skins": {},
+  "animations": [
+    {
+      "name": "probe",
+      "tracks": [],
+      "ik_tracks": [
+        {
+          "constraint": 0,
+          "keys": [
+            {
+              "time": 0.40000054,
+              "mix": -1000000.0,
+              "bend_positive": true,
+              "curve": {
+                "type": "bezier",
+                "time": [
+                  0.24999998370185442,
+                  0.7500000069849195
+                ],
+                "mix": [
+                  -1000000.0,
+                  1000000.0
+                ]
+              }
+            },
+            {
+              "time": 1.2000005,
+              "mix": 1000000.0,
+              "bend_positive": true,
+              "curve": {
+                "type": "linear"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
