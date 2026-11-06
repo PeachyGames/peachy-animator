@@ -140,12 +140,15 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
                             } else {
                                 property.read(transform) - base
                             };
-                            let curve = clip
+                            let curve = match clip
                                 .tracks
                                 .iter()
                                 .find(|t| t.bone == bone && t.property == property)
-                                .and_then(|t| t.keys.iter().find(|k| same_key_time(k.time, time)))
-                                .map_or(Curve::Linear, |k| k.curve);
+                            {
+                                Some(track) => key_index(&track.keys, time)?
+                                    .map_or(Curve::Linear, |index| track.keys[index].curve),
+                                None => Curve::Linear,
+                            };
                             Ok(Command::SetKey {
                                 animation,
                                 bone,
@@ -267,7 +270,7 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
                 }
             };
             let keys = &mut a.tracks[index].keys;
-            if let Some(i) = keys.iter().position(|k| same_key_time(k.time, key.time)) {
+            if let Some(i) = key_index(keys, key.time)? {
                 keys[i] = key;
             } else {
                 keys.push(key);
@@ -291,27 +294,11 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
                 return Err("Key time must be finite and inside the animation".into());
             }
             for track in &mut a.tracks {
-                if track.bone == bone && track.property == property {
-                    // Source-time identities take priority over frame tolerance. Imported
-                    // keys can be distinct yet closer than KEY_TIME_EPSILON.
-                    let exact = track.keys.iter().position(|key| key.time == time);
-                    let index = if let Some(index) = exact {
-                        Some(index)
-                    } else {
-                        let mut nearby = track
-                            .keys
-                            .iter()
-                            .enumerate()
-                            .filter(|(_, key)| same_key_time(key.time, time));
-                        let index = nearby.next().map(|(index, _)| index);
-                        if nearby.next().is_some() {
-                            return Err("Ambiguous key time; select an exact source key".into());
-                        }
-                        index
-                    };
-                    if let Some(index) = index {
-                        track.keys.remove(index);
-                    }
+                if track.bone == bone
+                    && track.property == property
+                    && let Some(index) = key_index(&track.keys, time)?
+                {
+                    track.keys.remove(index);
                 }
             }
             a.tracks.retain(|t| !t.keys.is_empty());
@@ -339,4 +326,20 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
         }
     }
     Ok(())
+}
+
+/// Exact identities win; tolerance is only safe for one unambiguous nearby key.
+fn key_index(keys: &[Keyframe], time: f32) -> Result<Option<usize>, String> {
+    if let Some(index) = keys.iter().position(|key| key.time == time) {
+        return Ok(Some(index));
+    }
+    let mut nearby = keys
+        .iter()
+        .enumerate()
+        .filter(|(_, key)| same_key_time(key.time, time));
+    let index = nearby.next().map(|(index, _)| index);
+    if nearby.next().is_some() {
+        return Err("Ambiguous key time; select an exact source key".into());
+    }
+    Ok(index)
 }
