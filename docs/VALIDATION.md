@@ -646,6 +646,15 @@ required inverse selection, invalid/no-op pose validation, singular transforms,
 finite-coordinate precision loss and command/batch atomicity. Residuals greater
 than **0.001** reject; the tolerance was not widened and no normalization was added.
 
+Malformed intermediate Batch hierarchies, including an invalid parent added before
+Bind or Unbind, are rejected before world-pose evaluation rather than panicking.
+These cases extend the existing atomicity test without changing the 162-test total
+or the accepted valid binding geometry.
+Hardening commit `5bf006c` passes all 162 tests and the required format, Clippy,
+build and architecture checks again. It affects invalid intermediate hierarchies;
+the recorded valid native, CLI and runtime checks remain applicable, without a
+claim that the full native workflow was rerun after this guard.
+
 [CLI acceptance](evidence/binding-cli.json) passes **271 scene comparisons** and
 **29,726 vertex coordinates**, with maximum vertex error **0.000030517578125**
 and zero UV error. Its nine expected rejections include singular Bind/Unbind,
@@ -689,13 +698,17 @@ and the 19 repository input/baseline files remain unchanged. The owned process i
 closed and its temporary authorization removed. See [native acceptance](evidence/binding-native.json)
 and [Weights capture](binding-editor.png).
 
-The full functional native run used `ca457f5`. Final build `a891007` only corrects
+The full functional native run used `ca457f5`. Visual-check build `a891007` corrects
 an explanatory properties hint; all 162 Rust tests and format/lint/build/architecture
 checks pass again, and a separate
 [focused visual run](evidence/binding-visual.json) verifies fully loaded original
 artwork, the G tool/view, independent icon and bone colors, a 100% row, and the
 corrected hint without changing its document/file. The screenshot is from this
-final build. This focused check is not counted as a second full functional run.
+visual-check build. This focused check is not counted as a second full functional run.
+
+The Bind checkpoint's three cleanup records confirm all six task-owned processes
+have exited, with no interactive handoff remaining. Earlier weighted-slice cleanup
+counts above retain their separate historical scope.
 
 Exact installed-editor docking, Direct/brush editing, additional bindings, Auto,
 Update, broader production-character/game-engine acceptance, other platforms and
