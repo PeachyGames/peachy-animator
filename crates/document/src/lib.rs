@@ -2,7 +2,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
-pub const FORMAT_VERSION: u32 = 2;
+pub const FORMAT_VERSION: u32 = 3;
 pub const KEY_TIME_EPSILON: f32 = 0.00001;
 pub fn same_key_time(a: f32, b: f32) -> bool {
     (a - b).abs() < KEY_TIME_EPSILON
@@ -199,8 +199,18 @@ pub struct Region {
 #[serde(deny_unknown_fields)]
 pub struct Animation {
     pub name: String,
-    pub duration: f32,
     pub tracks: Vec<Track>,
+}
+
+impl Animation {
+    /// The highest authored key time across validated, ordered tracks, or zero.
+    pub fn duration(&self) -> f32 {
+        self.tracks
+            .iter()
+            .filter_map(|track| track.keys.last())
+            .map(|key| key.time)
+            .fold(0.0, f32::max)
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -320,12 +330,8 @@ impl Document {
         }
         let mut animations = BTreeSet::new();
         for a in &self.animations {
-            if a.name.trim().is_empty()
-                || !animations.insert(&a.name)
-                || !a.duration.is_finite()
-                || a.duration <= 0.0
-            {
-                return Err("Animation names must be unique; duration must be positive".into());
+            if a.name.trim().is_empty() || !animations.insert(&a.name) {
+                return Err("Animation names must be nonempty and unique".into());
             }
             let mut tracks = BTreeSet::new();
             for t in &a.tracks {
@@ -337,10 +343,9 @@ impl Document {
                     if !k.time.is_finite()
                         || !k.value.is_finite()
                         || k.time < 0.0
-                        || k.time > a.duration
                         || k.time <= previous
                     {
-                        return Err("Keys must be finite, ordered and inside the animation".into());
+                        return Err("Keys must be finite, nonnegative and ordered".into());
                     }
                     if let Curve::Bezier(c) = k.curve
                         && (!c.iter().all(|v| v.is_finite())

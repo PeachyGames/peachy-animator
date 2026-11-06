@@ -66,7 +66,7 @@ fn invalid_delete_times_cannot_erase_keys_or_change_history() {
         })
         .unwrap();
     let before = session.document().clone();
-    for time in [f32::NAN, f32::INFINITY, -1.0, 2.0] {
+    for time in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY, -1.0] {
         assert!(
             session
                 .dispatch(Command::DeleteKey {
@@ -225,7 +225,7 @@ fn doc() -> Document {
         skins: Default::default(),
         animations: vec![Animation {
             name: "wave".into(),
-            duration: 1.0,
+
             tracks: vec![],
         }],
     }
@@ -248,7 +248,7 @@ fn commands_undo_redo_and_failed_batches_are_atomic() {
     let original = s.document().clone();
     assert!(
         s.dispatch(Command::Batch {
-            commands: vec![key(0.0, 20.0), key(2.0, 90.0)]
+            commands: vec![key(0.0, 20.0), key(-1.0, 90.0)]
         })
         .is_err()
     );
@@ -1032,7 +1032,7 @@ fn playback_handles_reverse_wrap_boundaries_large_steps_and_invalid_input() {
 }
 
 #[test]
-fn key_navigation_uses_nearest_distinct_key_and_last_key_not_reserved_duration() {
+fn key_navigation_uses_nearest_distinct_key_and_the_derived_animation_end() {
     let fixture = apply_command(
         &doc(),
         Command::Batch {

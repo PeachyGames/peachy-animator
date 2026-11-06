@@ -101,7 +101,7 @@ impl PoseEdits {
         transform: Transform,
         properties: &[Property],
     ) -> Result<Self, String> {
-        // Reuse the command boundary's validation, including singular setup scales and key bounds.
+        // Reuse the command boundary's validation, including setup scales and finite authoring time.
         apply_command(
             doc,
             Command::SetPose {

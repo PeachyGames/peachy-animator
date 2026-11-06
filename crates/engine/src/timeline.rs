@@ -164,7 +164,6 @@ fn checked_targets(keys: &[OwnedKey], offset: f32) -> Result<Vec<OwnedKey>, Stri
 fn insert_keys(document: &mut Document, animation: usize, keys: Vec<OwnedKey>) {
     let clip = &mut document.animations[animation];
     for incoming in keys {
-        clip.duration = clip.duration.max(incoming.key.time);
         let index = clip
             .tracks
             .iter()

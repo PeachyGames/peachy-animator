@@ -123,11 +123,13 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
                 EditTarget::Setup => doc.bones[bone].setup = transform,
                 EditTarget::Animate { animation, time } => {
                     let clip = doc.animations.get(animation).ok_or("Unknown animation")?;
-                    if !time.is_finite() || time < 0.0 || time > clip.duration {
-                        return Err("Key time must be finite and inside the animation".into());
+                    if !time.is_finite() || time < 0.0 {
+                        return Err("Key time must be finite and nonnegative".into());
                     }
-                    let time =
-                        ((time * doc.fps as f32).round() / doc.fps as f32).min(clip.duration);
+                    // Wider intermediates keep every finite authoring time valid,
+                    // even when its frame number exceeds the f32 range.
+                    let time = ((f64::from(time) * f64::from(doc.fps)).round() / f64::from(doc.fps))
+                        as f32;
                     let commands: Result<Vec<_>, String> = properties
                         .into_iter()
                         .map(|property| {
@@ -221,11 +223,25 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
             crate::mesh::split_triangle(mesh, triangle)?;
         }
         Command::AddBone { bone } => doc.bones.push(bone),
-        Command::AddAnimation { name, duration } => doc.animations.push(Animation {
-            name,
-            duration,
-            tracks: vec![],
-        }),
+        Command::AddAnimation { name, duration } => {
+            if !duration.is_finite() || duration < 0.0 {
+                return Err("Animation duration must be finite and nonnegative".into());
+            }
+            let tracks = if duration == 0.0 {
+                vec![]
+            } else {
+                vec![Track {
+                    bone: 0,
+                    property: Property::Rotation,
+                    keys: vec![Keyframe {
+                        time: duration,
+                        value: Property::Rotation.neutral(),
+                        curve: Curve::Linear,
+                    }],
+                }]
+            };
+            doc.animations.push(Animation { name, tracks });
+        }
         Command::RenameAnimation { animation, name } => {
             doc.animations
                 .get_mut(animation)
@@ -290,8 +306,8 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
                 .animations
                 .get_mut(animation)
                 .ok_or("Unknown animation")?;
-            if !time.is_finite() || time < 0.0 || time > a.duration {
-                return Err("Key time must be finite and inside the animation".into());
+            if !time.is_finite() || time < 0.0 {
+                return Err("Key time must be finite and nonnegative".into());
             }
             for track in &mut a.tracks {
                 if track.bone == bone
