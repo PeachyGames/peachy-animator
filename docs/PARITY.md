@@ -16,7 +16,8 @@ comparison. The native `.peachy` format is our own editable model.
 | Region → mesh | Four corners preserve the textured geometry and slot position | Engine checks under animation, reflection and nonuniform scale; native conversion check |
 | Setup mesh transforms | Single-vertex drag and numeric local coordinates, fixed UVs | Native mouse drag, one-step undo, redo, no UV changes |
 | Mesh topology editing | Split an existing triangle at its centroid | Preserves hull, indices and UV interpolation; freeform hull, UV/edge editing and general retriangulation remain |
-| Weights and binding | Pending, following UI alignment | Typed bone influences, binding, deterministic weighted geometry, normalized edits and black-box vertex comparisons |
+| Weighted mesh data and preview | Native v4 influences, strict JSON import/export, shared bone-driven geometry and read-only per-vertex inspection | 7,800 weighted runtime coordinates pass at unchanged 0.001 tolerance; editor re-export quantizes coordinates and is not lossless |
+| Binding and weight authoring | Pending | Bind/Unbind, Direct/brush edits, normalization, locks and Update bindings require shared commands and reference-matched controls |
 | Deform animation and linked meshes | Pending | Requires explicit model, interpolation, shared-mesh semantics and round-trip cases |
 | Bone animation and curves | Scalar transform keys, linear/stepped/Bezier, playback and scrubbing | External runtime boundaries, backwards scrubbing, full-turn rotation, native key/history checks |
 | Unkeyed poses and Auto Key | Transient multi-bone poses, K/Tree/transform keying, colored state, paired XY defaults and unified undo | Bone-transform subset; slot/deform/constraint keying remains pending |

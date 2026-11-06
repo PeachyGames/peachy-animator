@@ -192,3 +192,46 @@ The legacy hold migration is defined by our own preceding v2 exporter, captured 
 an original golden fixture before changing that code. Installed Spine 4.3.26 is used
 only to import/re-export original inputs; the separately supplied runtime is an
 external geometry/end oracle. Neither implementation was inspected or copied.
+
+## Weighted meshes and native v4 — November 6, 2026 UTC
+
+The typed influence representation and packed JSON decoder follow the public
+[JSON mesh contract](https://esotericsoftware.com/spine-json-format). Bone-local
+binding and bone-driven deformation are described in the public
+[Weights guide](https://esotericsoftware.com/spine-weights) and
+[Mesh guide](https://esotericsoftware.com/spine-meshes). Our evaluator independently
+sums each influence's weight times its bone's affine-transformed bind position.
+The slot bone is applied only to unweighted slot-local positions. No official
+skinning, parser, editor or runtime implementation was inspected, copied or ported.
+
+Native v4 migration extends our own strict decoder: legacy mesh arrays are wrapped
+without geometry changes, while the previously captured v2 export golden still
+checks materialized duration holds. The adapter's integral-float index support was
+prompted by read-only inspection diagnostics and verified with original fixtures;
+no private character data was copied into tests.
+
+`scripts/make_demo.py` derives `weighted-bot.peachy`, `weighted-contract.peachy`
+and `weighted-repeated.peachy` from our original mesh/artwork. They exercise multiple
+bones, reflection/nonuniform scale, more than four influences, zero entries,
+repeated bones and raw positive nonunit sums. Committed adapter fixtures are also
+original. The runtime harness calls only the separately supplied runtime's public
+mesh world-vertex API and compares independently evaluated geometry.
+
+The installed Spine 4.3.26 editor is a black-box import/re-export oracle. Controlled
+probes distinguish its repeated-influence rejection from the runtime's acceptance.
+The final demo and contract import, but editor output reorders/removes entries and
+quantizes some bind coordinates. The original-source comparison fails at 0.001;
+reimported editor data passes against that data's external runtime evaluation.
+These are separate results, recorded in
+[editor acceptance](evidence/weighted-editor-roundtrip.json), not a lossless claim.
+The stage causing quantization remains unresolved. Public
+[export](https://esotericsoftware.com/spine-export) and
+[CLI](https://esotericsoftware.com/spine-command-line-interface) documentation
+provided no supported position-precision override. Stable 4.3.26 must not be confused
+with the older 4.3.26-beta when interpreting release notes.
+
+Native controls show read-only per-entry influence values alongside our original
+artwork. They do not claim Spine's Weights view, Bind or painting UI. Repository
+captures show Peachy Animator only; proprietary reference images, native projects,
+failed probes and detailed artist reports remain local. The committed artist audit
+contains aggregate counters without identifying paths or artwork.

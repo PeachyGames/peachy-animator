@@ -545,3 +545,88 @@ UI behavior, extended transport, timeline pan/zoom/ranges, animation creation UI
 other platforms and hosted CI remain pending. Weighted meshes, constraints and the
 other production import blockers remain separate work; native v3 does not claim
 that an existing artist character is now fully supported.
+
+## Weighted meshes and native v4 — November 6, 2026 UTC
+
+The weighted-slice baseline at `4687dd7` passes **140 Rust tests**: desktop **43**,
+CLI **4**, engine **63**, I/O **15**, and adapter **15**. Formatting, warnings-denied workspace Clippy,
+workspace build and the six-crate architecture guard pass. This records the weighted
+import/evaluation/inspection slice; Bind and weight-authoring work is not included.
+Earlier dated results above remain the acceptance record for their own slices.
+
+Semantic checks cover more than four influences, repeated bones, zero weights,
+positive subnormal and rounded nonunit totals, inactive-skin bone references,
+strict tagged vertex modes, reflected/nonuniform/posed geometry, atomic weighted
+edit rejection and preserved pose/history/redo. Packed counts and bone indices
+accept mathematically integral JSON float tokens; fractional, negative, overflow,
+truncated and trailing cases stay rejected. Exact integer maxima and the exclusive
+floating index bound have separate checks.
+
+Native v1/v2/v3 migration reaches v4 through strict validation before adding legacy
+holds. The old v2 exporter golden still matches exactly. Legacy v3 mesh loading
+leaves source bytes unchanged; explicit save backs up the original, writes tagged
+vertices, and reopens correctly, including weighted data. Unknown fields and wrong
+version-specific vertex shapes remain errors.
+
+The CLI applies four commands, validates native v4, preserves influences through
+bone/slot rename and JSON round trips, and compares **168 poses** with maximum
+round-trip error **4.1611887e-9**. The legacy v3 export golden matches exactly and
+both source inputs remain unchanged. See [CLI acceptance](evidence/weighted-interop.json).
+
+Three original inputs are compared against the separately supplied Spine 4.3
+runtime at 52 times per clip/skin, including ends, beyond-end holds and reverse
+sample order:
+
+| Original fixture | Weighted coordinate comparisons | Maximum mesh error |
+| --- | ---: | ---: |
+| Weighted demo | 3,120 | 0.000061035156 |
+| Weighted transform contract | 1,560 | 0.000068664551 |
+| Repeated-influence contract | 3,120 | 0.000061035156 |
+| Total | **7,800** | **0.000068664551** |
+
+The world-coordinate tolerance remains **0.001**; UV error is zero. The harness
+also compares region/bone geometry, triangle order and hulls. Fixture hashes match
+the reports and sources remain unchanged. See [demo](evidence/weighted-runtime.json),
+[transform contract](evidence/weighted-contract-runtime.json), and
+[repeated entries](evidence/weighted-repeated-runtime.json). The separate
+[edited-data report](evidence/weighted-edited-runtime.json) verifies the renamed
+native document against its own export.
+
+Installed Spine Editor **4.3.26** imports and re-exports the demo and transform
+contract, and our importer accepts both. Positive weights and nonunit sums survive
+at f32 precision, but the editor drops a zero entry, reorders influences and changes
+local bind coordinates by up to **0.0047683716**. The external oracle comparison
+against the **original pre-editor native data fails** at the unchanged 0.001 tolerance
+(observed error **0.0012054443**). Importing the actual editor output into a new
+native document and evaluating that data against the runtime passes. This is not
+lossless original-data round-trip acceptance. The stage responsible for coordinate
+quantization is unproven and no documented precision override was found.
+
+Controlled repeated/order probes also distinguish runtime acceptance from stricter
+editor input behavior. The adapter continues preserving order, repeats, zeros and
+raw totals; no silent merge/prune/normalization was introduced to make a probe pass.
+See [editor round-trip acceptance](evidence/weighted-editor-roundtrip.json).
+
+The accepted native check verifies posed weighted inspection and finite handles,
+read-only drag/nudge/numeric/subdivision guards, then restored bone tools, keying,
+Undo/Redo and **two** native-save backups. Unweighted setup dragging, subdivision
+and history still pass. The original working document and system clipboard are
+restored. See [native acceptance](evidence/weighted-native.json),
+[weighted inspection](weighted-editor.png) and
+[unweighted regression](weighted-unweighted-regression.png).
+
+The read-only production audit covers the same **11** inputs, all unchanged from
+the prior audit. Weighted-mesh refusal reports fall **10 → 0** with no new inspection
+issues after the integral-float fix. Fully supported characters remain **0/11**;
+all 11 still report constraints. Identifying inputs, artwork and detailed diagnostics
+remain outside Git. See [redacted audit](evidence/weighted-artist-summary.json).
+
+Cleanup verifies 13 task cleanup records: all **28** task-owned native/CLI processes
+have exited, temporary authorizations/private-key files and temporary command
+folders are absent, and no interactive handoff remains. Failed attempts remain in
+local task evidence rather than being counted as accepted runs.
+
+Weight authoring, linked/deform meshes, constraints, full Weights UI, actual
+production-character/game-engine acceptance, other platforms and hosted CI remain
+pending. These finite samples establish bounded data/evaluation and native inspection
+behavior, not full Spine compatibility or pixel equivalence.

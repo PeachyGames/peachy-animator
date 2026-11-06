@@ -1,12 +1,12 @@
 # Peachy Animator
 
 A native 2D skeletal animation editor from Team Peachy, with an independent Rust
-core and Spine-compatible exports. The current slices add Spine-style naming dialogs,
-animation duplication, Dopesheet selection/retiming/clipboard actions and key-derived
-animation duration.
+core and Spine-compatible exports. The current slices include Spine-style naming,
+Dopesheet selection/retiming/clipboard actions, key-derived animation duration, and
+weighted mesh import, bone-driven preview and read-only influence inspection.
 This is still a bounded subset of Spine.
 
-![Peach Bot in the editor](docs/timeline-selection-editor.png)
+![Weighted Peach Bot in the editor](docs/weighted-editor.png)
 
 ## Try it
 
@@ -27,6 +27,18 @@ For the mesh demo, open **Mesh Lab.command**, or run:
 ```sh
 cargo run -p peachy-animator -- examples/peach-bot/mesh-bot.peachy
 ```
+
+For the weighted mesh demo:
+
+```sh
+cargo run -p peachy-animator -- examples/peach-bot/weighted-bot.peachy
+```
+
+Select its hand.R mesh attachment, then **Vertices**, to inspect the selected
+vertex's bone influences. Weighted inspection works in Setup and Animate, including
+an unkeyed pose. It stops playback and preserves the current pose and mode. Bone
+transforms and animation move the weighted artwork; editing weights, weighted
+vertices and weighted topology remains pending.
 
 File/history shortcuts use compact icons with named shortcut tooltips. The Views
 menu and view headings share the same visual cues; see the
@@ -51,13 +63,15 @@ properties right, transform controls below the viewport, and Dopesheet below tho
 in Animate mode. UI parity is an ongoing acceptance requirement; see the
 [UI parity contract](docs/UI_PARITY.md) for remaining differences.
 
-In Setup, expand the hand.R bone and slot, select its mesh attachment, then choose
-**Vertices** in the attachment properties and drag a numbered vertex. The **Mesh** checkbox converts a region
+For an unweighted mesh in Setup, expand the hand.R bone and slot, select its
+mesh attachment, then choose **Vertices** in the attachment properties and drag a numbered vertex. The **Mesh** checkbox converts a region
 to a four-corner mesh; existing mesh triangles can be split at their centers.
 Setup vertex movement deforms the image while UVs stay fixed; each canvas
 drag is one undo step, and Escape cancels the current drag.
 This corresponds to Spine's setup vertex transforms. UV editing, freeform hull
-creation, weights and animated deform keys are not implemented yet.
+creation, binding/weight editing and animated deform keys are not implemented yet.
+Weighted vertex dragging, nudging, local-coordinate fields and subdivision are
+blocked; selecting them never converts or normalizes their data.
 
 ![Editor iconography and Views menu](docs/icons-views-menu.png)
 
@@ -119,6 +133,8 @@ supported controls can edit it. Inactive skin attachments remain inspectable.
 - Shared commands for bone length, region setup transforms and a slot’s setup attachment.
 - Unweighted meshes with explicit UVs, triangles and hulls, setup vertex editing,
   region conversion and triangle subdivision.
+- Weighted meshes with typed bone-local influences, shared posed geometry for
+  rendering/picking/bounds, read-only inspection and preserved import/export data.
 - Deterministic timeline playback, scrubbing, frame stepping and looping.
 - Scalar keys with linear, stepped and editable Bezier interpolation.
 - Auto Key, unkeyed multi-bone posing, Key Edited (K), colored key indicators,
@@ -131,10 +147,15 @@ supported controls can edit it. Inactive skin attachments remain inspectable.
   creates a fresh directory with JSON, an atlas and its PNG page.
 - A headless CLI that uses the same document, command and pose engine.
 
-Weights, linked meshes, IK, physics, path/transform constraints, clipping, slot animation,
+Binding, weight editing, linked meshes, IK, physics, path/transform constraints,
+clipping, slot animation,
 events, image sequences, packed-atlas import, native `.spine` files and animation
 mixing are not implemented. Unsupported imports are blocked with a feature report;
-the source remains untouched. See [the compatibility contract](docs/COMPATIBILITY.md).
+the source remains untouched. The latest read-only artist audit still finds 0/11
+fully supported characters: weighted-mesh refusals are gone, but all 11 require
+constraints. Installed-editor re-export can quantize bind coordinates, remove zero
+entries and reorder influences, so lossless editor round trips are not claimed.
+See [the compatibility contract](docs/COMPATIBILITY.md).
 
 ## CLI
 
@@ -152,10 +173,11 @@ CLI outputs must be new files; it refuses to overwrite existing output. The CLI
 `export` command writes JSON only. Use the desktop exporter for a packed bundle.
 The CLI `bundle` command uses that same shared exporter.
 Native projects reference loose images in `images/` beside the project. Native
-format v3 derives animation duration from its last key, including empty clips. The
-loader migrates v1/v2 projects in memory, materializing their previous exported hold
-keys. Loading leaves source bytes unchanged. Explicit Save writes v3 and backs up
-the previous file; older binaries cannot open v3.
+format v4 tags mesh vertices as `slotLocal` positions or `weighted` bone influences;
+animation duration still follows its last key, including empty clips. The loader
+migrates v1/v2/v3 projects in memory, preserving v2's previous exported hold keys and
+wrapping legacy mesh positions. Loading leaves source bytes unchanged. Explicit
+Save writes v4 and backs up the previous file; older binaries cannot open v4.
 `pose` accepts an optional skin name and also emits evaluated attachment geometry.
 
 ## Architecture and verification

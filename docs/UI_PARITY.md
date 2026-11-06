@@ -302,3 +302,32 @@ For zero-length clips, current playback safely stops at zero in either direction
 including Loop. Nonlooping playback remains bounded to the last key. Exact Spine
 empty-playback behavior and extended nonlooping transport remain comparison gates;
 the installed-editor data round trip establishes file semantics, not those UI rules.
+
+## Weighted inspection slice — November 6, 2026 UTC
+
+Weighted mesh data now reaches the existing renderer and picking/bounds path.
+Select the weighted attachment, choose **Vertices**, then click a numbered handle
+or use **Vertex** to inspect its bone influences. Each stored entry is shown with
+its bone name and a percentage; repeated and zero entries stay separate. Display
+rounding does not change stored values. This is an inspection extension to the
+existing properties panel, not an implemented Spine Weights view or Weights tool.
+
+Inspection stops playback but preserves Setup/Animate, the current frame and an
+unkeyed pose. Handles follow the posed world geometry in Animate. Weighted handle
+drags and arrow nudges have no editing effect; local-coordinate fields are absent,
+and subdivision is disabled. The same operations are rejected by the shared engine.
+Returning to bone tools restores the normal pose/key/history paths. Native save
+retains native v4 influences and excludes an unkeyed pose as before.
+
+The properties body now uses a bounded scroll area so a long influence list does
+not push the main toolbar or Dopesheet outside its requested panel height. Native
+verification exercised posed inspection, edit guards, restored bone tools, keying,
+Undo/Redo and two save backups, then unweighted drag/subdivision. The working document
+and original clipboard were restored. See [acceptance](evidence/weighted-native.json),
+[weighted inspection](weighted-editor.png), and
+[unweighted regression](weighted-unweighted-regression.png).
+
+Bind/Unbind, Direct/brush editing, normalized weight changes, locks, Update bindings,
+pies/overlay, weighted vertex transforms and full Weights-view layout remain pending.
+Their shortcuts, selection state and Setup/Animate conventions need dedicated
+acceptance. Runtime coordinate agreement does not establish that UI parity.
