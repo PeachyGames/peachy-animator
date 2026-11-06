@@ -22,7 +22,7 @@ import re
 import struct
 import subprocess
 import sys
-from native_schema import NATIVE_FORMAT, bone_transform
+from native_schema import NATIVE_FORMAT, bone_transform, require_fk_document
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -72,6 +72,7 @@ def attachment(document):
 
 
 def setup_locals(document):
+    require_fk_document(document, "Authored setup snapshot")
     return [copy.deepcopy(bone["setup"]) for bone in document["bones"]]
 
 
@@ -160,7 +161,11 @@ class Acceptance:
     def pose(self, source, animation, time, skin="default"):
         key = (str(source), animation, time, skin)
         if key not in self.scene_cache:
-            self.scene_cache[key] = json.loads(self.run(["pose", source, animation, time, skin]))
+            scene = json.loads(self.run(["pose", source, animation, time, skin]))
+            for field in ["locals", "appliedLocals"]:
+                require(isinstance(scene.get(field), list) and len(scene[field]) == len(scene["bones"]),
+                        f"CLI pose is missing the separate {field} diagnostic")
+            self.scene_cache[key] = scene
         return self.scene_cache[key]
 
     def compare(self, before, after, label):
@@ -198,6 +203,7 @@ class Acceptance:
 
     def snapshot(self, source, name, locals_):
         document = read_json(source)
+        require_fk_document(document, "Authored setup rewrite")
         require(len(locals_) == len(document["bones"]), "Incomplete explicit pose snapshot")
         for bone, local in zip(document["bones"], locals_):
             bone["setup"] = copy.deepcopy(local)

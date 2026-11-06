@@ -25,3 +25,14 @@ def region_transform(x=0, y=0, rotation=0):
 
 def bone_transform(x=0, y=0, rotation=0):
     return {**region_transform(x, y, rotation), "shear_x": 0.0, "shear_y": 0.0}
+
+
+def require_fk_document(document, purpose):
+    """Our authored-only snapshot helpers are not a constraint evaluator.
+
+    CLI pose exposes separate locals/appliedLocals. A future constrained helper
+    must capture appliedLocals explicitly and reconstruct that snapshot via FK
+    once, without applying the live constraint list a second time.
+    """
+    if document.get("constraints"):
+        raise RuntimeError(f"{purpose} requires an unconstrained document; use an explicit checked applied pose")
