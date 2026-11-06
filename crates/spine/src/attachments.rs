@@ -17,7 +17,7 @@ pub(super) fn read_attachment(
             path,
             width: number(value, "width", 0.0),
             height: number(value, "height", 0.0),
-            transform: RegionTransform::try_from(transform(value))?,
+            transform: region_transform(value),
         }),
         "mesh" => {
             let uvs = pairs(&value["uvs"], "Mesh UVs")?;
@@ -169,7 +169,7 @@ fn indices(value: &Value, context: &str) -> Result<Vec<u32>, String> {
 pub(super) fn write_attachment(attachment: &Attachment) -> Value {
     let mut value = match attachment {
         Attachment::Region(r) => {
-            let mut v = transform_json(r.transform.into());
+            let mut v = region_transform_json(r.transform);
             v["width"] = json!(r.width);
             v["height"] = json!(r.height);
             v

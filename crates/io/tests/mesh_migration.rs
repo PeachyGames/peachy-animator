@@ -37,7 +37,7 @@ fn weighted_native() -> Value {
 fn v2_and_v3_mesh_arrays_migrate_to_slot_local_without_geometry_or_export_changes() {
     let v3 = legacy_mesh();
     let doc = decode(&v3).unwrap();
-    assert_eq!(doc.format, 4);
+    assert_eq!(doc.format, peachy_document::FORMAT_VERSION);
     assert!(doc.animations.is_empty());
     let Attachment::Mesh(mesh) = &doc.skins["default"]["body"]["cloth"] else {
         panic!("Expected mesh");
@@ -88,12 +88,21 @@ fn version_boundaries_reject_wrong_vertex_shapes_and_stale_duration_fields() {
     latest["skins"]["default"]["body"]["cloth"]["vertices"] =
         old["skins"]["default"]["body"]["cloth"]["vertices"].clone();
     assert!(decode(&latest).is_err());
-    for version in [3, 4] {
+    for version in [3, 4, peachy_document::FORMAT_VERSION] {
         let mut value = if version == 3 {
             old.clone()
         } else {
             serde_json::to_value(decode(&old).unwrap()).unwrap()
         };
+        if version == 4 {
+            value["format"] = json!(4);
+            for bone in value["bones"].as_array_mut().unwrap() {
+                for field in ["shear_x", "shear_y"] {
+                    assert_eq!(bone["setup"][field].as_f64(), Some(0.0));
+                    bone["setup"].as_object_mut().unwrap().remove(field);
+                }
+            }
+        }
         value["animations"] = json!([{"name":"stale","duration":4,"tracks":[]}]);
         assert!(
             decode(&value)
@@ -149,7 +158,7 @@ fn weighted_native_roundtrip_is_strict_and_validates_inactive_skin_references() 
 }
 
 #[test]
-fn v3_mesh_load_preserves_file_bytes_and_explicit_save_backs_up_before_writing_v4() {
+fn v3_mesh_load_preserves_file_bytes_and_explicit_save_backs_up_before_writing_latest() {
     let folder = std::env::temp_dir().join(format!(
         "peachy-mesh-migrate-{}-{}",
         std::process::id(),
@@ -174,7 +183,7 @@ fn v3_mesh_load_preserves_file_bytes_and_explicit_save_backs_up_before_writing_v
     assert_eq!(fs::read(backup.path()).unwrap(), original);
     assert_eq!(load(&path).unwrap(), document);
     let written: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
-    assert_eq!(written["format"], 4);
+    assert_eq!(written["format"], peachy_document::FORMAT_VERSION);
     assert_eq!(
         written["skins"]["default"]["body"]["cloth"]["vertices"]["mode"],
         "slotLocal"

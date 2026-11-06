@@ -22,10 +22,12 @@ import re
 import struct
 import subprocess
 import sys
+from native_schema import NATIVE_FORMAT, bone_transform
 
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "examples" / "peach-bot"
+SCHEMA_HELPER = Path(__file__).with_name("native_schema.py")
 SETUP_CLIP = "weight authoring setup"
 KEY = {"skin": "default", "slot": "hand.R", "placeholder": "hand.R"}
 
@@ -76,7 +78,8 @@ def setup_locals(document):
 def final_key_locals(document, clip):
     """Capture a held end pose; this deliberately does not implement interpolation."""
     locals_ = setup_locals(document)
-    fields = {"x": "x", "y": "y", "rotation": "rotation", "scaleX": "scale_x", "scaleY": "scale_y"}
+    fields = {"x": "x", "y": "y", "rotation": "rotation", "scaleX": "scale_x", "scaleY": "scale_y",
+              "shearX": "shear_x", "shearY": "shear_y"}
     for track in clip["tracks"]:
         if not track["keys"]:
             continue
@@ -128,7 +131,9 @@ class Acceptance:
 
     def validate(self, source):
         require(json.loads(self.run(["validate", source]))["valid"], f"Invalid native project: {source}")
-        require(read_json(source)["format"] == 4, f"Expected native v4: {source}")
+        # The supplied CLI must actually decode the current strict schema, not
+        # merely accept an older input. Successful writes are checked here too.
+        require(read_json(source)["format"] == NATIVE_FORMAT, f"Expected native v{NATIVE_FORMAT}: {source}")
 
     def apply(self, source, name, commands, failure=False, existing=False, expected_error=None):
         command_path = self.evidence / "commands" / f"{name}.json"
@@ -373,7 +378,8 @@ def main():
     check = Acceptance(cli, evidence, args.tolerance)
     report = {"status": "failed", "started": datetime.now(timezone.utc).isoformat(),
               "cli": str(cli), "cliSHA256": file_digest(cli), "scriptSHA256": file_digest(Path(__file__)),
-              "nativeFormat": 4, "tolerance": args.tolerance, "coreSessionTests": {"status": "not-run"},
+              "schemaHelperSHA256": file_digest(SCHEMA_HELPER),
+              "nativeFormat": NATIVE_FORMAT, "tolerance": args.tolerance, "coreSessionTests": {"status": "not-run"},
               "limitations": ["CLI creates new native outputs; overwrite Save/backup behavior is not exercised.",
                               "Explicit posed CLI snapshots are not transient Session state; --cargo checks pending pose/history regressions.",
                               "Spine JSON roundtrips use our independent adapter; no installed-editor or external-runtime acceptance is claimed.",

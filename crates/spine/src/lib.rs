@@ -8,6 +8,22 @@ use std::collections::{BTreeMap, BTreeSet};
 
 pub const TARGET_VERSION: &str = "4.3.26";
 
+fn timeline_properties(name: &str) -> Option<&'static [(Property, &'static str)]> {
+    match name {
+        "rotate" => Some(&[(Property::Rotation, "value")]),
+        "translate" => Some(&[(Property::X, "x"), (Property::Y, "y")]),
+        "translatex" => Some(&[(Property::X, "value")]),
+        "translatey" => Some(&[(Property::Y, "value")]),
+        "scale" => Some(&[(Property::ScaleX, "x"), (Property::ScaleY, "y")]),
+        "scalex" => Some(&[(Property::ScaleX, "value")]),
+        "scaley" => Some(&[(Property::ScaleY, "value")]),
+        "shear" => Some(&[(Property::ShearX, "x"), (Property::ShearY, "y")]),
+        "shearx" => Some(&[(Property::ShearX, "value")]),
+        "sheary" => Some(&[(Property::ShearY, "value")]),
+        _ => None,
+    }
+}
+
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Inspection {
@@ -58,11 +74,6 @@ pub fn inspect(value: &Value) -> Inspection {
             &format!("Bone {name}"),
             &mut unsupported,
         );
-        for field in ["shearX", "shearY"] {
-            if number(bone, field, 0.0) != 0.0 {
-                unsupported.push(format!("Bone {name}: {field}"));
-            }
-        }
         if bone["skin"].as_bool() == Some(true) {
             unsupported.push(format!("Bone {name}: skin-required bone"));
         }
@@ -163,20 +174,20 @@ pub fn inspect(value: &Value) -> Inspection {
                 }
             }
             if let Some(bones) = animation["bones"].as_object() {
-                for timelines in bones.values() {
+                for (bone, timelines) in bones {
                     if let Some(timelines) = timelines.as_object() {
+                        let mut properties = BTreeSet::new();
                         for (field, keys) in timelines {
-                            if ![
-                                "rotate",
-                                "translate",
-                                "translatex",
-                                "translatey",
-                                "scale",
-                                "scalex",
-                                "scaley",
-                            ]
-                            .contains(&field.as_str())
-                            {
+                            let channels = timeline_properties(field);
+                            if let Some(channels) = channels {
+                                for &(property, _) in channels {
+                                    if !properties.insert(property) {
+                                        unsupported.push(format!(
+                                            "Animation {name}/{bone}: duplicate {property:?} track"
+                                        ));
+                                    }
+                                }
+                            } else {
                                 unsupported
                                     .push(format!("Animation {name}: {field} bone timeline"));
                             }
@@ -192,7 +203,7 @@ pub fn inspect(value: &Value) -> Inspection {
                                     &mut unsupported,
                                 );
                                 let allowed: &[&str] =
-                                    if ["translate", "scale"].contains(&field.as_str()) {
+                                    if channels.is_some_and(|channels| channels.len() == 2) {
                                         &["time", "x", "y", "curve"]
                                     } else {
                                         &["time", "value", "curve"]
@@ -268,7 +279,7 @@ pub fn import_json(value: &Value, name: &str) -> Result<Document, String> {
             name: name.into(),
             parent,
             length: number(bone, "length", 0.0),
-            setup: transform(bone),
+            setup: bone_transform(bone),
         });
     }
     let mut slots = vec![];
@@ -307,16 +318,8 @@ pub fn import_json(value: &Value, name: &str) -> Result<Document, String> {
                 for (bone, timelines) in entries {
                     let bone = *indices.get(bone).ok_or("Unknown animated bone")?;
                     for (timeline, keys) in timelines.as_object().ok_or("Invalid bone timelines")? {
-                        let properties: &[(Property, &str)] = match timeline.as_str() {
-                            "rotate" => &[(Property::Rotation, "value")],
-                            "translate" => &[(Property::X, "x"), (Property::Y, "y")],
-                            "translatex" => &[(Property::X, "value")],
-                            "translatey" => &[(Property::Y, "value")],
-                            "scale" => &[(Property::ScaleX, "x"), (Property::ScaleY, "y")],
-                            "scalex" => &[(Property::ScaleX, "value")],
-                            "scaley" => &[(Property::ScaleY, "value")],
-                            _ => return Err(format!("Unsupported timeline {timeline}")),
-                        };
+                        let properties = timeline_properties(timeline)
+                            .ok_or_else(|| format!("Unsupported timeline {timeline}"))?;
                         let keys = keys.as_array().ok_or("Timeline must be an array")?;
                         for (channel, &(property, field)) in properties.iter().enumerate() {
                             let mut mapped_keys = vec![];
@@ -401,19 +404,11 @@ pub fn import_json(value: &Value, name: &str) -> Result<Document, String> {
 pub fn export_json(doc: &Document) -> Result<Value, String> {
     doc.validate()?;
     validate_export_names(doc)?;
-    // Temporary explicit boundary while the separately owned shear adapter is implemented.
-    if doc
-        .bones
-        .iter()
-        .any(|b| b.setup.shear_x != 0.0 || b.setup.shear_y != 0.0)
-    {
-        return Err("Bone shear interchange is not implemented yet".into());
-    }
     let bones: Vec<_> = doc
         .bones
         .iter()
         .map(|b| {
-            let mut bone = transform_json(b.setup);
+            let mut bone = bone_transform_json(b.setup);
             bone["name"] = json!(b.name);
             bone["length"] = json!(b.length);
             if let Some(parent) = b.parent {
@@ -461,9 +456,8 @@ pub fn export_json(doc: &Document) -> Result<Value, String> {
                 Property::Rotation => "rotate",
                 Property::ScaleX => "scalex",
                 Property::ScaleY => "scaley",
-                Property::ShearX | Property::ShearY => {
-                    return Err("Shear timeline interchange is not implemented yet".into());
-                }
+                Property::ShearX => "shearx",
+                Property::ShearY => "sheary",
             };
             let mut keys = vec![];
             for (i, key) in track.keys.iter().enumerate() {
@@ -610,12 +604,8 @@ fn inspect_shapes(root: &Value, issues: &mut Vec<String>) {
                             for key in array(keys) {
                                 object(key, "Keyframe", issues);
                                 if let Some(curve) = key.get("curve") {
-                                    let handles = if ["translate", "scale"].contains(&name.as_str())
-                                    {
-                                        8
-                                    } else {
-                                        4
-                                    };
+                                    let handles = timeline_properties(name)
+                                        .map_or(4, |channels| channels.len() * 4);
                                     let valid = curve.as_str() == Some("stepped")
                                         || curve.as_array().is_some_and(|a| {
                                             a.len() == handles
@@ -651,19 +641,44 @@ fn number(value: &Value, key: &str, default: f32) -> f32 {
 fn required_string<'a>(value: &'a Value, key: &str) -> Result<&'a str, String> {
     value[key].as_str().ok_or_else(|| format!("Missing {key}"))
 }
-fn transform(value: &Value) -> Transform {
+fn bone_transform(value: &Value) -> Transform {
     Transform {
         x: number(value, "x", 0.0),
         y: number(value, "y", 0.0),
         rotation: number(value, "rotation", 0.0),
         scale_x: number(value, "scaleX", 1.0),
         scale_y: number(value, "scaleY", 1.0),
-        shear_x: 0.0,
-        shear_y: 0.0,
+        shear_x: number(value, "shearX", 0.0),
+        shear_y: number(value, "shearY", 0.0),
     }
 }
-fn transform_json(t: Transform) -> Value {
+fn region_transform(value: &Value) -> RegionTransform {
+    RegionTransform {
+        x: number(value, "x", 0.0),
+        y: number(value, "y", 0.0),
+        rotation: number(value, "rotation", 0.0),
+        scale_x: number(value, "scaleX", 1.0),
+        scale_y: number(value, "scaleY", 1.0),
+    }
+}
+fn region_transform_json(t: RegionTransform) -> Value {
     json!({"x":t.x,"y":t.y,"rotation":t.rotation,"scaleX":t.scale_x,"scaleY":t.scale_y})
+}
+fn bone_transform_json(t: Transform) -> Value {
+    let mut value = region_transform_json(RegionTransform {
+        x: t.x,
+        y: t.y,
+        rotation: t.rotation,
+        scale_x: t.scale_x,
+        scale_y: t.scale_y,
+    });
+    if t.shear_x != 0.0 {
+        value["shearX"] = json!(t.shear_x);
+    }
+    if t.shear_y != 0.0 {
+        value["shearY"] = json!(t.shear_y);
+    }
+    value
 }
 fn unknown_fields(value: &Value, allowed: &[&str], context: &str, issues: &mut Vec<String>) {
     if let Some(o) = value.as_object() {
@@ -676,8 +691,11 @@ fn unknown_fields(value: &Value, allowed: &[&str], context: &str, issues: &mut V
 }
 fn inspect_numbers(value: &Value, fields: &[&str], context: &str, issues: &mut Vec<String>) {
     for field in fields {
-        if value.get(field).is_some_and(|v| v.as_f64().is_none()) {
-            issues.push(format!("{context}: {field} must be numeric"));
+        if value.get(field).is_some_and(|v| {
+            v.as_f64()
+                .is_none_or(|number| !number.is_finite() || !(number as f32).is_finite())
+        }) {
+            issues.push(format!("{context}: {field} must be a finite f32 number"));
         }
     }
 }
