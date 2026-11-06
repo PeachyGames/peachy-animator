@@ -571,3 +571,27 @@ fn explicit_set_ik_key_preserves_every_close_identity_including_ambiguous_neighb
     assert_eq!(keys[2].mix, 1.5);
     assert_eq!(keys[1].mix, 2.);
 }
+
+#[test]
+fn setup_command_target_rejects_unknown_fields_instead_of_silently_discarding_them() {
+    for invalid in [
+        serde_json::json!({"mode":"setup","unsupported":true}),
+        serde_json::json!({"mode":"setup","animation":0,"time":1}),
+    ] {
+        assert!(serde_json::from_value::<EditTarget>(invalid.clone()).is_err());
+        let mut command = serde_json::to_value(Command::SetPose {
+            bone: 1,
+            target: EditTarget::Setup,
+            transform: Transform::default(),
+            properties: vec![Property::X],
+        })
+        .unwrap();
+        command["target"] = invalid;
+        assert!(serde_json::from_value::<Command>(command).is_err());
+    }
+    let target: EditTarget = serde_json::from_str(r#"{"mode":"setup"}"#).unwrap();
+    assert_eq!(
+        serde_json::to_value(target).unwrap(),
+        serde_json::json!({"mode":"setup"})
+    );
+}
