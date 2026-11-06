@@ -3,6 +3,7 @@ use super::*;
 
 impl Editor {
     pub(super) fn cancel_gesture(&mut self) {
+        self.cancel_dopesheet_drag();
         let transform_drag = self.drag.take().is_some();
         let mesh_drag = self.mesh_drag.take().is_some();
         if transform_drag || mesh_drag {
@@ -28,6 +29,7 @@ impl Editor {
         }
     }
     pub(super) fn toggle_views(&mut self) {
+        self.cancel_dopesheet_drag();
         if let Some((tree, dopesheet)) = self.hidden_views.take() {
             self.show_tree = tree;
             self.show_dopesheet = dopesheet;
@@ -49,6 +51,9 @@ impl Editor {
     }
 
     fn nudge(&mut self, delta: [f32; 2], fine: bool) {
+        if self.key_drag.is_some() {
+            return;
+        }
         if self.tool == Tool::Mesh {
             if self.setup_mode
                 && let Some(key) = self.selected_attachment().cloned()
@@ -84,6 +89,10 @@ impl Editor {
             || self.duplicate_animation.is_some()
             || (ctx.egui_wants_keyboard_input() && !self.dopesheet_has_focus(ctx))
         {
+            return;
+        }
+        if self.key_drag.is_some() && ctx.input(|input| input.key_pressed(egui::Key::Escape)) {
+            self.cancel_dopesheet_drag();
             return;
         }
         if ctx.input_mut(|input| input.consume_key(egui::Modifiers::NONE, egui::Key::F2)) {
@@ -197,7 +206,7 @@ impl Editor {
             self.deselect();
         }
         if ctx.input(|i| i.key_pressed(egui::Key::Escape)) {
-            if self.mesh_drag.is_some() || self.drag.is_some() {
+            if self.mesh_drag.is_some() || self.drag.is_some() || self.key_drag.is_some() {
                 self.cancel_gesture();
             } else {
                 self.deselect();

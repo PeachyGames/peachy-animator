@@ -1,6 +1,7 @@
 //! Dopesheet controls adapt pointer/keyboard input to shared commands.
 use super::dopesheet_selection::KeyId;
 use super::icons::Icon;
+use super::key_drag::{ChartGeometry, KeyDrag};
 use super::*;
 
 impl Editor {
@@ -24,9 +25,9 @@ impl Editor {
             .reconcile(self.session.document(), animation, bone);
     }
     pub(super) fn delete_dopesheet_keys(&mut self) {
+        self.cancel_gesture();
         self.reconcile_dopesheet_selection();
         if let Some(command) = self.key_selection.deletion() {
-            self.cancel_gesture();
             self.playing = false;
             self.dispatch(command);
         }
@@ -123,9 +124,19 @@ impl Editor {
         let painter = ui.painter_at(rect);
         painter.rect_filled(rect, 5.0, Color32::from_rgb(21, 26, 33));
         let label_width = 160.0;
-        let start = rect.left() + label_width;
-        let width = rect.width() - label_width - 18.0;
-        let duration = self.duration();
+        let geometry = self.key_drag.as_ref().map_or(
+            ChartGeometry {
+                start: rect.left() + label_width,
+                width: rect.width() - label_width - 18.0,
+                duration: self.duration(),
+            },
+            |drag| drag.geometry,
+        );
+        let ChartGeometry {
+            start,
+            width,
+            duration,
+        } = geometry;
         self.record_target(
             "timelineTrack",
             egui::Rect::from_min_max(pos2(start, rect.top()), pos2(start + width, rect.bottom())),
@@ -211,7 +222,48 @@ impl Editor {
                 .min_by(|(_, a), (_, b)| a.distance(pointer).total_cmp(&b.distance(pointer)))
                 .map(|(key, _)| *key)
         };
-        if response.clicked() {
+        if self.error.is_none()
+            && self.rename.is_none()
+            && self.duplicate_animation.is_none()
+            && !egui::Popup::is_any_open(ui.ctx())
+            && ui.input(|input| input.focused)
+            && response.contains_pointer()
+            && ui.input(|input| input.pointer.button_pressed(egui::PointerButton::Primary))
+            && let Some(origin) = ui.input(|input| input.pointer.press_origin())
+            && let Some(pressed) = hit_key(origin)
+            && let Some(bone) = self.selected_bone()
+        {
+            self.cancel_gesture();
+            self.reconcile_dopesheet_selection();
+            let copy = ui.input(|input| {
+                (input.modifiers.command || input.modifiers.ctrl) && input.modifiers.shift
+            });
+            self.key_drag = KeyDrag::new(
+                self.animation,
+                bone,
+                pressed,
+                self.key_selection.keys(),
+                geometry,
+                origin.x,
+                copy,
+            );
+            response.request_focus();
+        }
+        let released = response.drag_stopped_by(egui::PointerButton::Primary);
+        if self.key_drag.is_some()
+            && (response.dragged_by(egui::PointerButton::Primary) || released)
+            && let Some(pointer) = response.interact_pointer_pos()
+        {
+            let unsnapped = ui.input(|input| input.modifiers.shift);
+            self.update_dopesheet_drag(pointer.x, unsnapped);
+            response.request_focus();
+            ui.ctx().request_repaint();
+        }
+        if released {
+            self.finish_dopesheet_drag();
+        } else if response.clicked() {
+            // A press that never crossed the drag threshold keeps ordinary click semantics.
+            self.finish_dopesheet_drag();
             response.request_focus();
             if let Some(key) = response.interact_pointer_pos().and_then(hit_key) {
                 self.playing = false;
@@ -236,7 +288,8 @@ impl Editor {
                     self.scrub_dopesheet(pointer, start, width, duration);
                 }
             }
-        } else if response.dragged()
+        } else if self.key_drag.is_none()
+            && response.dragged_by(egui::PointerButton::Primary)
             && ui
                 .input(|input| input.pointer.press_origin())
                 .and_then(hit_key)
@@ -249,7 +302,7 @@ impl Editor {
         if !self.key_selection.is_empty() {
             ui.label(
                 RichText::new(format!(
-                    "{} selected · Delete to remove · Cmd/Ctrl-click toggles",
+                    "{} selected · Delete to remove · Cmd/Ctrl-click toggles · Drag to retime",
                     self.key_selection.len()
                 ))
                 .small()
