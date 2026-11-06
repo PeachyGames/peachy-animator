@@ -1,6 +1,6 @@
 use crate::{
-    Command, EditTarget, EvaluatedPose, MeshBindPose, PoseEdits, apply_command,
-    checked_pose_from_locals, transform_group,
+    AuthoredPose, Command, EditTarget, EvaluatedPose, MeshBindPose, PoseEdits, apply_command,
+    checked_pose_from_authored, sample_authored_pose, transform_group,
 };
 use peachy_document::{AttachmentRef, Document, Property, Transform};
 
@@ -129,24 +129,18 @@ impl Session {
     /// Read authored setup or Animate+pending data through the checked applied-pose stage.
     /// This snapshots without keying, discarding a pose or changing history.
     pub fn evaluated_pose(&self, target: EditTarget) -> Result<EvaluatedPose, String> {
-        let locals = match target {
-            EditTarget::Setup => self
-                .document()
-                .bones
-                .iter()
-                .map(|bone| bone.setup)
-                .collect(),
+        checked_pose_from_authored(self.document(), &self.authored_pose(target)?)
+    }
+    /// Read the full authored state without solving, keying or discarding it.
+    pub fn authored_pose(&self, target: EditTarget) -> Result<AuthoredPose, String> {
+        match target {
+            EditTarget::Setup => sample_authored_pose(self.document(), None, 0.),
             EditTarget::Animate { animation, time } => {
-                if self.document().animations.get(animation).is_none() {
-                    return Err("Unknown animation".into());
-                }
-                if !time.is_finite() || time < 0.0 {
-                    return Err("Pose time must be finite and nonnegative".into());
-                }
-                self.local_pose(Some(animation), time)
+                let mut authored = sample_authored_pose(self.document(), Some(animation), time)?;
+                authored.locals = self.local_pose(Some(animation), time);
+                Ok(authored)
             }
-        };
-        checked_pose_from_locals(self.document(), locals)
+        }
     }
     /// Capture applied locals once, including pending edits. Binding reconstructs
     /// FK from this explicit snapshot and must never apply constraints again.

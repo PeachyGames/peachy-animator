@@ -2,6 +2,7 @@
 mod authoring;
 mod commands;
 mod ik;
+mod ik_sampling;
 mod ik_solver;
 mod mesh;
 mod mesh_binding;
@@ -16,7 +17,11 @@ mod tools;
 
 pub use authoring::{KeyState, PoseEdits, transform_group};
 pub use commands::{Command, EditTarget, apply_command, keyframe_at};
-pub use ik::{EvaluatedPose, checked_evaluate_pose, checked_pose_from_locals};
+pub use ik::{
+    AuthoredPose, EvaluatedPose, checked_evaluate_pose, checked_pose_from_authored,
+    checked_setup_pose_from_locals, sample_authored_pose,
+};
+pub use ik_sampling::{IkPose, sample_ik};
 pub use mesh::{mesh_world_vertices, region_to_mesh, region_vertices};
 pub use mesh_binding::MeshBindPose;
 pub use picking::{attachment_bounds, pick_attachment};
@@ -25,8 +30,8 @@ pub use playback::{
 };
 pub use pose::{Affine, curve_progress, evaluate, local_pose, sample, world_pose};
 pub use scene::{
-    AttachmentDraw, Bounds, Scene, checked_evaluate_scene, checked_scene_from_locals,
-    evaluate_scene, scene_from_locals,
+    AttachmentDraw, Bounds, Scene, checked_evaluate_scene, checked_scene_from_authored,
+    checked_setup_scene_from_locals, evaluate_scene,
 };
 pub use session::Session;
 pub use timeline::{ClipboardKey, KeyClipboard, TimelineKey, copy_keys};
@@ -44,6 +49,8 @@ mod binding_tests;
 mod direct_weight_tests;
 #[cfg(test)]
 mod duration_tests;
+#[cfg(test)]
+mod ik_animation_tests;
 #[cfg(test)]
 mod ik_tests;
 #[cfg(test)]
