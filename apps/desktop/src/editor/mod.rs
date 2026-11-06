@@ -11,6 +11,7 @@ mod rename;
 mod selection;
 mod selection_history;
 mod shortcuts;
+mod timeline_clipboard;
 mod tools;
 mod tree;
 mod tree_model;
@@ -66,6 +67,7 @@ pub(crate) struct Editor {
     selection_history: selection_history::SelectionHistory,
     key_selection: dopesheet_selection::KeySelection,
     key_drag: Option<key_drag::KeyDrag>,
+    timeline_clipboard: Option<peachy_engine::KeyClipboard>,
     tree: TreeState,
     hidden_bones: BTreeSet<usize>,
     hidden_slots: BTreeSet<usize>,
@@ -177,6 +179,7 @@ impl Editor {
             selection_history: Default::default(),
             key_selection: Default::default(),
             key_drag: None,
+            timeline_clipboard: None,
             tree,
             hidden_bones: BTreeSet::new(),
             hidden_slots: BTreeSet::new(),
@@ -501,6 +504,7 @@ impl Editor {
                     self.selection_history = Default::default();
                     self.key_selection = Default::default();
                     self.key_drag = None;
+                    self.timeline_clipboard = None;
                     self.selection = Some(TreeItem::Skeleton);
                     self.animation = 0;
                     self.time = 0.0;
@@ -731,6 +735,7 @@ impl eframe::App for Editor {
                     "setupMode":self.setup_mode,"dirty":self.session.is_dirty(),"canUndo":self.session.can_undo(),"canRedo":self.session.can_redo(),"imageCount":self.textures.len(),
                     "selectedKeys":self.key_selection.diagnostic(),"dopesheetFocused":self.dopesheet_has_focus(&ctx),
                     "keyDrag":self.key_drag.as_ref().map(key_drag::KeyDrag::diagnostic),
+                    "clipboardKeys":self.timeline_clipboard.as_ref().map_or(0, |clipboard| clipboard.keys.len()),
                     "selectedAttachment":self.selected_attachment(),"selectedVertex":self.mesh_vertex,"hiddenSlots":self.hidden_slots,
                     "pointer":ctx.input(|i|i.pointer.hover_pos().map(|p|[p.x,p.y])),
                     "targets":self.capture_targets,"meshHandles":self.mesh_handles,"innerSize":[ctx.content_rect().width(),ctx.content_rect().height()]
