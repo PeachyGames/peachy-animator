@@ -4,7 +4,7 @@ use super::icons::Icon;
 use super::*;
 
 impl Editor {
-    fn dopesheet_id() -> egui::Id {
+    pub(super) fn dopesheet_id() -> egui::Id {
         egui::Id::new("dopesheet-keys")
     }
     pub(super) fn dopesheet_has_focus(&self, ctx: &egui::Context) -> bool {
@@ -36,17 +36,7 @@ impl Editor {
         self.record_target("dopesheet", ui.max_rect());
         ui.horizontal(|ui| {
             icons::heading(ui, Icon::Dopesheet, "Dopesheet");
-            let delete = icons::toolbar_button(
-                ui,
-                Icon::Delete,
-                "Delete selected keys",
-                "Delete",
-                !self.key_selection.is_empty(),
-            );
-            self.record_target("timelineDelete", delete.rect);
-            if delete.clicked() {
-                self.delete_dopesheet_keys();
-            }
+            self.timeline_clipboard_toolbar(ui);
             for (direction, name) in [
                 (PlayDirection::Backward, "playBackward"),
                 (PlayDirection::Forward, "playForward"),

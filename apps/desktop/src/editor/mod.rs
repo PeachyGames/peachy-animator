@@ -10,6 +10,7 @@ mod rename;
 mod selection;
 mod selection_history;
 mod shortcuts;
+mod timeline_clipboard;
 mod tools;
 mod tree;
 mod tree_model;
@@ -64,6 +65,7 @@ pub(crate) struct Editor {
     selection: Option<TreeItem>,
     selection_history: selection_history::SelectionHistory,
     key_selection: dopesheet_selection::KeySelection,
+    timeline_clipboard: Option<peachy_engine::KeyClipboard>,
     tree: TreeState,
     hidden_bones: BTreeSet<usize>,
     hidden_slots: BTreeSet<usize>,
@@ -174,6 +176,7 @@ impl Editor {
             selection: Some(TreeItem::Bone(initial_bone)),
             selection_history: Default::default(),
             key_selection: Default::default(),
+            timeline_clipboard: None,
             tree,
             hidden_bones: BTreeSet::new(),
             hidden_slots: BTreeSet::new(),
@@ -478,6 +481,7 @@ impl Editor {
                         };
                     self.selection_history = Default::default();
                     self.key_selection = Default::default();
+                    self.timeline_clipboard = None;
                     self.selection = Some(TreeItem::Skeleton);
                     self.animation = 0;
                     self.time = 0.0;
@@ -702,6 +706,7 @@ impl eframe::App for Editor {
                     "keyStates":self.selected_bone().map(|bone| [Property::Rotation,Property::X,Property::ScaleX].map(|p| self.key_state(bone,&peachy_engine::transform_group(&[p])))),
                     "setupMode":self.setup_mode,"dirty":self.session.is_dirty(),"canUndo":self.session.can_undo(),"canRedo":self.session.can_redo(),"imageCount":self.textures.len(),
                     "selectedKeys":self.key_selection.diagnostic(),"dopesheetFocused":self.dopesheet_has_focus(&ctx),
+                    "clipboardKeys":self.timeline_clipboard.as_ref().map_or(0, |clipboard| clipboard.keys.len()),
                     "selectedAttachment":self.selected_attachment(),"selectedVertex":self.mesh_vertex,"hiddenSlots":self.hidden_slots,
                     "pointer":ctx.input(|i|i.pointer.hover_pos().map(|p|[p.x,p.y])),
                     "targets":self.capture_targets,"meshHandles":self.mesh_handles,"innerSize":[ctx.content_rect().width(),ctx.content_rect().height()]
