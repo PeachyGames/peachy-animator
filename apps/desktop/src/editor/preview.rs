@@ -67,14 +67,20 @@ impl PreviewView {
 
     fn reconcile(&mut self, doc: &Document) {
         if self.animation >= doc.animations.len() {
-            self.animation = doc.animations.len().saturating_sub(1);
+            let animation = doc.animations.len().saturating_sub(1);
+            if self.animation != animation {
+                self.animation = animation;
+                self.fit = true;
+            }
             self.time = 0.;
             self.playing = false;
-            self.fit = true;
         }
         if !doc.skins.contains_key(&self.skin) {
-            self.skin = preferred_skin(doc);
-            self.fit = true;
+            let skin = preferred_skin(doc);
+            if self.skin != skin {
+                self.skin = skin;
+                self.fit = true;
+            }
         }
         let duration = self.duration(doc);
         self.time = if self.time.is_finite() {
@@ -327,33 +333,33 @@ impl Editor {
         let skins: Vec<_> = self.session.document().skins.keys().cloned().collect();
         let previous_animation = self.preview.animation;
         let previous_skin = self.preview.skin.clone();
-        ui.horizontal(|ui| {
-            ui.label("Animation");
+        ui.columns(2, |columns| {
+            let ui = &mut columns[0];
+            let animation_name = animations
+                .get(self.preview.animation)
+                .map_or("No animations", String::as_str);
             let combo = egui::ComboBox::from_id_salt("preview-animation")
                 .width(ui.available_width())
                 .wrap_mode(egui::TextWrapMode::Truncate)
-                .selected_text(
-                    animations
-                        .get(self.preview.animation)
-                        .map_or("No animations", String::as_str),
-                )
+                .selected_text(format!("Animation: {animation_name}"))
                 .show_ui(ui, |ui| {
                     for (index, name) in animations.iter().enumerate() {
                         let row = ui.selectable_value(&mut self.preview.animation, index, name);
                         self.record_target(&format!("previewAnimation:{index}"), row.rect);
                     }
                 });
-            self.preview_control("previewAnimation", &combo.response);
-        });
-        ui.horizontal(|ui| {
-            ui.label("Skin");
+            let response = combo.response.on_hover_text(format!(
+                "Animation: {animation_name}\nSingle track. Mixing and multiple tracks are not available."
+            ));
+            self.preview_control("previewAnimation", &response);
+            let ui = &mut columns[1];
             let combo = egui::ComboBox::from_id_salt("preview-skin")
                 .width(ui.available_width())
                 .wrap_mode(egui::TextWrapMode::Truncate)
                 .selected_text(if self.preview.skin.is_empty() {
-                    "No skins"
+                    "Skin: none".to_string()
                 } else {
-                    &self.preview.skin
+                    format!("Skin: {}", self.preview.skin)
                 })
                 .show_ui(ui, |ui| {
                     for name in &skins {
@@ -361,7 +367,8 @@ impl Editor {
                         self.record_target(&format!("previewSkin:{name}"), row.rect);
                     }
                 });
-            self.preview_control("previewSkin", &combo.response);
+            let response = combo.response.on_hover_text(format!("Preview skin: {}", self.preview.skin));
+            self.preview_control("previewSkin", &response);
         });
         if self.preview.animation != previous_animation {
             self.preview.time = 0.;
@@ -373,6 +380,7 @@ impl Editor {
         }
         let duration = self.preview.duration(self.session.document());
         ui.horizontal_wrapped(|ui| {
+            ui.spacing_mut().item_spacing.x = 3.;
             for (name, icon, time) in [
                 ("Start", Icon::FirstFrame, 0.),
                 ("End", Icon::LastFrame, f64::from(duration)),
@@ -405,25 +413,41 @@ impl Editor {
             }
             let looping = ui.checkbox(&mut self.preview.looping, "Loop");
             self.preview_control("previewLoop", &looping);
+            let fit = ui.small_button("Fit").on_hover_text(format!(
+                "Fit Preview to its own canvas ({}% zoom)",
+                compact_number(f64::from(self.preview.zoom) * 100.)
+            ));
+            self.preview_control("previewFit", &fit);
+            if fit.clicked() {
+                self.preview.fit = true;
+            }
+            let bones = ui
+                .add(egui::Button::selectable(self.preview.show_bones, "Bones").small())
+                .on_hover_text("Show bones in Preview");
+            self.preview_control("previewBones", &bones);
+            if bones.clicked() {
+                self.preview.show_bones = !self.preview.show_bones;
+                self.preview.fit = true;
+            }
         });
         ui.horizontal_wrapped(|ui| {
             ui.label("Time");
             let mut time = f64::from(self.preview.time);
-            let value = ui.add_enabled(
-                duration > 0.,
-                egui::DragValue::new(&mut time)
-                    .speed(1. / f64::from(self.session.document().fps))
-                    .range(0.0..=f64::from(duration))
-                    .suffix(" s")
-                    .custom_formatter(|value, _| compact_number(value))
-                    .custom_parser(|text| {
-                        text.trim()
-                            .parse::<f64>()
-                            .ok()
-                            .filter(|value| value.is_finite())
-                    })
-                    .update_while_editing(false),
-            );
+            let value = ui
+                .add_enabled(
+                    duration > 0.,
+                    egui::DragValue::new(&mut time)
+                        .speed(1. / f64::from(self.session.document().fps))
+                        .range(0.0..=f64::from(duration))
+                        .suffix(" s")
+                        .custom_formatter(|value, _| compact_number(value))
+                        .custom_parser(finite_number)
+                        .update_while_editing(false),
+                )
+                .on_hover_text(format!(
+                    "Preview time / {} seconds",
+                    compact_number(f64::from(duration))
+                ));
             self.preview_control("previewTime", &value);
             if value.changed() {
                 self.preview.seek(time, duration);
@@ -431,11 +455,22 @@ impl Editor {
             if value.gained_focus() || value.drag_started() {
                 self.preview.playing = false;
             }
-            ui.label(
-                RichText::new(format!("/ {} s", compact_number(f64::from(duration))))
-                    .small()
-                    .color(MUTED),
-            );
+            ui.label("Speed");
+            let mut percent = self.preview.speed * 100.;
+            let speed = ui
+                .add(
+                    egui::DragValue::new(&mut percent)
+                        .range(1.0..=200.0)
+                        .suffix("%")
+                        .max_decimals(0)
+                        .custom_parser(finite_number)
+                        .update_while_editing(false),
+                )
+                .on_hover_text("Preview playback speed, 1–200%");
+            self.preview_control("previewSpeed", &speed);
+            if speed.changed() && percent.is_finite() {
+                self.preview.speed = (percent / 100.).clamp(0.01, 2.);
+            }
         });
         let mut progress = if duration > 0. {
             f64::from(self.preview.time) / f64::from(duration)
@@ -455,45 +490,6 @@ impl Editor {
         if scrub.drag_started() || scrub.clicked() {
             self.preview.playing = false;
         }
-        let mut percent = self.preview.speed * 100.;
-        ui.scope(|ui| {
-            ui.spacing_mut().slider_width = (ui.available_width() - 85.).max(40.);
-            let speed = ui.add(
-                egui::Slider::new(&mut percent, 1.0..=200.0)
-                    .text("Speed")
-                    .suffix("%")
-                    .integer(),
-            );
-            self.preview_control("previewSpeed", &speed);
-            if speed.changed() && percent.is_finite() {
-                self.preview.speed = (percent / 100.).clamp(0.01, 2.);
-            }
-        });
-        ui.horizontal_wrapped(|ui| {
-            let fit = ui.small_button("Fit");
-            self.preview_control("previewFit", &fit);
-            if fit.clicked() {
-                self.preview.fit = true;
-            }
-            let bones = ui.checkbox(&mut self.preview.show_bones, "Bones");
-            self.preview_control("previewBones", &bones);
-            if bones.changed() {
-                self.preview.fit = true;
-            }
-            ui.label(
-                RichText::new(format!(
-                    "{}%",
-                    compact_number(f64::from(self.preview.zoom) * 100.)
-                ))
-                .small()
-                .color(MUTED),
-            );
-        });
-        ui.label(
-            RichText::new("Single track. Mixing and multiple tracks are not available.")
-                .small()
-                .color(MUTED),
-        );
         self.preview_canvas(ui);
         // Compound controls (notably Slider's numeric value) can focus an
         // internal child response rather than the ID returned by the widget.
@@ -645,6 +641,13 @@ impl Editor {
             "appliedLocals":scene.as_ref().ok().map(|scene|&scene.applied_locals)
         })
     }
+}
+
+fn finite_number(text: &str) -> Option<f64> {
+    text.trim()
+        .parse::<f64>()
+        .ok()
+        .filter(|value| value.is_finite())
 }
 
 fn compact_number(value: f64) -> String {

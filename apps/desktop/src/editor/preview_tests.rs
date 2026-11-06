@@ -111,9 +111,10 @@ fn fixture() -> (Editor, egui::Context) {
 fn animation_skin_seek_and_transport_controls_preserve_the_main_pending_editor_and_history() {
     let (mut editor, ctx) = fixture();
     let main = main_state(&editor);
+    let alternate = editor.session.document().animations.len() - 1;
     click(&mut editor, &ctx, "previewAnimation");
-    click(&mut editor, &ctx, "previewAnimation:1");
-    assert_eq!(editor.preview.animation, 1);
+    click(&mut editor, &ctx, &format!("previewAnimation:{alternate}"));
+    assert_eq!(editor.preview.animation, alternate);
     click(&mut editor, &ctx, "previewSkin");
     click(&mut editor, &ctx, "previewSkin:mint");
     assert_eq!(editor.preview.skin, "mint");
@@ -141,6 +142,18 @@ fn animation_skin_seek_and_transport_controls_preserve_the_main_pending_editor_a
     assert_eq!(editor.preview.time, 0.);
     click(&mut editor, &ctx, "previewLoop");
     assert!(!editor.preview.looping);
+    let speed = point(&editor, "previewSpeed");
+    pointer(&mut editor, &ctx, speed, true, egui::PointerButton::Primary);
+    let moved = speed + vec2(20., 0.);
+    workspace_frame(&mut editor, &ctx, vec![egui::Event::PointerMoved(moved)]);
+    pointer(
+        &mut editor,
+        &ctx,
+        moved,
+        false,
+        egui::PointerButton::Primary,
+    );
+    assert!(editor.preview.speed > 1. && editor.preview.speed <= 2.);
     assert_eq!(main_state(&editor), main);
 }
 
@@ -424,6 +437,8 @@ fn minimum_dock_controls_and_canvas_remain_finite_including_empty_and_extreme_na
     for name in [
         "previewAnimation",
         "previewSkin",
+        "previewStart",
+        "previewEnd",
         "previewForward",
         "previewBackward",
         "previewLoop",
@@ -454,6 +469,16 @@ fn minimum_dock_controls_and_canvas_remain_finite_including_empty_and_extreme_na
     assert_eq!(editor.preview.time, 0.);
     assert!(!editor.preview.playing);
     assert!(editor.preview.error.is_none());
+    let mut no_skins = editor.session.document().clone();
+    no_skins.skins.clear();
+    no_skins.slots.clear();
+    editor.session = Session::new(no_skins).unwrap();
+    editor.preview.reset_document();
+    settle(&mut editor, &ctx);
+    editor.preview.pan = vec2(15., 20.);
+    settle(&mut editor, &ctx);
+    assert_eq!(editor.preview.pan, vec2(15., 20.));
+    assert!(!editor.preview.fit);
     let mut huge = doc;
     huge.bones[0].setup.x = f32::MAX * 0.25;
     huge.animations[0].tracks = vec![Track {
