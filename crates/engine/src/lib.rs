@@ -35,3 +35,5 @@ mod duration_tests;
 mod tests;
 #[cfg(test)]
 mod timeline_tests;
+#[cfg(test)]
+mod weighted_tests;
