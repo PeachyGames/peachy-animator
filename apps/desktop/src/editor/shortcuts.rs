@@ -3,6 +3,7 @@ use super::*;
 
 impl Editor {
     pub(super) fn cancel_gesture(&mut self) {
+        self.cancel_weight_edit();
         self.cancel_dopesheet_drag();
         let transform_drag = self.drag.take().is_some();
         let mesh_drag = self.mesh_drag.take().is_some();
@@ -60,7 +61,7 @@ impl Editor {
         }
     }
     pub(super) fn toggle_views(&mut self) {
-        self.cancel_dopesheet_drag();
+        self.cancel_gesture();
         self.weights.bind = None;
         if let Some(views) = self.hidden_views.take() {
             self.show_tree = views.tree;
@@ -120,7 +121,7 @@ impl Editor {
             self.capture = Some(self.capture_directory.join(format!("editor-{stamp}.png")));
             ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
         }
-        if self.weights_shortcuts(ctx) {
+        if self.weight_edit_shortcuts(ctx) || self.weights_shortcuts(ctx) {
             return;
         }
         if self.error.is_some()
@@ -129,7 +130,8 @@ impl Editor {
             || self.duplicate_animation.is_some()
             || (ctx.egui_wants_keyboard_input()
                 && !self.dopesheet_has_focus(ctx)
-                && !ctx.memory(|memory| memory.has_focus(Self::weights_id())))
+                && !ctx.memory(|memory| memory.has_focus(Self::weights_id()))
+                && !self.weight_control_has_focus(ctx))
         {
             return;
         }

@@ -101,6 +101,7 @@ impl Editor {
                         icons::toggle(ui, Icon::Weights, "Weights", &mut self.show_weights);
                     self.record_target("viewWeights", weights.rect);
                     if weights.changed() {
+                        self.cancel_weight_edit();
                         if self.show_weights {
                             self.open_weights_view();
                         } else {
@@ -116,6 +117,7 @@ impl Editor {
                     );
                     self.record_target("viewRestore", restore.rect);
                     if restore.clicked() {
+                        self.cancel_weight_edit();
                         self.show_tree = true;
                         self.show_dopesheet = true;
                         self.show_weights = false;
@@ -296,9 +298,10 @@ impl Editor {
                             .custom_formatter(move |v,_| format!("{:.2}",if world_scale{f64::from(display)}else{v})),
                     );
                     self.record_target(&format!("value:{property:?}"), response.rect);
-                    if response.clicked(){self.playing=false;}
+                    if response.clicked() || response.gained_focus() { self.cancel_weight_edit(); self.playing=false; }
                     if property.is_scale() && self.axes==Axes::World { response.clone().on_hover_text("World scale is shown; entry and dragging edit Local scale."); }
                     if response.drag_started() {
+                        self.cancel_weight_edit();
                         ui.data_mut(|data|data.insert_temp(entry_id,(base,focused,None::<f32>)));
                         self.session.begin_transaction();
                     }
@@ -379,6 +382,7 @@ impl Editor {
                     let range = if i % 2 == 0 { 0.0..=1.0 } else { -1.0..=2.0 };
                     let response = ui.add(egui::Slider::new(&mut handles[i], range).text(*label));
                     if response.drag_started() {
+                        self.cancel_weight_edit();
                         self.session.begin_transaction();
                     }
                 }

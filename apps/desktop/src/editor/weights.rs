@@ -48,7 +48,7 @@ impl WeightsState {
         let valid = match &self.bind {
             Some(BindMode::Mesh(key)) => {
                 self.mesh.as_ref() == Some(key)
-                    && matches!(document.attachment(key), Some(Attachment::Mesh(mesh)) if !mesh.is_weighted())
+                    && matches!(document.attachment(key), Some(Attachment::Mesh(_)))
             }
             Some(BindMode::Bone(bone)) => *bone < document.bones.len(),
             None => true,
@@ -70,7 +70,7 @@ impl Editor {
     pub(super) fn weights_id() -> egui::Id {
         egui::Id::new("weights-view")
     }
-    fn weights_mesh_active(&self, key: &AttachmentRef) -> bool {
+    pub(super) fn weights_mesh_active(&self, key: &AttachmentRef) -> bool {
         let document = self.session.document();
         let Some(slot) = document.slots.iter().position(|slot| slot.name == key.slot) else {
             return false;
@@ -115,9 +115,7 @@ impl Editor {
             Some(TreeItem::Bone(bone)) => Some(BindMode::Bone(*bone)),
             _ => self.weights.mesh.as_ref().and_then(|key| {
                 match self.session.document().attachment(key) {
-                    Some(Attachment::Mesh(mesh)) if !mesh.is_weighted() => {
-                        Some(BindMode::Mesh(key.clone()))
-                    }
+                    Some(Attachment::Mesh(_)) => Some(BindMode::Mesh(key.clone())),
                     _ => None,
                 }
             }),
@@ -133,12 +131,12 @@ impl Editor {
                 "Bind: click one bone in the Tree or viewport; Escape exits".into()
             }
             Some(BindMode::Bone(_)) => {
-                "Bind: click an unweighted mesh in the Tree or viewport; Escape exits".into()
+                "Bind: click a mesh in the Tree or viewport; Escape exits".into()
             }
-            None => "Select an unweighted mesh or one bone to bind".into(),
+            None => "Select a mesh or one bone to bind".into(),
         };
     }
-    fn weights_edit_target(&self) -> EditTarget {
+    pub(super) fn weights_edit_target(&self) -> EditTarget {
         if self.setup_mode {
             EditTarget::Setup
         } else {
@@ -156,7 +154,10 @@ impl Editor {
             (BindMode::Mesh(key), TreeItem::Bone(bone)) => Some((key, *bone)),
             (BindMode::Bone(bone), TreeItem::Attachment(key))
                 if self.weights_mesh_active(key)
-                    && matches!(self.session.document().attachment(key), Some(Attachment::Mesh(mesh)) if !mesh.is_weighted()) =>
+                    && matches!(
+                        self.session.document().attachment(key),
+                        Some(Attachment::Mesh(_))
+                    ) =>
             {
                 Some((key.clone(), bone))
             }
@@ -167,16 +168,26 @@ impl Editor {
             self.cancel_gesture();
             self.session.commit_transaction();
             self.playing = false;
-            let result =
+            let weighted = matches!(self.session.document().attachment(&key), Some(Attachment::Mesh(mesh)) if mesh.is_weighted());
+            let result = if weighted {
                 self.session
-                    .bind_mesh_to_bone(key.clone(), bone, self.weights_edit_target());
+                    .add_mesh_bone_binding(key.clone(), bone, self.weights_edit_target())
+            } else {
+                self.session
+                    .bind_mesh_to_bone(key.clone(), bone, self.weights_edit_target())
+            };
             self.weights.select_mesh(key.clone());
             self.weights.bone = Some(bone);
             self.restore_selection(Some(TreeItem::Attachment(key)));
             match result {
                 Ok(()) => {
+                    let action = if weighted {
+                        "Added zero-weight binding to"
+                    } else {
+                        "Bound mesh to"
+                    };
                     self.status = format!(
-                        "Bound mesh to {} at the current pose",
+                        "{action} {} at the current pose",
                         self.session.document().bones[bone].name
                     )
                 }
@@ -228,7 +239,8 @@ impl Editor {
             || (self.tool == Tool::Weights
                 && !self.dopesheet_has_focus(ctx)
                 && (!ctx.egui_wants_keyboard_input()
-                    || ctx.memory(|memory| memory.has_focus(Self::weights_id()))));
+                    || ctx.memory(|memory| memory.has_focus(Self::weights_id()))
+                    || self.weight_control_has_focus(ctx)));
         if priority
             && [egui::Key::Space, egui::Key::Escape]
                 .into_iter()
@@ -272,7 +284,7 @@ impl Editor {
         icons::heading(ui, icons::Icon::Weights, "Weights");
         self.reconcile_weights();
         let mesh_label = if matches!(self.weights.bind, Some(BindMode::Bone(_))) {
-            "Mesh: click an unweighted mesh".into()
+            "Mesh: click a mesh".into()
         } else {
             self.weights.mesh.as_ref().map_or_else(
                 || "Mesh: select an active mesh".into(),
@@ -291,9 +303,9 @@ impl Editor {
         ));
         ui.horizontal(|ui| {
             let can_bind = self.weights.bind.is_some() || self.selected_bone().is_some() || self.weights.mesh.as_ref().is_some_and(|key|
-                matches!(self.session.document().attachment(key),Some(Attachment::Mesh(mesh)) if !mesh.is_weighted()));
+                matches!(self.session.document().attachment(key),Some(Attachment::Mesh(_))));
             let bind = ui.add_enabled(can_bind, egui::Button::selectable(self.weights.bind.is_some(), "Bind"))
-                .on_hover_text("Bind an unweighted mesh to one bone at the current pose. Click a bone or mesh after entering Bind mode.");
+                .on_hover_text("Bind an unweighted mesh to one bone, or add a new bone with zero weight to a weighted mesh. Click a bone or mesh after entering Bind mode.");
             self.record_target("weightsBind", bind.rect);
             if bind.clicked() { self.begin_weights_bind(); focus.request_focus(); }
             let can_remove = self.weights.bind.is_none() && self.weights.mesh.as_ref().is_some_and(|key|matches!(self.session.document().attachment(key),Some(Attachment::Mesh(mesh)) if mesh.is_weighted()));
@@ -317,6 +329,7 @@ impl Editor {
         }
         let mut bones = Vec::new();
         let mut pose_bone = None;
+        let mut picked_bone = None;
         if let MeshVertices::Weighted { influences } = &mesh.vertices {
             for influence in influences.iter().flatten() {
                 if !bones.contains(&influence.bone) {
@@ -358,7 +371,7 @@ impl Editor {
                     ],
                 );
                 if row.clicked() {
-                    self.weights.bone = Some(bone);
+                    picked_bone = Some(bone);
                     focus.request_focus();
                 }
                 if row.secondary_clicked() {
@@ -368,12 +381,17 @@ impl Editor {
         } else {
             ui.label("Unweighted mesh");
         }
+        if let Some(bone) = picked_bone {
+            self.cancel_weight_edit();
+            self.weights.bone = Some(bone);
+        }
         if let Some(bone) = pose_bone {
             self.select(TreeItem::Bone(bone));
         }
+        self.weight_controls(ui);
         ui.label(
             RichText::new(
-                "Initial one-bone binding and Remove all. Weight adjustment is not available yet.",
+                "Direct adjusts one vertex and one bone. Brush, Update bindings and individual removal are not available yet.",
             )
             .small()
             .color(MUTED),
@@ -426,7 +444,8 @@ mod tests {
         assert_eq!(state.bind, None);
         state.bind = Some(BindMode::Mesh(key.clone()));
         state.reconcile(document);
-        assert_eq!(state.bind, None);
+        // A weighted mesh now remains a valid source for adding a genuinely new bone.
+        assert_eq!(state.bind, Some(BindMode::Mesh(key.clone())));
         state.mesh = Some(AttachmentRef {
             placeholder: "missing mesh".into(),
             ..key
