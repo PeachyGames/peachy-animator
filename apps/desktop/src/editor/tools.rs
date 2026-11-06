@@ -39,6 +39,28 @@ pub(super) fn item_parent(item: &TreeItem, doc: &Document, world: &[Affine]) -> 
     }
 }
 impl Editor {
+    /// Setup angle wrapping is a presentation convention for ordinary FK only.
+    /// IK mixes depend on raw turns, including when a currently zero mix is later enabled.
+    pub(super) fn setup_rotation_value(&self, item: Option<&TreeItem>, rotation: f32) -> f32 {
+        let ik_bone = match item {
+            Some(TreeItem::Bone(bone)) => {
+                self.session
+                    .document()
+                    .constraints
+                    .iter()
+                    .any(|constraint| {
+                        let Constraint::Ik(ik) = constraint;
+                        ik.bones.contains(bone)
+                    })
+            }
+            _ => false,
+        };
+        if ik_bone {
+            rotation
+        } else {
+            rotation.rem_euclid(360.)
+        }
+    }
     pub(super) fn selected_pose(&self) -> Result<SelectedPose, String> {
         let item = self
             .selection
@@ -88,10 +110,7 @@ impl Editor {
         };
         let (local, parent) = (pose.authored, pose.parent);
         match set_transform_value(local, parent, self.axes, property, value) {
-            Ok(mut transform) => {
-                if self.setup_mode && property == Property::Rotation {
-                    transform.rotation = transform.rotation.rem_euclid(360.);
-                }
+            Ok(transform) => {
                 let properties = if matches!(property, Property::X | Property::Y) {
                     &[Property::X, Property::Y][..]
                 } else {

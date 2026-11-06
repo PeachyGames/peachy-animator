@@ -49,6 +49,13 @@ Viewport gesture conversion also receives frozen authored/applied locals, actual
 world and parent frames through the shared engine helper. It projects along the
 displayed frame while applying deltas to authored values; this establishes
 internal control coherence, not exact installed-Spine partial-mix semantics.
+Setup local rotation fields and edits preserve raw turns for directly referenced
+IK bones, including a currently zero-mix constraint. Raw winding affects partial
+IK: authored 720 with a north target at half mix evaluates to 585; relative +10 must
+retain 730 and evaluate to 590. Ordinary FK and region Setup range conventions
+remain unchanged. This authored-pose policy keeps command, preview and display
+consistent; the exact installed-Spine Setup field convention remains an
+observation gate rather than an inferred normalization rule.
 A valid native edit that lies outside the current evaluator domain remains authored data
 and displays a checked evaluation error; it is not silently replaced with FK.
 Exact constrained-bone World/Parent/constrained-axis editing remains a reference

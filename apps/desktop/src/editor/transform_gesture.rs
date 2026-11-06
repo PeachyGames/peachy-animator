@@ -133,7 +133,7 @@ impl Editor {
     fn preview_transform(&mut self, mut transform: Transform) -> Result<(), String> {
         let edit = self.drag.as_ref().ok_or("No active transform gesture")?;
         if edit.setup && edit.properties.contains(&Property::Rotation) {
-            transform.rotation = transform.rotation.rem_euclid(360.);
+            transform.rotation = self.setup_rotation_value(Some(&edit.item), transform.rotation);
         }
         let target = if edit.setup {
             EditTarget::Setup

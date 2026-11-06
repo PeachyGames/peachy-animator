@@ -241,7 +241,7 @@ impl Editor {
         };
         let mut shown = peachy_engine::transform_values(local, parent, self.axes);
         if self.setup_mode {
-            shown.rotation = shown.rotation.rem_euclid(360.);
+            shown.rotation = self.setup_rotation_value(self.selection.as_ref(), shown.rotation);
         }
         let editable = tool.map_or_else(
             || self.transform_editable(),
