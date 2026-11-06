@@ -209,9 +209,11 @@ impl Editor {
         let Some(tool) = edit.tool.transform_tool() else {
             return;
         };
-        let result = peachy_engine::drag_transform(
+        let result = peachy_engine::drag_transform_in_frame(
             edit.initial,
+            edit.applied_initial,
             edit.parent,
+            edit.applied_world,
             peachy_engine::TransformGesture {
                 tool,
                 axes: edit.axes,
