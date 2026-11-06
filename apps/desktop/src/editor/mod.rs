@@ -8,6 +8,7 @@ mod ik;
 mod key_drag;
 mod layout;
 mod mesh;
+mod mesh_tools;
 mod panels;
 mod playback;
 mod properties;
@@ -72,8 +73,9 @@ struct ViewVisibility {
 struct MeshDrag {
     attachment: AttachmentRef,
     vertex: usize,
-    position: [f32; 2],
+    translation: peachy_engine::MeshTranslation,
     pointer: Pos2,
+    zoom: f32,
 }
 
 pub(crate) struct Editor {
@@ -130,6 +132,8 @@ pub(crate) struct Editor {
     mesh_vertex: usize,
     mesh_triangle: usize,
     mesh_drag: Option<MeshDrag>,
+    mesh_blocked: bool,
+    mesh_tools: mesh_tools::MeshToolsView,
     capture_targets: BTreeMap<String, [f32; 4]>,
     mesh_handles: Vec<[f32; 2]>,
     status: String,
@@ -243,6 +247,8 @@ impl Editor {
             mesh_vertex: 0,
             mesh_triangle: 0,
             mesh_drag: None,
+            mesh_blocked: false,
+            mesh_tools: Default::default(),
             capture_targets: BTreeMap::new(),
             mesh_handles: vec![],
             status: "Original Peach Bot • select a bone and make it yours".into(),
@@ -566,6 +572,10 @@ impl Editor {
             self.cancel_dopesheet_drag();
             return;
         }
+        if self.mesh_drag.is_some() {
+            self.cancel_mesh_drag();
+            return;
+        }
         self.session.undo();
         self.key_selection.clear();
         self.drag = None;
@@ -590,6 +600,10 @@ impl Editor {
         }
         if self.key_drag.is_some() {
             self.cancel_dopesheet_drag();
+            return;
+        }
+        if self.mesh_drag.is_some() {
+            self.cancel_mesh_drag();
             return;
         }
         self.session.redo();
@@ -728,6 +742,8 @@ impl Editor {
         if !ctx.input(|input| input.focused) {
             self.cancel_gesture();
         }
+        self.reconcile_mesh_input(&ctx);
+        self.mesh_tools.show_radius = false;
         self.capture_targets.clear();
         self.mesh_handles.clear();
         self.weights_handles.clear();
@@ -941,6 +957,7 @@ impl Editor {
                 report["evaluationError"] = self.evaluation_error.clone().into();
                 report["shearDisplayPolicy"] = "localPendingComparison".into();
                 report["meshInspection"] = self.mesh_inspection().unwrap_or_default();
+                report["meshTools"] = self.mesh_tools_diagnostic();
                 report["displayExtent"] = self
                     .key_drag
                     .as_ref()

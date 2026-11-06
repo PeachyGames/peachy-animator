@@ -610,3 +610,32 @@ per-animation Repeat and exact installed-editor comparison remain pending. The
 existing nonlooping transport stops at the last key. The live guides are not a
 versioned pixel reference. See [evidence](evidence/timeline-view.json) and the
 [native capture](timeline-view-editor.png).
+
+
+## Mesh Tools view — November 6, 2026
+
+The public [Mesh Tools guide](https://en.esotericsoftware.com/spine-mesh-tools)
+describes a soft-selection view ordered Size, Feather and Hull vertices. The
+implementation follows that order in the same optional right-rail dock as other
+auxiliary views. It is available in both modes, with an explicit Setup-only edit
+scope. Opening it leaves the current mode, typed selection and pending pose alone.
+Its Vertices button enters the existing attachment vertex workflow.
+
+Size is a 0–1,000 world-pixel radius. Feather uses an independently implemented
+linear outer falloff; Hull vertices can exclude unselected hull points. The one
+explicitly selected point always moves, and Size zero affects only that point.
+Viewport drag and arrow nudges use engine-generated atomic commands. A drag
+freezes its baseline, influence weights and view scale, includes the release
+position and forms one Undo step. Context/file/history/hide/focus actions cancel
+before continuing and block the cancelled held pointer until release. Local X/Y
+coordinate fields continue editing the explicitly chosen vertex only.
+
+Cyan selection, blue falloff shading, gray unaffected points and the two radius
+rings make the influence visible. Rings appear while hovering/adjusting Size or
+Feather. Close/reopen and F9 retain preferences; Restore default workspace resets
+them. Weighted meshes remain inspection-only and keep the Weights workflow.
+Multiple selected points, Rotate/Scale soft transforms, weighted/Animate edits,
+other attachment vertex types and deform keys are separate gaps. Linear falloff,
+endpoint policy, slider limits and exact installed-editor interaction equivalence
+have not been measured in installed Spine. Native input acceptance and rendering
+evidence are reported separately in [Mesh Tools evidence](evidence/mesh-tools.json).

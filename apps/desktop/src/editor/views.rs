@@ -6,6 +6,7 @@ use super::*;
 pub(super) enum DockView {
     Animations,
     Ghosting,
+    MeshTools,
     Metrics,
     Outline,
     Playback,
@@ -18,9 +19,10 @@ pub(super) enum DockView {
 mod tests;
 
 impl DockView {
-    const ALL: [Self; 7] = [
+    const ALL: [Self; 8] = [
         Self::Animations,
         Self::Ghosting,
+        Self::MeshTools,
         Self::Metrics,
         Self::Outline,
         Self::Playback,
@@ -31,6 +33,7 @@ impl DockView {
         match self {
             Self::Animations => "Animations",
             Self::Ghosting => "Ghosting",
+            Self::MeshTools => "Mesh Tools",
             Self::Metrics => "Metrics",
             Self::Outline => "Outline",
             Self::Playback => "Playback",
@@ -42,6 +45,7 @@ impl DockView {
         match self {
             Self::Animations => Icon::Animations,
             Self::Ghosting => Icon::Ghosting,
+            Self::MeshTools => Icon::MeshTools,
             Self::Metrics => Icon::Metrics,
             Self::Outline => Icon::Outline,
             Self::Playback => Icon::Playback,
@@ -90,7 +94,7 @@ impl ViewTabs {
 }
 
 /// The public guide's complete view inventory. Unsupported entries remain discoverable.
-const UNIMPLEMENTED: [(&str, &str); 5] = [
+const UNIMPLEMENTED: [(&str, &str); 4] = [
     (
         "Audio",
         "Audio assets, waveform display and playback are not implemented.",
@@ -98,10 +102,6 @@ const UNIMPLEMENTED: [(&str, &str); 5] = [
     (
         "Graph",
         "The editable value graph is not implemented. Use Dopesheet for supported key timing and curves.",
-    ),
-    (
-        "Mesh Tools",
-        "A separate Mesh Tools view is not implemented. Select an attachment and use Vertices for the current mesh subset.",
     ),
     (
         "Preview",
@@ -149,6 +149,10 @@ impl Editor {
             self.view_tabs.open.insert(view);
         }
         self.view_tabs.active = view;
+    }
+
+    pub(super) fn open_mesh_tools_view(&mut self) {
+        self.open_dock_view(DockView::MeshTools);
     }
 
     pub(super) fn restore_hidden_views(&mut self) {
@@ -236,6 +240,7 @@ impl Editor {
             self.show_weights = false;
             self.view_tabs.open.clear();
             self.ghosting.enabled = false;
+            self.mesh_tools = Default::default();
             self.weights.bind = None;
             self.hidden_views = None;
             ui.close();
@@ -306,6 +311,7 @@ impl Editor {
                 .show(ui, |ui| match view {
                     DockView::Animations => self.animations_panel(ui),
                     DockView::Ghosting => self.ghosting_panel(ui),
+                    DockView::MeshTools => self.mesh_tools_panel(ui),
                     DockView::Metrics => self.metrics_panel(ui),
                     DockView::Playback => self.playback_panel(ui),
                     DockView::Skins => self.skins_panel(ui),

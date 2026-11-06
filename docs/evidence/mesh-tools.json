@@ -1,0 +1,160 @@
+{
+  "date": "2026-11-06",
+  "view": "Mesh Tools",
+  "baseline": "8da2dc245ccb89183c51c8e7aa77952145817188",
+  "startingWorktreeClean": true,
+  "engineCommits": [
+    "d241b80",
+    "22cdaa9"
+  ],
+  "backup": "../../../.local-backups/peachy-mesh-tools-20261106T181246Z-f93e45/",
+  "inventory": {
+    "implemented": 11,
+    "total": 15,
+    "remaining": [
+      "Audio",
+      "Graph",
+      "Preview",
+      "Slot Color"
+    ]
+  },
+  "checks": {
+    "format": "passed",
+    "workspaceTests": 352,
+    "desktopTests": 138,
+    "engineTests": 150,
+    "newGeometryTests": 9,
+    "newDesktopTests": 9,
+    "clippyAllTargetsWarningsDenied": "passed",
+    "workspaceBuild": "passed",
+    "architectureCrates": 7,
+    "hostedCI": "not run"
+  },
+  "behavior": [
+    "Size uses world distance, Feather uses linear outer falloff, Hull vertices excludes only unselected hull points",
+    "One selected unweighted Setup vertex; selected point remains full strength, Size0 suppresses even coincident neighbors",
+    "Influence weights, local positions, slot world frame, pointer and zoom freeze at drag start",
+    "Exact press target is captured before the drag threshold; nearby vertices cannot steal a drag",
+    "Repeated and zero-delta previews use the frozen baseline; release includes final position and one history step",
+    "Escape/history/file/context/mode/tool/hide/focus/modal/projection-error paths cancel; held pointer is blocked until release",
+    "Arrow nudges use the same engine weights; explicit numeric Local X/Y still address one vertex",
+    "Settings and view lifecycle preserve pending pose/document/history; weighted/inactive targets refuse edits",
+    "No topology, UV, hull, edges, vertex IDs or serialized model changes"
+  ],
+  "geometryHarness": {
+    "feather": 0.5,
+    "hullVertices": true,
+    "oneStepUndoRedo": true,
+    "size": 120,
+    "skin": "peach",
+    "slot": "body",
+    "source": "original mesh-bot.peachy",
+    "sourceBytesUnchanged": true,
+    "topologyAndUVsPreserved": true,
+    "vertex": 4,
+    "weights": [
+      0.2080426961183548,
+      0.3909974992275238,
+      0.39099758863449097,
+      0.20804262161254883,
+      1.0
+    ],
+    "worldDelta": [
+      6,
+      -4
+    ]
+  },
+  "externalRuntime": {
+    "version": "4.3.13",
+    "report": {
+      "regionComparisons": 29120,
+      "maxRegionError": 3.0517578125e-05,
+      "meshComparisons": 5200,
+      "weightedMeshComparisons": 0,
+      "maxMeshError": 3.0517578125e-05,
+      "uvComparisons": 10400,
+      "maxUVError": 0,
+      "runtime": "Spine 4.3 external oracle",
+      "bones": 15,
+      "slots": 14,
+      "skins": [
+        "default",
+        "mint",
+        "peach"
+      ],
+      "clips": [
+        {
+          "name": "idle",
+          "nativeEnd": 2,
+          "runtimeEnd": 2,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 1.933524876562842e-05
+        },
+        {
+          "name": "wave",
+          "nativeEnd": 2.4000000953674316,
+          "runtimeEnd": 2.4000000953674316,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 2.6437081885433145e-05
+        }
+      ],
+      "tolerance": 0.001,
+      "maxWorldError": 2.6437081885433145e-05,
+      "comparisons": 28080
+    },
+    "runtimeImplementationInspected": false,
+    "runtimeRedistributed": false
+  },
+  "nativeRender": {
+    "normalOnScreenWindow": true,
+    "loadedOriginalArtwork": true,
+    "meshToolsRendered": true,
+    "controlsWithinPanel": true,
+    "radiusRendered": true,
+    "exactPidForegroundVerified": true,
+    "diagnosticStartupOnly": true,
+    "nativeInputAccepted": false,
+    "finalCapture": "editor-1793990790279053000.json",
+    "pid": 3171,
+    "capture": "../mesh-tools-editor.png",
+    "sourceDifference": "Temporary initial skin/attachment/view/tool/vertex/size only; absent byte-for-byte from final source and rebuilt application."
+  },
+  "nativeInput": {
+    "accepted": false,
+    "reason": "The render-only native run verifies a real window and hover/rings, but does not complete click/typed-value acceptance. Three earlier Timeline mouse attempts in this host session could not activate the existing mode control.",
+    "earlierEvidence": "timeline-view.json"
+  },
+  "finalSourceRestoredExactly": true,
+  "productionSourceSHA256": "dc1e6be22bd74b657a20713f72a5113a9f635c9d0c5afea66d53b424a06b2191",
+  "productionBinarySHA256": "91f2b320506eafd340dac92515ed9f43ecba5cb852bf4f1196357ed2035780c9",
+  "diagnosticBinarySHA256": "2e6e2b2b77e9581318202ac77d0d79eb70a79e70ab15589095e7fb327a185e4a",
+  "cleanup": {
+    "pid": 3171,
+    "taskOwnedEditorExited": true,
+    "temporaryAuthorizationExists": false,
+    "browserLaunched": false
+  },
+  "cacheCleanup": {
+    "timestamp": "2026-11-06T18:44:24.264519+00:00",
+    "removed": "/Users/chris/Development/2-Areas/ppg/peachy-animator/target/debug/incremental",
+    "scope": "Regenerable incremental compiler cache for this project only; Cargo target lock held",
+    "sourceAndBaselinesPreserved": true,
+    "binariesAndDependencyArtifactsPreserved": true
+  },
+  "limitations": [
+    "Single selected point and unweighted Setup translation/nudges only",
+    "No Rotate/Scale, weighted soft selection, deform keys or other vertex attachment types",
+    "Falloff endpoints and 0\u20131000 size range are bounded local choices; exact installed Spine parity unmeasured",
+    "Native mouse/keyboard acceptance pending; diagnostic startup removed from final product"
+  ]
+}

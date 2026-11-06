@@ -9,10 +9,7 @@ impl Editor {
         self.cancel_weight_edit();
         self.cancel_dopesheet_drag();
         self.cancel_transform_edit();
-        let mesh_drag = self.mesh_drag.take().is_some();
-        if mesh_drag {
-            self.session.cancel_transaction();
-        }
+        self.cancel_mesh_drag();
     }
     pub(super) fn set_tool(&mut self, tool: Tool) {
         if tool == Tool::Weights {
@@ -103,14 +100,21 @@ impl Editor {
             return;
         }
         if self.tool == Tool::Mesh {
-            if let Some(key) = self.selected_attachment().cloned()
-                && let Some(p) = self.editable_mesh_position(&key, self.mesh_vertex)
+            if self.mesh_drag.is_none()
+                && let Some(key) = self.selected_attachment().cloned()
+                && self
+                    .editable_mesh_position(&key, self.mesh_vertex)
+                    .is_some()
             {
-                self.dispatch(Command::SetMeshVertex {
-                    attachment: key,
-                    vertex: self.mesh_vertex,
-                    position: [p[0] + delta[0], p[1] + delta[1]],
-                });
+                match self
+                    .mesh_translation(&key, self.mesh_vertex)
+                    .and_then(|translation| translation.command(key, delta))
+                {
+                    Ok(command) => {
+                        self.dispatch(command);
+                    }
+                    Err(error) => self.error = Some(error),
+                }
             }
         } else if self.transform_tool_editable(self.tool) {
             self.nudge_transform(delta, fine);

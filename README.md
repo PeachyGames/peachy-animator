@@ -100,6 +100,10 @@ in its panel or with **Ghosts** above the viewport.
 
 ![Ghosting in the native editor](docs/ghosting-editor.png)
 
+**Views → Mesh Tools** provides Size, Feather and Hull vertices for soft selection
+while dragging or nudging unweighted Setup vertices. Neighbors use a linear falloff;
+a drag is one Undo step. Weighted soft selection and Rotate/Scale remain pending.
+
 **Views → Timeline** opens a compact ruler below the viewport, with playback,
 frame/key navigation, decimal frame entry, key markers, scrubbing, zoom and pan.
 It shares the current animation and works with Dopesheet closed.

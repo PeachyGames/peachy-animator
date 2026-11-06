@@ -100,6 +100,7 @@ impl Editor {
         Ok(())
     }
     pub(super) fn show_evaluation_error(&mut self, ui: &egui::Ui, rect: egui::Rect, error: String) {
+        self.cancel_mesh_drag();
         self.mesh_handles.clear();
         self.weights_handles.clear();
         self.record_target("evaluationError", rect);

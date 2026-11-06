@@ -1,8 +1,8 @@
 # Views audit and implemented scope
 
-Implementation progress: **10 of 15 views implemented**. The latest completed
-view is **Timeline**. Playback, Ghosting and Timeline have working controls within
-the explicit scope below; five views still need implementation.
+Implementation progress: **11 of 15 views implemented**. The latest completed
+view is **Mesh Tools**. Playback, Ghosting, Timeline and Mesh Tools have working
+controls within the explicit scope below; four views still need implementation.
 
 The old selector contained only **Tree, Dopesheet and Weights** because those were
 the only implemented panels. It was not an installation, license or rendering
@@ -21,7 +21,7 @@ presenting empty panels as working tools.
 | Dopesheet | Existing supported bone-transform keys, curves, selection, clipboard and retiming. |
 | Ghosting | New Animate onion-skin view: fractional Frames and exact Key Frames, Current keyed-pose comparison, per-side colors, Images/Solid display and opacity, Anchor, On top, Loop, per-frame offsets and typed bone Selection with Lock/Refresh. Renders checked region/mesh/IK poses in the main viewport. |
 | Graph | Unimplemented: editable value graph. Current curve controls belong to Dopesheet. |
-| Mesh Tools | Separate view unimplemented. Existing attachment Vertices/subdivision controls cover only the documented mesh subset. |
+| Mesh Tools | New soft-selection view with Size, Feather and Hull vertices. Affects neighboring vertices during unweighted Setup vertex drags and arrow nudges, with falloff colors and radius rings. Weighted/Animate transforms and multi-vertex selection remain pending. |
 | Metrics | New counts for bones, constraints, slots, all attachments, visible attachments, visible vertices and triangles. Animate additionally shows native scalar-track and key counts. |
 | Outline | New clean secondary display of the current evaluated pose, including pending unkeyed edits and static IK. Fit, right/middle drag pan, wheel zoom, and click to center the main viewport. |
 | Playback | New Animate panel with session-only Speed (1–200% and percentage presets), shared forward/backward transport and Loop, frame/key navigation and a read-only Timeline FPS. Works with Dopesheet closed. FPS retiming, Stepped and Interpolated overrides remain unimplemented. |
@@ -32,9 +32,9 @@ presenting empty panels as working tools.
 | Tree | Existing typed outline, filters, activation dots and contextual properties. The Slots filter shows draw order; Spine has no separate Slots view in this inventory. |
 | Weights | Existing bounded Bind/Remove all/Add binding/Direct workflow; still no brush, Update, locks or multi-vertex editing. |
 
-Five views remain unimplemented: **Audio, Graph, Mesh Tools, Preview and Slot Color**.
+Four views remain unimplemented: **Audio, Graph, Preview and Slot Color**.
 
-Animations, Ghosting, Metrics, Outline, Playback, Skins and Weights use a resizable tabbed panel in the right rail.
+Animations, Ghosting, Mesh Tools, Metrics, Outline, Playback, Skins and Weights use a resizable tabbed panel in the right rail.
 With the Tree closed, they use that rail's full height. Opening an already open
 entry focuses its tab. Individual close buttons are present on these views, Tree
 and Dopesheet; they reopen from Views. F9 stores/restores all view visibility,
@@ -97,6 +97,33 @@ layer, leaving the current pose usable. Current controls use reaches up to 60
 frames and steps down to 0.25 frames. Motion Vectors and Silhouette/Xray outlines
 remain pending; the implemented Images and Solid modes are functional rendering.
 
+Mesh Tools uses **Size** as a world-pixel radius around the one explicitly selected
+unweighted mesh vertex. Zero affects that vertex alone. **Feather** defines the
+outer fraction of the radius used for linear falloff; zero has a hard edge and
+100% fades from the center to the boundary. **Hull vertices** excludes neighboring
+hull vertices when off, while the explicitly selected vertex still moves. These
+falloff and boundary rules are bounded local policy, not an exact installed-editor
+measurement. Size currently ranges from 0 to 1,000 world pixels.
+
+Use **Vertices** in the attachment properties or Mesh Tools to enter the existing
+Setup vertex tool. Soft selection affects viewport translations and arrow nudges;
+the explicit Local X/Y fields still address only the chosen vertex. Influences,
+baseline positions, pointer and view scale freeze at drag start. Release commits
+one atomic history step; Escape, focus loss, context/tool/mode changes,
+file/history actions and hiding views cancel. A cancelled held pointer cannot
+restart before release. Geometry stays in the engine, using checked world-space
+distances under scaling/shear and an inverse linear transform for pointer motion.
+UVs, topology and existing vertex indices stay unchanged.
+
+Selected vertices are cyan, influenced neighbors shade from dark blue to cyan,
+and unaffected vertices are gray. Hovering/adjusting Size or Feather shows outer
+and inner rings in the viewport. Settings are session-only and retained through
+close/F9/Open; Restore default workspace resets Size to zero. Opening the view or
+changing its settings does not change a document, selection, history or pending
+pose. Weighted meshes remain inspectable and direct users to Weights. Rotate/Scale
+soft transforms, multiple selected vertices, deform keys, weighted soft selection
+and path/bounding-box/clipping vertices remain unimplemented.
+
 Timeline shares the active animation, time and playback state rather than owning a
 second clock. Orange diamonds summarize exact distinct key times across all
 supported bone tracks, including unselected bones; an orange end marker follows
@@ -134,6 +161,7 @@ Behavior references are the public
 [Skins](https://en.esotericsoftware.com/spine-skins-view),
 [Metrics](https://en.esotericsoftware.com/spine-metrics),
 [Ghosting](https://en.esotericsoftware.com/spine-ghosting),
+[Mesh Tools](https://en.esotericsoftware.com/spine-mesh-tools),
 [Outline](https://en.esotericsoftware.com/spine-outline),
 [Playback](https://en.esotericsoftware.com/spine-playback),
 [Timeline](https://en.esotericsoftware.com/spine-timeline),
@@ -157,3 +185,6 @@ weighted/IK geometry and selection/workspace lifecycle, are covered separately i
 
 Timeline model, real editor input, pending-pose/history and native acceptance
 checks are recorded in [Timeline evidence](evidence/timeline-view.json).
+
+Mesh Tools geometry, editor interaction checks and native acceptance limits are
+recorded in [Mesh Tools evidence](evidence/mesh-tools.json).

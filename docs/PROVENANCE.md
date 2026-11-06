@@ -447,3 +447,15 @@ runtime dependency, document format or export field was introduced. The existing
 separately licensed public runtime API remains an external geometry/export oracle.
 The live public guides do not prove exact installed 4.3 interaction or pixel parity.
 The screenshot uses only our original Peach Bot artwork.
+
+
+### Mesh Tools soft selection — November 6, 2026
+
+Behavioral reference: the public [Mesh Tools view guide](https://en.esotericsoftware.com/spine-mesh-tools),
+read November 6, 2026, describes Size, Feather, Hull vertices and viewport falloff
+cues. Our pure engine geometry, atomic command composition and native egui controls
+are original implementations. World-distance calculations and inverse affine
+translation use general mathematics. The linear outer-falloff formula, one-point
+selection, exact radius endpoints and bounded slider range are explicit local
+policies. No proprietary source or UI assets were inspected or copied. The
+external public-API oracle remains separately installed and unredistributed.

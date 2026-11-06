@@ -561,15 +561,19 @@ fn live_previews_restore_baseline_for_zero_and_rounded_tiny_deltas_without_histo
             let mut session = pending_with_redo(original.clone());
             let pending = session.pose_edits().clone();
             session.begin_transaction();
-            session.preview_transaction(command([10., 10.])).unwrap();
+            session.dispatch(command([10., 10.])).unwrap();
             assert_ne!(session.document(), &original);
-            session.preview_transaction(command(restore_delta)).unwrap();
+            session.dispatch(command(restore_delta)).unwrap();
             assert_eq!(session.document(), &original);
             session.commit_transaction();
             assert_eq!(session.document(), &original);
             assert_eq!(session.pose_edits(), &pending);
-            assert!(!session.can_undo());
             assert!(session.can_redo());
+            // The preexisting pending-pose edit is still the sole Undo step.
+            session.undo();
+            assert_eq!(session.document(), &original);
+            assert!(session.pose_edits().is_empty());
+            assert!(!session.can_undo());
         }
     }
 }

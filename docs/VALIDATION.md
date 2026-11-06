@@ -1156,3 +1156,55 @@ All four recorded task-owned editor PIDs are verified exited. Temporary localhos
 GUI authorization and command directories are removed, no private key was written,
 and no browser was launched. Independent session-only ranges, free docking,
 per-animation Repeat and exact installed-editor comparison remain gaps.
+
+
+## Mesh Tools view — November 6, 2026
+
+The final integrated source passes formatting, **352 workspace Rust tests**
+(including **150 engine** and **138 desktop** tests), Clippy across all targets
+with warnings denied, the workspace build and the seven-crate architecture guard.
+Hosted CI was not run. Nine geometry tests cover world-distance falloff, hull
+exclusion, hard/feathered endpoints, coincident Size-zero vertices, shear/reflection,
+large origins, wide inverse cancellation, malformed/weighted/overflow rejection
+and fixed-baseline transactional history. Nine desktop checks cover real egui
+settings and vertex input, exact press targeting, release position, zero-return
+previews, pending-pose/history preservation, Save, context/focus/modal/projection
+cancellation, cancelled held pointers, weighted/inactive gates and minimum layout.
+
+Review caught and fixed returning-to-zero previews, nearby-vertex drag stealing
+and a projection-error transaction leak. The initial engine regression incorrectly
+expected an empty Undo stack even though its fixture already contained a pose edit;
+it now verifies the actual live-dispatch path and that the preexisting pose edit
+remains the sole Undo step. Initial failures and final passing logs are retained.
+
+A pure engine harness moves the original Mesh Lab body's center by world [6,-4]
+with Size 120/Feather 50%, preserves all UVs/topology/hull/edges and verifies one-step
+Undo/Redo and unchanged source bytes. The resulting exported rig passes the
+external Spine 4.3.13 public-API oracle over two clips, three skins and 52 times per
+clip/skin: 28,080 bone-transform values, 29,120 region coordinates, 5,200 mesh
+coordinates and 10,400 UV coordinates. Maximum geometry error is 0.000030518,
+below the unchanged 0.001 tolerance; UV error is zero. No runtime implementation
+or private artwork is inspected/copied, and no runtime is redistributed.
+
+The [native capture](mesh-tools-editor.png) shows original artwork, the actual
+Mesh Tools controls, five influence-colored vertices and both radius rings. Exact
+owned-PID foreground and a normal on-screen window are verified. This is a
+rendering-only diagnostic build with temporary initial context/view/settings;
+the final source is restored byte-for-byte and the application rebuilt without
+that setup. Native click/typed-value acceptance is **pending**, following the
+same-session Timeline mouse-delivery failures. The capture and egui tests do not
+claim installed-editor visual/interaction parity. See [evidence](evidence/mesh-tools.json).
+
+The clean baseline is `8da2dc245ccb89183c51c8e7aa77952145817188`.
+Source/status/diff, engine lane, tests/builds, generated original geometry,
+runtime report and native cleanup records are at
+`../.local-backups/peachy-mesh-tools-20261106T181246Z-f93e45/`.
+Rollback: revert the desktop Mesh Tools commit, then `22cdaa9` and `d241b80`,
+preserving unrelated later work. The disk filled during a diagnostic compile;
+source restoration succeeded. Only this project's regenerable incremental
+compiler cache and this lane's disposable target were removed; baselines,
+source, logs and retained binaries remain. Later builds disable incremental
+caching for space. The owned editor is verified exited, temporary localhost
+GUI authorization/command directories are removed, no private key is written,
+and no browser is launched. Multi-point, Rotate/Scale, weighted/Animate soft
+transforms and exact installed-editor comparison remain gaps.

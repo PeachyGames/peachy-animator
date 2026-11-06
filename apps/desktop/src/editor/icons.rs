@@ -30,6 +30,7 @@ pub(super) enum Icon {
     NextKey,
     Animations,
     Ghosting,
+    MeshTools,
     Skins,
     Metrics,
     Outline,
@@ -289,6 +290,12 @@ fn paint(ui: &Ui, rect: Rect, icon: Icon, response: &Response) {
             painter.circle_stroke(p(8., 8.), 6. * rect.width() / SIZE, stroke(ink));
             line(&[[5.5, 5.5], [10.5, 10.5]], ink);
             line(&[[10.5, 5.5], [5.5, 10.5]], ink);
+        }
+        Icon::MeshTools => {
+            painter.circle_stroke(p(8., 8.), 6.5 * rect.width() / SIZE, stroke(ink));
+            painter.circle_stroke(p(8., 8.), 3.5 * rect.width() / SIZE, stroke(warm));
+            line(&[[2., 11.], [8., 4.], [14., 11.], [2., 11.]], ink);
+            painter.circle_filled(p(8., 4.), 1.5 * rect.width() / SIZE, warm);
         }
         Icon::Weights => {
             let points = [p(3., 12.), p(8., 3.), p(13., 12.)];

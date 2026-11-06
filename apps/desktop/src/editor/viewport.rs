@@ -251,7 +251,53 @@ impl Editor {
                 } else {
                     selected_key.as_ref() == Some(&draw.attachment)
                 };
+                let soft_weights = if selected
+                    && self.tool == Tool::Mesh
+                    && self.setup_mode
+                    && !mesh.is_weighted()
+                {
+                    self.mesh_drag
+                        .as_ref()
+                        .filter(|drag| drag.attachment == draw.attachment)
+                        .map(|drag| drag.translation.weights().to_vec())
+                        .or_else(|| {
+                            self.mesh_translation(&draw.attachment, self.mesh_vertex)
+                                .ok()
+                                .map(|translation| translation.weights().to_vec())
+                        })
+                } else {
+                    None
+                };
                 if selected {
+                    if self.tool == Tool::Mesh
+                        && self.mesh_tools.show_radius
+                        && self.setup_mode
+                        && !mesh.is_weighted()
+                        && let Some(&center) = draw.vertices.get(self.mesh_vertex)
+                    {
+                        let center = screen(center);
+                        let radius = self.mesh_tools.settings.size * zoom;
+                        let inner = radius * (1. - self.mesh_tools.settings.feather);
+                        painter.circle_stroke(
+                            center,
+                            radius,
+                            Stroke::new(1., Color32::from_rgb(91, 199, 224)),
+                        );
+                        painter.circle_stroke(
+                            center,
+                            inner,
+                            Stroke::new(1., Color32::from_rgb(46, 92, 155)),
+                        );
+                        self.capture_targets.insert(
+                            "meshSoftRadius".into(),
+                            [
+                                center.x - radius,
+                                center.y - radius,
+                                center.x + radius,
+                                center.y + radius,
+                            ],
+                        );
+                    }
                     if self.tool == Tool::Mesh {
                         self.mesh_handles = draw
                             .vertices
@@ -288,11 +334,32 @@ impl Editor {
                                 [p.x - 5., p.y - 5., p.x + 5., p.y + 5.],
                             );
                         }
-                        painter.circle_filled(
-                            p,
-                            if selected_vertex { 5. } else { 3.5 },
-                            if selected_vertex { ACCENT } else { MINT },
-                        );
+                        let color = if self.tool == Tool::Mesh {
+                            let weight = soft_weights
+                                .as_ref()
+                                .and_then(|weights| weights.get(i))
+                                .copied()
+                                .unwrap_or(0.);
+                            if selected_vertex {
+                                Color32::from_rgb(91, 199, 224)
+                            } else if weight > 0. {
+                                let channel = |low: f32, high: f32| {
+                                    (low + (high - low) * weight).round() as u8
+                                };
+                                Color32::from_rgb(
+                                    channel(35., 91.),
+                                    channel(73., 199.),
+                                    channel(140., 224.),
+                                )
+                            } else {
+                                Color32::from_gray(132)
+                            }
+                        } else if selected_vertex {
+                            ACCENT
+                        } else {
+                            MINT
+                        };
+                        painter.circle_filled(p, if selected_vertex { 5. } else { 3.5 }, color);
                         painter.text(
                             p + vec2(7., -7.),
                             egui::Align2::LEFT_BOTTOM,
@@ -301,7 +368,12 @@ impl Editor {
                             MINT,
                         );
                     }
-                    if let Some(mouse) = response.interact_pointer_pos() {
+                    // Choose the vertex under the press, before egui's drag threshold.
+                    // A nearby vertex under the later pointer must not steal the drag.
+                    if let Some(mouse) = ui
+                        .input(|input| input.pointer.press_origin())
+                        .or(response.interact_pointer_pos())
+                    {
                         let distance = mouse.distance(p);
                         if distance < 12.
                             && nearest_vertex
@@ -367,26 +439,15 @@ impl Editor {
                 })
         });
         let mesh_edit = self.mesh_drag.as_ref().and_then(|drag| {
-            self.editable_mesh_position(&drag.attachment, drag.vertex)?;
-            let bone = doc
-                .slots
-                .iter()
-                .find(|s| s.name == drag.attachment.slot)?
-                .bone;
-            let matrix = scene.world[bone];
             let mouse = response.interact_pointer_pos()?;
-            let start = world_point(drag.pointer);
-            let end = world_point(mouse);
-            let a = matrix.inverse_point(start[0], start[1])?;
-            let b = matrix.inverse_point(end[0], end[1])?;
-            Some(Command::SetMeshVertex {
-                attachment: drag.attachment.clone(),
-                vertex: drag.vertex,
-                position: [
-                    drag.position[0] + b[0] - a[0],
-                    drag.position[1] + b[1] - a[1],
-                ],
-            })
+            let delta = [
+                (mouse.x - drag.pointer.x) / drag.zoom,
+                -(mouse.y - drag.pointer.y) / drag.zoom,
+            ];
+            Some(
+                drag.translation
+                    .world_command(drag.attachment.clone(), delta),
+            )
         });
         let mut handle_axis = None;
         if self.transform_tool_editable(self.tool)
@@ -490,6 +551,15 @@ impl Editor {
             FontId::proportional(12.),
             MUTED,
         );
+        if self.error.is_some()
+            || self.rename.is_some()
+            || self.duplicate_animation.is_some()
+            || egui::Popup::is_any_open(ui.ctx())
+            || !ui.input(|input| input.focused)
+            || self.mesh_blocked
+        {
+            return;
+        }
         if response.clicked_by(egui::PointerButton::Secondary) {
             self.toggle_transform_tool();
             return;
@@ -568,18 +638,26 @@ impl Editor {
                 }
             }
         }
-        if response.dragged_by(egui::PointerButton::Primary) {
-            if let Some(command) = mesh_edit {
-                self.dispatch(command);
+        if (response.dragged_by(egui::PointerButton::Primary) || response.drag_stopped())
+            && let Some(command) = mesh_edit
+        {
+            match command {
+                Ok(command) => {
+                    if !self.dispatch(command) {
+                        self.cancel_mesh_drag();
+                    }
+                }
+                Err(error) => {
+                    self.cancel_mesh_drag();
+                    self.error = Some(error);
+                }
             }
-            if self.viewport_transform_active()
-                && let Some(pointer) = response.interact_pointer_pos()
-            {
-                self.update_viewport_transform(
-                    world_point(pointer),
-                    ui.input(|i| i.modifiers.shift),
-                );
-            }
+        }
+        if response.dragged_by(egui::PointerButton::Primary)
+            && self.viewport_transform_active()
+            && let Some(pointer) = response.interact_pointer_pos()
+        {
+            self.update_viewport_transform(world_point(pointer), ui.input(|i| i.modifiers.shift));
         }
         if response.drag_stopped() {
             if self.viewport_transform_active()

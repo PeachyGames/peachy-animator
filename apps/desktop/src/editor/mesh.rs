@@ -85,16 +85,22 @@ impl Editor {
         mesh.slot_local_positions()?.get(vertex).copied()
     }
     pub(super) fn begin_mesh_drag(&mut self, key: AttachmentRef, vertex: usize, pointer: Pos2) {
-        let Some(position) = self.editable_mesh_position(&key, vertex) else {
+        if self.mesh_blocked || self.editable_mesh_position(&key, vertex).is_none() {
             return;
-        };
-        self.mesh_drag = Some(MeshDrag {
-            attachment: key,
-            vertex,
-            position,
-            pointer,
-        });
-        self.session.begin_transaction();
+        }
+        match self.mesh_translation(&key, vertex) {
+            Ok(translation) => {
+                self.session.begin_transaction();
+                self.mesh_drag = Some(MeshDrag {
+                    attachment: key,
+                    vertex,
+                    translation,
+                    pointer,
+                    zoom: self.zoom,
+                });
+            }
+            Err(error) => self.error = Some(error),
+        }
     }
     fn set_mesh_vertex(&mut self, key: AttachmentRef, vertex: usize, position: [f32; 2]) {
         if self.editable_mesh_position(&key, vertex).is_some() {
@@ -198,6 +204,13 @@ impl Editor {
                 );
                 if vertices.clicked() {
                     self.enter_mesh_tool();
+                }
+                let soft = ui
+                    .small_button("Mesh Tools")
+                    .on_hover_text("Soft selection for Setup vertex drags and arrow nudges");
+                self.record_target("meshToolsOpen", soft.rect);
+                if soft.clicked() {
+                    self.open_mesh_tools_view();
                 }
                 if self.setup_mode || weighted {
                     let vertex = ui.add(
