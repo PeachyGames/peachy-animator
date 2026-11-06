@@ -381,12 +381,7 @@ fn draw_icon(p: &egui::Painter, origin: Pos2, item: &TreeItem, color: Color32) {
             icons::draw_ik(p, r, color)
         }
         TreeItem::Bone(_) => {
-            p.line_segment(
-                [origin + vec2(1., 8.), origin + vec2(9., 1.)],
-                Stroke::new(2., color),
-            );
-            p.circle_filled(origin + vec2(1., 8.), 2., color);
-            p.circle_filled(origin + vec2(9., 1.), 2., color);
+            icons::draw_bone(p, r, color);
         }
         TreeItem::Animation(_) => {
             p.add(egui::Shape::convex_polygon(

@@ -24,6 +24,8 @@ pub(super) enum Icon {
     Weights,
     IkConstraint,
     ChooseBone,
+    Bone,
+    TargetBone,
     RestoreWorkspace,
     MinimizeViews,
     RestoreViews,
@@ -128,6 +130,11 @@ pub(super) fn heading(ui: &mut Ui, icon: Icon, label: &str) {
         paint(ui, rect, icon, &response);
         ui.strong(label);
     });
+}
+
+pub(super) fn cue(ui: &mut Ui, icon: Icon) {
+    let (rect, response) = ui.allocate_exact_size(Vec2::splat(SIZE), egui::Sense::hover());
+    paint(ui, rect, icon, &response);
 }
 
 fn paint(ui: &Ui, rect: Rect, icon: Icon, response: &Response) {
@@ -291,6 +298,14 @@ fn paint(ui: &Ui, rect: Rect, icon: Icon, response: &Response) {
             }
         }
         Icon::IkConstraint => draw_ik(&painter, rect, ink),
+        Icon::Bone => draw_bone(&painter, rect, ink),
+        Icon::TargetBone => {
+            painter.circle_stroke(p(8., 8.), 4. * rect.width() / SIZE, stroke(warm));
+            line(&[[8., 1.], [8., 5.]], warm);
+            line(&[[8., 11.], [8., 15.]], warm);
+            line(&[[1., 8.], [5., 8.]], warm);
+            line(&[[11., 8.], [15., 8.]], warm);
+        }
         Icon::ChooseBone => {
             line(
                 &[
@@ -366,4 +381,13 @@ pub(super) fn draw_ik(painter: &egui::Painter, rect: Rect, color: Color32) {
     painter.circle_filled(p(2., 13.), rect.width() / 10., color);
     painter.circle_filled(p(6., 5.), rect.width() / 10., color);
     painter.circle_stroke(p(12., 9.), rect.width() / 5., stroke);
+}
+
+pub(super) fn draw_bone(painter: &egui::Painter, rect: Rect, color: Color32) {
+    let a = rect.left_bottom() + vec2(rect.width() * 0.2, -rect.height() * 0.2);
+    let b = rect.right_top() + vec2(-rect.width() * 0.2, rect.height() * 0.2);
+    painter.line_segment([a, b], Stroke::new(rect.width() * 0.18, color));
+    for point in [a, b] {
+        painter.circle_filled(point, rect.width() * 0.16, color);
+    }
 }

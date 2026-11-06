@@ -39,8 +39,12 @@ document settings and are neither keyed nor discarded by constraint edits.
 Authored local values feed numeric/key editing. The shell queries one checked
 EvaluatedPose for each transform baseline; it retains authored and applied values
 separately. Canvas origin/axes use applied world output and the shared engine draw
-helper. There is no persistent pose cache, UI solver or applied-pose bake. A valid
-native edit that lies outside the current evaluator domain remains authored data
+helper. There is no persistent pose cache, UI solver or applied-pose bake.
+Viewport gesture conversion also receives frozen authored/applied locals, actual
+world and parent frames through the shared engine helper. It projects along the
+displayed frame while applying deltas to authored values; this establishes
+internal control coherence, not exact installed-Spine partial-mix semantics.
+A valid native edit that lies outside the current evaluator domain remains authored data
 and displays a checked evaluation error; it is not silently replaced with FK.
 Exact constrained-bone World/Parent/constrained-axis editing remains a reference
 observation gate. Phase A acceptance centers on target manipulation and supported
@@ -68,10 +72,20 @@ Retrieved November 6, 2026 through Agent Reach/Exa:
   guide does not establish the current visible widget/label. Advanced modes are
   not exposed in this slice.
 
-Official guide PNG links were located, but the available reader refused their
-image content type. No guide pixels were inspected or copied. Current Tree node
-placement, exact properties styling and current 4.3 chooser behavior remain
-explicit visual/reference gates; no new pane, tool or shortcut was inferred.
+The coordinator retrieved the official guide PNGs in an isolated reference
+browser after the text reader refused their content type. We inspected the
+[one-bone properties](https://esotericsoftware.com/img/spine-user-guide/ik/properties1.png),
+[two-bone properties](https://esotericsoftware.com/img/spine-user-guide/ik/properties2.png),
+[creation](https://esotericsoftware.com/img/spine-user-guide/ik/setup.png),
+[Tree](https://esotericsoftware.com/img/spine-user-guide/constraints/tree.png) and
+[annotations](https://esotericsoftware.com/img/spine-user-guide/constraints/annotations.png).
+They establish the IK Constraint: name header, aligned bone-reference rows with
+cues, an Options row containing Positive for two bones, and Mix numeric entry
+before its slider. The independent controls follow those organization cues.
+The images have unknown application versions and show the obsolete Uniform
+checkbox. They do not establish current 4.3 pixels or advanced settings. No
+reference assets were copied into Git. Exact current styling and chooser behavior
+remain visual/reference gates; no extra pane or creation wizard was inferred.
 
 ## Native diagnostics
 

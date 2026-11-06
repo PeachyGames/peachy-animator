@@ -3,8 +3,18 @@ use super::*;
 impl Editor {
     pub(super) fn inspector(&mut self, ui: &mut egui::Ui) {
         self.record_target("properties", ui.clip_rect());
+        let title = match self.selection {
+            Some(TreeItem::Constraint(index)) => format!(
+                "IK Constraint: {}",
+                self.ik_constraint(index).map_or("?", |ik| ik.name.as_str())
+            ),
+            _ => "Properties".into(),
+        };
         ui.horizontal(|ui| {
-            ui.label(RichText::new("Properties").strong());
+            let heading = ui.label(RichText::new(title).strong());
+            if matches!(self.selection, Some(TreeItem::Constraint(_))) {
+                self.record_target("ikHeader", heading.rect);
+            }
             if let Some(item @ (TreeItem::Bone(_) | TreeItem::Slot(_) | TreeItem::Animation(_))) =
                 self.selection.clone()
             {
@@ -39,7 +49,9 @@ impl Editor {
             ui.label("Select an item in the Tree or viewport.");
             return;
         };
-        ui.label(RichText::new(item.label(self.session.document())).color(ACCENT));
+        if !matches!(item, TreeItem::Constraint(_)) {
+            ui.label(RichText::new(item.label(self.session.document())).color(ACCENT));
+        }
         match item {
             TreeItem::Skeleton => {
                 let doc = self.session.document();
