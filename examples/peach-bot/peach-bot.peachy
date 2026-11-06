@@ -1,5 +1,5 @@
 {
-  "format": 6,
+  "format": 7,
   "constraints": [],
   "name": "Peach Bot",
   "fps": 30,
@@ -728,7 +728,8 @@
             }
           ]
         }
-      ]
+      ],
+      "ik_tracks": []
     },
     {
       "name": "idle",
@@ -796,7 +797,8 @@
             }
           ]
         }
-      ]
+      ],
+      "ik_tracks": []
     }
   ]
 }
