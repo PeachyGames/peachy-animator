@@ -31,8 +31,9 @@ pub use scene::{
 pub use session::Session;
 pub use timeline::{ClipboardKey, KeyClipboard, TimelineKey, copy_keys};
 pub use tools::{
-    Axes, TransformGesture, TransformTool, drag_transform, parse_transform_input,
-    set_transform_value, transform_axes, transform_axes_from_world, transform_values,
+    Axes, TransformGesture, TransformTool, drag_transform, drag_transform_in_frame,
+    parse_transform_input, set_transform_value, transform_axes, transform_axes_from_world,
+    transform_values,
 };
 
 #[cfg(test)]
