@@ -1,0 +1,10 @@
+{
+  "commandsApplied": 6,
+  "sourceUnchanged": true,
+  "nativeValidated": true,
+  "roundtripPoseSamples": 174,
+  "maxRoundtripError": 8.381903171539307e-09,
+  "nearNeighborsPreserved": true,
+  "nativeDurationExtended": 3.0,
+  "bundle": "bundle/peachy-export-1793933318990266000"
+}

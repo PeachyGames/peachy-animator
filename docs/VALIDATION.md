@@ -386,3 +386,60 @@ Captures: [editor](authoring-editor.png), [selected keys](authoring-keys.png),
 [Rename](authoring-rename.png), and [Duplicate](authoring-duplicate.png).
 All review processes and temporary login authorizations were cleaned up; earlier
 user windows were preserved. No new interactive handoff remains.
+
+
+## Dopesheet retiming and clipboard — November 5, 2026
+
+Three lanes implemented pure timeline commands, key dragging and clipboard routing
+in isolated worktrees with separate Cargo targets. The integrated source passes
+**78 Rust tests** (desktop 18, CLI 4, engine 44, I/O 4, adapter 8), formatting,
+warnings-denied Clippy, workspace build and the six-crate dependency guard.
+No native schema or dependency change was required. Core transitions were reviewed
+for platform/I/O effects; the OS clipboard remains in the desktop shell.
+
+New cases cover simultaneous moves, overlap/collision replacement, exact fractional
+neighbors, curve/value preservation, malformed clipboard/offset rejection, atomic
+batches, baseline preview rollback, redo preservation and session clipboard routing.
+SetKey, SetPose curve lookup, DeleteKey and curve-inspector lookup prefer exact keys;
+ambiguous near-key edits fail instead of targeting an arbitrary neighbor.
+
+The CLI applies six edits to our original fixture, including moving groups, extending
+native duration, duplicate/paste and editing one of two very close fractional keys.
+Native validation, packed export and export/import comparison pass: **174 pose
+samples**, maximum round-trip error 8.3819032e-9. Source input bytes are unchanged.
+The external separately licensed Spine 4.3 runtime compares **27,540 world components**
+and **32,640 region coordinates** across two clips and three skins. Maximum errors
+are 0.000031082 and 0.000061036 at tolerance 0.001. This fixture has no meshes; prior
+mesh geometry evidence remains the baseline. See
+[CLI evidence](evidence/timeline-interop.json) and
+[runtime evidence](evidence/timeline-runtime.json).
+
+Native feature checks use only original Peach Bot copies in verified task-owned
+foreground windows. Collision previews restore overwritten keys when moved away,
+Escape restores the baseline, group retiming is one undo/redo step and Shift keeps
+fractional times. A longer run stopped on foreground loss and refused further
+input. The clipboard run confirms native Copy/Paste events, toolbar Cut/Paste,
+Undo selection clearing, inert Delete after Undo, cross-bone paste, foreign-text
+rejection, correct saved documents and original clipboard restoration.
+
+Acceptance is recorded by feature, not as an uninterrupted long-run pass. Splitting
+the clipboard run removed one save but initially retained a three-backup assertion;
+its feature assertions passed before that harness error. An independent file audit
+verifies the actual two readable backups and restored original file. Failed attempts
+and recovery logs remain outside Git. See
+[drag checks](evidence/timeline-drag-native.json),
+[clipboard checks](evidence/timeline-clipboard-native.json) and
+[save audit](evidence/timeline-save-audit.json).
+
+Captures: [clipboard selection](timeline-clipboard.png) and
+[editor](timeline-editor.png). Full selection boxes, Select All, all-bone rows,
+Graph, advanced curve reshaping, shrinking duration, extended nonlooping playback,
+other platforms and hosted CI remain unverified or pending.
+
+The extra native run for committed fractional-key clicks, modifier duplication and
+Save during a preview stopped safely during initial pointer calibration after
+foreground loss. Those additional native comparisons remain pending; pure command/
+gesture tests and source review are not presented as native interaction evidence.
+All nine task-owned review processes have exited. Nine cleanup records confirm no
+temporary authorization, private-key file or temporary command directory remains.
+No new interactive handoff is retained; existing user windows were preserved.

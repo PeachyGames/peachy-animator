@@ -190,3 +190,25 @@ source time. Context changes clear it and document changes prune missing keys.
 DeleteKey commands. Exact source matches take precedence over the command's
 single-match time tolerance; ambiguous near matches fail atomically. No screen or
 platform types enter the engine.
+
+## Key retiming and clipboard
+
+`engine/timeline.rs` owns exact key references, simultaneous moves/copies, relative
+clipboard payloads and paste transitions. Sources are captured before any removals;
+exact destination keys are replaced while close neighbors remain separate. Every
+transition is a serializable command through the existing pure validation boundary.
+The engine uses no OS clipboard, event, clock or file APIs.
+
+`Session::preview_transaction` recomputes from a fixed document/pose baseline.
+Moving away from an overwritten key restores it during preview. Cancellation keeps
+the existing redo branch; commit creates one history entry. The desktop captures
+press-time source keys, modifiers and chart geometry, and cancels a key preview
+before context changes or Save/Export/Open. Completed Undo/Redo clears key selection
+so a restored destination cannot inherit a moved key's time-based selection.
+
+`timeline_clipboard.rs` is the imperative clipboard shell. Its session-owned buffer
+contains key data, never assets or file paths. Explicit successful Copy/Cut mirrors a
+versioned JSON envelope through egui's native clipboard output. Dedicated clipboard
+input events take precedence over raw-key fallbacks and only run for chart focus.
+Keyboard Paste requires the current envelope; text fields keep their input. The
+system clipboard is not an engine dependency or native-project field.

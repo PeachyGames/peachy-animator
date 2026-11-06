@@ -12,6 +12,7 @@ covers those controls with independently drawn vectors and a shared vocabulary.
 | Export | Arrow leaving a tray | File menu, beside its label and shortcut |
 | Rename | Text with an insertion caret | Compact properties action; F2 tooltip |
 | Duplicate animation | Overlapping pages | Compact properties action with a named tooltip |
+| Copy / Cut / Paste keys | Overlapping pages / scissors / clipboard | Dopesheet toolbar; shortcut tooltips and contextual availability |
 | Delete selected keys | Cross inside a circle | Dopesheet toolbar; availability follows selected keys |
 | Views | Divided window | Menu heading with a dropdown corner cue |
 | Tree | Connected hierarchy boxes | Same warm hierarchy icon in Views and Tree heading |

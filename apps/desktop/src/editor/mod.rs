@@ -734,6 +734,7 @@ impl eframe::App for Editor {
                     "keyStates":self.selected_bone().map(|bone| [Property::Rotation,Property::X,Property::ScaleX].map(|p| self.key_state(bone,&peachy_engine::transform_group(&[p])))),
                     "setupMode":self.setup_mode,"dirty":self.session.is_dirty(),"canUndo":self.session.can_undo(),"canRedo":self.session.can_redo(),"imageCount":self.textures.len(),
                     "selectedKeys":self.key_selection.diagnostic(),"dopesheetFocused":self.dopesheet_has_focus(&ctx),
+                    "windowFocused":ctx.input(|input|input.focused),
                     "keyDrag":self.key_drag.as_ref().map(key_drag::KeyDrag::diagnostic),
                     "clipboardKeys":self.timeline_clipboard.as_ref().map_or(0, |clipboard| clipboard.keys.len()),
                     "selectedAttachment":self.selected_attachment(),"selectedVertex":self.mesh_vertex,"hiddenSlots":self.hidden_slots,

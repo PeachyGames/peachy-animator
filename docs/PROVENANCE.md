@@ -163,3 +163,16 @@ editor or runtime implementation was inspected or copied.
 Public guides do not establish every mode/activation/focus detail. The implementation
 and remaining differences are recorded in UI_PARITY.md and the slice notes. Runtime
 checks use the separately licensed runtime only as an external black-box consumer.
+
+## Timeline retiming and clipboard references — November 5, 2026
+
+The public [Dopesheet guide](https://esotericsoftware.com/spine-dopesheet) defines
+horizontal key dragging, Shift frame-snap bypass and Cmd/Ctrl+Shift duplication.
+The [Keys guide](https://esotericsoftware.com/spine-keys) defines Copy/Cut/Delete/Paste
+and pasting supported bone keys onto another bone. Public official forum excerpts
+on [key replacement and curves](https://esotericsoftware.com/forum/d/27677-connecting-two-curves-without-breaking-them)
+and [frame snapping](https://en.esotericsoftware.com/forum/d/10002-frame-snapping)
+informed bounded overwrite/snapping behavior. Exact advanced handle reshaping,
+group corner cases and cross-project clipboard preferences remain comparison gates.
+No proprietary implementation was read or copied. The clipboard and gesture code
+are independently implemented on the existing pure commands and egui shell.

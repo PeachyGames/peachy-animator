@@ -1,0 +1,7 @@
+{
+  "splitRunnerExpectedBackups": 2,
+  "actualBackups": 2,
+  "backupsReadable": true,
+  "savedOriginalRestored": true,
+  "runnerFinalAssertion": "retained obsolete three-save expectation after splitting test; feature assertions passed"
+}

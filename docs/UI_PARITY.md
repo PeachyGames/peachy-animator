@@ -211,6 +211,43 @@ Cmd/Ctrl-click toggles keys; Delete/Backspace requires focus in the visible canv
 Double-click deletes the clicked key. The toolbar offers the same deletion command
 with an independent icon. Rotation/translation/scale keys use narrow green/blue/red
 bars, following the public row images. Only the selected bone's supported scalar
-tracks are covered; multi-bone rows, overview rows, box selection, dragging,
-clipboard, select-all and Graph synchronization remain pending. Jump-to-key is on;
+tracks are covered; multi-bone rows, overview rows, box selection, select-all
+and Graph synchronization remain pending. Jump-to-key is on;
 configurable selection/scrubbing preferences remain pending.
+
+
+## Key retiming and clipboard slice
+
+Drag a selected key to move its selected group. An unselected key starts a new
+single-key group when dragged. The pressed key's destination snaps to frame time;
+other keys retain their relative offsets. Shift disables snapping. Cmd/Ctrl+Shift
+captured at press duplicates the group. Source times remain exact, including
+fractional keys closer than the usual keying tolerance. Ordinary clicks do not
+snap an existing fractional key. Dragging preserves the playhead; a click jumps
+to the clicked key. Negative destinations are clamped at the earliest source key.
+
+A preview replaces exact destination collisions. Moving away restores those keys
+from the transaction baseline; Escape or context/save/export/focus changes cancel
+it. Release commits one undo step. This is bounded scalar-track retiming, informed
+by the public [Dopesheet guide](https://esotericsoftware.com/spine-dopesheet#Moving-keys)
+and [Keys guide](https://esotericsoftware.com/spine-keys). Timeline zoom/pan,
+auto-pan, persistent selection boxes/scaling and full gesture preferences remain
+pending. Native duration currently grows to contain later keys but does not shrink
+when the last key moves earlier. Spine's key-derived duration is a separate gap.
+
+Copy/Cut/Paste icons have the same session actions as focused Cmd/Ctrl+C/X/V.
+Copy stores committed selected keys with relative times, scalar values and curves;
+Paste uses the current bone/playhead. Cut deletes as one command before replacing
+the clipboard. The buffer survives bone/animation changes and clears on opening a
+project. Pending unkeyed poses remain separate and are called out in status text.
+Undo/Redo clears key selection to avoid selecting restored collision destinations
+by stale time identity.
+
+Explicit Copy/Cut also writes a versioned text envelope to the system clipboard.
+Keyboard Paste accepts only this session's unchanged envelope; arbitrary external
+text and another application's clipboard edits cannot paste a stale internal buffer.
+The toolbar Paste uses the internal buffer. Cross-project/system import and full
+Spine clipboard format interoperability remain pending. Text fields, modal dialogs,
+hidden views and Setup retain their own shortcut behavior. Interpolation controls
+resolve the exact playhead key before considering a unique near match, and refuse
+ambiguous near matches.

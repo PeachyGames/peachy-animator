@@ -34,7 +34,8 @@ impl Editor {
     }
     pub(super) fn timeline(&mut self, ui: &mut egui::Ui) {
         self.reconcile_dopesheet_selection();
-        self.record_target("dopesheet", ui.max_rect());
+        let view_rect = ui.max_rect();
+        self.record_target("dopesheet", view_rect);
         ui.horizontal(|ui| {
             icons::heading(ui, Icon::Dopesheet, "Dopesheet");
             self.timeline_clipboard_toolbar(ui);
@@ -108,7 +109,14 @@ impl Editor {
             egui::WidgetInfo::labeled(egui::WidgetType::Other, true, "Dopesheet keys")
         });
         self.record_target("timelineCanvas", rect);
-        if response.clicked_elsewhere() {
+        if response.clicked_elsewhere()
+            && ui.input(|input| {
+                input
+                    .pointer
+                    .interact_pos()
+                    .is_none_or(|pointer| !view_rect.contains(pointer))
+            })
+        {
             response.surrender_focus();
         }
         let painter = ui.painter_at(rect);

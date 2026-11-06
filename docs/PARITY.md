@@ -21,7 +21,7 @@ comparison. The native `.peachy` format is our own editable model.
 | Bone animation and curves | Scalar transform keys, linear/stepped/Bezier, playback and scrubbing | External runtime boundaries, backwards scrubbing, full-turn rotation, native key/history checks |
 | Unkeyed poses and Auto Key | Transient multi-bone poses, K/Tree/transform keying, colored state, paired XY defaults and unified undo | Bone-transform subset; slot/deform/constraint keying remains pending |
 | Animation transport | A/D reverse/forward play, bidirectional loops, W/S key navigation and Q/E start/last key | Native/engine boundary checks; nonlooping playback stays within native duration; extended playback/view preferences pending |
-| Timeline authoring | Key insertion, exact selection/removal and curve controls; animation rename/duplicate | Still needs retiming, copy/paste, broader selection and animation management, and mixing |
+| Timeline authoring | Key insertion, exact selection/removal, retiming/copy gestures, Copy/Cut/Paste and curve controls; animation rename/duplicate | Still needs broader selection, advanced curve editing, animation management and mixing |
 | Rig/artwork authoring | Add child bones, rename bones/slots; work with existing loose PNGs | Still needs image import, attachment creation, pivots, stable IDs before delete/reparent |
 | IK/transform/path/physics constraints | Pending | Each needs controlled inputs, public behavior specification and runtime boundary checks |
 | Slot animation, draw order, events, clipping, sequences | Pending | Unsupported imports are refused; no silent approximation |

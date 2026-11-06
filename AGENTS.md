@@ -62,6 +62,11 @@ in menus. Preserve command and visibility behavior when replacing a text control
 ## Parallel development
 
 The user has authorized coordinated subagent development toward Spine parity.
+Continue through tested, committed vertical slices within the active task; a
+completed commit is a progress checkpoint, not a request for another "continue".
+Choose the next useful gap from docs/PARITY.md and docs/UI_PARITY.md. Ask only for
+missing decisions or genuine blockers. Report actual session/Goal limits clearly;
+repository instructions alone do not activate automatic continuation across turns.
 Use bounded slices in isolated worktrees when parallel work helps; the coordinating
 agent owns integration, shared conventions and final native/compatibility checks.
 Agree on APIs and ownership before editing shared boundaries. Keep each lane's

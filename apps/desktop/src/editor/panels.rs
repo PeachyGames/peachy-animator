@@ -301,7 +301,8 @@ impl Editor {
         ui.add_space(10.0);
         ui.separator();
         ui.label(RichText::new("Key interpolation").small().color(MUTED));
-        let time = self.snapped_time();
+        let time = self.time;
+        let mut ambiguous = false;
         let keys: Vec<_> = self
             .session
             .document()
@@ -310,13 +311,15 @@ impl Editor {
             .into_iter()
             .flat_map(|a| a.tracks.iter())
             .filter(|t| t.bone == bone)
-            .filter_map(|track| {
-                track
-                    .keys
-                    .iter()
-                    .find(|k| same_key_time(k.time, time))
-                    .map(|key| (track.property, *key))
-            })
+            .filter_map(
+                |track| match peachy_engine::keyframe_at(&track.keys, time) {
+                    Ok(key) => key.map(|key| (track.property, key)),
+                    Err(_) => {
+                        ambiguous = true;
+                        None
+                    }
+                },
+            )
             .collect();
         let mut found = false;
         for (property, key) in keys {
@@ -387,13 +390,21 @@ impl Editor {
                     animation: self.animation,
                     bone,
                     property,
-                    time,
+                    time: key.time,
                 });
             }
         }
-        if !found {
+        if ambiguous {
             ui.label(
-                RichText::new("Select a diamond on the timeline to edit its curve.").color(MUTED),
+                RichText::new("Select an exact key to edit its interpolation.")
+                    .small()
+                    .color(MUTED),
+            );
+        }
+        if !found && !ambiguous {
+            ui.label(
+                RichText::new("Select a key in the Dopesheet to edit its interpolation.")
+                    .color(MUTED),
             );
         }
     }
