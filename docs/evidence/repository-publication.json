@@ -1,0 +1,11 @@
+{
+  "repository": "https://github.com/PeachyGames/peachy-animator",
+  "public": true,
+  "sourceHead": "52a8446c983493e6381aa148062d61cf4ffa73ca",
+  "remoteHead": "52a8446c983493e6381aa148062d61cf4ffa73ca",
+  "remoteMatches": true,
+  "publishedUTC": "2026-11-06T11:20:17.155836+00:00",
+  "workflowManualOnly": true,
+  "hostedCiDispatched": false,
+  "scope": "Initial publication checkpoint; subsequent source commits retain their own validation."
+}

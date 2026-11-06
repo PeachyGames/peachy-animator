@@ -987,3 +987,19 @@ IK timelines, creation/deletion/reordering, advanced or dependent/transformed ch
 physics, transform/path constraints and representative game-engine acceptance remain
 open. The private inventory still has 0/11 fully supported rigs; full parity is an
 ongoing objective, not this checkpoint's claim.
+
+The final private audit uses the same integrated CLI and verifies all 11 source
+hashes against the previous Shear baseline. Weighted/shear inspection issues remain
+zero. It finds 33 IK, 224 physics, eight transform and three path entries; whole-rig
+acceptance stays **0/11**. Of 33 IK entries, 30 lack advanced-field blockers, but
+required-bone/domain validation still applies: only six pass isolated minimal
+required-bone diagnostic projections. No private rig is filtered for actual import.
+All 85 inspection invocations are waited, read-only and retain identifying reports
+outside Git. The redacted report is `evidence/ik-artist-summary.json`.
+
+Initial source publication is verified at
+[PeachyGames/peachy-animator](https://github.com/PeachyGames/peachy-animator),
+checkpoint `52a8446`. Remote and local commit hashes match; hosted CI was not
+dispatched. See `evidence/repository-publication.json`. The approved
+[next IK animation contract](slices/ik-animation-design.md) is design authorization,
+not an implemented native7 or animation-parity claim.

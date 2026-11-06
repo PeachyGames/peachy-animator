@@ -95,3 +95,12 @@ slices. All sampled production rigs still need physics and other unsupported dat
 so **0/11** remain fully supported. Native `.spine`/binary `.skel` support and actual
 consuming-game verification remain separate hurdles. See
 [the accepted checks](VALIDATION.md#normal-ik-phase-a--november-6-2026-utc).
+
+The final Phase A read-only audit preserves all 11 hashes and finds 33 IK entries
+in eight files. Six individual IK entries pass minimal required-bone diagnostic
+projections; that is **not** whole-rig import acceptance. Remaining domains include
+inheritance, chain transforms, child offsets, skin requirements and stretch. There
+are no IK animation timelines in this sampled inventory, so the next animated-IK
+slice advances feature completeness without claiming to remove an observed artist
+timeline blocker. All 11 still need physics. See
+[evidence/ik-artist-summary.json](evidence/ik-artist-summary.json).

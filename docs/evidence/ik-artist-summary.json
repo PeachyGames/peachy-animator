@@ -1,0 +1,63 @@
+{
+  "scope": "Read-only aggregate audit of private inputs; no artist data or identifying paths in this summary",
+  "sourceCLI": {
+    "sourceHead": "5e4ea7ea734503a936003ddd80ef1127992b43dd",
+    "cliSHA256": "ae2d6d4d8dfc01338e6cf00121b61a950edd7ac5e6e4b52411849395a53cd089",
+    "baselineReportSHA256": "82fb0988579eaf24b77019d05eaf1b59dc1381b4e1d514697d8d73ba996c22a8",
+    "inputs": 11
+  },
+  "sampledInputs": 11,
+  "fullySupported": 0,
+  "allSourceBytesUnchanged": true,
+  "unchangedSinceShearAudit": 11,
+  "constraintTypes": {
+    "ik": 33,
+    "physics": 224,
+    "path": 3,
+    "transform": 8
+  },
+  "IK": {
+    "entries": 33,
+    "files": 8
+  },
+  "setupAdvancedFieldCategories": {
+    "nonneutralSkin": 2,
+    "nonneutralStretch": 1
+  },
+  "animationFeatures": {
+    "namedIKTimelines": 0,
+    "nonemptyIKTimelines": 0,
+    "IKFrames": 0,
+    "framesWithNonzeroSoftness": 0,
+    "framesWithCompress": 0,
+    "framesWithStretch": 0,
+    "BezierIKFrames": 0
+  },
+  "inspectionFeatures": {
+    "weightedIssues": 0,
+    "shearIssues": 0,
+    "physicsFiles": 11
+  },
+  "minimalRequiredBonesStaticIKDiagnostic": {
+    "supported": 6,
+    "refused": 27,
+    "refusalCategoriesPerConstraint": {
+      "IKSkinRequired": 2,
+      "requiredBoneSkinFlag": 2,
+      "IKChildOffsetOrLength": 7,
+      "IKChainAxes": 6,
+      "requiredBoneInheritance": 11,
+      "IKStretch": 1
+    },
+    "scope": "Each probe retains the original IK entry and all its constrained/target ancestor bones unchanged; unrelated art/other constraint kinds omitted in memory for diagnosis only. Not full-rig import acceptance."
+  },
+  "IKSetupFieldSubset": {
+    "entries": 33,
+    "entriesWithUnsupportedAdvancedSetupFields": 3,
+    "entriesWithoutThoseAdvancedFieldBlockers": 30,
+    "scope": "Field-level count; required bone/domain checks are separate and not waived."
+  },
+  "allProjectionInvocationsReadOnly": true,
+  "privateJSONCopiesWritten": false,
+  "qualification": "Minimal required-bone projections are diagnostic only; no mixed rig was filtered or accepted. Animated IK advances feature completeness, not this sampled input blocker."
+}
