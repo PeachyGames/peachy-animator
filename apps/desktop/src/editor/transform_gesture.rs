@@ -879,6 +879,99 @@ mod tests {
         std::fs::remove_dir_all(folder).unwrap();
     }
     #[test]
+    fn enter_tab_to_local_axes_keeps_global_history_and_save_shortcuts() {
+        let mut editor = editor_fixture();
+        editor.set_setup_mode(true);
+        editor.set_tool(Tool::Shear);
+        let original = editor.session.document().clone();
+        let ctx = editor_context();
+        frame(&mut editor, &ctx, vec![]);
+        click(&mut editor, &ctx, "value:ShearX");
+        frame(&mut editor, &ctx, vec![egui::Event::Text("23.5".into())]);
+        frame(
+            &mut editor,
+            &ctx,
+            key(egui::Key::Enter, egui::Modifiers::NONE),
+        );
+        let first = editor.session.document().clone();
+        assert_eq!(first.bones[8].setup.shear_x, 23.5);
+        click(&mut editor, &ctx, "value:ShearY");
+        frame(&mut editor, &ctx, vec![egui::Event::Text("-17.25".into())]);
+        frame(
+            &mut editor,
+            &ctx,
+            key(egui::Key::Tab, egui::Modifiers::NONE),
+        );
+        let edited = editor.session.document().clone();
+        assert_eq!(edited.bones[8].setup.shear_y, -17.25);
+        assert!(editor.drag.is_none());
+        assert!(!ctx.text_edit_focused());
+        assert!(ctx.egui_wants_keyboard_input());
+        let focus = ctx.memory(|memory| memory.focused()).unwrap();
+        let focus_rect = ctx.read_response(focus).unwrap().rect;
+        assert!(focus_rect.contains(point(&editor, "axes:Local")));
+
+        frame(
+            &mut editor,
+            &ctx,
+            key(egui::Key::Z, egui::Modifiers::COMMAND),
+        );
+        assert_eq!(editor.session.document(), &first);
+        frame(
+            &mut editor,
+            &ctx,
+            key(egui::Key::Z, egui::Modifiers::COMMAND),
+        );
+        assert_eq!(editor.session.document(), &original);
+        frame(
+            &mut editor,
+            &ctx,
+            key(
+                egui::Key::Z,
+                egui::Modifiers::COMMAND | egui::Modifiers::SHIFT,
+            ),
+        );
+        assert_eq!(editor.session.document(), &first);
+        frame(
+            &mut editor,
+            &ctx,
+            key(egui::Key::Y, egui::Modifiers::COMMAND),
+        );
+        assert_eq!(editor.session.document(), &edited);
+
+        // Normal focused controls retain their own unmodified/arrow routing.
+        let before = editor.selected_transform();
+        frame(
+            &mut editor,
+            &ctx,
+            key(egui::Key::ArrowRight, egui::Modifiers::NONE),
+        );
+        assert_eq!(editor.selected_transform(), before);
+        let folder = std::env::temp_dir().join(format!(
+            "peachy-focused-control-save-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir(&folder).unwrap();
+        editor.project_path = Some(folder.join("rig.peachy"));
+        editor.asset_root =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../examples/peach-bot");
+        frame(
+            &mut editor,
+            &ctx,
+            key(egui::Key::S, egui::Modifiers::COMMAND),
+        );
+        assert_eq!(
+            files::load(&folder.join("rig.peachy")).unwrap().bones,
+            edited.bones
+        );
+        assert!(!editor.session.is_dirty());
+        std::fs::remove_dir_all(folder).unwrap();
+    }
+    #[test]
     fn escape_then_keyboard_tab_can_reenter_the_same_numeric_control() {
         let mut editor = editor_fixture();
         let ctx = editor_context();
