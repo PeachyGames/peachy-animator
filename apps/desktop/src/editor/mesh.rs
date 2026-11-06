@@ -396,6 +396,106 @@ mod tests {
         }
     }
 
+    fn right_click_canvas(editor: &mut Editor, ctx: &egui::Context) {
+        frame(editor, ctx, vec![], true);
+        let viewport = editor.capture_targets["viewport"];
+        let point = pos2(viewport[0] + 25., viewport[1] + 25.);
+        let button = |pressed| egui::Event::PointerButton {
+            pos: point,
+            button: egui::PointerButton::Secondary,
+            pressed,
+            modifiers: egui::Modifiers::NONE,
+        };
+        frame(
+            editor,
+            ctx,
+            vec![egui::Event::PointerMoved(point), button(true)],
+            true,
+        );
+        frame(editor, ctx, vec![button(false)], true);
+    }
+
+    #[test]
+    fn mesh_inspection_restores_each_transform_and_preserves_its_right_click_pair() {
+        for (active, prior) in [
+            (Tool::Rotate, Tool::Move),
+            (Tool::Move, Tool::Scale),
+            (Tool::Scale, Tool::Rotate),
+        ] {
+            for select_bone in [true, false] {
+                let (mut editor, _) = mesh_editor(true);
+                editor.tool = active;
+                editor.last_tool = prior;
+                let original = editor.session.document().clone();
+                editor.enter_mesh_tool();
+                assert!(editor.tool == Tool::Mesh);
+                assert!(editor.mesh_return_tool == Some(active));
+                assert!(editor.last_tool == prior);
+                let ctx = egui::Context::default();
+                if select_bone {
+                    editor.select(TreeItem::Bone(8));
+                } else {
+                    right_click_canvas(&mut editor, &ctx);
+                }
+                assert!(editor.tool == active);
+                assert!(editor.last_tool == prior);
+                assert!(editor.mesh_return_tool.is_none());
+                right_click_canvas(&mut editor, &ctx);
+                assert!(editor.tool == prior);
+                assert!(editor.last_tool == active);
+                right_click_canvas(&mut editor, &ctx);
+                assert!(editor.tool == active);
+                assert!(editor.last_tool == prior);
+                assert_eq!(editor.session.document(), &original);
+                assert!(!editor.session.can_undo());
+            }
+        }
+    }
+
+    #[test]
+    fn explicit_transform_shortcuts_from_mesh_update_the_previous_transform_coherently() {
+        for (active, prior) in [
+            (Tool::Rotate, Tool::Move),
+            (Tool::Move, Tool::Scale),
+            (Tool::Scale, Tool::Rotate),
+        ] {
+            for (requested, key) in [
+                (Tool::Rotate, egui::Key::C),
+                (Tool::Move, egui::Key::V),
+                (Tool::Scale, egui::Key::X),
+            ] {
+                let (mut editor, _) = mesh_editor(true);
+                editor.tool = active;
+                editor.last_tool = prior;
+                editor.enter_mesh_tool();
+                let ctx = egui::Context::default();
+                frame(
+                    &mut editor,
+                    &ctx,
+                    vec![egui::Event::Key {
+                        key,
+                        physical_key: None,
+                        pressed: true,
+                        repeat: false,
+                        modifiers: egui::Modifiers::NONE,
+                    }],
+                    true,
+                );
+                let previous = if requested == active { prior } else { active };
+                assert!(editor.tool == requested);
+                assert!(editor.last_tool == previous);
+                assert!(editor.mesh_return_tool.is_none());
+                right_click_canvas(&mut editor, &ctx);
+                assert!(editor.tool == previous);
+                assert!(editor.last_tool == requested);
+                right_click_canvas(&mut editor, &ctx);
+                assert!(editor.tool == requested);
+                assert!(editor.last_tool == previous);
+                assert!(!editor.session.can_undo());
+            }
+        }
+    }
+
     #[test]
     fn weighted_inspection_in_animate_preserves_pose_history_and_uses_world_handles() {
         let (mut editor, key) = mesh_editor(true);
@@ -410,7 +510,8 @@ mod tests {
         assert_eq!(before.len(), 4);
         assert!(!editor.session.can_undo());
         editor.select(TreeItem::Bone(8));
-        assert!(editor.tool == editor.last_tool);
+        assert!(editor.tool == Tool::Rotate);
+        assert!(editor.last_tool == Tool::Move);
         let mut pose = editor.selected_transform().unwrap();
         pose.x += 30.;
         editor.edit_transform(pose, &[Property::X]);
@@ -512,12 +613,13 @@ mod tests {
     }
 
     #[test]
-    fn weighted_vertex_click_and_drag_select_without_starting_an_edit_transaction() {
+    fn weighted_canvas_click_and_drag_select_without_replacing_a_pose_transaction() {
         let (mut editor, _) = mesh_editor(true);
         editor.set_setup_mode(false);
         editor.enter_mesh_tool();
         let original = editor.session.document().clone();
-        // An inspection gesture must not commit a pending numeric pose transaction.
+        // This canvas-only harness excludes the full app's idle commit policy.
+        // Inspection must not replace the pose transaction with a mesh edit transaction.
         let mut pose = editor.session.local_pose(Some(0), 0.)[8];
         pose.rotation += 7.;
         editor.session.begin_transaction();

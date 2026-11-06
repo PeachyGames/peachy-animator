@@ -22,10 +22,32 @@ impl Editor {
         }
         if self.tool != tool {
             self.cancel_gesture();
-            if self.tool != Tool::Mesh && tool != Tool::Mesh {
-                self.last_tool = self.tool;
+            if tool == Tool::Mesh {
+                // Inspection is temporary; keep the previous transform pair intact.
+                self.mesh_return_tool = Some(self.tool);
+            } else {
+                let previous = if self.tool == Tool::Mesh {
+                    self.mesh_return_tool.take().unwrap_or(self.last_tool)
+                } else {
+                    self.tool
+                };
+                if previous != tool {
+                    self.last_tool = previous;
+                }
             }
             self.tool = tool;
+        }
+    }
+    pub(super) fn return_from_mesh_tool(&mut self) {
+        if self.tool == Tool::Mesh {
+            self.set_tool(self.mesh_return_tool.unwrap_or(self.last_tool));
+        }
+    }
+    pub(super) fn toggle_transform_tool(&mut self) {
+        if self.tool == Tool::Mesh {
+            self.return_from_mesh_tool();
+        } else {
+            self.set_tool(self.last_tool);
         }
     }
     pub(super) fn toggle_views(&mut self) {
