@@ -17,6 +17,8 @@ mod style;
 mod test_support;
 mod timeline_clipboard;
 mod tools;
+mod transform_gesture;
+use transform_gesture::TransformEdit;
 mod tree;
 mod tree_model;
 use selection::{Folder, TreeItem};
@@ -64,14 +66,6 @@ struct MeshDrag {
     pointer: Pos2,
 }
 
-struct TransformDrag {
-    item: TreeItem,
-    initial: Transform,
-    parent: Affine,
-    axis: Option<usize>,
-    pointer: Pos2,
-}
-
 pub(crate) struct Editor {
     session: Session,
     project_path: Option<PathBuf>,
@@ -112,7 +106,9 @@ pub(crate) struct Editor {
     weight_blocked: Option<egui::Id>,
     weight_controls: Option<[egui::Id; 2]>,
     weights_handles: Vec<[f32; 2]>,
-    drag: Option<TransformDrag>,
+    drag: Option<TransformEdit>,
+    transform_blocked: bool,
+    transform_blocked_control: Option<egui::Id>,
     mesh_vertex: usize,
     mesh_triangle: usize,
     mesh_drag: Option<MeshDrag>,
@@ -214,6 +210,8 @@ impl Editor {
             weights_handles: Vec::new(),
             hidden_views: None,
             drag: None,
+            transform_blocked: false,
+            transform_blocked_control: None,
 
             mesh_vertex: 0,
             mesh_triangle: 0,
@@ -272,6 +270,7 @@ impl Editor {
 
     fn dispatch(&mut self, command: Command) -> bool {
         self.cancel_weight_edit();
+        self.cancel_transform_edit();
         match self.session.dispatch(command) {
             Ok(()) => {
                 self.reconcile_selection();
@@ -461,6 +460,7 @@ impl Editor {
         }
     }
     fn reconcile_selection(&mut self) {
+        self.reconcile_transform_edit();
         self.reconcile_weight_edit();
         if self.key_drag.as_ref().is_some_and(|drag| {
             self.setup_mode
@@ -497,6 +497,10 @@ impl Editor {
     }
     fn undo(&mut self) {
         self.weights.bind = None;
+        if self.drag.is_some() {
+            self.cancel_transform_edit();
+            return;
+        }
         if self.weight_edit.is_some() {
             self.cancel_weight_edit();
             return;
@@ -513,6 +517,10 @@ impl Editor {
     }
     fn redo(&mut self) {
         self.weights.bind = None;
+        if self.drag.is_some() {
+            self.cancel_transform_edit();
+            return;
+        }
         if self.weight_edit.is_some() {
             self.cancel_weight_edit();
             return;
@@ -567,6 +575,8 @@ impl Editor {
                     self.weights = Default::default();
                     self.weight_blocked = None;
                     self.weight_controls = None;
+                    self.transform_blocked = false;
+                    self.transform_blocked_control = None;
                     self.weights_handles.clear();
                     self.selection = Some(TreeItem::Skeleton);
                     self.animation = 0;
@@ -836,6 +846,8 @@ impl eframe::App for Editor {
                 report["weightedMeshCount"] = self.weighted_mesh_count().into();
                 report["weightsContext"] = self.weights_diagnostic();
                 report["weightsDirect"] = self.weight_direct_diagnostic();
+                report["transformGesture"] = self.transform_gesture_diagnostic();
+                report["shearDisplayPolicy"] = "localPendingComparison".into();
                 report["meshInspection"] = self.mesh_inspection().unwrap_or_default();
                 report["displayExtent"] = self
                     .key_drag

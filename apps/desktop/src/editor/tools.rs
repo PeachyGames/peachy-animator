@@ -50,6 +50,7 @@ impl Editor {
         {
             return;
         }
+        self.cancel_gesture();
         let Some((local, parent)) = self.selected_transform().zip(self.selected_parent()) else {
             return;
         };
@@ -69,6 +70,7 @@ impl Editor {
         }
     }
     pub(super) fn nudge_transform(&mut self, delta: [f32; 2], fine: bool) {
+        self.cancel_gesture();
         let Some((local, parent)) = self.selected_transform().zip(self.selected_parent()) else {
             return;
         };

@@ -74,6 +74,8 @@ pub(super) fn editor_fixture() -> Editor {
         weights_handles: Vec::new(),
         hidden_views: None,
         drag: None,
+        transform_blocked: false,
+        transform_blocked_control: None,
         mesh_vertex: 0,
         mesh_triangle: 0,
         mesh_drag: None,

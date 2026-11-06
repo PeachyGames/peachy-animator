@@ -370,6 +370,8 @@ mod tests {
             (Tool::Rotate, Tool::Move),
             (Tool::Move, Tool::Scale),
             (Tool::Scale, Tool::Rotate),
+            (Tool::Shear, Tool::Rotate),
+            (Tool::Rotate, Tool::Shear),
         ] {
             for select_bone in [true, false] {
                 let (mut editor, _) = mesh_editor(true);
@@ -407,11 +409,14 @@ mod tests {
             (Tool::Rotate, Tool::Move),
             (Tool::Move, Tool::Scale),
             (Tool::Scale, Tool::Rotate),
+            (Tool::Shear, Tool::Rotate),
+            (Tool::Rotate, Tool::Shear),
         ] {
             for (requested, key) in [
                 (Tool::Rotate, egui::Key::C),
                 (Tool::Move, egui::Key::V),
                 (Tool::Scale, egui::Key::X),
+                (Tool::Shear, egui::Key::Z),
             ] {
                 let (mut editor, _) = mesh_editor(true);
                 editor.tool = active;
