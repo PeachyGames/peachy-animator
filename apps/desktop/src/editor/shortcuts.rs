@@ -80,7 +80,9 @@ impl Editor {
             self.capture = Some(self.capture_directory.join(format!("editor-{stamp}.png")));
             ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
         }
-        if ctx.egui_wants_keyboard_input() && !self.dopesheet_has_focus(ctx) {
+        if self.rename.is_some()
+            || (ctx.egui_wants_keyboard_input() && !self.dopesheet_has_focus(ctx))
+        {
             return;
         }
         if self.dopesheet_has_focus(ctx)

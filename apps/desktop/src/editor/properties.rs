@@ -3,7 +3,18 @@ use super::*;
 impl Editor {
     pub(super) fn inspector(&mut self, ui: &mut egui::Ui) {
         self.record_target("properties", ui.clip_rect());
-        ui.label(RichText::new("Properties").strong());
+        ui.horizontal(|ui| {
+            ui.label(RichText::new("Properties").strong());
+            if let Some(item @ (TreeItem::Bone(_) | TreeItem::Slot(_))) = self.selection.clone() {
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    let rename = ui.button("Rename").on_hover_text("Rename · F2");
+                    self.record_target("rename", rename.rect);
+                    if rename.clicked() {
+                        self.begin_rename(item);
+                    }
+                });
+            }
+        });
         ui.separator();
         let Some(item) = self.selection.clone() else {
             ui.label("Select an item in the Tree or viewport.");
