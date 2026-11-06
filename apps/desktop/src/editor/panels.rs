@@ -97,6 +97,17 @@ impl Editor {
                         self.record_target("viewDopesheet", dopesheet.rect);
                     });
                     ui.separator();
+                    let weights =
+                        icons::toggle(ui, Icon::Weights, "Weights", &mut self.show_weights);
+                    self.record_target("viewWeights", weights.rect);
+                    if weights.changed() {
+                        if self.show_weights {
+                            self.open_weights_view();
+                        } else {
+                            self.weights.bind = None;
+                        }
+                    }
+                    ui.separator();
                     let restore = icons::button(
                         ui,
                         Icon::RestoreWorkspace,
@@ -107,6 +118,8 @@ impl Editor {
                     if restore.clicked() {
                         self.show_tree = true;
                         self.show_dopesheet = true;
+                        self.show_weights = false;
+                        self.weights.bind = None;
                         self.hidden_views = None;
                         ui.close();
                     }
@@ -175,6 +188,18 @@ impl Editor {
                 } else {
                     ui.label(RichText::new("No selection").color(MUTED));
                 }
+                let weights = icons::tool_button(
+                    ui,
+                    icons::Icon::Weights,
+                    "Weights [G]",
+                    self.tool == Tool::Weights,
+                )
+                .on_hover_text("Weights tool · G");
+                self.record_target("weightsTool", weights.rect);
+                if weights.clicked() {
+                    self.show_weights = true;
+                    self.set_tool(Tool::Weights);
+                }
                 if !self.setup_mode {
                     let auto_key = ui.checkbox(&mut self.auto_key, "Auto Key");
                     self.record_target("autoKey", auto_key.rect);
@@ -222,7 +247,7 @@ impl Editor {
                     [112.0, 22.0],
                     egui::Button::selectable(self.tool == tool, label),
                 );
-                let target = match tool { Tool::Rotate=>"rotateTool",Tool::Move=>"translateTool",Tool::Scale=>"scaleTool",Tool::Mesh=>"meshTool" };
+                let target = match tool { Tool::Rotate=>"rotateTool",Tool::Move=>"translateTool",Tool::Scale=>"scaleTool",Tool::Mesh=>"meshTool",Tool::Weights=>"weightsTool" };
                 self.capture_targets.insert(
                     target.into(),
                     [

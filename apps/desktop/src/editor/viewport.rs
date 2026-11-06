@@ -100,6 +100,20 @@ impl Editor {
             Stroke::new(1., Color32::from_rgb(38, 67, 60)),
         );
         let selected_key = self.selected_attachment().cloned();
+        if let Some(draw) = scene
+            .attachments
+            .iter()
+            .find(|draw| Some(&draw.attachment) == self.weights.mesh.as_ref())
+        {
+            self.weights_handles = draw
+                .vertices
+                .iter()
+                .map(|&point| {
+                    let point = screen(point);
+                    [point.x, point.y]
+                })
+                .collect();
+        }
         for draw in &scene.attachments {
             if let Some(texture) = self.textures.get(&draw.image) {
                 let mut mesh = egui::Mesh::with_texture(texture.id());
@@ -133,8 +147,16 @@ impl Editor {
                 screen(matrix.point(0., 0.)),
                 screen(matrix.point(bone.length, 0.)),
             );
-            let selected = selected_bone == Some(i);
-            let color = if selected {
+            let selected = if self.tool == Tool::Weights {
+                self.weights.bone == Some(i)
+            } else {
+                selected_bone == Some(i)
+            };
+            let bound = self.tool == Tool::Weights && self.weights.mesh.as_ref().is_some_and(|key|
+                matches!(doc.attachment(key),Some(Attachment::Mesh(Mesh {vertices:MeshVertices::Weighted {influences},..})) if influences.iter().flatten().any(|influence|influence.bone == i)));
+            let color = if bound {
+                weights::bone_color(i)
+            } else if selected {
                 ACCENT
             } else {
                 MINT.gamma_multiply(0.8)
@@ -154,7 +176,7 @@ impl Editor {
                     ACCENT,
                 );
             }
-            if self.tree.filters.bones
+            if (self.tree.filters.bones || self.weights.bind.is_some())
                 && let Some(mouse) = response.interact_pointer_pos()
             {
                 let distance = distance_to_segment(mouse, start, end);
@@ -164,24 +186,35 @@ impl Editor {
             }
         }
         let mut nearest_vertex = None;
-        if self.tool == Tool::Mesh {
+        if matches!(self.tool, Tool::Mesh | Tool::Weights) {
             for draw in &scene.attachments {
                 let Some(Attachment::Mesh(mesh)) = doc.attachment(&draw.attachment) else {
                     continue;
                 };
-                if !self.setup_mode && !mesh.is_weighted() {
+                if self.tool == Tool::Weights
+                    && Some(&draw.attachment) != self.weights.mesh.as_ref()
+                {
                     continue;
                 }
-                let selected = selected_key.as_ref() == Some(&draw.attachment);
+                if self.tool == Tool::Mesh && !self.setup_mode && !mesh.is_weighted() {
+                    continue;
+                }
+                let selected = if self.tool == Tool::Weights {
+                    self.weights.mesh.as_ref() == Some(&draw.attachment)
+                } else {
+                    selected_key.as_ref() == Some(&draw.attachment)
+                };
                 if selected {
-                    self.mesh_handles = draw
-                        .vertices
-                        .iter()
-                        .map(|&p| {
-                            let p = screen(p);
-                            [p.x, p.y]
-                        })
-                        .collect();
+                    if self.tool == Tool::Mesh {
+                        self.mesh_handles = draw
+                            .vertices
+                            .iter()
+                            .map(|&p| {
+                                let p = screen(p);
+                                [p.x, p.y]
+                            })
+                            .collect();
+                    }
                     for t in draw.triangles.as_chunks::<3>().0 {
                         for (a, b) in [(t[0], t[1]), (t[1], t[2]), (t[2], t[0])] {
                             painter.line_segment(
@@ -197,10 +230,21 @@ impl Editor {
                 for (i, &p) in draw.vertices.iter().enumerate() {
                     let p = screen(p);
                     if selected {
+                        let selected_vertex = if self.tool == Tool::Weights {
+                            self.weights.vertex == Some(i)
+                        } else {
+                            i == self.mesh_vertex
+                        };
+                        if self.tool == Tool::Weights {
+                            self.capture_targets.insert(
+                                format!("weightsVertex:{i}"),
+                                [p.x - 5., p.y - 5., p.x + 5., p.y + 5.],
+                            );
+                        }
                         painter.circle_filled(
                             p,
-                            if i == self.mesh_vertex { 5. } else { 3.5 },
-                            if i == self.mesh_vertex { ACCENT } else { MINT },
+                            if selected_vertex { 5. } else { 3.5 },
+                            if selected_vertex { ACCENT } else { MINT },
                         );
                         painter.text(
                             p + vec2(7., -7.),
@@ -266,7 +310,7 @@ impl Editor {
                 .interact_pointer_pos()
                 .and_then(|p| pick_attachment(&scene.attachments, world_point(p)))
                 .map(|draw| {
-                    if self.tree.filters.attachments {
+                    if self.tree.filters.attachments || self.weights.bind.is_some() {
                         TreeItem::Attachment(draw.attachment.clone())
                     } else if self.tree.filters.slots {
                         TreeItem::Slot(draw.slot)
@@ -377,7 +421,11 @@ impl Editor {
         painter.text(
             rect.left_bottom() + vec2(12., -14.),
             egui::Align2::LEFT_BOTTOM,
-            if self.tool == Tool::Mesh && self.selected_mesh_is_weighted() {
+            if self.weights.bind.is_some() {
+                &self.status
+            } else if self.tool == Tool::Weights {
+                "Weights · select a vertex to inspect bindings · G"
+            } else if self.tool == Tool::Mesh && self.selected_mesh_is_weighted() {
                 "Weighted vertices · select to inspect bone influences"
             } else if self.tool == Tool::Mesh {
                 "Setup vertices · drag to deform · Escape cancels"
@@ -391,13 +439,28 @@ impl Editor {
             self.toggle_transform_tool();
             return;
         }
-        if self.tool == Tool::Mesh && (self.setup_mode || self.selected_mesh_is_weighted()) {
+        if self.weights.bind.is_some() {
+            if response.clicked()
+                && let Some(item) = picked
+            {
+                self.select(item);
+            }
+            return;
+        }
+        if self.tool == Tool::Weights
+            || (self.tool == Tool::Mesh && (self.setup_mode || self.selected_mesh_is_weighted()))
+        {
             if (response.clicked() || response.drag_started_by(egui::PointerButton::Primary))
                 && let Some((key, vertex, _)) = nearest_vertex
             {
                 self.select(TreeItem::Attachment(key.clone()));
-                self.mesh_vertex = vertex;
-                if response.drag_started_by(egui::PointerButton::Primary)
+                if self.tool == Tool::Weights {
+                    self.weights.vertex = Some(vertex);
+                } else {
+                    self.mesh_vertex = vertex;
+                }
+                if self.tool == Tool::Mesh
+                    && response.drag_started_by(egui::PointerButton::Primary)
                     && let Some(pointer) = ui
                         .input(|i| i.pointer.press_origin())
                         .or(response.interact_pointer_pos())
@@ -407,6 +470,9 @@ impl Editor {
             } else if response.clicked() {
                 if let Some(item) = picked {
                     self.select(item);
+                } else if self.tool == Tool::Weights {
+                    self.weights.vertex = None;
+                    self.weights.bone = None;
                 } else {
                     self.deselect();
                 }

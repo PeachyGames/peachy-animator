@@ -8,7 +8,7 @@ impl Tool {
             Self::Rotate => Some(TransformTool::Rotate),
             Self::Move => Some(TransformTool::Translate),
             Self::Scale => Some(TransformTool::Scale),
-            Self::Mesh => None,
+            Self::Mesh | Self::Weights => None,
         }
     }
     pub(super) fn properties(self) -> &'static [Property] {
@@ -16,7 +16,7 @@ impl Tool {
             Self::Rotate => &[Property::Rotation],
             Self::Move => &[Property::X, Property::Y],
             Self::Scale => &[Property::ScaleX, Property::ScaleY],
-            Self::Mesh => &[],
+            Self::Mesh | Self::Weights => &[],
         }
     }
 }
@@ -92,7 +92,7 @@ impl Editor {
                     property.read(local) + (delta[0] + delta[1]) * amount * 0.01,
                 );
             }
-            Tool::Mesh => {}
+            Tool::Mesh | Tool::Weights => {}
         }
     }
 }

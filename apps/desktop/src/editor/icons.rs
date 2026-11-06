@@ -21,19 +21,29 @@ pub(super) enum Icon {
     Views,
     Tree,
     Dopesheet,
+    Weights,
     RestoreWorkspace,
     MinimizeViews,
     RestoreViews,
 }
 
 /// Atom rectangles keep the icon aligned by egui's own button layout, at any UI scale.
-fn show(ui: &mut Ui, icon: Icon, label: Option<&str>, shortcut: Option<&str>) -> Response {
+fn show(
+    ui: &mut Ui,
+    icon: Icon,
+    label: Option<&str>,
+    shortcut: Option<&str>,
+    selected: bool,
+) -> Response {
     let icon_id = ui.next_auto_id().with("icon");
     let mut atoms = egui::Atoms::new(Atom::custom(icon_id, Vec2::splat(SIZE)));
     if let Some(label) = label {
         atoms.push_right(label);
     }
-    let mut button = Button::new(atoms).small().min_size(vec2(24., 22.));
+    let mut button = Button::new(atoms)
+        .selected(selected)
+        .small()
+        .min_size(vec2(24., 22.));
     if let Some(shortcut) = shortcut {
         button = button.shortcut_text(shortcut);
     }
@@ -52,7 +62,7 @@ pub(super) fn toolbar_button(
     enabled: bool,
 ) -> Response {
     ui.add_enabled_ui(enabled, |ui| {
-        let response = show(ui, icon, None, None);
+        let response = show(ui, icon, None, None, false);
         response.widget_info(|| {
             egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), name)
         });
@@ -69,7 +79,11 @@ pub(super) fn toolbar_button(
 }
 
 pub(super) fn button(ui: &mut Ui, icon: Icon, label: &str, shortcut: Option<&str>) -> Response {
-    show(ui, icon, Some(label), shortcut)
+    show(ui, icon, Some(label), shortcut, false)
+}
+
+pub(super) fn tool_button(ui: &mut Ui, icon: Icon, label: &str, selected: bool) -> Response {
+    show(ui, icon, Some(label), None, selected)
 }
 
 /// Keep view visibility on the established native checkbox; its label stays accessible.
@@ -264,6 +278,15 @@ fn paint(ui: &Ui, rect: Rect, icon: Icon, response: &Response) {
             painter.circle_stroke(p(8., 8.), 6. * rect.width() / SIZE, stroke(ink));
             line(&[[5.5, 5.5], [10.5, 10.5]], ink);
             line(&[[10.5, 5.5], [5.5, 10.5]], ink);
+        }
+        Icon::Weights => {
+            let points = [p(3., 12.), p(8., 3.), p(13., 12.)];
+            for (a, b) in [(0, 1), (1, 2), (2, 0)] {
+                painter.line_segment([points[a], points[b]], stroke(ink));
+            }
+            for point in points {
+                painter.circle_filled(point, 2. * rect.width() / SIZE, ink);
+            }
         }
         Icon::Views | Icon::RestoreWorkspace => {
             box_at([1.5, 2.], [14.5, 14.], ink);
