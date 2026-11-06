@@ -1,0 +1,14 @@
+{
+  "sourceHead": "c82d16005db2abe994247a4563929b2279cd3f07",
+  "nativeSha256": "b858f16cb2c3186ff198fdb94c0aac803604e0deb0dd710ac9450f496de6eff8",
+  "normalOwnedForegroundWindow": true,
+  "imageCount": 10,
+  "nativeTypedPendingMixUndoRedo": true,
+  "documentAndWorkingFileUnchanged": true,
+  "setupMode": false,
+  "animation": "ik mix linear",
+  "capture": "editor-1793968720934968000.json",
+  "retainedForUserReview": true,
+  "scope": "Native smoke and interactive review handoff; full scripted native acceptance not claimed",
+  "spineInteractiveUiCompared": false
+}

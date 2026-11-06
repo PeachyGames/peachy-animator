@@ -1,0 +1,28 @@
+{
+  "sourceHead": "c82d16005db2abe994247a4563929b2279cd3f07",
+  "scope": "Final review-build workspace; f64 X export corrected, raw-source IK precision correction remains pending",
+  "checks": {
+    "fmt": {
+      "exitCode": 0
+    },
+    "test": {
+      "exitCode": 0
+    },
+    "clippy": {
+      "exitCode": 0
+    },
+    "build": {
+      "exitCode": 0
+    }
+  },
+  "finishedUTC": "2026-11-06T12:36:17.887440+00:00",
+  "rustTests": 344,
+  "counts": {
+    "desktop": 114,
+    "engine": 155,
+    "cli": 7,
+    "io": 27,
+    "spine": 41
+  },
+  "acceptance": "Review checkpoint only; raw-source precision correction and full native parity acceptance remain pending"
+}
