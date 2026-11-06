@@ -124,8 +124,26 @@ pub fn transform_axes(
     axes: Axes,
     tool: TransformTool,
 ) -> [[f32; 2]; 2] {
+    transform_axes_from_world(
+        local,
+        parent,
+        parent.then(Affine::from_transform(local)),
+        axes,
+        tool,
+    )
+}
+
+/// Draw a checked applied pose without recomposing its world frame from an
+/// authored local transform. Translation retains the existing rotation-frame
+/// convention; this does not define unobserved constrained-tool edit semantics.
+pub fn transform_axes_from_world(
+    local: Transform,
+    parent: Affine,
+    world: Affine,
+    axes: Axes,
+    tool: TransformTool,
+) -> [[f32; 2]; 2] {
     if matches!(tool, TransformTool::Scale | TransformTool::Shear) {
-        let world = parent.then(Affine::from_transform(local));
         return [unit([world.a, world.c]), unit([world.b, world.d])];
     }
     if axes == Axes::World {
