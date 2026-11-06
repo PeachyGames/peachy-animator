@@ -465,3 +465,28 @@ comparison gates. The installed-editor checks are CLI data round trips. Fresh GU
 Screen Capture preflight was false; no proprietary UI screenshot or interactive
 Shear comparison was obtained. Local labeling is a bounded policy rather than a
 claim of observed exact display behavior.
+
+## Normal IK Phase A — November 6, 2026 UTC
+
+Constraints have a typed Tree folder and independently drawn cues on affected and
+target bones. Setup properties follow the observed public guide: an IK Constraint
+heading, linked Parent/Child/Target rows, a target pencil chooser, Positive in the
+Options row and a numeric Mix field before its slider. Rename uses the existing
+name dialog, F2 and double-click conventions. Selecting a linked target and pressing
+V allows the usual viewport translation. Animate displays static settings read-only.
+
+Native OS input verifies typed Mix, held slider cancellation, numeric Escape/Save,
+Positive, Rename, chooser cancellation/retargeting and one-step history. Setup
+rotation preserves authored winding on directly constrained bones (720 + 10 becomes
+730); displayed solved motion does not overwrite authored values. Pending target
+poses stay outside Save. Bind/Remove all captures the applied frame once, and
+Direct weights retains the pending pose through Save and Undo/Redo.
+
+Public guide image version is unknown and includes older controls. Its layout is
+useful reference evidence, not proof of exact installed 4.3 UI parity. Our original
+captures are `ik-editor.png`, `ik-posed.png` and `ik-weights.png`; proprietary guide
+images are retained outside Git and are not application assets. Exact installed
+interaction/visual comparison, partial-Mix World/Parent behavior, constraint
+creation, animated settings and advanced controls remain gates. No fake creation
+wizard or active unsupported option is shown. See `evidence/ik-visual.json` and the
+[UI contract](slices/ik-ui.md).

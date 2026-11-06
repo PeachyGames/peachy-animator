@@ -925,3 +925,65 @@ and full production-rig compatibility remain open. Screen Capture was denied in
 the fresh GUI context; installed-editor CLI checks do not establish those UI
 behaviors. All sampled artist rigs still require physics; many also need IK,
 transform/path constraints and unsupported animation types.
+
+## Normal IK Phase A — November 6, 2026 UTC
+
+Integrated implementation `5e4ea7e` passes **288 Rust tests**: 95 desktop, 133 engine,
+7 CLI, 23 I/O and 30 adapter. Format, all-target Clippy with warnings denied,
+workspace build and dependency architecture checks pass on that exact source.
+`evidence/ik-checks.json` pins the source and both accepted binary hashes.
+
+Native v6 requires ordered static IK constraints and migrates formats 1–5 without
+changing their source bytes. All eight previous examples change only format 5→6
+and an empty constraints list; their complete exported JSON remains byte-identical.
+All 12 original artwork/atlas files remain byte-identical. The ninth fixture, IK
+Lab, adds two target bones and independent one-/two-bone chains to the existing
+weighted artwork. Five clips animate targets; the clip named “ik negative” is
+negative target motion, not animated bend. See `evidence/ik-source-baselines.json`.
+
+Independent original controls exercise winding, 180-degree ties, both bends,
+ordinary unreachable targets, partial Mix and precision boundaries. Of 157 original
+sources, 154 accepted poses match the separately installed public runtime API at
+absolute 0.001 tolerance (maximum world error about 5.73e-7); three expected query
+errors cover coincidence and lossy relevant target coordinates. Raw failures before
+the targeted f64 precision fix remain retained locally. No runtime implementation
+was inspected. `evidence/ik-runtime-synthetic.json` and engine provenance record scope.
+
+The final integrated CLI packs all nine original fixtures and compares every clip
+and all three skins at 52 times each, including exact ends, held tails and backwards
+zero. It checks 304,200 bone values, 312,000 region coordinates, 46,800 mesh coordinates
+(23,400 weighted) and 93,600 UV coordinates. Maximum world error is 4.82e-5;
+region/mesh error is at most 6.11e-5 and UV error is zero. Geometry tolerance stays
+0.001. Inputs remain unchanged. `evidence/ik-runtime-packed.json` records per-case results.
+
+Native acceptance is **composite**, not one uninterrupted successful script. The
+first run passes Mix text/slider history and cancellation, Positive, shared Rename,
+target chooser/link/translation, raw Setup winding, read-only Animate settings,
+pending-pose Save exclusion and posed Unbind/Bind with zero observed shape error.
+It then fails because the driver tries to reveal a viewport vertex by scrolling
+the Weights pane. Its edited task copy and failure are retained. A corrected focused
+run starts from that actual authored save, uses Fit and the viewport vertex, and
+passes Direct 35%, one-step Undo/Redo, exact pending-pose preservation, Save exclusion
+and baseline restoration. No app changes separate these runs. Both clipboards are
+restored; owned editors, two editor CLI processes and the isolated reference browser
+are verified exited. Six plus two Save backups are readable, first backups match raw
+baselines, and all eight match captured documents at f32 precision. See
+`evidence/ik-native.json`; private inputs and unrelated windows were untouched.
+
+The rig captured after those actual native IK/target/Direct edits is independently
+packed and compared for all five clips and three skins. Its 79,560 bone values,
+72,800 region coordinates, 13,000 mesh coordinates and 26,000 UV coordinates pass
+with pending target translation excluded. `evidence/ik-native-edited-runtime.json`
+pins that gate. Original IK Lab also imports/re-exports through installed Spine
+Editor 4.3.26 and reimports into our adapter; `evidence/ik-spine-editor.json` records
+this separate CLI interchange result. Editor re-export can reorder metadata and
+quantize numbers; arbitrary lossless project conversion is not claimed.
+
+Public guide images were observed in an isolated approved headed browser. Their
+application version is unknown. They support the folder/property/annotation ordering
+in `evidence/ik-visual.json`, but not exact installed-editor visual/interaction parity.
+Screen Capture permission remains unavailable; no permission settings were changed.
+IK timelines, creation/deletion/reordering, advanced or dependent/transformed chains,
+physics, transform/path constraints and representative game-engine acceptance remain
+open. The private inventory still has 0/11 fully supported rigs; full parity is an
+ongoing objective, not this checkpoint's claim.

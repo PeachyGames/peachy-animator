@@ -1,0 +1,13 @@
+{
+  "head": "6f3bfaba6006f001e484ac1478001761131cc521",
+  "binarySha256": "830fa5cf17e22057c5421d27ca4aaf7068dea9ad91a76eef7a5244c045582b5f",
+  "oracleRuntimePackage": "4.3.13",
+  "inputVersion": "4.3.26",
+  "caseCount": 157,
+  "successfulPoseCount": 154,
+  "expectedQueryErrorCount": 3,
+  "allSourcesUnchanged": true,
+  "allExpected": true,
+  "maxWorldDifference": 5.724901477321964e-07,
+  "maxAppliedRotationDifference": 2.6591089579142135e-06
+}

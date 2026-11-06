@@ -1,0 +1,11 @@
+{
+  "startingHead": "7cbb9a6",
+  "originalArtAndAtlasFiles": 12,
+  "artAndAtlasByteIdenticalToStartingCommit": true,
+  "intentionalOldExampleMigrations": 8,
+  "migrationPayloadOnly": "format5\u21926 and constraints[]; remaining payload unchanged",
+  "newOriginalFixture": "ik-bot.peachy",
+  "newOriginalFixtureSha256": "7366f9948fb3efa980c300f663330cd065964419b3c532031b76504208d8189d",
+  "nineFinalRuntimeSourcesUnchanged": true,
+  "privateAssetsRedistributed": false
+}

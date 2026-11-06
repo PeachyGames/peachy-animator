@@ -367,8 +367,8 @@ math owns checked inverse directions, World rotation and oblique Scale coordinat
 The adapter owns absolute/normalized curve conversion and target range errors.
 The engine keeps the ten-segment curve policy and widens overflowing interpolation
 intermediates. `checked_scene_from_locals` and `checked_evaluate_scene` return an
-error before shells serialize, draw or pick nonfinite data; the existing unguarded
-functions remain available for validated core callsites. Shells use the checked
+error before shells serialize, draw or pick nonfinite data; the original evaluation
+names now delegate through fallible aliases. Shells use the checked
 boundary. Bounds centers likewise widen only
 when the ordinary intermediate overflows. All these functions remain pure.
 
@@ -379,3 +379,30 @@ checked command. Direct and transform input cancel each other before capture.
 Pointer-up and frame settlement produce one history step; context/history/file
 actions cancel and suppress stale blur/held-pointer input. File operations remain
 in the shell. Toolbar and seven-channel chart sizes derive from shared style.
+
+## Static IK and native v6
+
+The document owns ordered, tagged `Constraint::Ik` data and validates references;
+the engine owns the bounded solver and command validation. The adapter recognizes
+4.3's unified setup `constraints` array and translates names to native references.
+Native v6 requires the list. The decoder rejects it in formats 1–5 before adding an
+empty list during migration; no serde default conceals missing current data.
+
+`EvaluatedPose` encapsulates authored locals, applied locals and solved world
+transforms. `Session::local_pose` remains authored; checked evaluation builds one
+applied frame for geometry, picking, bounds and presentation. Constraint changes
+use the ordinary pure command boundary and Session transactions. Unsupported
+dynamic poses return explicit errors without rewriting valid stored data.
+
+The independent solver widens only relevant FK/IK inputs and checks final f32
+origins/tips against the absolute 0.001 world residual. It preserves observed raw
+rotation winding and performs one angular correction rather than modulo reduction.
+`drag_transform_in_frame` derives gestures from displayed applied coordinates and
+adds their delta to authored values. No client bakes the solved pose into keys.
+
+Binding snapshots applied locals once, then reconstructs FK from that snapshot;
+it never reruns IK over an already solved chain. Pending bone edits, saved-state
+comparison and history retain their existing Session ownership. Constraint Mix,
+Positive, Rename and target replacement reuse transactions, typed Tree selection
+and the shared name dialog. Static settings are read-only in Animate. Animated
+settings need an explicit pose/track model before extending these boundaries.

@@ -1,0 +1,94 @@
+{
+  "sourceHead": "5e4ea7ea734503a936003ddd80ef1127992b43dd",
+  "cliSha256": "ae2d6d4d8dfc01338e6cf00121b61a950edd7ac5e6e4b52411849395a53cd089",
+  "runtimePackageVersion": "4.3.13",
+  "exportMetadata": "4.3.26",
+  "scope": "Actual native-authored static IK, target and Direct35% save; five clips/three skins; pending target pose excluded",
+  "pendingPoseExcluded": true,
+  "case": "native-edited",
+  "metrics": {
+    "regionComparisons": 72800,
+    "maxRegionError": 3.0517578125e-05,
+    "meshComparisons": 13000,
+    "weightedMeshComparisons": 7800,
+    "maxMeshError": 6.103515625e-05,
+    "uvComparisons": 26000,
+    "maxUVError": 0,
+    "runtime": "Spine 4.3 external oracle",
+    "bones": 17,
+    "slots": 14,
+    "skins": [
+      "default",
+      "mint",
+      "peach"
+    ],
+    "clips": [
+      {
+        "name": "idle",
+        "nativeEnd": 2,
+        "runtimeEnd": 2,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default",
+          "mint",
+          "peach"
+        ],
+        "maxWorldError": 2.6042566105388687e-05
+      },
+      {
+        "name": "ik negative",
+        "nativeEnd": 2.4000000953674316,
+        "runtimeEnd": 2.4000000953674316,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default",
+          "mint",
+          "peach"
+        ],
+        "maxWorldError": 2.300523584608527e-05
+      },
+      {
+        "name": "ik positive",
+        "nativeEnd": 2.4000000953674316,
+        "runtimeEnd": 2.4000000953674316,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default",
+          "mint",
+          "peach"
+        ],
+        "maxWorldError": 2.0423802652658196e-05
+      },
+      {
+        "name": "ik reach",
+        "nativeEnd": 2.4000000953674316,
+        "runtimeEnd": 2.4000000953674316,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default",
+          "mint",
+          "peach"
+        ],
+        "maxWorldError": 2.9758763162135438e-05
+      },
+      {
+        "name": "wave",
+        "nativeEnd": 2.4000000953674316,
+        "runtimeEnd": 2.4000000953674316,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default",
+          "mint",
+          "peach"
+        ],
+        "maxWorldError": 2.323910138102292e-05
+      }
+    ],
+    "tolerance": 0.001,
+    "maxWorldError": 2.9758763162135438e-05,
+    "comparisons": 79560
+  },
+  "sourceSha256": "73b94b161f8c0d66765600b9df4d06e785a475c253774fdb31569b71540148d2",
+  "runtimeExitCode": 0,
+  "exportSha256": "c15485efedc698ad9165595eac4c0107f303183dfa832a63b46b38785220a2e2"
+}

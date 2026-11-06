@@ -1,0 +1,38 @@
+{
+  "sourceHead": "5e4ea7ea734503a936003ddd80ef1127992b43dd",
+  "startedUTC": "2026-11-06T10:41:31.131745+00:00",
+  "checks": {
+    "fmt": {
+      "exitCode": 0,
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "test": {
+      "exitCode": 0,
+      "logSha256": "bd980fab2c70b7f6cf1372c420c6b6715448a2412d45b97c3dd202745469e67f"
+    },
+    "clippy": {
+      "exitCode": 0,
+      "logSha256": "c69b31463b1d074f23118b3889358523ab98bd39bb63b7ee10130c0d31eb8900"
+    },
+    "build": {
+      "exitCode": 0,
+      "logSha256": "0166b895161f9d2c46802d80b62a833c5a0651d68986ccb30d493e147798c2bd"
+    },
+    "architecture": {
+      "exitCode": 0,
+      "logSha256": "bb68b3227dad85e41b6af19c345d302e508908c49d5b226f91d404123c7b98a0"
+    }
+  },
+  "peachy-cliSha256": "ae2d6d4d8dfc01338e6cf00121b61a950edd7ac5e6e4b52411849395a53cd089",
+  "peachy-animatorSha256": "a2a206edd1ad65586fb4e6f1748c0853f06e08a17ba657e728498cd0c5490c85",
+  "finishedUTC": "2026-11-06T10:41:51.218809+00:00",
+  "passed": true,
+  "rootRustTests": 288,
+  "counts": {
+    "desktop": 95,
+    "engine": 133,
+    "cli": 7,
+    "io": 23,
+    "spine": 30
+  }
+}

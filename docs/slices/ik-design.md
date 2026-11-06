@@ -1,9 +1,9 @@
 # Normal IK: Phase A contract
 
-Status: internally approved for implementation, 2026-11-06. Isolated core, format
-and desktop lanes are in progress. This contract does not claim accepted IK or
-interactive UI parity. The accepted main application remains native v5 until the
-combined native6 slice passes its integration gates.
+Status: Phase A accepted on 2026-11-06, integrated source `5e4ea7e`, native v6.
+All 288 Rust tests and required checks pass, with separate native, packed runtime
+and installed-editor CLI acceptance. Exact installed-editor interactive UI parity
+remains open. See [the acceptance record](../VALIDATION.md#normal-ik-phase-a--november-6-2026-utc).
 
 ## Scope and evidence
 

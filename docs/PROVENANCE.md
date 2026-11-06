@@ -357,3 +357,28 @@ reuse our existing Session and shell boundaries. The native-edited saved documen
 also passes the separately licensed runtime oracle. No editor/runtime implementation,
 source map, constant or proprietary UI asset was inspected, copied or redistributed.
 The [UI scope](slices/shear-ui.md) retains the unobserved reference gates.
+
+## Independent normal IK — November 6, 2026 UTC
+
+The Phase A solver combines general planar IK/affine mathematics with original
+input/output observations executed through the separately licensed public Spine
+4.3 runtime API. Winding and tie behavior, applied transforms, reach and precision
+boundaries are recorded in `crates/engine/IK_PROVENANCE.md`. No proprietary editor
+or runtime implementation, source maps, function text or internal constants were
+read, copied or translated. The runtime is not a Cargo dependency or distributed
+artifact. Installed-editor CLI import/re-export is a distinct data gate.
+
+Official public guide images supply independently observed UI ordering: Constraints
+folder, annotations, IK Constraint heading, linked Parent/Child/Target, Options
+Positive, numeric Mix before slider. Their version is unknown and older controls
+are visible. Image URLs and limitations appear in `evidence/ik-visual.json`; those
+images are neither committed nor reused as app assets. The UI and vector drawings
+are independently authored. Native screenshots contain only our original Peach Bot.
+Exact installed 4.3 visual/interaction parity remains unverified.
+
+Native v6, authored/applied evaluation, frame-aware gestures, strict migrations and
+format rejection are our independently designed boundaries. Binding reuses one
+applied pose snapshot without solving twice. Public runtime controls justify accepting
+neutral `skin:false` while skin-required constraints remain unsupported. Empty
+constraint lists preserve all eight earlier export goldens. See the approved
+[contract](slices/ik-design.md), [UI scope](slices/ik-ui.md) and final validation.

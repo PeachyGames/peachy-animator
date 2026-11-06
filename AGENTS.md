@@ -30,18 +30,33 @@ Run `python3 scripts/check-architecture.py` too. Its allowlist checks real Cargo
 
 `apply_command(&Document, Command)` is the pure editing boundary. `Session` wraps it with in-memory history; pointer gestures use begin/commit/cancel transactions. Native documents and commands reject unknown fields. Export-target restrictions belong to the adapter, not native document validation. Reconcile transient editor selections after history/document changes. Introduce stable entity IDs before deletion/reparenting.
 
-Native format v5 retains tagged `Attachment::Region` / `Attachment::Mesh` and key-derived
+Native format v6 requires ordered `Document.constraints`, with strict static one-/two-bone
+`Constraint::Ik` entries. It retains tagged `Attachment::Region` / `Attachment::Mesh` and key-derived
 animation ends. Bone/pose `Transform` requires seven finite fields, including
 `shear_x`/`shear_y`; `RegionTransform` retains five fields and rejects shear.
 `MeshVertices` distinguishes slot-bone-local positions from per-vertex lists of
 bone-local `BoneInfluence` values. The I/O decoder chains v1 region tags, v2
 duration capture, v3 mesh-array wrapping and v4 zero-shear insertion into strict
-v5 validation before materializing prior exported holds. Legacy formats reject
+v5 validation, then v5→v6 inserts empty constraints before materializing prior exported holds. Formats 1–5 reject
+root constraints even when null or empty. Legacy formats reject
 new shear fields/tracks even when zero/empty; current commands require the new
 bone payload rather than hiding missing fields with serde defaults. Validate influence references
 in every skin, including zero-weight entries and inactive attachments. Preserve
 influence order, repeated bones, zero entries and positive nonunit totals;
 imports/exports must not silently normalize, merge, sort or prune them.
+
+IK evaluation uses one checked engine solve. `EvaluatedPose` distinguishes authored
+locals, applied locals and world transforms; `Session::local_pose` stays authored.
+Rendering, picking, bounds and tools use the evaluated frame. The old evaluation
+names are fallible aliases; `world_pose` is explicitly forward kinematics only.
+Binding captures applied locals once and reconstructs FK, never applying IK twice.
+Viewport deltas use `drag_transform_in_frame` and update authored values without
+baking solved transforms. Preserve raw Setup rotation winding on directly constrained
+bones, including zero Mix. Native6 Mix is [0,1]; unsupported chains/poses fail explicitly
+under the approved `docs/slices/ik-design.md` rules and absolute 0.001 world residual.
+Append-only core/CLI constraint creation is supported. Creation UI needs the reference
+selection workflow; deletion/reordering require identity/remapping contracts. IK keys
+and advanced settings need explicit models. Do not approximate them or add a UI-only solver.
 
 Mesh topology, UVs, binding data and weighted geometry belong in document/engine.
 `evaluate_scene` emits shared vertex/UV/index buffers for rendering, bounds and CLI

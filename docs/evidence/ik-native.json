@@ -1,0 +1,59 @@
+{
+  "captures": {
+    "winding": "editor-1793962218156718000.json",
+    "setup": "editor-1793962234786018000.json",
+    "posed": "editor-1793962257744017000.json"
+  },
+  "scope": "Real OS input in our task-owned original IK Lab; no installed-Spine interactive comparison claim",
+  "typedMixOneUndoRedoAndNative6Save": true,
+  "heldSliderAndNumericEscapeSaveSuppressStalePreview": true,
+  "positiveBendOneUndoRedo": true,
+  "sharedConstraintRenamePreservesRefsAndHistory": true,
+  "targetChooserCancelAndExistingBoneRetarget": true,
+  "targetLinkVAndViewportMoveUsesSolvedPoseWithoutBake": true,
+  "setupAuthoredWindingAndRelativeEntryPreserved": true,
+  "animateStaticControlsAndPendingTargetSaveExclusion": true,
+  "unbindMaxWorldError": 0.0,
+  "bindMaxWorldError": 0.0,
+  "appliedPoseUnbindBindOnceAndExactPendingHistory": true,
+  "sourceHead": "5e4ea7ea734503a936003ddd80ef1127992b43dd",
+  "nativeSha256": "a2a206edd1ad65586fb4e6f1748c0853f06e08a17ba657e728498cd0c5490c85",
+  "cliSha256": "ae2d6d4d8dfc01338e6cf00121b61a950edd7ac5e6e4b52411849395a53cd089",
+  "rootRustTests": 288,
+  "acceptance": "Composite properties/binding pass plus separate focused Direct pass; first whole-run harness did not complete",
+  "firstRunHarnessFailure": "Driver tried to reveal viewport vertex by scrolling Weights pane; app source unchanged for corrected focused pass",
+  "firstRunTaskCopyRetainedEdited": true,
+  "nativeSessionsClosed": true,
+  "spineInteractiveUiCompared": false,
+  "saveAudit": [
+    {
+      "backupCount": 6,
+      "firstBackupExactInitialBytes": true,
+      "allBackupsMatchCapturedDocumentAtF32Precision": true,
+      "finalFileRestoredAtF32Precision": false,
+      "originalClipboardRestored": true
+    },
+    {
+      "backupCount": 2,
+      "firstBackupExactInitialBytes": true,
+      "allBackupsMatchCapturedDocumentAtF32Precision": true,
+      "finalFileRestoredAtF32Precision": true,
+      "originalClipboardRestored": true
+    }
+  ],
+  "recordedOwnedProcessesExited": true,
+  "focusedDirect": {
+    "captures": {
+      "posed": "editor-1793962813731747000.json"
+    },
+    "scope": "Focused Direct weights with pending IK, starting from actual native-authored save; no installed-Spine interactive comparison",
+    "selectedVertex": 4,
+    "selectedBone": 7,
+    "weightPercent": 35,
+    "directWeightUnderPendingIKIsOneUndoRedoAndSaveExcludesPose": true,
+    "complete": true,
+    "saveBackups": 2,
+    "focusedWorkingDocumentAndFileRestoredAtF32Precision": true,
+    "originalClipboardRestored": true
+  }
+}

@@ -4,6 +4,16 @@ Target: Spine **4.3.x JSON**, with export metadata `4.3.26`. The initial externa
 oracle is separately installed `@esotericsoftware/spine-core` **4.3.13**.
 Compatibility applies to the subset below, not every 4.3 project or future patch.
 
+Static IK is a bounded subset: one or two connected bones, unit positive scale
+and zero shear on their chain/ancestors, a parent for the first bone, and disjoint
+affected subtrees without cross-target dependencies. Two-bone child translation
+is a constant positive X offset with Y zero. Target coincidence and unrepresentable
+solved frames fail explicitly; ordinary inner/outer unreachable targets work.
+Setup Mix is [0,1]. See the [complete Phase A rules](slices/ik-design.md).
+Neutral advanced defaults and `skin:false` are accepted; active advanced features,
+skin-required constraints and nonempty IK timelines are rejected even at Mix 0.
+Input-only obsolete integer `order` is validated and omitted, never used to sort.
+
 | Area | Supported | Import refuses |
 | --- | --- | --- |
 | Bones | Normal inheritance; X/Y, rotation, scale X/Y, shear X/Y, length | Other inheritance modes, skin-required bones |
@@ -12,9 +22,9 @@ Compatibility applies to the subset below, not every 4.3 project or future patch
 | Skins | Region/mesh maps, explicit attachment names and default-skin fallback | Skin-required bones or constraints |
 | Animation | Bone rotation, translation, scale and shear; combined or scalar input timelines | Slot, attachment, draw-order, event or constraint timelines |
 | Curves | Linear, stepped, normalized monotone-time cubic handles | Nonfinite or unordered controls; overshooting curves between equal values |
-| Constraints | None | IK, transform, path, physics and other constraints |
+| Constraints | Static one-/two-bone normal IK, Mix [0,1], two-bone Positive, disjoint chains; animated targets | IK timelines, advanced/dependent/transformed chains; transform, path, physics and other constraints |
 | Images | Loose PNGs for editing; one untrimmed atlas page for desktop export | Packed-atlas import, rotated/trimmed atlas regions, multipage export |
-| Files | `.peachy` v5; in-memory v1/v2/v3/v4 migration; Spine JSON adapter | Native `.spine` projects and binary `.skel` |
+| Files | `.peachy` v6; in-memory v1–v5 migration; Spine JSON adapter | Native `.spine` projects and binary `.skel` |
 
 Our own project format is JSON and holds the editable rig, skin references and clips.
 It is distinct from a runtime export. The importer ignores documented editor-only
@@ -30,6 +40,14 @@ planning a migration. The first local review inspected 11 current exports withou
 modifying them. All needed features beyond this slice, so no artist migration is claimed.
 
 ## Acceptance evidence
+
+The current IK checkpoint passes 288 integrated Rust tests and the required format,
+Clippy, build and architecture checks. Nine original packed fixtures agree with
+the separately installed runtime across all clips/skins within 0.001 world units;
+the rig actually edited in the native UI passes the same gate. Original IK Lab
+imports/re-exports through Spine Editor 4.3.26. These are separate data, runtime and
+native UI gates; exact installed-editor visual/interaction parity remains open.
+See [current validation](VALIDATION.md#normal-ik-phase-a--november-6-2026-utc).
 
 The original fixture also imports into a new native project with Spine Editor
 4.3.26, re-exports from that editor, and imports back into Peachy Animator. Its

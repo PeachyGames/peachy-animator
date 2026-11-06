@@ -1,0 +1,12 @@
+{
+  "spineVersion": "4.3.26",
+  "scope": "Original IK Lab import and reexport via editor CLI; no interactive UI claim",
+  "importExitCode": 0,
+  "projectCreated": true,
+  "sourceSha256": "a063712b06a2813b0c47654f578f14f4b9317508ee8be457420ec756ec6380c5",
+  "reexportExitCode": 0,
+  "reexportCreated": true,
+  "independentAdapterAccepted": true,
+  "exportSha256": "269735dd0a17a9abc8d48fef9c76eb33ddf99275da51817b417e63906552a010",
+  "sourceUnchanged": true
+}

@@ -24,7 +24,8 @@ comparison. The native `.peachy` format is our own editable model.
 | Animation transport | A/D reverse/forward play, bidirectional loops, W/S key navigation and Q/E start/last key | Native/engine boundary checks; nonlooping playback stays within native duration; extended playback/view preferences pending |
 | Timeline authoring | Key insertion, exact/row/all-shown selection, removal, retiming/copy gestures, Copy/Cut/Paste and curve controls; animation rename/duplicate | Key-derived ends, empty clips and beyond-end authoring implemented; still needs marquee/all-bone selection, advanced curves, clip management and mixing |
 | Rig/artwork authoring | Add child bones, rename bones/slots; work with existing loose PNGs | Still needs image import, attachment creation, pivots, stable IDs before delete/reparent |
-| IK/transform/path/physics constraints | Pending | Each needs controlled inputs, public behavior specification and runtime boundary checks |
+| IK constraints | Bounded static one-/two-bone normal IK, animated targets, authored/applied separation, Setup Mix/Positive/target/Rename | [Phase A](slices/ik-design.md) and [validation](VALIDATION.md#normal-ik-phase-a--november-6-2026-utc); animated settings, creation, dependent/transformed chains and exact installed UI remain gates |
+| Transform/path/physics constraints | Pending | Each needs controlled inputs, public behavior specification and runtime boundary checks |
 | Slot animation, draw order, events, clipping, sequences | Pending | Unsupported imports are refused; no silent approximation |
 | Engine integration | Versioned Spine JSON plus single-page atlas export | Separate licensed runtime is an external consumer/oracle; native `.spine` and binary `.skel` decoding remain unsupported |
 

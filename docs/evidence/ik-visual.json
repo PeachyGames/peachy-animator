@@ -1,0 +1,31 @@
+{
+  "scope": "Root-reviewed original Peach Bot native captures; public guide images observed independently; no installed-editor pixel/interaction comparison",
+  "originalArtworkOnly": true,
+  "captures": [
+    "ik-editor.png",
+    "ik-posed.png",
+    "ik-weights.png"
+  ],
+  "observedPublicGuideVersion": "unknown; guide includes older controls",
+  "references": [
+    "https://esotericsoftware.com/img/spine-user-guide/ik/properties1.png",
+    "https://esotericsoftware.com/img/spine-user-guide/ik/properties2.png",
+    "https://esotericsoftware.com/img/spine-user-guide/ik/setup.png",
+    "https://esotericsoftware.com/img/spine-user-guide/constraints/tree.png",
+    "https://esotericsoftware.com/img/spine-user-guide/constraints/annotations.png"
+  ],
+  "observedConventions": [
+    "Constraints folder beside bone branch",
+    "IK Constraint heading and linked Parent/Child/Target rows",
+    "Positive under Options",
+    "Numeric Mix preceding slider",
+    "Affected/target bone annotations"
+  ],
+  "remainingGates": [
+    "Exact installed4.3 layout/interaction",
+    "World/Parent partial-mix behavior",
+    "Creation, advanced settings and constraint animation"
+  ],
+  "publicGuideImagesRedistributed": false,
+  "installedSpineInteractiveUiCompared": false
+}

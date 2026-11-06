@@ -9,11 +9,11 @@ Do not count a rejected import or a synthetic success as a migrated game charact
 | --- | --- | --- |
 | Import our Spine characters | Supported 4.3 JSON includes weighted meshes; strict inspection explains refusals | November 6 UTC audit: weighted refusals 10→0, but 0/11 artist exports fully supported and all 11 require constraints. Add linked meshes/timelines/constraints and packed art, then verify an unchanged full production rig |
 | Modify a character | Bone transforms/length, region transforms, slot setup attachments, unweighted setup vertices/subdivision, initial Bind/Remove-all, additional zero bindings and one-vertex/bone Direct weights | Rig/image creation, pivots, remaining entity naming, delete/reparent with stable IDs; brush/lock/multi-selection weights, Update and broader mesh/UV tools |
-| Work on poses | Setup and transient Animate poses, Rotate/Translate/Scale, bounded bone Shear and axes, Auto Key/K/undo; weighted artwork follows posed bones and weights can be edited at that pose | Exact Shear interactions/Pose tool, compensation, multi-selection, constraints and broader weight authoring |
+| Work on poses | Setup and transient Animate poses, Rotate/Translate/Scale, bounded bone Shear and static normal IK, Auto Key/K/undo; weighted artwork and binding use the evaluated pose | Exact Shear/IK interactions, Pose tool, compensation, multi-selection, advanced constraints and broader weight authoring |
 | Work on animations | Supported bone transforms/curves, pose keying, exact key selection/deletion, group retiming/duplication, Copy/Cut/Paste, animation rename/duplicate and transport | Broader timeline selection, extended playback, Graph, clip creation/deletion, mixing and remaining timeline types |
 | Work on slots/features | Typed slots/placeholders/attachments/skins, setup attachment edits, temporary editor visibility | Attachment/color/draw-order animation, slot creation/order/blending, sequences, events, clipping and constraints |
 | Export for the game | Fresh 4.3 JSON/atlas/PNG bundles; separately supplied Spine runtime checks; installed editor import/re-export | Representative production-character round trip and actual game-engine load/render/playback, including the features that rig uses |
-| Save editable work | Strict `.peachy` v5 saves, v1/v2/v3/v4 migration, weighted influence preservation, reopen, verified backups, atomic replacement and image copying | Broad real-rig round trip as coverage expands; crash recovery/packaging. Unkeyed poses must be keyed first |
+| Save editable work | Strict `.peachy` v6 saves, v1–v5 migration, weighted influence and static IK preservation, reopen, verified backups, atomic replacement and image copying | Broad real-rig round trip as coverage expands; crash recovery/packaging. Unkeyed poses must be keyed first |
 | Save native Spine files | Our JSON can be imported into the installed Spine Editor and saved there as `.spine` | Peachy Animator itself does **not** read/write native `.spine` projects or binary `.skel`. These are separate format projects |
 
 The latest artist inventory was read-only: all 11 sampled input hashes match the
@@ -32,8 +32,8 @@ Use two continuing tracks: reference-matched authoring controls, and progressive
 broader format/evaluation support driven by a selected real rig. Weighted preview
 now works, as do initial one-bone binding and Remove-all at the current pose.
 Additional zero bindings and single-vertex/bone Direct percentages extend that
-loop. Bone shear now extends the native v5 model and bone animation; exact Shear
-UI comparison remains open. Brush editing, locks, Update and constraints are
+loop. Bone shear and bounded static IK extend the native v6 model; exact Shear/IK
+UI comparison remains open. Brush editing, locks, Update and broader constraints are
 next; these are not implied by the current G Weights tool/view.
 Tool/axis and timeline work continue alongside that track.
 Each feature needs independent core behavior, undo/save checks, native UI verification,
@@ -79,3 +79,19 @@ for those separate results and the editor's precision/repeated-entry limits.
 Constraints, full production-character editing and
 actual consuming-game acceptance remain unchanged hurdles; **0/11** sampled
 production exports are fully supported.
+
+## Static IK checkpoint — November 6, 2026 UTC
+
+Original IK Lab now completes a bounded import → edit constraint/target → pose →
+animate targets → save/reopen → packed runtime export loop. Its one-/two-bone
+chains expose familiar Tree properties and preserve authored rotations separately
+from solved values. Native Bind/Remove all and Direct weights work under the
+constrained pose without baking or saving pending target edits. Native v6 stores
+the constraints; the prior eight examples retain identical runtime exports.
+
+This advances constraint editing and target animation. IK Mix/Positive keys,
+advanced/dependent/transformed chains and constraint creation remain separate
+slices. All sampled production rigs still need physics and other unsupported data,
+so **0/11** remain fully supported. Native `.spine`/binary `.skel` support and actual
+consuming-game verification remain separate hurdles. See
+[the accepted checks](VALIDATION.md#normal-ik-phase-a--november-6-2026-utc).

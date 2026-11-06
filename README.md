@@ -4,10 +4,10 @@ A native 2D skeletal animation editor from Team Peachy, with an independent Rust
 core and Spine-compatible exports. The current slices include Spine-style naming,
 Dopesheet selection/retiming/clipboard actions, key-derived animation duration, and
 weighted mesh import, bone-driven preview, binding, single-vertex Direct weights,
-and bone shear data/authoring controls. Shear interaction comparison is still in progress.
+bone shear authoring, and bounded one-/two-bone inverse kinematics (IK).
 This is still a bounded subset of Spine.
 
-![Original Shear Lab in the native editor](docs/shear-posed.png)
+![Original IK Lab in the native editor](docs/ik-editor.png)
 
 ## Try it
 
@@ -45,6 +45,18 @@ cargo run -p peachy-animator -- examples/peach-bot/shear-bot.peachy
 Select a bone and press **Z** for Shear. Both numeric axes and explicit handles are
 available; exact installed-Spine empty-space/Shift behavior and World/Parent display
 remain comparison gates. See [the current UI scope](docs/slices/shear-ui.md).
+
+The original IK Lab adds two targets, one-/two-bone constraints and target animation:
+
+```sh
+cargo run -p peachy-animator -- examples/peach-bot/ik-bot.peachy
+```
+
+Select a constraint in the Tree's **Constraints** folder. Setup properties expose
+Mix, two-bone Positive, linked bones, target replacement and Rename. Move a target
+to pose its chain; authored bone values remain separate from solved values.
+Constraint settings are static in this slice. See [the IK contract](docs/slices/ik-design.md)
+for its chain, transform and precision limits.
 
 For either mesh fixture, select its hand.R attachment and **Vertices** to inspect the selected
 vertex's bone influences. Weighted inspection works in Setup and Animate, including
@@ -205,6 +217,8 @@ supported controls can edit it. Inactive skin attachments remain inspectable.
   explicit transform/Tree key buttons and pose-aware transactional history.
 - Canvas manipulation, transform controls and adding child bones.
 - Shared commands, atomic batch edits and undo/redo.
+- Static one-/two-bone normal IK with animated targets, constraint Tree properties,
+  and pose-aware binding/transform tools within the supported chain subset.
 - JSON project saves with atomic replacement, verified timestamped backups and
   image copying when saving to another directory.
 - Spine **4.3.x JSON** import/export for the supported subset. Desktop export
@@ -212,7 +226,7 @@ supported controls can edit it. Inactive skin attachments remain inspectable.
 - A headless CLI that uses the same document, command and pose engine.
 
 Brush weight editing, multi-vertex/multi-bone weights, Update bindings, linked meshes,
-IK, physics, path/transform constraints,
+IK timelines and advanced/dependent chains, physics, path/transform constraints,
 clipping, slot animation,
 events, image sequences, packed-atlas import, native `.spine` files and animation
 mixing are not implemented. Unsupported imports are blocked with a feature report;
@@ -239,13 +253,13 @@ CLI outputs must be new files; it refuses to overwrite existing output. The CLI
 `export` command writes JSON only. Use the desktop exporter for a packed bundle.
 The CLI `bundle` command uses that same shared exporter.
 Native projects reference loose images in `images/` beside the project. Native
-format v5 requires bone shear X/Y and retains tagged `slotLocal`/`weighted` mesh
+format v6 requires an ordered constraints list, bone shear X/Y and tagged `slotLocal`/`weighted` mesh
 vertices. Animation duration follows its last key, including empty clips. The loader
-migrates v1/v2/v3/v4 projects in memory, preserving legacy holds/vertices and adding
-zero shear to legacy bones. Loading leaves source bytes unchanged. Explicit Save
-writes v5 and backs up the previous file; older binaries cannot open v5. Bone
+migrates v1–v5 projects in memory, preserving legacy holds/vertices, adding
+zero shear and empty constraints where needed. Loading leaves source bytes unchanged. Explicit Save
+writes v6 and backs up the previous file; older binaries cannot open v6. Bone
 command payloads require all seven transform fields. `pose` accepts an optional
-skin name and emits evaluated attachment geometry; nonfinite evaluation fails
+skin name and emits authored locals, applied locals, world transforms and attachment geometry; unsupported or nonfinite evaluation fails
 explicitly before JSON output.
 
 ## Architecture and verification
