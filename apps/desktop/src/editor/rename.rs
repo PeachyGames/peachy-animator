@@ -105,6 +105,7 @@ impl Editor {
         let kind = match item {
             TreeItem::Bone(_) => "bone",
             TreeItem::Slot(_) => "slot",
+            TreeItem::Animation(_) => "animation",
             _ => return,
         };
         if item.exists(self.session.document()) {
@@ -138,6 +139,7 @@ impl Editor {
                 let command = match state.item {
                     TreeItem::Bone(bone) => Command::RenameBone { bone, name },
                     TreeItem::Slot(slot) => Command::RenameSlot { slot, name },
+                    TreeItem::Animation(animation) => Command::RenameAnimation { animation, name },
                     _ => return,
                 };
                 match self.session.dispatch(command) {

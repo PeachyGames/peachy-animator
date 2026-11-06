@@ -5,10 +5,22 @@ impl Editor {
         self.record_target("properties", ui.clip_rect());
         ui.horizontal(|ui| {
             ui.label(RichText::new("Properties").strong());
-            if let Some(item @ (TreeItem::Bone(_) | TreeItem::Slot(_))) = self.selection.clone() {
+            if let Some(item @ (TreeItem::Bone(_) | TreeItem::Slot(_) | TreeItem::Animation(_))) =
+                self.selection.clone()
+            {
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if let TreeItem::Animation(animation) = item {
+                        let duplicate = ui.button("Duplicate");
+                        self.record_target("animationDuplicate", duplicate.rect);
+                        if duplicate.clicked() {
+                            self.begin_duplicate_animation(animation);
+                        }
+                    }
                     let rename = ui.button("Rename").on_hover_text("Rename · F2");
                     self.record_target("rename", rename.rect);
+                    if matches!(item, TreeItem::Animation(_)) {
+                        self.record_target("animationRename", rename.rect);
+                    }
                     if rename.clicked() {
                         self.begin_rename(item);
                     }
@@ -93,22 +105,7 @@ impl Editor {
                     self.activate_skin(skin);
                 }
             }
-            TreeItem::Animation(animation) => {
-                let a = &self.session.document().animations[animation];
-                ui.label(format!(
-                    "{} frames · {} tracks",
-                    (a.duration * self.session.document().fps as f32).round() as u32,
-                    a.tracks.len()
-                ));
-                ui.label(if self.animation == animation {
-                    "Active animation"
-                } else {
-                    "Selected for inspection; another animation is active."
-                });
-                if ui.button("Activate animation").clicked() {
-                    self.activate_animation(animation);
-                }
-            }
+            TreeItem::Animation(animation) => self.animation_properties(ui, animation),
             TreeItem::Folder(Folder::Skins) => {
                 ui.label("Use a skin's visibility dot to make it active.");
                 if ui.button("Clear active skin").clicked() {
