@@ -44,3 +44,10 @@ native-f32 locals, so a tiny lost direction can still be solved correctly rather
 than hidden behind an endpoint-only bound. Exactly recoverable large poses and
 unrelated large/zero-scale branches remain accepted. No global FK math change,
 angle clamp, data rewrite, or blanket coordinate cutoff is used.
+
+The frame-aware drag helper interprets pointer motion in frozen applied geometry
+and adds the resulting delta to the separate raw authored transform. Displayed
+axis projection, applied pivot angles and evaluated scale ratios stay in the
+engine. This is a coherent inferred interaction rule, not an observation of every
+Spine partial-mix convention. The existing FK entry point delegates using equal
+authored/applied locals and retains its original arithmetic order where possible.

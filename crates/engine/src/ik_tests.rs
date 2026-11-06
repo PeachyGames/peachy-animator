@@ -730,6 +730,146 @@ fn required_singular_frames_and_between_key_coincidence_are_queries_not_destruct
 }
 
 #[test]
+fn local_move_projects_the_drawn_applied_axis_and_preserves_raw_authored_values() {
+    let document = one(0.5);
+    let pose = checked_evaluate_pose(&document, None, 0.).unwrap();
+    let parent = pose.world()[0];
+    let world = pose.world()[1];
+    let authored = pose.authored_locals()[1];
+    let applied = pose.applied_locals()[1];
+    near(authored.rotation, 0.);
+    near(applied.rotation, 45.);
+    let basis = transform_axes_from_world(
+        applied,
+        parent,
+        world,
+        Axes::Local,
+        TransformTool::Translate,
+    )[0];
+    let result = drag_transform_in_frame(
+        authored,
+        applied,
+        parent,
+        world,
+        TransformGesture {
+            tool: TransformTool::Translate,
+            axes: Axes::Local,
+            axis: Some(0),
+            start: [world.x, world.y],
+            end: [world.x + basis[0] * 10., world.y + basis[1] * 10.],
+            snap_rotation: false,
+        },
+    )
+    .unwrap();
+    near(result.x, 10. * std::f32::consts::FRAC_1_SQRT_2);
+    near(result.y, 10. * std::f32::consts::FRAC_1_SQRT_2);
+    assert_eq!(result.rotation, 0.);
+    assert_eq!(result.scale_x, 1.);
+    assert_eq!(result.shear_x, 0.);
+    // The shared pose boundary receives authored edits, not the solved45 value.
+    let mut session = Session::new(document).unwrap();
+    session
+        .edit_pose(
+            1,
+            EditTarget::Setup,
+            result,
+            &[Property::X, Property::Y],
+            false,
+        )
+        .unwrap();
+    assert_eq!(session.document().bones[1].setup.rotation, 0.);
+    point(
+        session.evaluated_pose(EditTarget::Setup).unwrap().world()[1].point(0., 0.),
+        [result.x, result.y],
+    );
+}
+
+#[test]
+fn applied_pivot_and_scale_frame_produce_deltas_on_the_distinct_authored_baseline() {
+    let authored = Transform {
+        x: 3.,
+        y: -4.,
+        rotation: 720.,
+        scale_x: 2.,
+        scale_y: 3.,
+        shear_x: 5.,
+        shear_y: 7.,
+    };
+    let applied = Transform {
+        x: 100.,
+        y: 200.,
+        rotation: 45.,
+        ..Transform::default()
+    };
+    let parent = Affine::from_transform(Transform::default());
+    let world = parent.then(Affine::from_transform(applied));
+    let gesture = |tool, axis, start, end| TransformGesture {
+        tool,
+        axes: Axes::Local,
+        axis,
+        start,
+        end,
+        snap_rotation: false,
+    };
+    let start = [world.x + 10., world.y];
+    let end = [world.x, world.y + 10.];
+    let rotated = drag_transform_in_frame(
+        authored,
+        applied,
+        parent,
+        world,
+        gesture(TransformTool::Rotate, None, start, end),
+    )
+    .unwrap();
+    near(rotated.rotation, 810.);
+    assert_eq!(
+        (rotated.x, rotated.y, rotated.scale_x, rotated.shear_y),
+        (3., -4., 2., 7.)
+    );
+    let sheared = drag_transform_in_frame(
+        authored,
+        applied,
+        parent,
+        world,
+        gesture(TransformTool::Shear, Some(1), start, end),
+    )
+    .unwrap();
+    near(sheared.shear_y, 97.);
+    assert_eq!(
+        (sheared.rotation, sheared.shear_x, sheared.x),
+        (720., 5., 3.)
+    );
+    let start = world.point(1., 0.);
+    let end = world.point(2., 0.);
+    let scaled = drag_transform_in_frame(
+        authored,
+        applied,
+        parent,
+        world,
+        gesture(TransformTool::Scale, Some(0), start, end),
+    )
+    .unwrap();
+    near(scaled.scale_x, 4.);
+    assert_eq!(
+        (scaled.scale_y, scaled.rotation, scaled.shear_x, scaled.x),
+        (3., 720., 5., 3.)
+    );
+    let mut invalid_world = world;
+    invalid_world.x = f32::NAN;
+    assert!(
+        drag_transform_in_frame(
+            authored,
+            applied,
+            parent,
+            invalid_world,
+            gesture(TransformTool::Rotate, None, start, end)
+        )
+        .is_err()
+    );
+    assert_eq!(authored.rotation, 720.);
+}
+
+#[test]
 fn constraint_previews_restore_fixed_base_pending_saved_state_redo_and_commit_one_undo() {
     let mut session = Session::new(one(0.)).unwrap();
     let target = EditTarget::Animate {
