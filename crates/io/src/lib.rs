@@ -1,4 +1,6 @@
 //! Shared imperative shell for project files, image copying and packed exports.
+mod audio;
+pub use audio::{WavClip, WavePeak, decode_wav, load_wav};
 use peachy_document::{Curve, Document, Keyframe, Property, Track};
 use std::{
     fs,

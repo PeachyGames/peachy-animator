@@ -128,7 +128,7 @@ fn malformed_containers_chunk_lengths_padding_and_duplicate_audio_chunks_are_rej
     for bytes in [
         riff(&[fmt.clone(), fmt.clone(), data.clone()]),
         riff(&[fmt.clone(), data.clone(), data.clone()]),
-        riff(&[fmt.clone()]),
+        riff(std::slice::from_ref(&fmt)),
         riff(&[data]),
         riff(&[chunk(b"JUNK", &[])]),
     ] {

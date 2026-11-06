@@ -342,16 +342,17 @@ impl Editor {
         }
         // Slider arrows remain with that widget; only the waveform owns seek arrows.
         if focused == Some(self.audio_canvas_id()) {
+            let modifiers = ctx.input(|input| input.modifiers);
             for (key, delta) in [(egui::Key::ArrowLeft, -0.1), (egui::Key::ArrowRight, 0.1)] {
-                if ctx.input(|input| input.key_pressed(key)) {
-                    let step = if ctx.input(|input| input.modifiers.shift) {
-                        10.
-                    } else {
-                        1.
-                    };
+                if ctx.input_mut(|input| input.consume_key(modifiers, key)) {
+                    let step = if modifiers.shift { 10. } else { 1. };
                     self.audio.cancel_input();
                     self.audio.seek(self.audio.position() + delta * step);
                 }
+            }
+            // Canvas arrows must not also navigate focus into the Volume slider.
+            for key in [egui::Key::ArrowUp, egui::Key::ArrowDown] {
+                ctx.input_mut(|input| input.consume_key(modifiers, key));
             }
         }
         true
@@ -501,6 +502,17 @@ impl Editor {
                 "Summary waveform · click/drag to seek · wheel zoom · right/middle drag pan",
             );
         self.audio_control("audioWaveform", &response);
+        // Register canvas-owned arrows before egui's next begin-pass navigation.
+        ui.memory_mut(|memory| {
+            memory.set_focus_lock_filter(
+                response.id,
+                egui::EventFilter {
+                    horizontal_arrows: true,
+                    vertical_arrows: true,
+                    ..Default::default()
+                },
+            )
+        });
         let painter = ui.painter_at(rect);
         painter.rect_filled(rect, 0., Color32::from_gray(39));
         let Some(loaded) = &self.audio.loaded else {

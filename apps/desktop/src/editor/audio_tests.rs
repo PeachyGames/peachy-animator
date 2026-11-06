@@ -219,6 +219,7 @@ fn audio_focus_owns_transport_and_escape_without_deselecting_or_nudging_the_main
     ] {
         key(&mut editor, &ctx, name, egui::Modifiers::NONE);
     }
+    assert!(ctx.memory(|memory| memory.has_focus(editor.audio_canvas_id())));
     let time = editor.audio.position();
     key(
         &mut editor,
@@ -227,6 +228,7 @@ fn audio_focus_owns_transport_and_escape_without_deselecting_or_nudging_the_main
         egui::Modifiers::NONE,
     );
     assert!((editor.audio.position() - time - 0.1).abs() < 1e-6);
+    assert!(ctx.memory(|memory| memory.has_focus(editor.audio_canvas_id())));
     key(&mut editor, &ctx, egui::Key::R, egui::Modifiers::COMMAND);
     assert!(output.borrow().looping);
     key(&mut editor, &ctx, egui::Key::Space, egui::Modifiers::NONE);
@@ -397,6 +399,7 @@ fn waveform_zoom_pan_fit_and_minimum_dock_controls_are_bounded_and_session_only(
         vec![
             egui::Event::PointerMoved(p),
             egui::Event::MouseWheel {
+                phase: egui::TouchPhase::Move,
                 unit: egui::MouseWheelUnit::Point,
                 delta: vec2(0., 200.),
                 modifiers: egui::Modifiers::NONE,

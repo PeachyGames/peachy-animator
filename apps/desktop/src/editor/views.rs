@@ -5,6 +5,7 @@ use super::*;
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(super) enum DockView {
     Animations,
+    Audio,
     Ghosting,
     Graph,
     MeshTools,
@@ -22,8 +23,9 @@ pub(super) enum DockView {
 mod tests;
 
 impl DockView {
-    const ALL: [Self; 11] = [
+    const ALL: [Self; 12] = [
         Self::Animations,
+        Self::Audio,
         Self::Ghosting,
         Self::Graph,
         Self::MeshTools,
@@ -38,6 +40,7 @@ impl DockView {
     fn label(self) -> &'static str {
         match self {
             Self::Animations => "Animations",
+            Self::Audio => "Audio",
             Self::Ghosting => "Ghosting",
             Self::Graph => "Graph",
             Self::MeshTools => "Mesh Tools",
@@ -53,6 +56,7 @@ impl DockView {
     fn icon(self) -> Icon {
         match self {
             Self::Animations => Icon::Animations,
+            Self::Audio => Icon::Audio,
             Self::Ghosting => Icon::Ghosting,
             Self::Graph => Icon::Graph,
             Self::MeshTools => Icon::MeshTools,
@@ -108,12 +112,6 @@ impl ViewTabs {
     }
 }
 
-/// The public guide's complete view inventory. Unsupported entries remain discoverable.
-const UNIMPLEMENTED: [(&str, &str); 1] = [(
-    "Audio",
-    "Audio assets, waveform display and playback are not implemented.",
-)];
-
 impl Editor {
     fn dock_view_open(&self, view: DockView) -> bool {
         if view == DockView::Weights {
@@ -150,6 +148,14 @@ impl Editor {
             self.view_tabs.open.insert(view);
         }
         self.view_tabs.active = view;
+    }
+
+    pub(super) fn open_audio_view(&mut self) {
+        self.open_dock_view(DockView::Audio);
+    }
+
+    pub(super) fn audio_visible(&self) -> bool {
+        self.dock_view_open(DockView::Audio) && self.view_tabs.active == DockView::Audio
     }
 
     pub(super) fn open_slot_color_view(&mut self) {
@@ -203,7 +209,9 @@ impl Editor {
                 .on_disabled_hover_text("Available in Animate mode.");
             self.record_target(&format!("view{}", view.label()), response.rect);
             if response.clicked() {
-                if view == DockView::SlotColor {
+                if view == DockView::Audio {
+                    self.open_audio_view();
+                } else if view == DockView::SlotColor {
                     self.open_slot_color_view();
                 } else if view == DockView::Graph {
                     self.open_graph_view();
@@ -250,14 +258,6 @@ impl Editor {
             self.restore_hidden_views();
             self.show_tree = true;
             ui.close();
-        }
-        ui.separator();
-        ui.label(RichText::new("Not implemented yet").small().color(MUTED));
-        for (label, reason) in UNIMPLEMENTED {
-            let response = ui
-                .add_enabled(false, egui::Button::new(label))
-                .on_disabled_hover_text(reason);
-            self.record_target(&format!("view{label}"), response.rect);
         }
         ui.separator();
         let restore = icons::button(
@@ -345,6 +345,7 @@ impl Editor {
                 .auto_shrink([false, false])
                 .show(ui, |ui| match view {
                     DockView::Animations => self.animations_panel(ui),
+                    DockView::Audio => self.audio_panel(ui),
                     DockView::Ghosting => self.ghosting_panel(ui),
                     DockView::Graph => self.graph_panel(ui),
                     DockView::MeshTools => self.mesh_tools_panel(ui),
@@ -575,6 +576,6 @@ impl Editor {
     }
 
     pub(super) fn views_diagnostic(&self) -> serde_json::Value {
-        serde_json::json!({"open": self.visible_dock_views().iter().map(|view| view.label()).collect::<Vec<_>>(), "storedOpen":DockView::ALL.into_iter().filter(|&view| self.dock_view_open(view)).map(DockView::label).collect::<Vec<_>>(), "active":self.view_tabs.active.label(), "tree":self.show_tree,"dopesheet":self.show_dopesheet && !self.setup_mode,"timeline":self.show_timeline && !self.setup_mode,"storedTimeline":self.show_timeline,"weights":self.show_weights,"minimized":self.hidden_views.is_some(), "outlineZoom": self.view_tabs.outline_zoom, "outlinePan":[self.view_tabs.outline_pan.x,self.view_tabs.outline_pan.y],"unimplemented":UNIMPLEMENTED.map(|(name,_)|name)})
+        serde_json::json!({"open": self.visible_dock_views().iter().map(|view| view.label()).collect::<Vec<_>>(), "storedOpen":DockView::ALL.into_iter().filter(|&view| self.dock_view_open(view)).map(DockView::label).collect::<Vec<_>>(), "active":self.view_tabs.active.label(), "tree":self.show_tree,"dopesheet":self.show_dopesheet && !self.setup_mode,"timeline":self.show_timeline && !self.setup_mode,"storedTimeline":self.show_timeline,"weights":self.show_weights,"minimized":self.hidden_views.is_some(), "outlineZoom": self.view_tabs.outline_zoom, "outlinePan":[self.view_tabs.outline_pan.x,self.view_tabs.outline_pan.y],"unimplemented":[]})
     }
 }

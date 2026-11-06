@@ -29,6 +29,7 @@ pub(super) enum Icon {
     PreviousKey,
     NextKey,
     Animations,
+    Audio,
     Ghosting,
     Graph,
     MeshTools,
@@ -353,6 +354,22 @@ fn paint(ui: &Ui, rect: Rect, icon: Icon, response: &Response) {
             box_at([1.5, 1.5], [5.5, 5.5], warm);
             box_at([8., 5.5], [12., 9.5], warm);
             box_at([8., 10.5], [12., 14.5], warm);
+        }
+        Icon::Audio => {
+            line(
+                &[
+                    [1., 8.],
+                    [3., 8.],
+                    [5., 3.],
+                    [7., 13.],
+                    [9., 5.],
+                    [11., 11.],
+                    [13., 8.],
+                    [15., 8.],
+                ],
+                ink,
+            );
+            painter.circle_filled(p(5., 3.), 1.2 * rect.width() / SIZE, warm);
         }
         Icon::Animations => {
             box_at([2., 2.], [14., 14.], ink);

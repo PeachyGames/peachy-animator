@@ -96,6 +96,7 @@ pub(super) fn editor_fixture() -> Editor {
         view_tabs: Default::default(),
         ghosting: Default::default(),
         preview: Default::default(),
+        audio: Default::default(),
         graph: Default::default(),
         slot_color: Default::default(),
         drag: None,

@@ -220,7 +220,7 @@ impl Editor {
         {
             return;
         }
-        if self.preview_shortcuts(ctx) {
+        if self.preview_shortcuts(ctx) || self.audio_shortcuts(ctx) {
             return;
         }
         // Buttons and other navigable controls request keyboard input too. Global

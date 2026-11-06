@@ -1,5 +1,7 @@
 mod animation;
 mod animation_management;
+mod audio;
+mod audio_output;
 mod dopesheet;
 mod dopesheet_selection;
 mod ghosting;
@@ -122,6 +124,7 @@ pub(crate) struct Editor {
     view_tabs: views::ViewTabs,
     ghosting: ghosting::GhostingState,
     preview: preview::PreviewView,
+    audio: audio::AudioView,
     graph: graph::GraphView,
     slot_color: slot_color::SlotColorView,
     weights: weights::WeightsState,
@@ -247,6 +250,7 @@ impl Editor {
             view_tabs: Default::default(),
             ghosting: Default::default(),
             preview: Default::default(),
+            audio: Default::default(),
             graph: Default::default(),
             slot_color: Default::default(),
             drag: None,
@@ -642,18 +646,22 @@ impl Editor {
         self.reconcile_selection();
     }
 
-    fn confirm_discard(&self) -> bool {
-        (!self.session.is_dirty() && self.session.pose_edits().is_empty())
-            || rfd::MessageDialog::new()
-                .set_title("Unsaved changes")
-                .set_description("Discard unsaved project changes and any unkeyed pose?")
-                .set_buttons(rfd::MessageButtons::YesNo)
-                .show()
-                == rfd::MessageDialogResult::Yes
+    fn confirm_discard(&mut self) -> bool {
+        if !self.session.is_dirty() && self.session.pose_edits().is_empty() {
+            return true;
+        }
+        self.pause_audio_for_modal();
+        rfd::MessageDialog::new()
+            .set_title("Unsaved changes")
+            .set_description("Discard unsaved project changes and any unkeyed pose?")
+            .set_buttons(rfd::MessageButtons::YesNo)
+            .show()
+            == rfd::MessageDialogResult::Yes
     }
 
     fn open_project(&mut self, ctx: &egui::Context) {
         self.cancel_gesture();
+        self.pause_audio_for_modal();
         if !self.confirm_discard() {
             return;
         }
@@ -683,6 +691,7 @@ impl Editor {
                     self.timeline_view.reset_document();
                     self.ghosting.reset_document();
                     self.preview.reset_document();
+                    self.audio.reset_document();
                     self.graph.reset_document();
                     self.slot_color.reset_document();
                     self.weight_blocked = None;
@@ -720,10 +729,13 @@ impl Editor {
         self.cancel_gesture();
         let path = match &self.project_path {
             Some(path) => Some(path.clone()),
-            None => rfd::FileDialog::new()
-                .set_file_name("my-character.peachy")
-                .add_filter("Peachy project", &["peachy"])
-                .save_file(),
+            None => {
+                self.pause_audio_for_modal();
+                rfd::FileDialog::new()
+                    .set_file_name("my-character.peachy")
+                    .add_filter("Peachy project", &["peachy"])
+                    .save_file()
+            }
         };
         if let Some(mut path) = path {
             path.set_extension("peachy");
@@ -746,6 +758,7 @@ impl Editor {
 
     fn export(&mut self) {
         self.cancel_gesture();
+        self.pause_audio_for_modal();
         if let Some(folder) = rfd::FileDialog::new()
             .set_title("Choose parent folder for a new Spine export")
             .pick_folder()
@@ -785,6 +798,7 @@ impl Editor {
         self.reconcile_slot_color_input(&ctx);
         self.shortcuts(&ctx);
         self.advance_preview(&ctx);
+        self.advance_audio(&ctx);
         self.observe_timeline_input(&ctx);
         self.reconcile_selection();
         if self.playing {
@@ -912,6 +926,7 @@ impl Editor {
             });
         self.finish_idle_transactions(&ctx);
         self.observe_preview_focus(&ctx);
+        self.observe_audio_focus(&ctx);
         self.observe_graph_focus(&ctx);
         self.observe_slot_color_focus(&ctx);
         if let Some(error) = self.error.clone() {
@@ -977,6 +992,7 @@ impl Editor {
                 report["compactTimeline"] = self.timeline_view_diagnostic();
                 report["ghosting"] = self.ghosting_diagnostic();
                 report["preview"] = self.preview_diagnostic();
+                report["audio"] = self.audio_diagnostic();
                 report["graph"] = self.graph_diagnostic();
                 report["slotColor"] = self.slot_color_diagnostic();
                 report["playbackSpeed"] = self.playback_speed.into();

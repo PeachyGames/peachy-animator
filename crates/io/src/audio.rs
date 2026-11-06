@@ -77,14 +77,16 @@ pub fn decode_wav(bytes: Vec<u8>) -> Result<WavClip, String> {
         }
         match &bytes[offset..offset + 4] {
             b"fmt " => {
-                if format.replace(start..stop).is_some() {
+                if format.is_some() {
                     return Err("Multiple WAV format chunks are not supported".into());
                 }
+                format = Some(start..stop);
             }
             b"data" => {
-                if data.replace(start..stop).is_some() {
+                if data.is_some() {
                     return Err("Multiple WAV data chunks are not supported".into());
                 }
+                data = Some(start..stop);
             }
             _ => {} // Metadata remains unchanged in the retained byte snapshot.
         }
