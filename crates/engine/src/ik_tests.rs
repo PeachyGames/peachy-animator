@@ -63,6 +63,25 @@ fn constraint() -> IkConstraint {
 }
 
 #[test]
+fn evaluated_draw_axes_use_the_supplied_world_without_recomposing_authored_rotation() {
+    let local = Transform::default();
+    let parent = Affine::from_transform(local);
+    let world = Affine::from_transform(Transform {
+        rotation: 90.,
+        ..local
+    });
+    for tool in [TransformTool::Scale, TransformTool::Shear] {
+        let axes = transform_axes_from_world(local, parent, world, Axes::World, tool);
+        assert!(axes[0][0].abs() < 0.0001 && (axes[0][1] - 1.).abs() < 0.0001);
+        assert!((axes[1][0] + 1.).abs() < 0.0001 && axes[1][1].abs() < 0.0001);
+    }
+    assert_eq!(
+        transform_axes_from_world(local, parent, world, Axes::World, TransformTool::Translate),
+        [[1., 0.], [0., 1.]]
+    );
+}
+
+#[test]
 fn native6_requires_strict_constraint_and_setup_data() {
     let mut document = rig();
     document.constraints.push(Constraint::Ik(constraint()));
