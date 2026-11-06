@@ -1,7 +1,6 @@
 use super::*;
 
-const WEIGHT_EDIT_HINT: &str =
-    "Editing weighted vertices and topology requires weight tools, which are not implemented yet.";
+const WEIGHT_EDIT_HINT: &str = "Use Weights [G] to manage bindings. Weighted vertex transforms and topology editing are not available yet.";
 
 impl Editor {
     pub(super) fn enter_mesh_tool(&mut self) {
