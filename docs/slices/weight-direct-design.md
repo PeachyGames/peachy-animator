@@ -1,8 +1,9 @@
 # Additional binding and single-bone Direct weights
 
-Status: proposed bounded core contract for review. No implementation or UI parity
-is claimed here. Native v4 remains unchanged. The existing initial single-bone
-Bind and Remove-all commands remain separate operations.
+Status: approved bounded core design; engine implementation is authorized. Native
+v4 remains unchanged. The existing initial single-bone Bind and Remove-all commands
+remain separate operations. This approval does not establish UI parity or resolve
+the observation gates listed below.
 
 ## Public evidence
 
@@ -31,7 +32,7 @@ corresponding thread pages. No proprietary implementation is a reference. Exact
 4.3 UI placement, gesture behavior and remaining edge cases need separate native
 observation and acceptance.
 
-## Proposed serializable commands
+## Approved serializable commands
 
 Extend the existing strict `Command` enum with:
 
@@ -56,7 +57,7 @@ with exactly one transform per document bone. Unknown command, pose and transfor
 fields remain errors. Both commands address an exact skin/slot/placeholder, without
 implicit fallback resolution or a cached bone target.
 
-Proposed thin Session wrappers:
+Approved thin Session wrappers:
 
 ```rust
 add_mesh_bone_binding(attachment, bone, target: EditTarget) -> Result<(), String>
@@ -69,11 +70,11 @@ Animate uses the actual sampled and pending Session locals at the supplied finit
 nonnegative time, including fractional times and times beyond the current end.
 They neither snap the bind pose to frames nor key/discard pending edits.
 
-The Direct pose field is a proposed safety boundary, not a documented Spine data
+The Direct pose field is an approved safety boundary, not a documented Spine data
 format requirement. Direct's weight arithmetic needs no matrices. The captured
 pose lets the pure command reject a newly nonfinite selected world vertex under
 our f32 evaluator. It is not used to rebind or compensate positions. This field
-and the exact API names require coordinator approval before implementation.
+and the exact API names are approved for this limited engine implementation.
 
 ## Add a genuinely new bone at zero weight
 
@@ -89,6 +90,12 @@ be each mesh vertex evaluated by the existing weighted evaluator. Build:
 new_position[v] = inverse(W[new_bone]) * P[v]
 new_entry[v] = { bone: new_bone, position: new_position[v], weight: 0 }
 ```
+
+The inverse-position choice is our approved mathematical policy for initializing
+a usable zero binding. The staff answer establishes the new zero weight, not an
+observation of how Spine stores that new entry's bind position. Likewise the
+rejection rules below are approved limits, not claims that Spine rejects every
+same input.
 
 Append exactly one new entry to each logical vertex. Preserve all existing entries
 bit for bit, including positions, positive/non-unit weights, zeros, repeated bones
@@ -185,7 +192,7 @@ rules; no new bitwise history comparison is proposed.
 
 For a normalized mesh at the pose used to add B, both bones initially agree on the
 vertex position within the shared binding tolerance. This is a mathematical
-consequence of the proposed bind-position calculation, not evidence for every
+consequence of the approved bind-position calculation, not evidence for every
 Spine edge case. Non-unit imported totals and already different old bind positions
 can move when Direct explicitly normalizes the selected vertex.
 
@@ -240,4 +247,4 @@ Sparse existing-bone filling, zero-recipient redistribution, locks, simultaneous
 multi-bone Direct, multi-vertex UI behavior, per-bone Remove and Update bindings are
 observation gates. Auto, brush painting, Smooth, Prune, Weld, Swap and deform keys
 remain outside this bounded slice. Do not infer an equal-share fallback, silently
-normalize imports or advertise those tools from the two proposed commands.
+normalize imports or advertise those tools from the two approved commands.
