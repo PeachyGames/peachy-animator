@@ -1208,3 +1208,43 @@ caching for space. The owned editor is verified exited, temporary localhost
 GUI authorization/command directories are removed, no private key is written,
 and no browser is launched. Multi-point, Rotate/Scale, weighted/Animate soft
 transforms and exact installed-editor comparison remain gaps.
+
+
+## Independent Preview — November 6, 2026
+
+The final source passes formatting, **359 workspace Rust tests** (including
+**145 desktop** and **150 engine** tests), all-targets Clippy with warnings denied,
+the workspace build and seven-crate architecture guard. Hosted CI was not run.
+Seven Preview checks exercise independent clip/skin/seek/transport, speed/loop
+boundaries, checked weighted/static-IK keyed poses excluding pending edits,
+localized evaluation failure/recovery, hide/F9/Setup/focus/Open lifecycle,
+actual canvas pan/zoom and shortcut isolation, minimum layout and empty/extreme
+native contexts. Main document/pose/selection/clip/time/history are compared.
+The checked evaluator, IK solver, sampling, transport and Session sources are
+byte-identical to the verified Mesh Tools checkpoint; its external public-API
+runtime evidence remains applicable. Projection/rendering are checked separately.
+
+The initial layout clipped the canvas and overflowed Speed. Four compact rows now
+leave a100-pixel canvas even in the minimum/default dock. A fixture-index error
+was corrected to select the actual appended alternate clip. Escape handling also
+needed the actual end-frame focus owner because egui clears focus before the
+shortcut pass; its regression now confirms main selection stays unchanged.
+
+The [native capture](preview-view-editor.png) shows a checked keyed wave inside
+Preview while the main viewport remains in Setup. A normal on-screen window,
+exact owned-PID foreground, loaded original artwork and all controls/canvas
+inside the panel are verified. This render-only binary differs by one initial
+open-Preview call; final source is restored byte-for-byte and the app rebuilt
+without that call. Native click/typed-value acceptance remains **pending**;
+no installed-editor visual/interaction equivalence is claimed. See
+[evidence](evidence/preview-view.json).
+
+The clean integration baseline is `dfa4f25` (full hash retained in the backup).
+Source/status/diff, lane files, initial failures and final checks, native scripts,
+capture, hashes and cleanup are retained at
+`../.local-backups/peachy-preview-20261106T183406Z-589208/`.
+Rollback: revert the Preview integration commit, then `322c260` and `1d886d7`,
+preserving unrelated later work. The owned editor is verified exited; temporary
+local GUI authorization/command directory are removed, no private key is written,
+and no browser is launched. Mixing/layering and exact installed-editor parity
+remain gaps; no document format or export timing changes are part of Preview.

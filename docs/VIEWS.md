@@ -1,8 +1,8 @@
 # Views audit and implemented scope
 
-Implementation progress: **11 of 15 views implemented**. The latest completed
-view is **Mesh Tools**. Playback, Ghosting, Timeline and Mesh Tools have working
-controls within the explicit scope below; four views still need implementation.
+Implementation progress: **12 of 15 views implemented**. The latest completed
+view is **Preview**. The implemented views have working controls within the
+explicit scope below; three views still need implementation.
 
 The old selector contained only **Tree, Dopesheet and Weights** because those were
 the only implemented panels. It was not an installation, license or rendering
@@ -25,16 +25,16 @@ presenting empty panels as working tools.
 | Metrics | New counts for bones, constraints, slots, all attachments, visible attachments, visible vertices and triangles. Animate additionally shows native scalar-track and key counts. |
 | Outline | New clean secondary display of the current evaluated pose, including pending unkeyed edits and static IK. Fit, right/middle drag pan, wheel zoom, and click to center the main viewport. |
 | Playback | New Animate panel with session-only Speed (1–200% and percentage presets), shared forward/backward transport and Loop, frame/key navigation and a read-only Timeline FPS. Works with Dopesheet closed. FPS retiming, Stepped and Interpolated overrides remain unimplemented. |
-| Preview | Unimplemented: independent playback, tracks and animation mixing. Outline deliberately follows the current pose. |
+| Preview | New independent keyed-pose animation/skin display, own forward/reverse clock, Loop, Time, Speed, Fit/Bones, pan and zoom. Works during Setup and excludes pending unkeyed edits. Single track; mixing and multiple tracks remain pending. |
 | Skins | New searchable named-skin list. Click activates, right-click selects Tree properties, Clear skin uses shared default attachments. Single active skin only. |
 | Slot Color | Unimplemented: slot-color model and timelines. |
 | Timeline | New compact Animate ruler below the viewport. Shared cursor/transport/Loop, exact all-track key markers, decimal frame entry, snapped or Shift-subframe scrubbing, wheel/slider zoom, right-drag pan and Zoom Keys. Works with Dopesheet closed. |
 | Tree | Existing typed outline, filters, activation dots and contextual properties. The Slots filter shows draw order; Spine has no separate Slots view in this inventory. |
 | Weights | Existing bounded Bind/Remove all/Add binding/Direct workflow; still no brush, Update, locks or multi-vertex editing. |
 
-Four views remain unimplemented: **Audio, Graph, Preview and Slot Color**.
+Three views remain unimplemented: **Audio, Graph and Slot Color**.
 
-Animations, Ghosting, Mesh Tools, Metrics, Outline, Playback, Skins and Weights use a resizable tabbed panel in the right rail.
+Animations, Ghosting, Mesh Tools, Metrics, Outline, Playback, Preview, Skins and Weights use a resizable tabbed panel in the right rail.
 With the Tree closed, they use that rail's full height. Opening an already open
 entry focuses its tab. Individual close buttons are present on these views, Tree
 and Dopesheet; they reopen from Views. F9 stores/restores all view visibility,
@@ -96,6 +96,28 @@ derived white mask; original image pixels and files are unchanged. A request ove
 layer, leaving the current pose usable. Current controls use reaches up to 60
 frames and steps down to 0.25 frames. Motion Vectors and Silhouette/Xray outlines
 remain pending; the implemented Images and Solid modes are functional rendering.
+
+Preview chooses its own animation and skin and evaluates committed keys through
+the same checked region/mesh/static-IK engine. It does not display pending unkeyed
+poses or change the main animation, skin, cursor, transport, selection or history.
+This makes it useful while editing Setup, when the main viewport still shows Setup.
+If the main transport is playing, it continues on its own clock.
+
+Preview has independent forward/reverse play, Start/End, Loop, decimal Time,
+1–200% Speed, a seek slider, Fit and Bones. Right/middle drag pans; wheel zooms.
+Its focused controls own transport keys and leave main key clipboard/Delete/nudges
+alone; text keeps its own Undo. Escape pauses Preview and releases its focus.
+Closing, hiding, changing tabs, losing app focus or opening a modal pauses it;
+mode changes retain its availability. Successful Open resets its clip/skin/time
+and view, stops playback and replaces input IDs while retaining Speed/Loop/Bones.
+Errors stop only Preview and are shown inside its canvas.
+
+The current Preview is one track with instantaneous clip changes. Mixing,
+multiple tracks, additive/alpha/hold-previous controls, automatic play-current and
+hide-controls settings remain unimplemented. Loop affects the current clip;
+it does not claim Spine's next-entry Repeat semantics. Speed range and preview
+shortcut routing are bounded local policy. Preferences stay outside Save/export,
+and free docking and exact installed-editor parity remain pending.
 
 Mesh Tools uses **Size** as a world-pixel radius around the one explicitly selected
 unweighted mesh vertex. Zero affects that vertex alone. **Feather** defines the
@@ -188,3 +210,6 @@ checks are recorded in [Timeline evidence](evidence/timeline-view.json).
 
 Mesh Tools geometry, editor interaction checks and native acceptance limits are
 recorded in [Mesh Tools evidence](evidence/mesh-tools.json).
+
+Independent Preview rendering, interaction checks and native acceptance limits
+are recorded in [Preview evidence](evidence/preview-view.json).

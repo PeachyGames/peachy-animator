@@ -20,6 +20,7 @@ pub(super) struct PreviewView {
     show_bones: bool,
     error: Option<String>,
     controls: Vec<egui::Id>,
+    owned_focus: bool,
     epoch: u64,
 }
 
@@ -40,6 +41,7 @@ impl Default for PreviewView {
             show_bones: false,
             error: None,
             controls: Vec::new(),
+            owned_focus: false,
             epoch: 0,
         }
     }
@@ -58,6 +60,7 @@ impl PreviewView {
         self.fit = true;
         self.error = None;
         self.controls.clear();
+        self.owned_focus = false;
         self.epoch = self.epoch.wrapping_add(1);
     }
 
@@ -202,6 +205,7 @@ impl Editor {
             || egui::Popup::is_any_open(ctx)
         {
             self.preview.playing = false;
+            self.preview.owned_focus = false;
             if let Some(id) = ctx.memory(|memory| memory.focused())
                 && self.preview.controls.contains(&id)
             {
@@ -222,7 +226,10 @@ impl Editor {
             return false;
         }
         let focused = ctx.memory(|memory| memory.focused());
-        if !focused.is_some_and(|id| self.preview.controls.contains(&id)) {
+        let owned_escape = focused.is_none()
+            && self.preview.owned_focus
+            && ctx.input(|input| input.key_pressed(egui::Key::Escape));
+        if !focused.is_some_and(|id| self.preview.controls.contains(&id)) && !owned_escape {
             return false;
         }
         if ctx.input_mut(|input| input.consume_key(egui::Modifiers::NONE, egui::Key::F9)) {
@@ -232,6 +239,7 @@ impl Editor {
         }
         if ctx.input_mut(|input| input.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
             self.preview.playing = false;
+            self.preview.owned_focus = false;
             if let Some(id) = focused {
                 ctx.memory_mut(|memory| memory.surrender_focus(id));
             }
@@ -292,6 +300,16 @@ impl Editor {
         // Arrows remain with the focused numeric/slider widget. Canvas focus
         // blocks main bone/key nudges without inventing a second editing target.
         true
+    }
+
+    /// Capture the final owner after every pane has had a chance to change focus.
+    /// egui clears focus on Escape before the next application's shortcut pass.
+    pub(super) fn observe_preview_focus(&mut self, ctx: &egui::Context) {
+        self.preview.owned_focus = self.preview_visible()
+            && ctx.input(|input| input.focused)
+            && ctx
+                .memory(|memory| memory.focused())
+                .is_some_and(|id| self.preview.controls.contains(&id));
     }
 
     fn preview_control(&mut self, name: &str, response: &egui::Response) {

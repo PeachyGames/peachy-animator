@@ -217,6 +217,9 @@ impl Editor {
         {
             return;
         }
+        if self.preview_shortcuts(ctx) {
+            return;
+        }
         // Buttons and other navigable controls request keyboard input too. Global
         // file/history actions remain available there, while text owns its undo.
         if !ctx.text_edit_focused() {

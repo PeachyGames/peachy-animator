@@ -639,3 +639,31 @@ other attachment vertex types and deform keys are separate gaps. Linear falloff,
 endpoint policy, slider limits and exact installed-editor interaction equivalence
 have not been measured in installed Spine. Native input acceptance and rendering
 evidence are reported separately in [Mesh Tools evidence](evidence/mesh-tools.json).
+
+
+## Independent Preview — November 6, 2026
+
+The public [Preview guide](https://en.esotericsoftware.com/spine-preview) describes
+an animation display independent of the authoring viewport, useful during Setup,
+with pan/zoom and per-track playback. **Views → Preview** now provides a compact
+right-rail panel with separate animation/skin selectors, directional transport,
+Start/End, Loop/Fit/Bones, decimal seconds, numeric percentage Speed and a seek
+slider above its own image canvas. The four compact control rows leave at least
+100 pixels for the image at the default/minimum dock; the initial taller layout
+clipped it and was corrected before acceptance.
+
+The view evaluates keyed regions, meshes and static IK without applying Session's
+pending pose. Its clock and view changes preserve main authoring/selection/history.
+Focus routes Preview transport keys locally and keeps main clipboard/Delete/nudge
+actions out. Escape pauses and releases Preview focus. egui clears focus before
+its shortcut pass on Escape, so the shell remembers the actual owner after all
+panes render; this avoids accidentally clearing main selection. Hidden/inactive,
+unfocused or modal Preview pauses. Setup remains supported; Open resets its
+context while retaining Speed/Loop/Bones, with fresh numeric control IDs.
+
+One track and instantaneous animation switches are explicit limits. Mixing,
+multiple tracks, additive/alpha/hold-previous, follow-current and hide-controls are
+pending. Current-clip Loop differs from next-entry Repeat. This is a functional
+bounded Preview, not full installed-editor parity. The [evidence](evidence/preview-view.json)
+separates egui interaction tests and actual native rendering from native-input
+acceptance, which remains pending.

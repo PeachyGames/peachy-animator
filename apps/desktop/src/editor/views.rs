@@ -10,6 +10,7 @@ pub(super) enum DockView {
     Metrics,
     Outline,
     Playback,
+    Preview,
     Skins,
     Weights,
 }
@@ -19,13 +20,14 @@ pub(super) enum DockView {
 mod tests;
 
 impl DockView {
-    const ALL: [Self; 8] = [
+    const ALL: [Self; 9] = [
         Self::Animations,
         Self::Ghosting,
         Self::MeshTools,
         Self::Metrics,
         Self::Outline,
         Self::Playback,
+        Self::Preview,
         Self::Skins,
         Self::Weights,
     ];
@@ -37,6 +39,7 @@ impl DockView {
             Self::Metrics => "Metrics",
             Self::Outline => "Outline",
             Self::Playback => "Playback",
+            Self::Preview => "Preview",
             Self::Skins => "Skins",
             Self::Weights => "Weights",
         }
@@ -49,6 +52,7 @@ impl DockView {
             Self::Metrics => Icon::Metrics,
             Self::Outline => Icon::Outline,
             Self::Playback => Icon::Playback,
+            Self::Preview => Icon::Preview,
             Self::Skins => Icon::Skins,
             Self::Weights => Icon::Weights,
         }
@@ -94,7 +98,7 @@ impl ViewTabs {
 }
 
 /// The public guide's complete view inventory. Unsupported entries remain discoverable.
-const UNIMPLEMENTED: [(&str, &str); 4] = [
+const UNIMPLEMENTED: [(&str, &str); 3] = [
     (
         "Audio",
         "Audio assets, waveform display and playback are not implemented.",
@@ -102,10 +106,6 @@ const UNIMPLEMENTED: [(&str, &str); 4] = [
     (
         "Graph",
         "The editable value graph is not implemented. Use Dopesheet for supported key timing and curves.",
-    ),
-    (
-        "Preview",
-        "Independent animation playback and track mixing are not implemented. Outline follows the current pose.",
     ),
     (
         "Slot Color",
@@ -151,6 +151,14 @@ impl Editor {
         self.view_tabs.active = view;
     }
 
+    pub(super) fn open_preview_view(&mut self) {
+        self.open_dock_view(DockView::Preview);
+    }
+
+    pub(super) fn preview_visible(&self) -> bool {
+        self.dock_view_open(DockView::Preview) && self.view_tabs.active == DockView::Preview
+    }
+
     pub(super) fn open_mesh_tools_view(&mut self) {
         self.open_dock_view(DockView::MeshTools);
     }
@@ -176,7 +184,11 @@ impl Editor {
                 .on_disabled_hover_text("Available in Animate mode.");
             self.record_target(&format!("view{}", view.label()), response.rect);
             if response.clicked() {
-                self.open_dock_view(view);
+                if view == DockView::Preview {
+                    self.open_preview_view();
+                } else {
+                    self.open_dock_view(view);
+                }
                 ui.close();
             }
         }
@@ -314,6 +326,7 @@ impl Editor {
                     DockView::MeshTools => self.mesh_tools_panel(ui),
                     DockView::Metrics => self.metrics_panel(ui),
                     DockView::Playback => self.playback_panel(ui),
+                    DockView::Preview => self.preview_panel(ui),
                     DockView::Skins => self.skins_panel(ui),
                     DockView::Weights => self.weights_panel(ui),
                     DockView::Outline => unreachable!(),

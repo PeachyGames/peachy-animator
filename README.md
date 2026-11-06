@@ -100,6 +100,10 @@ in its panel or with **Ghosts** above the viewport.
 
 ![Ghosting in the native editor](docs/ghosting-editor.png)
 
+**Views → Preview** plays a keyed animation and skin on an independent clock while
+you edit Setup or another pose. It has its own transport, speed, pan/zoom and Fit;
+pending unkeyed edits stay in the main editor. Mixing and multiple tracks remain pending.
+
 **Views → Mesh Tools** provides Size, Feather and Hull vertices for soft selection
 while dragging or nudging unweighted Setup vertices. Neighbors use a linear falloff;
 a drag is one Undo step. Weighted soft selection and Rotate/Scale remain pending.

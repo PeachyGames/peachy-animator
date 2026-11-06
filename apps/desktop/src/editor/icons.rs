@@ -35,6 +35,7 @@ pub(super) enum Icon {
     Metrics,
     Outline,
     Playback,
+    Preview,
     Weights,
     IkConstraint,
     ChooseBone,
@@ -413,6 +414,15 @@ fn paint(ui: &Ui, rect: Rect, icon: Icon, response: &Response) {
                 ],
                 green,
             );
+        }
+        Icon::Preview => {
+            box_at([1., 2.], [12., 12.], ink);
+            box_at([4., 5.], [15., 15.], ink);
+            painter.add(Shape::convex_polygon(
+                vec![p(8., 7.), p(12., 10.), p(8., 13.)],
+                warm,
+                Stroke::NONE,
+            ));
         }
         Icon::Playback => {
             painter.add(Shape::convex_polygon(

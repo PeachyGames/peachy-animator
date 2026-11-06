@@ -1,0 +1,89 @@
+{
+  "date": "2026-11-06",
+  "view": "Preview",
+  "baseline": "dfa4f25512b6c851445c5c21c802c7ac3232f8fd",
+  "startingWorktreeClean": true,
+  "sourceCommits": [
+    "1d886d7",
+    "322c260"
+  ],
+  "backup": "../../../.local-backups/peachy-preview-20261106T183406Z-589208/",
+  "inventory": {
+    "implemented": 12,
+    "total": 15,
+    "remaining": [
+      "Audio",
+      "Graph",
+      "Slot Color"
+    ]
+  },
+  "checks": {
+    "format": "passed",
+    "workspaceTests": 359,
+    "desktopTests": 145,
+    "engineTests": 150,
+    "newPreviewTests": 7,
+    "clippyAllTargetsWarningsDenied": "passed",
+    "workspaceBuild": "passed",
+    "architectureCrates": 7,
+    "hostedCI": "not run"
+  },
+  "behavior": [
+    "Independent keyed animation/skin/time/playback/speed/Loop; main document, pending pose, clip, cursor, selection, transport and history unchanged by Preview controls",
+    "Checked regions, weighted meshes and static IK use committed data; no pending-pose overrides",
+    "Own time scrubbing, percentage speed, forward/reverse boundaries, Fit/Bones/pan/wheel zoom",
+    "Own focus blocks main clipboard/Delete/nudges/transport; text retains Undo and file actions remain available",
+    "End-frame focus ownership handles Escape before egui auto-blur can retarget main selection",
+    "Hide/inactive/focus/modal pauses; Setup supported; Open resets context/input IDs and retains appearance preferences",
+    "Localized errors, minimum100px canvas with all compact controls, empty contexts and extreme finite clips"
+  ],
+  "renderReviewFixes": [
+    "Initial tall controls clipped canvas and Speed overflowed; compact four-row layout corrected",
+    "Initial test selected original idle instead of appended alternate clip; corrected exact clip index",
+    "Escape cleared egui focus before routing; actual final owner is retained to pause Preview without main deselection"
+  ],
+  "nativeRender": {
+    "normalOnScreenWindow": true,
+    "loadedOriginalArtwork": true,
+    "previewRendered": true,
+    "independentKeyedPoseInSetup": true,
+    "controlsAndCanvasWithinPanel": true,
+    "exactPidForegroundVerified": true,
+    "diagnosticStartupOnly": true,
+    "nativeInputAccepted": false,
+    "finalCapture": "editor-1793992710735853000.json",
+    "pid": 30387,
+    "capture": "../preview-view-editor.png",
+    "sourceDifference": "One temporary startup open_preview_view() call; removed byte-for-byte before rebuilding final application."
+  },
+  "nativeInput": {
+    "accepted": false,
+    "reason": "Render-only diagnostic; no complete native click/typed-value workflow. Prior Timeline mouse-delivery failures retained separately.",
+    "earlierEvidence": "timeline-view.json"
+  },
+  "evaluatorUnchangedSinceVerifiedMeshToolsCheckpoint": [
+    "crates/engine/src/scene.rs",
+    "crates/engine/src/pose.rs",
+    "crates/engine/src/ik.rs",
+    "crates/engine/src/ik_solver.rs",
+    "crates/engine/src/playback.rs",
+    "crates/engine/src/session.rs"
+  ],
+  "existingRuntimeEvidence": "mesh-tools.json",
+  "finalSourceRestoredExactly": true,
+  "productionSourceSHA256": "f16ad5a13a93dd43b81c8a84da9780183bcaecb896bba267a55e9f0ed2013097",
+  "productionBinarySHA256": "9a0cf7d7dbb395374c16c803df9bf50499d23f26531827122a98a8f5a49f3c55",
+  "diagnosticBinarySHA256": "ecb57c4a9854e6f7cdc6716897229016b66e860ebbe9c156399609ec5b4d57c5",
+  "cleanup": {
+    "pid": 30387,
+    "taskOwnedEditorExited": true,
+    "temporaryAuthorizationExists": false,
+    "browserLaunched": false
+  },
+  "limitations": [
+    "Single track; immediate switches; no mixing/multitrack/additive/alpha/hold-previous",
+    "Loop affects current entry; next-entry Repeat and follow-current/hide-controls settings pending",
+    "Session-only view preferences and no free docking",
+    "Native input and exact installed-editor parity remain pending"
+  ]
+}

@@ -459,3 +459,14 @@ translation use general mathematics. The linear outer-falloff formula, one-point
 selection, exact radius endpoints and bounded slider range are explicit local
 policies. No proprietary source or UI assets were inspected or copied. The
 external public-API oracle remains separately installed and unredistributed.
+
+
+### Independent Preview — November 6, 2026
+
+The public [Preview guide](https://en.esotericsoftware.com/spine-preview), read
+November 6, describes a separate runtime-like animation display useful during Setup,
+with pan/zoom, speed, tracks and mixing. Our bounded single-track view reuses the
+original checked evaluator and transport, with independently written egui controls,
+projection math and icon. It does not implement track mixing or copy runtime/editor
+implementation or UI assets. Loop-current behavior, percentage limits and shortcut
+ownership are explicit local policies. All captures use original artwork.

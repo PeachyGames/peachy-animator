@@ -11,6 +11,7 @@ mod mesh;
 mod mesh_tools;
 mod panels;
 mod playback;
+mod preview;
 mod properties;
 mod rename;
 mod scene_view;
@@ -118,6 +119,7 @@ pub(crate) struct Editor {
     hidden_views: Option<ViewVisibility>,
     view_tabs: views::ViewTabs,
     ghosting: ghosting::GhostingState,
+    preview: preview::PreviewView,
     weights: weights::WeightsState,
     weight_edit: Option<weight_direct::WeightEdit>,
     weight_blocked: Option<egui::Id>,
@@ -240,6 +242,7 @@ impl Editor {
             hidden_views: None,
             view_tabs: Default::default(),
             ghosting: Default::default(),
+            preview: Default::default(),
             drag: None,
             transform_blocked: false,
             transform_blocked_control: None,
@@ -653,6 +656,7 @@ impl Editor {
                     self.view_tabs.reset_document();
                     self.timeline_view.reset_document();
                     self.ghosting.reset_document();
+                    self.preview.reset_document();
                     self.weight_blocked = None;
                     self.weight_controls = None;
                     self.ik_edit = None;
@@ -750,6 +754,7 @@ impl Editor {
         self.reconcile_selection();
         self.reconcile_timeline_input(&ctx);
         self.shortcuts(&ctx);
+        self.advance_preview(&ctx);
         self.observe_timeline_input(&ctx);
         self.reconcile_selection();
         if self.playing {
@@ -876,6 +881,7 @@ impl Editor {
                 self.canvas(ui);
             });
         self.finish_idle_transactions(&ctx);
+        self.observe_preview_focus(&ctx);
         if let Some(error) = self.error.clone() {
             egui::Window::new("Project needs attention")
                 .collapsible(false)
@@ -938,6 +944,7 @@ impl Editor {
                 report["views"] = self.views_diagnostic();
                 report["compactTimeline"] = self.timeline_view_diagnostic();
                 report["ghosting"] = self.ghosting_diagnostic();
+                report["preview"] = self.preview_diagnostic();
                 report["playbackSpeed"] = self.playback_speed.into();
                 report["animationEnd"] = self.animation_end().into();
                 report["weightedMeshCount"] = self.weighted_mesh_count().into();
