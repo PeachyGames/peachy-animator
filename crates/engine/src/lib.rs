@@ -12,7 +12,7 @@ mod timeline;
 mod tools;
 
 pub use authoring::{KeyState, PoseEdits, transform_group};
-pub use commands::{Command, EditTarget, apply_command};
+pub use commands::{Command, EditTarget, apply_command, keyframe_at};
 pub use mesh::{region_to_mesh, region_vertices};
 pub use picking::{attachment_bounds, pick_attachment};
 pub use playback::{

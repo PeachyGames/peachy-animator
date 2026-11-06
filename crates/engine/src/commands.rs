@@ -328,6 +328,14 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
     Ok(())
 }
 
+/// Query an exact key first, or one unambiguous nearby key without changing its source time.
+pub fn keyframe_at(keys: &[Keyframe], time: f32) -> Result<Option<Keyframe>, String> {
+    if !time.is_finite() || time < 0.0 {
+        return Err("Key time must be finite and nonnegative".into());
+    }
+    key_index(keys, time).map(|index| index.map(|index| keys[index]))
+}
+
 /// Exact identities win; tolerance is only safe for one unambiguous nearby key.
 fn key_index(keys: &[Keyframe], time: f32) -> Result<Option<usize>, String> {
     if let Some(index) = keys.iter().position(|key| key.time == time) {

@@ -1,4 +1,6 @@
-use crate::{Command, EditTarget, KeyClipboard, Session, TimelineKey, apply_command, copy_keys};
+use crate::{
+    Command, EditTarget, KeyClipboard, Session, TimelineKey, apply_command, copy_keys, keyframe_at,
+};
 use peachy_document::*;
 use std::collections::BTreeMap;
 
@@ -592,6 +594,15 @@ fn later_pose_edits_and_set_key_choose_exact_neighbors_and_reject_ambiguous_time
     let curve = Curve::Bezier([0.2, -0.1, 0.8, 1.2]);
     before.animations[0].tracks[0].keys =
         vec![key(0.499995, 1., Curve::Stepped), key(0.5, 2., curve)];
+    let track = keys(&before, 0, 0, Property::Rotation);
+    assert_eq!(keyframe_at(track, 0.5).unwrap(), Some(track[1]));
+    assert!(keyframe_at(track, 0.4999975).is_err());
+    assert_eq!(keyframe_at(&track[1..], 0.500005).unwrap(), Some(track[1]));
+    assert_eq!(keyframe_at(track, 0.6).unwrap(), None);
+    for invalid in [-1., f32::NEG_INFINITY, f32::INFINITY, f32::NAN] {
+        assert!(keyframe_at(track, invalid).is_err());
+        assert!(keyframe_at(&[], invalid).is_err());
+    }
     let pose = || Command::SetPose {
         bone: 0,
         target: EditTarget::Animate {
