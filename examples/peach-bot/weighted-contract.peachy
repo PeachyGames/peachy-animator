@@ -1,5 +1,5 @@
 {
-  "format": 6,
+  "format": 7,
   "constraints": [],
   "name": "Weighted Transform Contract",
   "fps": 30,
@@ -217,71 +217,85 @@
   ],
   "slots": [
     {
+      "color": [255, 255, 255, 255],
       "name": "thigh.L",
       "bone": 9,
       "attachment": "thigh.L"
     },
     {
+      "color": [255, 255, 255, 255],
       "name": "shin.L",
       "bone": 10,
       "attachment": "shin.L"
     },
     {
+      "color": [255, 255, 255, 255],
       "name": "foot.L",
       "bone": 11,
       "attachment": "foot.L"
     },
     {
+      "color": [255, 255, 255, 255],
       "name": "thigh.R",
       "bone": 12,
       "attachment": "thigh.R"
     },
     {
+      "color": [255, 255, 255, 255],
       "name": "shin.R",
       "bone": 13,
       "attachment": "shin.R"
     },
     {
+      "color": [255, 255, 255, 255],
       "name": "foot.R",
       "bone": 14,
       "attachment": "foot.R"
     },
     {
+      "color": [255, 255, 255, 255],
       "name": "upper-arm.L",
       "bone": 3,
       "attachment": "upper-arm.L"
     },
     {
+      "color": [255, 255, 255, 255],
       "name": "forearm.L",
       "bone": 4,
       "attachment": "forearm.L"
     },
     {
+      "color": [255, 255, 255, 255],
       "name": "hand.L",
       "bone": 5,
       "attachment": "hand.L"
     },
     {
+      "color": [255, 255, 255, 255],
       "name": "body",
       "bone": 1,
       "attachment": "body"
     },
     {
+      "color": [255, 255, 255, 255],
       "name": "head",
       "bone": 2,
       "attachment": "head"
     },
     {
+      "color": [255, 255, 255, 255],
       "name": "upper-arm.R",
       "bone": 6,
       "attachment": "upper-arm.R"
     },
     {
+      "color": [255, 255, 255, 255],
       "name": "forearm.R",
       "bone": 7,
       "attachment": "forearm.R"
     },
     {
+      "color": [255, 255, 255, 255],
       "name": "hand.R",
       "bone": 8,
       "attachment": "hand.R"

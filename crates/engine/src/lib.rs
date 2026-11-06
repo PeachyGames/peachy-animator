@@ -62,6 +62,8 @@ mod scene_checks_tests;
 #[cfg(test)]
 mod shear_tests;
 #[cfg(test)]
+mod slot_color_tests;
+#[cfg(test)]
 mod tests;
 #[cfg(test)]
 mod timeline_tests;

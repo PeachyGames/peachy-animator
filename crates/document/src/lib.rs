@@ -4,7 +4,7 @@ use std::collections::{BTreeMap, BTreeSet};
 mod ik;
 pub use ik::{Constraint, IkConstraint, IkSetup};
 
-pub const FORMAT_VERSION: u32 = 6;
+pub const FORMAT_VERSION: u32 = 7;
 pub const KEY_TIME_EPSILON: f32 = 0.00001;
 pub fn same_key_time(a: f32, b: f32) -> bool {
     (a - b).abs() < KEY_TIME_EPSILON
@@ -121,6 +121,8 @@ pub struct Slot {
     pub name: String,
     pub bone: usize,
     pub attachment: Option<String>,
+    /// Setup tint in exact, unpremultiplied RGBA bytes. Required in native v7.
+    pub color: [u8; 4],
 }
 
 /// Slot name -> attachment placeholder -> attachment. Draw order is the slot vector.
