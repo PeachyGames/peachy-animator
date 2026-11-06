@@ -149,7 +149,11 @@ impl Editor {
                         .speed(0.25),
                 );
                 self.record_target("boneLength", response.rect);
+                if response.gained_focus() {
+                    self.cancel_weight_edit();
+                }
                 if response.drag_started() {
+                    self.cancel_weight_edit();
                     self.session.begin_transaction();
                 }
                 if response.changed() {

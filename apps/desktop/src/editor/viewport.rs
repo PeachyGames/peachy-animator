@@ -471,6 +471,7 @@ impl Editor {
                 if let Some(item) = picked {
                     self.select(item);
                 } else if self.tool == Tool::Weights {
+                    self.cancel_weight_edit();
                     self.weights.vertex = None;
                     self.weights.bone = None;
                 } else {

@@ -20,6 +20,7 @@ mod tree_model;
 use selection::{Folder, TreeItem};
 use tree_model::TreeState;
 mod viewport;
+mod weight_direct;
 mod weights;
 use eframe::egui::{self, Color32, FontId, Pos2, RichText, Sense, Stroke, Vec2, pos2, vec2};
 use peachy_document::*;
@@ -104,6 +105,9 @@ pub(crate) struct Editor {
     show_weights: bool,
     hidden_views: Option<ViewVisibility>,
     weights: weights::WeightsState,
+    weight_edit: Option<weight_direct::WeightEdit>,
+    weight_blocked: Option<egui::Id>,
+    weight_controls: Option<[egui::Id; 2]>,
     weights_handles: Vec<[f32; 2]>,
     drag: Option<TransformDrag>,
     mesh_vertex: usize,
@@ -220,6 +224,9 @@ impl Editor {
             show_dopesheet: true,
             show_weights: false,
             weights: Default::default(),
+            weight_edit: None,
+            weight_blocked: None,
+            weight_controls: None,
             weights_handles: Vec::new(),
             hidden_views: None,
             drag: None,
@@ -280,6 +287,7 @@ impl Editor {
     }
 
     fn dispatch(&mut self, command: Command) -> bool {
+        self.cancel_weight_edit();
         match self.session.dispatch(command) {
             Ok(()) => {
                 self.reconcile_selection();
@@ -366,6 +374,7 @@ impl Editor {
         mut local: Transform,
         properties: &[Property],
     ) {
+        self.cancel_weight_edit();
         if self.setup_mode && properties.contains(&Property::Rotation) {
             local.rotation = local.rotation.rem_euclid(360.);
         }
@@ -452,6 +461,7 @@ impl Editor {
         }
     }
     fn reconcile_selection(&mut self) {
+        self.reconcile_weight_edit();
         if self.key_drag.as_ref().is_some_and(|drag| {
             self.setup_mode
                 || !self.show_dopesheet
@@ -487,6 +497,10 @@ impl Editor {
     }
     fn undo(&mut self) {
         self.weights.bind = None;
+        if self.weight_edit.is_some() {
+            self.cancel_weight_edit();
+            return;
+        }
         if self.key_drag.is_some() {
             self.cancel_dopesheet_drag();
             return;
@@ -499,6 +513,10 @@ impl Editor {
     }
     fn redo(&mut self) {
         self.weights.bind = None;
+        if self.weight_edit.is_some() {
+            self.cancel_weight_edit();
+            return;
+        }
         if self.key_drag.is_some() {
             self.cancel_dopesheet_drag();
             return;
@@ -521,7 +539,7 @@ impl Editor {
     }
 
     fn open_project(&mut self, ctx: &egui::Context) {
-        self.cancel_dopesheet_drag();
+        self.cancel_gesture();
         if !self.confirm_discard() {
             return;
         }
@@ -547,6 +565,8 @@ impl Editor {
                     self.timeline_clipboard = None;
                     self.timeline_input = Default::default();
                     self.weights = Default::default();
+                    self.weight_blocked = None;
+                    self.weight_controls = None;
                     self.weights_handles.clear();
                     self.selection = Some(TreeItem::Skeleton);
                     self.animation = 0;
@@ -571,7 +591,7 @@ impl Editor {
     }
 
     fn save_project(&mut self) {
-        self.cancel_dopesheet_drag();
+        self.cancel_gesture();
         let path = match &self.project_path {
             Some(path) => Some(path.clone()),
             None => rfd::FileDialog::new()
@@ -599,7 +619,7 @@ impl Editor {
     }
 
     fn export(&mut self) {
-        self.cancel_dopesheet_drag();
+        self.cancel_gesture();
         if let Some(folder) = rfd::FileDialog::new()
             .set_title("Choose parent folder for a new Spine export")
             .pick_folder()
@@ -626,7 +646,7 @@ impl eframe::App for Editor {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let ctx = ui.ctx().clone();
         if !ctx.input(|input| input.focused) {
-            self.cancel_dopesheet_drag();
+            self.cancel_gesture();
         }
         self.capture_targets.clear();
         self.mesh_handles.clear();
@@ -750,9 +770,7 @@ impl eframe::App for Editor {
                     .show(ui, |ui| self.main_tools(ui));
                 self.canvas(ui);
             });
-        if !ctx.input(|i| i.pointer.any_down()) {
-            self.session.commit_transaction();
-        }
+        self.finish_idle_transactions(&ctx);
         if let Some(error) = self.error.clone() {
             egui::Window::new("Project needs attention")
                 .collapsible(false)
@@ -815,6 +833,7 @@ impl eframe::App for Editor {
                 report["animationEnd"] = self.animation_end().into();
                 report["weightedMeshCount"] = self.weighted_mesh_count().into();
                 report["weightsContext"] = self.weights_diagnostic();
+                report["weightsDirect"] = self.weight_direct_diagnostic();
                 report["meshInspection"] = self.mesh_inspection().unwrap_or_default();
                 report["displayExtent"] = self
                     .key_drag
