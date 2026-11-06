@@ -64,6 +64,7 @@ pub(super) fn read(
                     "stretch",
                     "scaleY",
                     "order",
+                    "skin",
                 ],
                 "IK constraint",
                 &mut issues,
@@ -105,7 +106,7 @@ pub(super) fn read(
                     context()
                 ));
             }
-            for field in ["compress", "stretch"] {
+            for field in ["compress", "stretch", "skin"] {
                 if entry.get(field).is_some_and(|v| v.as_bool() != Some(false)) {
                     return Err(format!("{}: {field} must be omitted or false", context()));
                 }
