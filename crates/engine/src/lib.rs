@@ -38,6 +38,8 @@ mod direct_weight_tests;
 #[cfg(test)]
 mod duration_tests;
 #[cfg(test)]
+mod pose_preview_tests;
+#[cfg(test)]
 mod tests;
 #[cfg(test)]
 mod timeline_tests;
