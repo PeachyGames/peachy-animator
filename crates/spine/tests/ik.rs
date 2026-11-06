@@ -106,12 +106,14 @@ fn neutral_advanced_fields_are_typed_and_nondefault_aliases_never_silently_disap
         ("compress", json!(false)),
         ("stretch", json!(false)),
         ("scaleY", json!("none")),
+        ("skin", json!(false)),
     ] {
         neutral["constraints"][0][field] = value;
     }
     let doc = import_json(&neutral, "Neutral").unwrap();
+    assert_eq!(doc, import_json(&fixture(), "Neutral").unwrap());
     let out = export_json(&doc).unwrap();
-    for field in ["softness", "compress", "stretch", "scaleY"] {
+    for field in ["softness", "compress", "stretch", "scaleY", "skin"] {
         assert!(out["constraints"][0].get(field).is_none());
     }
     for mix in [0, 1] {
@@ -129,7 +131,10 @@ fn neutral_advanced_fields_are_typed_and_nondefault_aliases_never_silently_disap
             ("uniform", json!(false)),
             ("scaleYMode", json!("none")),
             ("enabled", json!(true)),
-            ("skin", json!(false)),
+            ("skin", json!(true)),
+            ("skin", json!(0)),
+            ("skin", json!("false")),
+            ("skin", Value::Null),
             ("future", json!([])),
         ] {
             let mut bad_input = fixture();
