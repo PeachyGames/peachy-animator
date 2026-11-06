@@ -1,8 +1,9 @@
 # Normal IK: Phase A contract
 
-Status: proposed for internal approval, 2026-11-06. This document freezes a bounded
-data/evaluation slice before implementation. It does not claim implemented IK or
-interactive UI parity. Native v5 and the current application remain unchanged.
+Status: internally approved for implementation, 2026-11-06. Isolated core, format
+and desktop lanes are in progress. This contract does not claim accepted IK or
+interactive UI parity. The accepted main application remains native v5 until the
+combined native6 slice passes its integration gates.
 
 ## Scope and evidence
 
@@ -243,8 +244,8 @@ Caller migration is part of Phase A:
 - Canvas rendering, picking, bounds, fit, CLI pose and weight diagnostics consume
   the same checked Scene/evaluated result. Inspector-first errors must surface
   even before the canvas queries that frame.
-- CLI `pose` retains authored `locals` and adds an explicitly named
-  `appliedLocals` field. Bind/Direct acceptance helpers must request that applied
+- CLI `pose` adds explicitly named authored `locals` and solved `appliedLocals`
+  fields; the previous output contained world bones and attachments only. Bind/Direct acceptance helpers must request that applied
   snapshot; their old setup/held-key reconstruction is authored. A temporary FK
   snapshot document must not retain enabled constraints and solve it again.
   Until a helper has an explicit constrained-rig path, refuse those inputs

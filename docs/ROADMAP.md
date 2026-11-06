@@ -7,7 +7,9 @@ Spine runtime. Subsequent work should grow that working loop.
 1. **Spine UI parity.** Match Spine's layout, controls, terminology and conventions.
    The workspace and shortcut alignment is followed by a typed Tree, contextual
    selection, filters, activation dots, viewport picking and unkeyed/Auto Key posing.
-   Rotate/Translate/Scale and axis controls now follow the public reference.
+   Rotate/Translate/Scale and axis controls now follow the public reference. Bounded
+   bone Shear authoring is native-verified; exact empty-space/Shift and axes-display
+   comparison remains open.
    Selection history, single-item groups, reverse playback and key navigation are also available.
    Key retiming/duplication and focused clipboard actions are available. Next extend
    box selection, then Graph/view tabs and
@@ -15,7 +17,7 @@ Spine runtime. Subsequent work should grow that working loop.
 
 2. **Weight authoring and broader mesh editing.** Unweighted editing and weighted
    import/export, deterministic bone-driven evaluation and read-only influence
-   inspection now work through native v4. Initial one-bone Bind and Remove-all
+   inspection now work through native v5, retaining the v4 influence model. Initial one-bone Bind and Remove-all
    have shared commands, a G Weights view/tool and native acceptance. Additional
    zero bindings and one-vertex/bone Direct changes now have explicit shared
    commands and percentage controls. Preserve their separate validation gates and
@@ -32,9 +34,13 @@ Spine runtime. Subsequent work should grow that working loop.
 3. **Artwork and rig creation.** Import layered/loose images, create attachments,
    edit pivots and draw order, rename/delete/reparent with stable IDs. Add robust
    atlas import so artist exports can be reviewed without loose originals.
-4. **Constraint parity.** Begin with one- and two-bone IK, then transform/path
-   constraints and physics. Specify each through controlled fixtures and compare
-   observed outputs at boundaries as well as ordinary poses.
+4. **Constraint parity.** The approved [normal IK Phase A contract](slices/ik-design.md)
+   is in isolated implementation: static one-/two-bone constraints with animated
+   targets, authored/applied pose separation, strict native6 persistence and bounded
+   familiar Tree properties. IK keys/settings, dependent/transformed chains and
+   full interaction parity follow separately. Compare controlled boundaries and
+   ordinary poses before acceptance. Physics remains necessary on all 11 sampled
+   production rigs; transform/path constraints remain separate gaps.
 5. **Animation editing.** Exact selection, copy/paste and group retiming now work.
    [Key-derived duration](slices/key-derived-duration.md), empty clips and beyond-end
    authoring are now implemented. Next add broader selection, animation creation UI,
