@@ -334,7 +334,7 @@ fn contextual_edits_change_only_the_addressed_entity_and_undo_atomically() {
         session
             .dispatch(Command::SetRegionTransform {
                 attachment: head.clone(),
-                transform: Transform {
+                transform: RegionTransform {
                     x,
                     rotation: 25.,
                     ..Default::default()
@@ -381,7 +381,7 @@ fn contextual_edits_change_only_the_addressed_entity_and_undo_atomically() {
         },
         Command::SetRegionTransform {
             attachment: head.clone(),
-            transform: Transform {
+            transform: RegionTransform {
                 x: f32::INFINITY,
                 ..Default::default()
             },
@@ -394,7 +394,7 @@ fn contextual_edits_change_only_the_addressed_entity_and_undo_atomically() {
                 },
                 Command::SetRegionTransform {
                     attachment: hand(),
-                    transform: Transform::default(),
+                    transform: RegionTransform::default(),
                 },
                 Command::SetSlotAttachment {
                     slot: 99,
@@ -841,6 +841,8 @@ fn tool_coordinates_roundtrip_under_rotated_reflected_nonuniform_parents() {
         rotation: 410.,
         scale_x: -1.3,
         scale_y: 0.7,
+        shear_x: 0.0,
+        shear_y: 0.0,
     };
     for parent in [
         Transform::default(),
@@ -850,6 +852,8 @@ fn tool_coordinates_roundtrip_under_rotated_reflected_nonuniform_parents() {
             rotation: 37.,
             scale_x: -2.,
             scale_y: 0.4,
+            shear_x: 0.0,
+            shear_y: 0.0,
         },
     ] {
         let parent = Affine::from_transform(parent);
@@ -896,6 +900,8 @@ fn axis_gestures_restrict_world_motion_and_scale_without_changing_other_properti
         rotation: 45.,
         scale_x: 1.5,
         scale_y: -0.8,
+        shear_x: 0.0,
+        shear_y: 0.0,
     };
     let parent = Affine::from_transform(Transform {
         rotation: 35.,

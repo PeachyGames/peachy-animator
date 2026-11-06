@@ -610,7 +610,7 @@ fn strict_command_and_native_roundtrips_retain_zero_binding_api_identity_and_oth
         let edited = apply_command(source, command).unwrap();
         assert_eq!(apply_command(source, decoded).unwrap(), edited);
         let native = serde_json::to_value(&edited).unwrap();
-        assert_eq!(native["format"], 4);
+        assert_eq!(native["format"], FORMAT_VERSION);
         assert_eq!(serde_json::from_value::<Document>(native).unwrap(), edited);
         for field in ["command", "pose", "transform"] {
             let mut invalid = encoded.clone();
