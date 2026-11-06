@@ -2,6 +2,62 @@ use super::*;
 use peachy_document::*;
 
 #[test]
+fn exact_key_delete_preserves_close_neighbors_and_ambiguous_batch_is_atomic() {
+    let mut before = doc();
+    before.animations[0].tracks = vec![Track {
+        bone: 0,
+        property: Property::Rotation,
+        keys: [0.1, 0.5, 0.500005]
+            .map(|time| Keyframe {
+                time,
+                value: time * 20.,
+                curve: Curve::Stepped,
+            })
+            .to_vec(),
+    }];
+    let delete = |time| Command::DeleteKey {
+        animation: 0,
+        bone: 0,
+        property: Property::Rotation,
+        time,
+    };
+    let exact = apply_command(&before, delete(0.5)).unwrap();
+    assert_eq!(
+        exact.animations[0].tracks[0].keys,
+        vec![
+            before.animations[0].tracks[0].keys[0],
+            before.animations[0].tracks[0].keys[2],
+        ]
+    );
+    let mut session = Session::new(before.clone()).unwrap();
+    session
+        .dispatch(Command::SetBoneLength {
+            bone: 0,
+            length: 42.,
+        })
+        .unwrap();
+    session.undo();
+    assert!(session.can_redo());
+    assert!(
+        session
+            .dispatch(Command::Batch {
+                commands: vec![delete(0.1), delete(0.5000025)]
+            })
+            .is_err()
+    );
+    assert_eq!(session.document(), &before);
+    assert!(!session.is_dirty());
+    assert!(!session.can_undo());
+    assert!(session.can_redo());
+    // Existing near-time clients retain tolerance when exactly one key matches.
+    let tolerant = apply_command(&exact, delete(0.5000025)).unwrap();
+    assert_eq!(
+        tolerant.animations[0].tracks[0].keys,
+        vec![before.animations[0].tracks[0].keys[0]]
+    );
+}
+
+#[test]
 fn invalid_delete_times_cannot_erase_keys_or_change_history() {
     let mut session = Session::new(doc()).unwrap();
     session

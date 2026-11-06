@@ -1,4 +1,6 @@
 mod animation;
+mod dopesheet;
+mod dopesheet_selection;
 mod icons;
 mod mesh;
 mod panels;
@@ -59,6 +61,7 @@ pub(crate) struct Editor {
     textures: BTreeMap<String, egui::TextureHandle>,
     selection: Option<TreeItem>,
     selection_history: selection_history::SelectionHistory,
+    key_selection: dopesheet_selection::KeySelection,
     tree: TreeState,
     hidden_bones: BTreeSet<usize>,
     hidden_slots: BTreeSet<usize>,
@@ -166,6 +169,7 @@ impl Editor {
             textures: BTreeMap::new(),
             selection: Some(TreeItem::Bone(initial_bone)),
             selection_history: Default::default(),
+            key_selection: Default::default(),
             tree,
             hidden_bones: BTreeSet::new(),
             hidden_slots: BTreeSet::new(),
@@ -422,6 +426,7 @@ impl Editor {
         self.hidden_slots
             .retain(|&i| i < self.session.document().slots.len());
         self.reconcile_attachment();
+        self.reconcile_dopesheet_selection();
     }
     fn undo(&mut self) {
         self.session.undo();
@@ -466,6 +471,7 @@ impl Editor {
                             None
                         };
                     self.selection_history = Default::default();
+                    self.key_selection = Default::default();
                     self.selection = Some(TreeItem::Skeleton);
                     self.animation = 0;
                     self.time = 0.0;
@@ -685,6 +691,7 @@ impl eframe::App for Editor {
                     "autoKey":self.auto_key,"unkeyedPose":self.session.pose_edits(),"selectedTransform":self.selected_transform(),"locals":self.session.local_pose(self.active_animation(),self.time),
                     "keyStates":self.selected_bone().map(|bone| [Property::Rotation,Property::X,Property::ScaleX].map(|p| self.key_state(bone,&peachy_engine::transform_group(&[p])))),
                     "setupMode":self.setup_mode,"dirty":self.session.is_dirty(),"canUndo":self.session.can_undo(),"canRedo":self.session.can_redo(),"imageCount":self.textures.len(),
+                    "selectedKeys":self.key_selection.diagnostic(),"dopesheetFocused":self.dopesheet_has_focus(&ctx),
                     "selectedAttachment":self.selected_attachment(),"selectedVertex":self.mesh_vertex,"hiddenSlots":self.hidden_slots,
                     "pointer":ctx.input(|i|i.pointer.hover_pos().map(|p|[p.x,p.y])),
                     "targets":self.capture_targets,"meshHandles":self.mesh_handles,"innerSize":[ctx.content_rect().width(),ctx.content_rect().height()]

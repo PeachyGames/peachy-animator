@@ -246,7 +246,26 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
             }
             for track in &mut a.tracks {
                 if track.bone == bone && track.property == property {
-                    track.keys.retain(|k| !same_key_time(k.time, time));
+                    // Source-time identities take priority over frame tolerance. Imported
+                    // keys can be distinct yet closer than KEY_TIME_EPSILON.
+                    let exact = track.keys.iter().position(|key| key.time == time);
+                    let index = if let Some(index) = exact {
+                        Some(index)
+                    } else {
+                        let mut nearby = track
+                            .keys
+                            .iter()
+                            .enumerate()
+                            .filter(|(_, key)| same_key_time(key.time, time));
+                        let index = nearby.next().map(|(index, _)| index);
+                        if nearby.next().is_some() {
+                            return Err("Ambiguous key time; select an exact source key".into());
+                        }
+                        index
+                    };
+                    if let Some(index) = index {
+                        track.keys.remove(index);
+                    }
                 }
             }
             a.tracks.retain(|t| !t.keys.is_empty());

@@ -80,8 +80,16 @@ impl Editor {
             self.capture = Some(self.capture_directory.join(format!("editor-{stamp}.png")));
             ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
         }
-        if ctx.egui_wants_keyboard_input() {
+        if ctx.egui_wants_keyboard_input() && !self.dopesheet_has_focus(ctx) {
             return;
+        }
+        if self.dopesheet_has_focus(ctx)
+            && ctx.input_mut(|input| {
+                input.consume_key(egui::Modifiers::NONE, egui::Key::Delete)
+                    || input.consume_key(egui::Modifiers::NONE, egui::Key::Backspace)
+            })
+        {
+            self.delete_dopesheet_keys();
         }
         // Consume modified keys first so Cmd+R never also advances a frame.
         for (index, key) in [
