@@ -1,8 +1,8 @@
 # Views audit and implemented scope
 
-Implementation progress: **12 of 15 views implemented**. The latest completed
-view is **Preview**. The implemented views have working controls within the
-explicit scope below; three views still need implementation.
+Implementation progress: **13 of 15 views implemented**. The latest completed
+view is **Graph**. The implemented views have working controls within the
+explicit scope below; two views still need implementation.
 
 The old selector contained only **Tree, Dopesheet and Weights** because those were
 the only implemented panels. It was not an installation, license or rendering
@@ -20,7 +20,7 @@ presenting empty panels as working tools.
 | Audio | Unimplemented: audio data, waveforms and playback. |
 | Dopesheet | Existing supported bone-transform keys, curves, selection, clipboard and retiming. |
 | Ghosting | New Animate onion-skin view: fractional Frames and exact Key Frames, Current keyed-pose comparison, per-side colors, Images/Solid display and opacity, Anchor, On top, Loop, per-frame offsets and typed bone Selection with Lock/Refresh. Renders checked region/mesh/IK poses in the main viewport. |
-| Graph | Unimplemented: editable value graph. Current curve controls belong to Dopesheet. |
+| Graph | New editable scalar graph for the selected bone and seven supported transform properties. Exact-key picker, engine-sampled curves, vertical value dragging, Fit and Zoom Keys. Existing key times/curves stay fixed; tangents, retiming and multiple curves remain pending. |
 | Mesh Tools | New soft-selection view with Size, Feather and Hull vertices. Affects neighboring vertices during unweighted Setup vertex drags and arrow nudges, with falloff colors and radius rings. Weighted/Animate transforms and multi-vertex selection remain pending. |
 | Metrics | New counts for bones, constraints, slots, all attachments, visible attachments, visible vertices and triangles. Animate additionally shows native scalar-track and key counts. |
 | Outline | New clean secondary display of the current evaluated pose, including pending unkeyed edits and static IK. Fit, right/middle drag pan, wheel zoom, and click to center the main viewport. |
@@ -32,9 +32,9 @@ presenting empty panels as working tools.
 | Tree | Existing typed outline, filters, activation dots and contextual properties. The Slots filter shows draw order; Spine has no separate Slots view in this inventory. |
 | Weights | Existing bounded Bind/Remove all/Add binding/Direct workflow; still no brush, Update, locks or multi-vertex editing. |
 
-Three views remain unimplemented: **Audio, Graph and Slot Color**.
+Two views remain unimplemented: **Audio and Slot Color**.
 
-Animations, Ghosting, Mesh Tools, Metrics, Outline, Playback, Preview, Skins and Weights use a resizable tabbed panel in the right rail.
+Animations, Ghosting, Graph, Mesh Tools, Metrics, Outline, Playback, Preview, Skins and Weights use a resizable tabbed panel in the right rail.
 With the Tree closed, they use that rail's full height. Opening an already open
 entry focuses its tab. Individual close buttons are present on these views, Tree
 and Dopesheet; they reopen from Views. F9 stores/restores all view visibility,
@@ -45,7 +45,7 @@ both are open. View changes stay outside document
 history. Opening another document retains workspace tabs while clearing searches
 and fitting Outline to the new document.
 
-Animations, Ghosting, Playback, Timeline and Dopesheet are unavailable in Setup; their open
+Animations, Ghosting, Graph, Playback, Timeline and Dopesheet are unavailable in Setup; their open
 tabs are retained and return in Animate. All unsupported views remain discoverable in both
 modes. This is a local, explicit availability policy. The live public guide says
 Spine's lists differ by mode, but does not enumerate the complete per-mode menu.
@@ -96,6 +96,29 @@ derived white mask; original image pixels and files are unchanged. A request ove
 layer, leaving the current pose usable. Current controls use reaches up to 60
 frames and steps down to 0.25 frames. Motion Vectors and Silhouette/Xray outlines
 remain pending; the implemented Images and Solid modes are functional rendering.
+
+Graph displays the selected bone's existing Rotation, X/Y, Scale X/Y or Shear X/Y
+track. Values are native Setup offsets (degrees/units) or scale multipliers, not
+pending pose values. The orange playhead shares the main clip/time,
+while Graph's selected key is presentation-only and never redirects Dopesheet
+clipboard/Delete operations. Missing tracks are read-only; no phantom keys appear.
+
+Choose overlapping/close native keys independently from the exact-key picker,
+then use Zoom Keys. Drag a marker vertically to edit its value. The exact time,
+curve, source context and chart mapping freeze at press; release commits one
+Session history step. Editing pauses main playback without seeking or discarding
+pending poses. Escape, history/file/context/tool/view/focus/modal actions cancel,
+and a held cancelled pointer cannot restart until release. Unrelated pose edits
+cancel the graph first, then apply to the correct Session baseline. Graph focus
+keeps main transport, clipboard, Delete and nudges out.
+
+Curves use engine sampling with bounded render work (at most 257 markers and
+about 1,024 sampled points); native keys are never merged or deleted for display.
+The virtualized picker retains every exact time. Fit and Zoom Keys change only
+presentation. Main pose-evaluation errors do not prevent correcting finite key
+values. Tangent handles, key creation/retiming, clipboard editing, general pan/zoom,
+multiple curves and absolute posed-value display remain pending. Dopesheet keeps
+its current curve/timing tools; exact installed Graph parity is not claimed.
 
 Preview chooses its own animation and skin and evaluates committed keys through
 the same checked region/mesh/static-IK engine. It does not display pending unkeyed
@@ -183,6 +206,7 @@ Behavior references are the public
 [Skins](https://en.esotericsoftware.com/spine-skins-view),
 [Metrics](https://en.esotericsoftware.com/spine-metrics),
 [Ghosting](https://en.esotericsoftware.com/spine-ghosting),
+[Graph](https://en.esotericsoftware.com/spine-graph),
 [Mesh Tools](https://en.esotericsoftware.com/spine-mesh-tools),
 [Outline](https://en.esotericsoftware.com/spine-outline),
 [Playback](https://en.esotericsoftware.com/spine-playback),
@@ -213,3 +237,6 @@ recorded in [Mesh Tools evidence](evidence/mesh-tools.json).
 
 Independent Preview rendering, interaction checks and native acceptance limits
 are recorded in [Preview evidence](evidence/preview-view.json).
+
+Graph value-editing, exact-key/lifecycle checks and native rendering are recorded
+in [Graph evidence](evidence/graph-view.json).

@@ -392,3 +392,70 @@ fn every_supported_property_is_discoverable_and_missing_tracks_are_read_only() {
     assert_eq!(editor.session.document(), &original);
     assert!(!editor.session.can_undo());
 }
+
+#[test]
+fn graph_canvas_and_controls_fit_the_default_minimum_dock_and_escape_keeps_main_selection() {
+    let mut editor = graph_editor();
+    editor.show_tree = true;
+    let ctx = editor_context();
+    for _ in 0..4 {
+        let mut output = ctx.run_ui(
+            egui::RawInput {
+                focused: true,
+                screen_rect: Some(egui::Rect::from_min_size(Pos2::ZERO, vec2(1120., 740.))),
+                ..Default::default()
+            },
+            |ui| editor.workspace_ui(ui),
+        );
+        output.textures_delta.clear();
+    }
+    let [left, top, right, bottom] = editor.capture_targets["graphClip"];
+    for name in [
+        "graphPropertyPicker",
+        "graphKeyPicker",
+        "graphFit",
+        "graphZoomKeys",
+        "graphCanvas",
+    ] {
+        let [a, b, c, d] = editor.capture_targets[name];
+        assert!(
+            a >= left && c <= right + 1. && b >= top && d <= bottom + 1.,
+            "{name}: {:?} vs {:?}",
+            [a, b, c, d],
+            [left, top, right, bottom]
+        );
+    }
+    let [_, top, _, bottom] = editor.capture_targets["graphCanvas"];
+    assert!(bottom - top >= 100.);
+    let selection = editor.selection.clone();
+    settle(&mut editor, &ctx);
+    click(&mut editor, &ctx, "graphCanvas");
+    workspace_frame(
+        &mut editor,
+        &ctx,
+        chord(egui::Key::Escape, egui::Modifiers::NONE),
+    );
+    assert_eq!(editor.selection, selection);
+}
+
+#[test]
+fn main_pose_edit_cancels_graph_before_applying_a_new_pending_value() {
+    let mut editor = graph_editor();
+    let ctx = editor_context();
+    let mut pose = editor.selected_transform().unwrap();
+    pose.rotation += 9.;
+    editor.edit_transform(pose, &[Property::Rotation]);
+    let pending = editor.session.pose_edits().clone();
+    let original = editor.session.document().clone();
+    let (_, to) = start_drag(&mut editor, &ctx, 0.5, 20.);
+    let mut pose = editor.selected_transform().unwrap();
+    pose.x += 3.;
+    editor.edit_transform(pose, &[Property::X]);
+    assert!(!editor.graph_edit_active());
+    assert_eq!(editor.session.document(), &original);
+    assert_ne!(editor.session.pose_edits(), &pending);
+    workspace_frame(&mut editor, &ctx, pointer(to, false));
+    editor.undo();
+    assert_eq!(editor.session.document(), &original);
+    assert_eq!(editor.session.pose_edits(), &pending);
+}

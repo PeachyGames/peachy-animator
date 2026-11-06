@@ -1225,7 +1225,7 @@ byte-identical to the verified Mesh Tools checkpoint; its external public-API
 runtime evidence remains applicable. Projection/rendering are checked separately.
 
 The initial layout clipped the canvas and overflowed Speed. Four compact rows now
-leave a100-pixel canvas even in the minimum/default dock. A fixture-index error
+leave a 100-pixel canvas in the default dock at minimum window size. A fixture-index error
 was corrected to select the actual appended alternate clip. Escape handling also
 needed the actual end-frame focus owner because egui clears focus before the
 shortcut pass; its regression now confirms main selection stays unchanged.
@@ -1248,3 +1248,38 @@ preserving unrelated later work. The owned editor is verified exited; temporary
 local GUI authorization/command directory are removed, no private key is written,
 and no browser is launched. Mixing/layering and exact installed-editor parity
 remain gaps; no document format or export timing changes are part of Preview.
+
+
+## Scalar Graph view — November 6, 2026
+
+The final source passes formatting, **368 workspace Rust tests** (including
+**154 desktop** and **150 engine** tests), all-targets Clippy with warnings denied,
+the workspace build and seven-crate architecture guard. Hosted CI was not run.
+Nine Graph regressions cover exact time/curve preservation, one-step value history,
+pending poses/redo, held cancellation, close native keys and exact picker/Zoom Keys,
+10,000-key display budgets, extreme finite values, missing tracks, typed contexts,
+main pose edits, focus isolation and default-dock bounds at1120×740. Sampling and
+SetKey use the unchanged verified engine; no format/export changes are introduced.
+
+The actual scroll-area clip now bounds plot height. Key selection/presentation is
+separate from Dopesheet clipboard data. End-frame focus ownership handles Escape
+without clearing the main bone, and an unrelated pose edit cancels the graph before
+changing Session's pending state. Main pose-render errors do not prevent correcting
+finite scalar data. Tangent/retiming/key-creation/general-pan-zoom/multi-curve tools
+remain pending; no complete installed Graph interaction-parity claim is made.
+
+The [native capture](graph-view-editor.png) shows original artwork, the sampled
+curve, eight exact rotation-key markers and shared18-frame playhead, with all
+controls/plot inside the default dock. It verifies a normal task-owned foreground
+window and loaded artwork. The isolated diagnostic startup only enters Animate,
+opens Graph and seeks0.6; final source is restored byte-for-byte and app rebuilt.
+Native mouse/keyboard acceptance remains **pending**, separate from egui event
+checks and rendering. [Evidence](evidence/graph-view.json) pins these limits/hashes.
+
+The clean integration baseline is `06d2afe` (full hash retained), with source,
+status/diff, lane, checks, captured output and cleanup at
+`../.local-backups/peachy-graph-20261106T184001Z-4731b0/`.
+Rollback: revert the Graph integration commit then `cb2afd0`, preserving unrelated
+later work. The owned editor is verified exited, temporary localhost GUI
+authorization/command directory are removed, no private key is written, and no
+browser is launched.

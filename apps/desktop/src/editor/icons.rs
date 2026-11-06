@@ -30,6 +30,7 @@ pub(super) enum Icon {
     NextKey,
     Animations,
     Ghosting,
+    Graph,
     MeshTools,
     Skins,
     Metrics,
@@ -363,6 +364,13 @@ fn paint(ui: &Ui, rect: Rect, icon: Icon, response: &Response) {
                 green,
                 Stroke::NONE,
             ));
+        }
+        Icon::Graph => {
+            line(&[[2., 2.], [2., 14.], [15., 14.]], ink);
+            line(&[[3., 11.], [6., 5.], [10., 9.], [14., 3.]], warm);
+            for (x, y) in [(3., 11.), (6., 5.), (10., 9.), (14., 3.)] {
+                painter.circle_filled(p(x, y), rect.width() / SIZE, warm);
+            }
         }
         Icon::Ghosting => {
             for (x, color) in [

@@ -4,6 +4,7 @@ use super::*;
 impl Editor {
     pub(super) fn cancel_gesture(&mut self) {
         self.cancel_timeline_interaction();
+        self.cancel_graph_edit();
         self.cancel_ik_edit();
         self.ik_target = None;
         self.cancel_weight_edit();
@@ -225,6 +226,9 @@ impl Editor {
         if !ctx.text_edit_focused() {
             self.file_history_shortcuts(ctx);
             self.tool_shortcuts(ctx);
+        }
+        if self.graph_shortcuts(ctx) {
+            return;
         }
         if self.weights_shortcuts(ctx) {
             return;

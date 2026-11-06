@@ -17,6 +17,7 @@ covers those controls with independently drawn vectors and a shared vocabulary.
 | Views | Divided window | Menu heading with a dropdown corner cue |
 | Tree | Connected hierarchy boxes | Same warm hierarchy icon in Views and Tree heading |
 | Dopesheet | Timeline lanes with colored keys | Same icon in Views and Dopesheet heading; unavailable state remains dimmed in Setup |
+| Graph | Value axes with a keyed rising/falling line | Shared independent view icon in menu and heading |
 | Preview | Overlapping frames with an original play triangle | Shared view icon in the menu and heading |
 | Mesh Tools | Mesh triangle within concentric soft-selection circles | Shared original icon in Views and the panel heading |
 | Timeline | Ruler with an orange key and cyan playhead | Same independent icon in Views and the bottom Timeline heading |

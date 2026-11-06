@@ -6,6 +6,7 @@ use super::*;
 pub(super) enum DockView {
     Animations,
     Ghosting,
+    Graph,
     MeshTools,
     Metrics,
     Outline,
@@ -20,9 +21,10 @@ pub(super) enum DockView {
 mod tests;
 
 impl DockView {
-    const ALL: [Self; 9] = [
+    const ALL: [Self; 10] = [
         Self::Animations,
         Self::Ghosting,
+        Self::Graph,
         Self::MeshTools,
         Self::Metrics,
         Self::Outline,
@@ -35,6 +37,7 @@ impl DockView {
         match self {
             Self::Animations => "Animations",
             Self::Ghosting => "Ghosting",
+            Self::Graph => "Graph",
             Self::MeshTools => "Mesh Tools",
             Self::Metrics => "Metrics",
             Self::Outline => "Outline",
@@ -48,6 +51,7 @@ impl DockView {
         match self {
             Self::Animations => Icon::Animations,
             Self::Ghosting => Icon::Ghosting,
+            Self::Graph => Icon::Graph,
             Self::MeshTools => Icon::MeshTools,
             Self::Metrics => Icon::Metrics,
             Self::Outline => Icon::Outline,
@@ -59,7 +63,10 @@ impl DockView {
     }
 
     fn available_in_setup(self) -> bool {
-        !matches!(self, Self::Animations | Self::Ghosting | Self::Playback)
+        !matches!(
+            self,
+            Self::Animations | Self::Ghosting | Self::Graph | Self::Playback
+        )
     }
 }
 
@@ -98,14 +105,10 @@ impl ViewTabs {
 }
 
 /// The public guide's complete view inventory. Unsupported entries remain discoverable.
-const UNIMPLEMENTED: [(&str, &str); 3] = [
+const UNIMPLEMENTED: [(&str, &str); 2] = [
     (
         "Audio",
         "Audio assets, waveform display and playback are not implemented.",
-    ),
-    (
-        "Graph",
-        "The editable value graph is not implemented. Use Dopesheet for supported key timing and curves.",
     ),
     (
         "Slot Color",
@@ -151,6 +154,16 @@ impl Editor {
         self.view_tabs.active = view;
     }
 
+    pub(super) fn open_graph_view(&mut self) {
+        self.open_dock_view(DockView::Graph);
+    }
+
+    pub(super) fn graph_visible(&self) -> bool {
+        !self.setup_mode
+            && self.dock_view_open(DockView::Graph)
+            && self.view_tabs.active == DockView::Graph
+    }
+
     pub(super) fn open_preview_view(&mut self) {
         self.open_dock_view(DockView::Preview);
     }
@@ -184,7 +197,9 @@ impl Editor {
                 .on_disabled_hover_text("Available in Animate mode.");
             self.record_target(&format!("view{}", view.label()), response.rect);
             if response.clicked() {
-                if view == DockView::Preview {
+                if view == DockView::Graph {
+                    self.open_graph_view();
+                } else if view == DockView::Preview {
                     self.open_preview_view();
                 } else {
                     self.open_dock_view(view);
@@ -323,6 +338,7 @@ impl Editor {
                 .show(ui, |ui| match view {
                     DockView::Animations => self.animations_panel(ui),
                     DockView::Ghosting => self.ghosting_panel(ui),
+                    DockView::Graph => self.graph_panel(ui),
                     DockView::MeshTools => self.mesh_tools_panel(ui),
                     DockView::Metrics => self.metrics_panel(ui),
                     DockView::Playback => self.playback_panel(ui),

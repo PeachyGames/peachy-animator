@@ -3,6 +3,7 @@ mod animation_management;
 mod dopesheet;
 mod dopesheet_selection;
 mod ghosting;
+mod graph;
 mod icons;
 mod ik;
 mod key_drag;
@@ -120,6 +121,7 @@ pub(crate) struct Editor {
     view_tabs: views::ViewTabs,
     ghosting: ghosting::GhostingState,
     preview: preview::PreviewView,
+    graph: graph::GraphView,
     weights: weights::WeightsState,
     weight_edit: Option<weight_direct::WeightEdit>,
     weight_blocked: Option<egui::Id>,
@@ -243,6 +245,7 @@ impl Editor {
             view_tabs: Default::default(),
             ghosting: Default::default(),
             preview: Default::default(),
+            graph: Default::default(),
             drag: None,
             transform_blocked: false,
             transform_blocked_control: None,
@@ -319,6 +322,7 @@ impl Editor {
     }
 
     fn dispatch(&mut self, command: Command) -> bool {
+        self.cancel_graph_edit();
         self.cancel_ik_edit();
         self.ik_target = None;
         self.cancel_weight_edit();
@@ -412,6 +416,7 @@ impl Editor {
         mut local: Transform,
         properties: &[Property],
     ) {
+        self.cancel_graph_edit();
         self.cancel_ik_edit();
         self.ik_target = None;
         self.cancel_weight_edit();
@@ -557,6 +562,10 @@ impl Editor {
     }
     fn undo(&mut self) {
         self.cancel_timeline_interaction();
+        if self.graph_edit_active() {
+            self.cancel_graph_edit();
+            return;
+        }
         self.ik_target = None;
         if self.ik_edit.is_some() {
             self.cancel_ik_edit();
@@ -587,6 +596,10 @@ impl Editor {
     }
     fn redo(&mut self) {
         self.cancel_timeline_interaction();
+        if self.graph_edit_active() {
+            self.cancel_graph_edit();
+            return;
+        }
         self.ik_target = None;
         if self.ik_edit.is_some() {
             self.cancel_ik_edit();
@@ -657,6 +670,7 @@ impl Editor {
                     self.timeline_view.reset_document();
                     self.ghosting.reset_document();
                     self.preview.reset_document();
+                    self.graph.reset_document();
                     self.weight_blocked = None;
                     self.weight_controls = None;
                     self.ik_edit = None;
@@ -753,6 +767,7 @@ impl Editor {
         self.weights_handles.clear();
         self.reconcile_selection();
         self.reconcile_timeline_input(&ctx);
+        self.reconcile_graph_input(&ctx);
         self.shortcuts(&ctx);
         self.advance_preview(&ctx);
         self.observe_timeline_input(&ctx);
@@ -882,6 +897,7 @@ impl Editor {
             });
         self.finish_idle_transactions(&ctx);
         self.observe_preview_focus(&ctx);
+        self.observe_graph_focus(&ctx);
         if let Some(error) = self.error.clone() {
             egui::Window::new("Project needs attention")
                 .collapsible(false)
@@ -945,6 +961,7 @@ impl Editor {
                 report["compactTimeline"] = self.timeline_view_diagnostic();
                 report["ghosting"] = self.ghosting_diagnostic();
                 report["preview"] = self.preview_diagnostic();
+                report["graph"] = self.graph_diagnostic();
                 report["playbackSpeed"] = self.playback_speed.into();
                 report["animationEnd"] = self.animation_end().into();
                 report["weightedMeshCount"] = self.weighted_mesh_count().into();

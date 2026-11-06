@@ -470,3 +470,14 @@ original checked evaluator and transport, with independently written egui contro
 projection math and icon. It does not implement track mixing or copy runtime/editor
 implementation or UI assets. Loop-current behavior, percentage limits and shortcut
 ownership are explicit local policies. All captures use original artwork.
+
+
+### Scalar Graph view — November 6, 2026
+
+Reference: public [Graph guide](https://en.esotericsoftware.com/spine-graph).
+The original implementation uses existing engine scalar sampling and SetKey
+transactions; native f64 chart mapping, bounded display sampling, exact-key
+selection and icons are independent code. It edits only existing key values,
+not times/tangents. Setup-offset/multiplier display is an explicit bounded scope,
+not a claim of every installed-editor Graph convention. No proprietary code or
+UI assets are inspected or copied.

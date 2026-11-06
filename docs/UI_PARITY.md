@@ -649,7 +649,7 @@ with pan/zoom and per-track playback. **Views → Preview** now provides a compa
 right-rail panel with separate animation/skin selectors, directional transport,
 Start/End, Loop/Fit/Bones, decimal seconds, numeric percentage Speed and a seek
 slider above its own image canvas. The four compact control rows leave at least
-100 pixels for the image at the default/minimum dock; the initial taller layout
+100 pixels for the image in the default dock at minimum window size; the initial taller layout
 clipped it and was corrected before acceptance.
 
 The view evaluates keyed regions, meshes and static IK without applying Session's
@@ -667,3 +667,29 @@ pending. Current-clip Loop differs from next-entry Repeat. This is a functional
 bounded Preview, not full installed-editor parity. The [evidence](evidence/preview-view.json)
 separates egui interaction tests and actual native rendering from native-input
 acceptance, which remains pending.
+
+
+## Scalar Graph view — November 6, 2026
+
+**Views → Graph** opens an Animate-only right-rail view for the selected typed
+bone and one of seven supported transform properties. It draws an engine-sampled
+value curve, exact key markers, frame/value ticks and the shared playhead. An
+exact-key picker preserves access to coincident screen positions and close
+native times; Fit and Zoom Keys adjust the presentation. Values are explicitly
+native Setup offsets/multipliers. Missing tracks remain read-only.
+
+Vertical marker drags change only an existing value, preserving its exact time
+and outgoing curve, other keys and pending pose. Source context/map freeze;
+release settles after all frame actions as one Undo step. Escape/context/file/
+history/tool/hide/focus/modal actions cancel and block held-pointer re-entry.
+Direct pose edits cancel the graph before applying a new pending value. Own canvas
+focus suppresses main clipboard/Delete/transport/nudges; remembered actual focus
+handles egui's pre-shortcut Escape blur without deselecting the main bone.
+
+Rendering is bounded without changing document keys, and a virtualized picker
+accesses every exact key. The finite clip height controls chart size in the
+scrollable default dock; dense/selected-key details live in its tooltip. Main
+pose-render errors do not block correction of finite scalar keys. Tangents,
+retiming, key creation/clipboard, general mouse pan/zoom, multiple curves and exact
+installed-editor equivalence remain pending. The [evidence](evidence/graph-view.json)
+separates egui state checks and native rendering from native-input acceptance.

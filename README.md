@@ -100,6 +100,10 @@ in its panel or with **Ghosts** above the viewport.
 
 ![Ghosting in the native editor](docs/ghosting-editor.png)
 
+**Views → Graph** shows the selected bone's keyed transform values and edits them
+with vertical key dragging. Exact-key selection preserves close native times;
+timing and curves stay fixed. Tangents, retiming and multiple curves remain pending.
+
 **Views → Preview** plays a keyed animation and skin on an independent clock while
 you edit Setup or another pose. It has its own transport, speed, pan/zoom and Fit;
 pending unkeyed edits stay in the main editor. Mixing and multiple tracks remain pending.

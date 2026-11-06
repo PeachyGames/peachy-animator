@@ -96,6 +96,7 @@ pub(super) fn editor_fixture() -> Editor {
         view_tabs: Default::default(),
         ghosting: Default::default(),
         preview: Default::default(),
+        graph: Default::default(),
         drag: None,
         transform_blocked: false,
         transform_blocked_control: None,

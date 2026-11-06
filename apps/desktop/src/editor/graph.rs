@@ -68,6 +68,7 @@ pub(super) struct GraphView {
     fit: bool,
     edit: Option<GraphEdit>,
     blocked: bool,
+    owned_focus: bool,
     error: Option<String>,
     rendered_keys: usize,
     rendered_points: usize,
@@ -83,6 +84,7 @@ impl Default for GraphView {
             fit: true,
             edit: None,
             blocked: false,
+            owned_focus: false,
             error: None,
             rendered_keys: 0,
             rendered_points: 0,
@@ -286,11 +288,14 @@ impl Editor {
         if !ctx.input(|input| input.pointer.primary_down()) {
             self.graph.blocked = false;
         }
+        if !self.graph_visible() || !ctx.input(|input| input.focused) {
+            self.graph.owned_focus = false;
+            ctx.memory_mut(|memory| memory.surrender_focus(Self::graph_id()));
+        }
         if self.graph.edit.as_ref().is_some_and(|edit| {
             !self.graph_visible()
                 || !ctx.input(|input| input.focused)
                 || self.error.is_some()
-                || self.evaluation_error.is_some()
                 || self.rename.is_some()
                 || self.duplicate_animation.is_some()
                 || egui::Popup::is_any_open(ctx)
@@ -302,6 +307,8 @@ impl Editor {
                 || self.auto_key != edit.auto_key
                 || self.pose_view_generation != edit.pose_generation
                 || self.session.pose_edits() != &edit.pose
+                || (ctx.text_edit_focused()
+                    && !ctx.memory(|memory| memory.has_focus(Self::graph_id())))
                 || !self.graph_source_matches(edit)
         }) {
             self.cancel_graph_edit();
@@ -329,7 +336,10 @@ impl Editor {
             || !ctx.input(|input| input.focused)
             || ctx.text_edit_focused()
             || egui::Popup::is_any_open(ctx)
-            || !ctx.memory(|memory| memory.has_focus(Self::graph_id()))
+            || !(ctx.memory(|memory| memory.has_focus(Self::graph_id()))
+                || (self.graph.owned_focus
+                    && ctx.input(|input| input.key_pressed(egui::Key::Escape)))
+                || self.graph_edit_active())
         {
             return false;
         }
@@ -346,6 +356,12 @@ impl Editor {
         true
     }
 
+    pub(super) fn observe_graph_focus(&mut self, ctx: &egui::Context) {
+        self.graph.owned_focus = self.graph_visible()
+            && ctx.input(|input| input.focused)
+            && ctx.memory(|memory| memory.has_focus(Self::graph_id()));
+    }
+
     fn begin_graph_edit(
         &mut self,
         context: GraphContext,
@@ -358,7 +374,7 @@ impl Editor {
         let Some(source) = self.graph_track(context).cloned() else {
             return;
         };
-        if !source.keys.iter().any(|existing| *existing == key) {
+        if !source.keys.contains(&key) {
             return;
         }
         self.session.commit_transaction();
@@ -559,6 +575,8 @@ impl Editor {
             |time| format!("Key at {time} s"),
         );
         let key_picker = egui::ComboBox::from_id_salt("graph-exact-key")
+            .width(ui.available_width())
+            .wrap_mode(egui::TextWrapMode::Truncate)
             .selected_text(selected_text)
             .show_ui(ui, |ui| {
                 let track = self.graph_track(context).unwrap();
@@ -629,14 +647,34 @@ impl Editor {
             }
             return;
         };
-        let height = (ui.available_height() - 45.).clamp(140., 360.);
+        let height = (ui.clip_rect().bottom() - ui.cursor().top()).clamp(100., 360.);
         let (_, rect) = ui.allocate_space(vec2(ui.available_width(), height));
         self.record_target("graphCanvas", rect);
         self.record_target("graphClip", ui.clip_rect());
         let plot_rect =
             egui::Rect::from_min_max(rect.min + vec2(6., 23.), rect.max - vec2(62., 8.));
         self.record_target("graphPlot", plot_rect);
-        let canvas = ui.interact(rect, Self::graph_id(), Sense::click_and_drag());
+        let count = self
+            .graph_track(context)
+            .map_or(0, |track| track.keys.len());
+        let mut hint =
+            "Frames → · native values ↑ · drag a key vertically; timing is fixed.".to_string();
+        if count > KEY_DRAW_LIMIT {
+            hint.push_str(&format!(
+                "\nShowing at most {} of {count} keys. Choose exact key, then Zoom Keys.",
+                KEY_DRAW_LIMIT + 1
+            ));
+        }
+        if let Some(time) = self.graph.selected
+            && let Some(key) = self
+                .graph_track(context)
+                .and_then(|track| track.keys.iter().find(|key| key.time == time))
+        {
+            hint.push_str(&format!("\nSelected: {} s · value {}", key.time, key.value));
+        }
+        let canvas = ui
+            .interact(rect, Self::graph_id(), Sense::click_and_drag())
+            .on_hover_text(hint);
         canvas.widget_info(|| {
             egui::WidgetInfo::labeled(egui::WidgetType::Other, true, "Graph key values")
         });
@@ -659,7 +697,6 @@ impl Editor {
             if !self.graph.blocked
                 && ui.input(|input| input.focused)
                 && self.error.is_none()
-                && self.evaluation_error.is_none()
                 && self.rename.is_none()
                 && self.duplicate_animation.is_none()
                 && !egui::Popup::is_any_open(ui.ctx())
@@ -763,37 +800,13 @@ impl Editor {
                 Some("Graph interval cannot be displayed as finite coordinates.".into());
         }
         if let Some(error) = &self.graph.error {
-            ui.colored_label(ACCENT, error);
-        } else {
-            ui.label(
-                RichText::new("Frames → · values ↑ · drag a key vertically; timing is fixed.")
-                    .small()
-                    .color(MUTED),
+            let galley = painter.layout(
+                error.clone(),
+                FontId::proportional(11.),
+                ACCENT,
+                (rect.width() - 16.).max(1.),
             );
-            let count = self
-                .graph_track(context)
-                .map_or(0, |track| track.keys.len());
-            if count > KEY_DRAW_LIMIT {
-                ui.label(
-                    RichText::new(format!(
-                        "Showing {} of {count} keys. Choose exact key, then Zoom Keys.",
-                        self.graph.rendered_keys
-                    ))
-                    .small()
-                    .color(MUTED),
-                );
-            }
-            if let Some(time) = self.graph.selected
-                && let Some(key) = self
-                    .graph_track(context)
-                    .and_then(|track| track.keys.iter().find(|key| key.time == time))
-            {
-                ui.label(
-                    RichText::new(format!("Selected: {} s · value {}", key.time, key.value))
-                        .small()
-                        .color(ACCENT),
-                );
-            }
+            painter.galley(rect.center() - galley.size() * 0.5, galley, ACCENT);
         }
     }
 

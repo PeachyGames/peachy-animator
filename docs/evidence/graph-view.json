@@ -1,0 +1,73 @@
+{
+  "date": "2026-11-06",
+  "view": "Graph",
+  "baseline": "06d2afecf9a564030d6b9c5a97811d48de80f9f0",
+  "startingWorktreeClean": true,
+  "sourceCommit": "cb2afd0",
+  "backup": "../../../.local-backups/peachy-graph-20261106T184001Z-4731b0/",
+  "inventory": {
+    "implemented": 13,
+    "total": 15,
+    "remaining": [
+      "Audio",
+      "Slot Color"
+    ]
+  },
+  "checks": {
+    "format": "passed",
+    "workspaceTests": 368,
+    "desktopTests": 154,
+    "engineTests": 150,
+    "newGraphTests": 9,
+    "clippyAllTargetsWarningsDenied": "passed",
+    "workspaceBuild": "passed",
+    "architectureCrates": 7,
+    "hostedCI": "not run"
+  },
+  "behavior": [
+    "Seven native scalar bone properties with engine-sampled curves, exact key markers and shared main playhead",
+    "Vertical existing-key value edit only; exact native time/outgoing curve/otherkeys/pending pose preserved",
+    "Fixed source/map/context with one Session transaction; release after frame actions, return/cancel history and redo preservation",
+    "Escape/Undo/file/context/tool/skin/clip/time/hide/focus/modal/resize cancel and block held-pointer re-entry",
+    "Unrelated main pose edits cancel Graph before applying new pending values",
+    "Own canvas focus suppresses main clipboard/Delete/nudges/transport; precise remembered focus handles Escape auto-blur",
+    "Dense render budget257markers/about1024points plus virtualized exact picker; no key merging/truncation in document",
+    "Fit/Zoom Keys, finite extremes, missing tracks readonly and default260px dock at minimum1120x740 window"
+  ],
+  "nativeRender": {
+    "normalOnScreenWindow": true,
+    "loadedOriginalArtwork": true,
+    "graphRendered": true,
+    "eightExactKeyMarkers": true,
+    "controlsAndCanvasWithinPanel": true,
+    "exactPidForegroundVerified": true,
+    "diagnosticStartupOnly": true,
+    "nativeInputAccepted": false,
+    "finalCapture": "editor-1793994403952094000.json",
+    "pid": 34461,
+    "capture": "../graph-view-editor.png",
+    "sourceDifference": "Temporary startup Animate/Graph/time0.6 only; removed exactly before rebuilding final application."
+  },
+  "nativeInput": {
+    "accepted": false,
+    "reason": "Render-only diagnostic; full native click/typed-value workflow remains pending following earlier host mouse-delivery failures.",
+    "earlierEvidence": "timeline-view.json"
+  },
+  "finalSourceRestoredExactly": true,
+  "productionSourceSHA256": "d01c7184847aab7a1c9b3f823212fc2c3a52fae1c80c8001cdc9b9d6ae9f44b8",
+  "productionBinarySHA256": "c16dc66b782471056d87c62cbb95c38e813e0b0237dbec72fd649e677d012863",
+  "diagnosticBinarySHA256": "607f196c3cbce7c4acfe2ef84a25b2793841e60456076ce76ad1fd1f994fd11c",
+  "cleanup": {
+    "pid": 34461,
+    "taskOwnedEditorExited": true,
+    "temporaryAuthorizationExists": false,
+    "browserLaunched": false
+  },
+  "existingRuntimeEvidence": "mesh-tools.json",
+  "limitations": [
+    "One native scalar curve; no tangents/retiming/key creation/clipboard/multi-curve editing",
+    "Values are Setup offsets/multipliers; no absolute posed-value display",
+    "General mouse pan/zoom, free docking and persisted range preferences pending",
+    "Native input and exact installed-editor comparison pending"
+  ]
+}
