@@ -18,6 +18,76 @@ TEAL = (102, 194, 175, 255)
 DARK = (56, 77, 85, 255)
 
 
+def weighted_fixtures(mesh_document):
+    """Original bind data; the renderer and runtime evaluate it independently."""
+    document = json.loads(json.dumps(mesh_document))
+    document["name"] = "Peach Bot Weighted Lab"
+    world = []
+
+    def point(matrix, position):
+        a, b, c, d, x, y = matrix
+        return [a*position[0]+b*position[1]+x, c*position[0]+d*position[1]+y]
+
+    for bone in document["bones"]:
+        t = bone["setup"]
+        angle = math.radians(t["rotation"])
+        s, c = math.sin(angle), math.cos(angle)
+        local = [c*t["scale_x"], -s*t["scale_y"], s*t["scale_x"], c*t["scale_y"], t["x"], t["y"]]
+        if bone["parent"] is None:
+            world.append(local)
+        else:
+            a, b, c, d, x, y = world[bone["parent"]]
+            la, lb, lc, ld, lx, ly = local
+            world.append([a*la+b*lc, a*lb+b*ld, c*la+d*lc, c*lb+d*ld, a*lx+b*ly+x, c*lx+d*ly+y])
+
+    def bind(bone, position, weight):
+        a, b, c, d, x, y = world[bone]
+        det = a*d-b*c
+        assert abs(det) > 1e-8, "The original binding pose must be invertible"
+        dx, dy = position[0]-x, position[1]-y
+        return dict(bone=bone, position=[(d*dx-b*dy)/det, (-c*dx+a*dy)/det], weight=weight)
+
+    mesh = document["skins"]["default"]["hand.R"]["hand.R"]
+    positions = [point(world[8], p) for p in mesh["vertices"]["positions"]]
+    weights = [
+        [(7, .7), (8, .3)], [(7, .2), (8, .8)], [(8, 1)], [(7, 1)],
+        [(0, .1), (1, .1), (6, .15), (7, .15), (8, .2), (2, .1), (9, .2), (3, 0)],
+    ]
+    mesh["vertices"] = dict(mode="weighted", influences=[
+        [bind(bone, position, weight) for bone, weight in vertex]
+        for position, vertex in zip(positions, weights)
+    ])
+
+    contract = json.loads(json.dumps(document))
+    contract["name"] = "Weighted Transform Contract"
+    contract["bones"][0]["setup"].update(rotation=37, scale_x=-1.3, scale_y=.8)
+    influences = contract["skins"]["default"]["hand.R"]["hand.R"]["vertices"]["influences"]
+    influences[2] = [bind(7, positions[2], .5001), bind(8, positions[2], .5)]
+    influences[3][0]["weight"] = .9999
+    def track(bone, property, values):
+        return dict(bone=bone, property=property, keys=[dict(time=t, value=v, curve="linear") for t, v in values])
+    contract["animations"] = [dict(name="weighted contract", tracks=[
+        track(0, "scaleX", [(0, 1), (.5, 0), (1, -1.2), (2, 1)]),
+        track(7, "scaleY", [(0, 1), (.5, 0), (1, -.6), (2, 1)]),
+        track(8, "rotation", [(0, 0), (1, 400), (2, 0)]),
+        track(6, "rotation", [(0, -10), (1, 35), (2, -10)]),
+        track(1, "x", [(0, 0), (1, 8), (2, 0)]),
+    ])]
+    return document, contract
+
+
+def repeated_influence_fixture(document):
+    """Original repeated influence data for the external runtime oracle."""
+    repeated = json.loads(json.dumps(document))
+    repeated["name"] = "Weighted Repeated Influence Contract"
+    vertex = repeated["skins"]["default"]["hand.R"]["hand.R"]["vertices"]["influences"][4]
+    index = next(i for i, influence in enumerate(vertex) if influence["bone"] == 8)
+    influence = vertex[index]
+    influence["weight"] *= .5
+    vertex.insert(index + 2, json.loads(json.dumps(influence)))
+    return repeated
+
+
 class Canvas:
     def __init__(self, width, height):
         self.width, self.height = width, height
@@ -204,7 +274,7 @@ def main():
         peach[slot] = {slot: {**skin[slot][slot], "name": slot+".peach"}}
     # Skin placeholders must not collide with direct attachments in default.
     shared = {slot: entries for slot, entries in skin.items() if slot not in peach}
-    doc = dict(format=3, name="Peach Bot", fps=30, bones=bones, slots=slots, skins={"default":shared,"peach":peach,"mint":mint}, animations=[dict(name="wave",tracks=wave),dict(name="idle",tracks=idle)])
+    doc = dict(format=4, name="Peach Bot", fps=30, bones=bones, slots=slots, skins={"default":shared,"peach":peach,"mint":mint}, animations=[dict(name="wave",tracks=wave),dict(name="idle",tracks=idle)])
     (ROOT/"peach-bot.peachy").write_text(json.dumps(doc, indent=2)+"\n")
     contract = json.loads(json.dumps(doc))
     contract["name"] = "Transform Contract"
@@ -234,7 +304,7 @@ def main():
         vertices = [local(-w,-h),local(w,-h),local(w,h),local(-w,h),local(0,0)]
         # Setup deformation: the UVs stay fixed while the center moves.
         vertices[4][0] += 8
-        mesh = dict(type="mesh",path=r["path"],width=r["width"],height=r["height"],vertices=vertices,
+        mesh = dict(type="mesh",path=r["path"],width=r["width"],height=r["height"],vertices=dict(mode="slotLocal", positions=vertices),
                     uvs=[[0,1],[1,1],[1,0],[0,0],[.5,.5]],triangles=[0,1,4,1,2,4,2,3,4,3,0,4],
                     hull=4,edges=[0,2,2,4,4,6,6,0])
         if "name" in r: mesh["name"]=r["name"]
@@ -245,6 +315,10 @@ def main():
     mesh_contract["bones"][0]["setup"].update(rotation=37,scale_x=-1.3,scale_y=.8)
     mesh_contract["animations"] = contract["animations"]
     (ROOT/"mesh-contract.peachy").write_text(json.dumps(mesh_contract,indent=2)+"\n")
+    weighted, weighted_contract = weighted_fixtures(mesh_doc)
+    (ROOT/"weighted-bot.peachy").write_text(json.dumps(weighted,indent=2)+"\n")
+    (ROOT/"weighted-contract.peachy").write_text(json.dumps(weighted_contract,indent=2)+"\n")
+    (ROOT/"weighted-repeated.peachy").write_text(json.dumps(repeated_influence_fixture(weighted),indent=2)+"\n")
     print(f"Wrote original fixture: {len(bones)} bones, {len(slots)} slots, 2 animations, {len(parts)} textures")
 
 

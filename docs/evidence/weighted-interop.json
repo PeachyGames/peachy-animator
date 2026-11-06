@@ -1,0 +1,12 @@
+{
+  "commandsApplied": 4,
+  "sourceUnchanged": true,
+  "nativeFormat": 4,
+  "nativeValidated": true,
+  "weightedInfluencesPreservedThroughBoneSlotRenameAndJsonRoundtrip": true,
+  "roundtripPoseSamples": 168,
+  "maxRoundtripError": 4.161188726925502e-09,
+  "legacyV3GoldenExact": true,
+  "legacyV3SourceUnchanged": true,
+  "bundle": "bundle/peachy-export-1793939067707237000"
+}

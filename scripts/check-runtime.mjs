@@ -39,7 +39,7 @@ const sourceProject = JSON.parse(readFileSync(source, 'utf8'));
 const data = new SkeletonJson(new AtlasAttachmentLoader(atlas)).readSkeletonData(readFileSync(exportPath, 'utf8'));
 assert.equal(data.version.split('.').slice(0, 2).join('.'), '4.3');
 assert.equal(data.animations.length, sourceProject.animations.length, 'Every native clip is exported, including empty clips');
-const report = { regionComparisons: 0, maxRegionError: 0, meshComparisons: 0, maxMeshError: 0, uvComparisons: 0, maxUVError: 0, runtime: 'Spine 4.3 external oracle', bones: data.bones.length, slots: data.slots.length, skins:data.skins.map(s=>s.name), clips: [], tolerance: 0.001, maxWorldError: 0, comparisons: 0 };
+const report = { regionComparisons: 0, maxRegionError: 0, meshComparisons: 0, weightedMeshComparisons: 0, maxMeshError: 0, uvComparisons: 0, maxUVError: 0, runtime: 'Spine 4.3 external oracle', bones: data.bones.length, slots: data.slots.length, skins:data.skins.map(s=>s.name), clips: [], tolerance: 0.001, maxWorldError: 0, comparisons: 0 };
 for (const animation of data.animations) {
   const native = sourceProject.animations.find(clip => clip.name === animation.name);
   assert.ok(native, 'Exported clip has a native source');
@@ -79,6 +79,9 @@ for (const animation of data.animations) {
         const native=sourceProject.skins[key.skin][key.slot][key.placeholder];
         assert.equal(skeleton.slots[draw.slot].data.name,key.slot,'Slot identity');
         if (native.type==='mesh') assert.ok(skeleton.slots[draw.slot].appliedPose.attachment instanceof MeshAttachment,'Native mesh remains a mesh in the external runtime');
+        if (native.vertices?.mode === 'weighted') {
+          assert.ok(skeleton.slots[draw.slot].appliedPose.attachment.bones?.length > 0, 'Native weighted mesh remains weighted in the external runtime');
+        }
         if (native.type==='region' || sourceProject.format===1) assert.ok(skeleton.slots[draw.slot].appliedPose.attachment instanceof RegionAttachment,'Native region remains a region in the external runtime');
       }
       for (let slotIndex=0;slotIndex<skeleton.slots.length;slotIndex++) {
@@ -105,6 +108,8 @@ for (const animation of data.animations) {
         if (!(attachment instanceof MeshAttachment)) continue;
         const actual=actualDraws.get(slotIndex);
         assert.ok(actual,`Missing mesh at slot ${slotIndex}`);
+        const native=sourceProject.skins[actual.attachment.skin][actual.attachment.slot][actual.attachment.placeholder];
+        const weighted=native.vertices?.mode === 'weighted';
         assert.equal(actual.image,attachment.path);
         assert.deepEqual(actual.triangles,Array.from(attachment.triangles),'Triangle order');
         assert.equal(actual.hull*2,attachment.hullLength,'Hull coordinate count');
@@ -116,6 +121,7 @@ for (const animation of data.animations) {
           const error=Math.abs(oursVertices[i]-vertices[i]);
           assert.ok(Number.isFinite(error) && error<=report.tolerance,`${animation.name} skin=${skin?.name} t=${time} mesh=${slotIndex} coordinate=${i} error=${error}`);
           report.meshComparisons++; report.maxMeshError=Math.max(report.maxMeshError,error);
+          if (weighted) report.weightedMeshComparisons++;
         }
         const localUVs=actual.uvs.flat();
         const packedUVs=attachment.sequence.getUVs(0);
