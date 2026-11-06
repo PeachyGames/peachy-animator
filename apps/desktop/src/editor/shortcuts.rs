@@ -134,6 +134,51 @@ impl Editor {
         }
     }
 
+    fn tool_shortcuts(&mut self, ctx: &egui::Context) {
+        if !ctx.input(|input| input.focused) {
+            return;
+        }
+        let tools = ctx.input_mut(|input| {
+            let mut tools = Vec::new();
+            input.events.retain(|event| {
+                let egui::Event::Key {
+                    key,
+                    pressed: true,
+                    repeat,
+                    modifiers,
+                    ..
+                } = event
+                else {
+                    return true;
+                };
+                if *modifiers != egui::Modifiers::NONE {
+                    return true;
+                }
+                let tool = match key {
+                    egui::Key::C => Tool::Rotate,
+                    egui::Key::V => Tool::Move,
+                    egui::Key::X => Tool::Scale,
+                    egui::Key::Z => Tool::Shear,
+                    egui::Key::G => Tool::Weights,
+                    _ => return true,
+                };
+                if !repeat {
+                    tools.push(tool);
+                }
+                false
+            });
+            tools
+        });
+        for tool in tools {
+            // A tool action ends a preview even when that tool is already selected.
+            self.cancel_gesture();
+            self.set_tool(tool);
+            if tool == Tool::Weights {
+                ctx.memory_mut(|memory| memory.request_focus(Self::weights_id()));
+            }
+        }
+    }
+
     pub(super) fn shortcuts(&mut self, ctx: &egui::Context) {
         if ctx.input(|i| i.viewport().close_requested()) && !self.confirm_discard() {
             ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
@@ -150,7 +195,6 @@ impl Editor {
         if self.ik_shortcuts(ctx)
             || self.transform_shortcuts(ctx)
             || self.weight_edit_shortcuts(ctx)
-            || self.weights_shortcuts(ctx)
         {
             return;
         }
@@ -165,6 +209,10 @@ impl Editor {
         // file/history actions remain available there, while text owns its undo.
         if !ctx.text_edit_focused() {
             self.file_history_shortcuts(ctx);
+            self.tool_shortcuts(ctx);
+        }
+        if self.weights_shortcuts(ctx) {
+            return;
         }
         if ctx.egui_wants_keyboard_input()
             && !self.dopesheet_has_focus(ctx)
@@ -246,18 +294,6 @@ impl Editor {
         }
         if ctx.input(|i| i.key_pressed(egui::Key::F9)) {
             self.toggle_views();
-        }
-        if ctx.input(|i| i.key_pressed(egui::Key::C)) {
-            self.set_tool(Tool::Rotate);
-        }
-        if ctx.input(|i| i.key_pressed(egui::Key::X)) {
-            self.set_tool(Tool::Scale);
-        }
-        if ctx.input(|i| i.key_pressed(egui::Key::V)) {
-            self.set_tool(Tool::Move);
-        }
-        if ctx.input(|i| i.key_pressed(egui::Key::Z)) {
-            self.set_tool(Tool::Shear);
         }
         if ctx.input(|i| i.key_pressed(egui::Key::Space)) {
             self.deselect();

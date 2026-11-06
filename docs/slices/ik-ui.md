@@ -75,6 +75,20 @@ explicit visual/reference gates; no new pane, tool or shortcut was inferred.
 
 ## Native diagnostics
 
+Unmodified C/V/X/Z/G tool actions are routed outside text, popup and modal
+ownership, including after a Target link or normal button has focus. They retain
+event order and exact modifiers; file/history modified shortcuts run first. The
+focused widget keeps arrows, Enter, Space and Tab. Tool actions cancel a held
+preview before switching, including selecting the current tool again. Numeric
+text retains tool letters as text and keeps its own undo.
+
+This is a deliberate inference from the globally listed defaults in the
+[Tools guide](https://esotericsoftware.com/spine-tools) and text-field ownership;
+it is not an observed claim of exact installed-Spine normal-button focus behavior.
+That comparison remains a gate. A historical human staff discussion of
+[text-field focus](https://esotericsoftware.com/forum/d/11231-editor-focusing-on-rotate-field-after-mode-switch)
+also distinguishes text traversal from viewport hotkeys, but is not 4.3 evidence.
+
 Targets: constraint:<index>, folder:Constraints, ikParent/ikChild/ikTarget,
 ikTargetChoose, ikMixSlider, ikMixValue, ikPositive, and
 ikAnnotation:<bone>:<constraint>. F12 ik reports selection, target-picker and Mix
