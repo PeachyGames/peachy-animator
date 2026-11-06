@@ -95,6 +95,10 @@ fn version_boundaries_reject_wrong_vertex_shapes_and_stale_duration_fields() {
             serde_json::to_value(decode(&old).unwrap()).unwrap()
         };
         if version == 4 {
+            assert_eq!(
+                value.as_object_mut().unwrap().remove("constraints"),
+                Some(json!([]))
+            );
             value["format"] = json!(4);
             for bone in value["bones"].as_array_mut().unwrap() {
                 for field in ["shear_x", "shear_y"] {
