@@ -16,6 +16,8 @@ pub(super) struct IkEdit {
     constraint: usize,
     base: IkConstraint,
     animation: usize,
+    setup: bool,
+    auto_key: bool,
     time: f32,
     control: egui::Id,
     numeric: bool,
@@ -24,6 +26,14 @@ pub(super) struct IkEdit {
     percent: f64,
     finish_pending: bool,
     error: Option<String>,
+}
+
+pub(super) struct IkBendRequest {
+    constraint: usize,
+    positive: bool,
+    setup: bool,
+    animation: usize,
+    time: f32,
 }
 
 pub(super) struct IkTargetPicker {
@@ -36,7 +46,7 @@ impl Editor {
         let Constraint::Ik(ik) = self.session.document().constraints.get(index)?;
         Some(ik)
     }
-    fn selected_ik(&self) -> Option<usize> {
+    pub(super) fn selected_ik(&self) -> Option<usize> {
         match self.selection {
             Some(TreeItem::Constraint(index)) => Some(index),
             _ => None,
@@ -51,24 +61,25 @@ impl Editor {
     fn begin_ik_edit(&mut self, control: egui::Id, numeric: bool) -> Result<(), String> {
         self.cancel_gesture();
         self.weights.bind = None;
-        if !self.setup_mode {
-            return Err(
-                "IK settings are edited in Setup; constraint keys are not supported yet".into(),
-            );
-        }
         let constraint = self.selected_ik().ok_or("Select an IK constraint")?;
         let base = self
             .ik_constraint(constraint)
             .ok_or("Select an existing IK constraint")?
             .clone();
+        let current = self
+            .session
+            .authored_pose(self.weights_edit_target())?
+            .ik_poses()[constraint];
         self.session.commit_transaction();
         self.session.begin_transaction();
         self.playing = false;
         self.ik_edit = Some(IkEdit {
             constraint,
-            percent: f64::from(base.setup.mix) * 100.,
+            percent: current.mix * 100.,
             base,
             animation: self.animation,
+            setup: self.setup_mode,
+            auto_key: self.auto_key,
             time: self.time,
             control,
             numeric,
@@ -83,13 +94,23 @@ impl Editor {
         let Some(edit) = self.ik_edit.as_mut() else {
             return;
         };
-        let mut value = edit.base.clone();
-        value.setup.mix = (percent / 100.) as f32;
         edit.percent = percent;
-        let result = self.session.preview_transaction(Command::SetIkConstraint {
-            constraint: edit.constraint,
-            value,
-        });
+        let target = if edit.setup {
+            EditTarget::Setup
+        } else {
+            EditTarget::Animate {
+                animation: edit.animation,
+                time: edit.time,
+            }
+        };
+        let result = self.session.preview_edit_ik_pose(
+            edit.constraint,
+            target,
+            &[peachy_engine::IkPoseEdit::Mix {
+                value: (percent / 100.) as f32,
+            }],
+            edit.auto_key,
+        );
         edit.error = result.as_ref().err().cloned();
         match result {
             Ok(()) => {
@@ -105,6 +126,96 @@ impl Editor {
             self.session.cancel_transaction();
         }
     }
+    pub(super) fn ik_key_ready(&mut self) -> Result<(), String> {
+        let Some(edit) = self.ik_edit.as_mut() else {
+            return Ok(());
+        };
+        edit.finish_pending = false;
+        if !edit.valid_text {
+            return Err("Enter a finite Mix percentage before keying".into());
+        }
+        edit.error.clone().map_or(Ok(()), Err)
+    }
+    pub(super) fn ik_group_state(&self, constraint: usize) -> Result<KeyState, String> {
+        self.session.pose_edits().ik_key_state(
+            self.session.document(),
+            self.animation,
+            self.time,
+            constraint,
+        )
+    }
+    pub(super) fn current_ik_pose(
+        &self,
+        constraint: usize,
+    ) -> Result<peachy_engine::IkPose, String> {
+        self.session
+            .authored_pose(self.weights_edit_target())?
+            .ik_poses()
+            .get(constraint)
+            .copied()
+            .ok_or_else(|| "Unknown IK constraint".into())
+    }
+    pub(super) fn key_ik(&mut self, constraint: usize) {
+        self.request_pose_key(pose_key::PoseKeyAction::Ik { constraint });
+    }
+    pub(super) fn settle_ik_bend(&mut self) {
+        let Some(request) = self.ik_bend_request.take() else {
+            return;
+        };
+        if self.setup_mode != request.setup
+            || self.animation != request.animation
+            || self.time != request.time
+            || self.selected_ik() != Some(request.constraint)
+        {
+            return;
+        }
+        if let Err(error) = self.ik_key_ready() {
+            self.status = format!("Cannot change Positive: {error}");
+            return;
+        }
+        self.cancel_weight_edit();
+        self.cancel_transform_edit();
+        self.weights.bind = None;
+        self.playing = false;
+        let target = if request.setup {
+            EditTarget::Setup
+        } else {
+            EditTarget::Animate {
+                animation: request.animation,
+                time: request.time,
+            }
+        };
+        match self.session.edit_ik_pose(
+            request.constraint,
+            target,
+            &[peachy_engine::IkPoseEdit::BendPositive {
+                value: request.positive,
+            }],
+            self.auto_key,
+        ) {
+            Ok(()) => {
+                self.seal_ik_for_key();
+                self.session.commit_transaction();
+                self.status = "IK bend direction updated".into();
+                self.ik_evaluation_status();
+            }
+            Err(error) => {
+                self.hold_ik_key_error(&error);
+                self.status = error;
+            }
+        }
+    }
+    pub(super) fn seal_ik_for_key(&mut self) {
+        if let Some(edit) = self.ik_edit.take() {
+            self.ik_blocked = Some(edit.control);
+        }
+    }
+    pub(super) fn hold_ik_key_error(&mut self, error: &str) {
+        if let Some(edit) = &mut self.ik_edit {
+            edit.finish_pending = false;
+            edit.error = Some(error.into());
+        }
+    }
     fn finish_ik_edit(&mut self) {
         if self.ik_edit.take().is_some() {
             self.session.commit_transaction();
@@ -112,7 +223,8 @@ impl Editor {
     }
     pub(super) fn reconcile_ik(&mut self) {
         if self.ik_edit.as_ref().is_some_and(|edit| {
-            !self.setup_mode
+            self.setup_mode != edit.setup
+                || self.auto_key != edit.auto_key
                 || !self.show_tree
                 || self.selected_ik() != Some(edit.constraint)
                 || edit.animation != self.animation
@@ -246,6 +358,9 @@ impl Editor {
             .as_ref()
             .is_some_and(|edit| edit.control == response.id)
         {
+            if response.has_focus() || response.is_pointer_button_down_on() {
+                self.ik_edit.as_mut().unwrap().finish_pending = false;
+            }
             if let Some(valid) = parsed {
                 self.ik_edit.as_mut().unwrap().valid_text = valid;
             }
@@ -300,42 +415,37 @@ impl Editor {
         });
         ui.end_row();
     }
-    fn ik_positive_control(&mut self, ui: &mut egui::Ui, index: usize, ik: &IkConstraint) {
+    fn ik_positive_control(&mut self, ui: &mut egui::Ui, index: usize, positive: bool) {
         let label = ui.label("Options");
         self.record_target("ikOptions", label.rect);
-        let mut positive = ik.setup.bend_positive;
+        let mut positive = positive;
         let response = ui.add_enabled(
-            self.setup_mode,
+            self.ik_target.is_none(),
             egui::Checkbox::new(&mut positive, "Positive"),
         );
         self.record_target("ikPositive", response.rect);
         if response.changed() {
-            self.cancel_gesture();
-            self.weights.bind = None;
-            if let Some(mut value) = self.ik_constraint(index).cloned() {
-                value.setup.bend_positive = positive;
-                if self.dispatch(Command::SetIkConstraint {
-                    constraint: index,
-                    value,
-                }) {
-                    self.status = "IK bend direction updated".into();
-                    self.ik_evaluation_status();
-                }
-            }
+            self.ik_bend_request = Some(IkBendRequest {
+                constraint: index,
+                positive,
+                setup: self.setup_mode,
+                animation: self.animation,
+                time: self.time,
+            });
         }
         ui.end_row();
     }
-    fn ik_mix_controls(&mut self, ui: &mut egui::Ui, index: usize, mix: f32) {
+    fn ik_mix_controls(&mut self, ui: &mut egui::Ui, index: usize, mix: f64) {
         if let Some(control) = self.ik_blocked {
             ui.memory_mut(|memory| memory.surrender_focus(control));
         }
         let mut percent = self
             .ik_edit
             .as_ref()
-            .map_or(f64::from(mix) * 100., |edit| edit.percent);
+            .map_or(mix * 100., |edit| edit.percent);
         ui.label("Mix");
         ui.push_id(("ik-mix", index), |ui| {
-            ui.add_enabled_ui(self.setup_mode && self.ik_target.is_none(), |ui| {
+            ui.add_enabled_ui(self.ik_target.is_none(), |ui| {
                 ui.horizontal(|ui| {
                     let parsed = std::cell::Cell::new(None);
                     let value = ui.add(
@@ -368,6 +478,13 @@ impl Editor {
         let Some(ik) = self.ik_constraint(index).cloned() else {
             return;
         };
+        let current = match self.session.authored_pose(self.weights_edit_target()) {
+            Ok(pose) => pose.ik_poses()[index],
+            Err(error) => {
+                ui.colored_label(ACCENT, error);
+                return;
+            }
+        };
         egui::Grid::new(("ik-properties", index))
             .num_columns(2)
             .min_col_width(58.)
@@ -378,17 +495,10 @@ impl Editor {
                 self.ik_bone_row(ui, index, "Child", ik.bones.get(1).copied());
                 self.ik_bone_row(ui, index, "Target", Some(ik.target));
                 if ik.bones.len() == 2 {
-                    self.ik_positive_control(ui, index, &ik);
+                    self.ik_positive_control(ui, index, current.bend_positive);
                 }
-                self.ik_mix_controls(ui, index, ik.setup.mix);
+                self.ik_mix_controls(ui, index, current.mix);
             });
-        if !self.setup_mode {
-            ui.label(
-                RichText::new("Setup settings · IK constraint keys are not supported yet.")
-                    .small()
-                    .color(MUTED),
-            );
-        }
         if let Some(error) = self.ik_edit.as_ref().and_then(|edit| edit.error.as_ref()) {
             ui.label(RichText::new(error).small().color(ACCENT));
         }
@@ -423,7 +533,7 @@ impl Editor {
             if self
                 .ik_edit
                 .as_ref()
-                .is_some_and(|edit| edit.finish_pending)
+                .is_some_and(|edit| edit.finish_pending && edit.valid_text && edit.error.is_none())
             {
                 self.finish_ik_edit();
             }
@@ -433,6 +543,8 @@ impl Editor {
     pub(super) fn ik_diagnostic(&self) -> serde_json::Value {
         serde_json::json!({"selected":self.selected_ik(),"targetPicker":self.ik_target.as_ref().map(|picker|picker.constraint),
             "authored":self.session.authored_pose(self.weights_edit_target()).ok().and_then(|pose| self.selected_ik().and_then(|index|pose.ik_poses().get(index).copied())),
+            "pending":self.session.pose_edits(),
+            "keyState":self.selected_ik().map(|index|match self.ik_group_state(index) {Ok(state)=>serde_json::json!({"state":state}),Err(error)=>serde_json::json!({"error":error})}),
             "edit":self.ik_edit.as_ref().map(|edit|serde_json::json!({"constraint":edit.constraint,"percent":edit.percent,
                 "animation":edit.animation,"time":edit.time,"numeric":edit.numeric,"validText":edit.valid_text,"finishPending":edit.finish_pending,"error":edit.error}))})
     }
@@ -608,7 +720,7 @@ mod tests {
             .collect()
     }
     #[test]
-    fn actual_workspace_mix_entry_is_one_undo_and_animate_controls_are_read_only() {
+    fn actual_workspace_mix_entry_is_one_undo_and_animate_controls_edit_pending_values() {
         let mut editor = editor_fixture();
         install_ik(&mut editor, true, 0.);
         let original = editor.session.document().clone();
@@ -682,7 +794,7 @@ mod tests {
         click(&mut editor, &ctx, "ikPositive");
         assert!(editor.ik_edit.is_none());
         assert_eq!(editor.session.document(), &edited);
-        assert!(editor.session.pose_edits().is_empty());
+        assert!(editor.session.pose_edits().has_ik(0, 0));
         assert!(editor.selected_bone().is_none());
         editor.nudge_transform([1., 0.], false);
         assert_eq!(editor.session.document(), &edited);

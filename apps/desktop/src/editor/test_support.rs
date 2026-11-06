@@ -89,6 +89,8 @@ pub(super) fn editor_fixture() -> Editor {
         ik_edit: None,
         ik_blocked: None,
         ik_target: None,
+        ik_bend_request: None,
+        pose_key_request: None,
         hidden_views: None,
         drag: None,
         transform_blocked: false,

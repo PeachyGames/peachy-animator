@@ -13,7 +13,7 @@ impl Editor {
         ui.label(format!(
             "{:.0} frames · {} tracks",
             animation::frame_at(a.duration(), self.session.document().fps),
-            a.tracks.len()
+            a.tracks.len() + a.ik_tracks.len()
         ));
         ui.label(if self.animation == animation {
             "Active animation"
