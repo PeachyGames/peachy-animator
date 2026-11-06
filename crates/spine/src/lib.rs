@@ -389,6 +389,7 @@ pub fn import_json(value: &Value, name: &str) -> Result<Document, String> {
         return Err("FPS must be 1–240".into());
     }
     let doc = Document {
+        constraints: vec![],
         format: FORMAT_VERSION,
         name: name.into(),
         fps: fps as u32,
@@ -402,6 +403,9 @@ pub fn import_json(value: &Value, name: &str) -> Result<Document, String> {
 }
 
 pub fn export_json(doc: &Document) -> Result<Value, String> {
+    if !doc.constraints.is_empty() {
+        return Err("IK export implementation is pending".into());
+    }
     doc.validate()?;
     validate_export_names(doc)?;
     let bones: Vec<_> = doc

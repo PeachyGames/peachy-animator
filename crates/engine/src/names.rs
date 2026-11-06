@@ -73,8 +73,8 @@ mod tests {
                 assert_eq!(&after.skins[skin]["face-slot"], attachments);
                 assert!(!after.skins[skin].contains_key("head"));
             }
-            let old = evaluate_scene(&before, Some(0), 0.35, skin, None);
-            let new = evaluate_scene(&after, Some(0), 0.35, skin, None);
+            let old = evaluate_scene(&before, Some(0), 0.35, skin, None).unwrap();
+            let new = evaluate_scene(&after, Some(0), 0.35, skin, None).unwrap();
             let affine_values = |world: &[crate::Affine]| {
                 world
                     .iter()

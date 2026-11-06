@@ -4,6 +4,7 @@ use std::collections::BTreeMap;
 
 fn fixture() -> Document {
     Document {
+        constraints: vec![],
         format: FORMAT_VERSION,
         name: "Original checked evaluation fixture".into(),
         fps: 30,
