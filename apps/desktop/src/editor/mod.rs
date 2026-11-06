@@ -3,6 +3,7 @@ mod animation_management;
 mod dopesheet;
 mod dopesheet_selection;
 mod icons;
+mod ik;
 mod key_drag;
 mod layout;
 mod mesh;
@@ -108,6 +109,9 @@ pub(crate) struct Editor {
     weight_blocked: Option<egui::Id>,
     weight_controls: Option<[egui::Id; 2]>,
     weights_handles: Vec<[f32; 2]>,
+    ik_edit: Option<ik::IkEdit>,
+    ik_blocked: Option<egui::Id>,
+    ik_target: Option<ik::IkTargetPicker>,
     drag: Option<TransformEdit>,
     transform_blocked: bool,
     transform_blocked_control: Option<egui::Id>,
@@ -211,6 +215,9 @@ impl Editor {
             weight_blocked: None,
             weight_controls: None,
             weights_handles: Vec::new(),
+            ik_edit: None,
+            ik_blocked: None,
+            ik_target: None,
             hidden_views: None,
             drag: None,
             transform_blocked: false,
@@ -273,6 +280,8 @@ impl Editor {
     }
 
     fn dispatch(&mut self, command: Command) -> bool {
+        self.cancel_ik_edit();
+        self.ik_target = None;
         self.cancel_weight_edit();
         self.cancel_transform_edit();
         match self.session.dispatch(command) {
@@ -364,6 +373,8 @@ impl Editor {
         mut local: Transform,
         properties: &[Property],
     ) {
+        self.cancel_ik_edit();
+        self.ik_target = None;
         self.cancel_weight_edit();
         if properties
             .iter()
@@ -412,6 +423,9 @@ impl Editor {
     }
 
     fn select(&mut self, item: TreeItem) {
+        if self.ik_target_selection(&item) {
+            return;
+        }
         if self.weights_bind_selection(&item) {
             return;
         }
@@ -475,6 +489,7 @@ impl Editor {
             self.cancel_dopesheet_drag();
         }
         selection::reconcile(&mut self.selection, self.session.document());
+        self.reconcile_ik();
         self.selection_history.reconcile(self.session.document());
         self.animation = self
             .animation
@@ -500,6 +515,11 @@ impl Editor {
         self.reconcile_dopesheet_selection();
     }
     fn undo(&mut self) {
+        self.ik_target = None;
+        if self.ik_edit.is_some() {
+            self.cancel_ik_edit();
+            return;
+        }
         self.weights.bind = None;
         if self.drag.is_some() {
             self.cancel_transform_edit();
@@ -520,6 +540,11 @@ impl Editor {
         self.reconcile_selection();
     }
     fn redo(&mut self) {
+        self.ik_target = None;
+        if self.ik_edit.is_some() {
+            self.cancel_ik_edit();
+            return;
+        }
         self.weights.bind = None;
         if self.drag.is_some() {
             self.cancel_transform_edit();
@@ -579,6 +604,9 @@ impl Editor {
                     self.weights = Default::default();
                     self.weight_blocked = None;
                     self.weight_controls = None;
+                    self.ik_edit = None;
+                    self.ik_blocked = None;
+                    self.ik_target = None;
                     self.transform_blocked = false;
                     self.transform_blocked_control = None;
                     self.weights_handles.clear();
@@ -657,8 +685,8 @@ impl Editor {
     }
 }
 
-impl eframe::App for Editor {
-    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+impl Editor {
+    fn workspace_ui(&mut self, ui: &mut egui::Ui) {
         let ctx = ui.ctx().clone();
         if !ctx.input(|input| input.focused) {
             self.cancel_gesture();
@@ -842,7 +870,7 @@ impl eframe::App for Editor {
                     "tool":match self.tool {Tool::Rotate=>"rotate",Tool::Move=>"translate",Tool::Scale=>"scale",Tool::Shear=>"shear",Tool::Mesh=>"vertices",Tool::Weights=>"weights"},
                     "treeVisible":self.show_tree,"dopesheetVisible":!self.setup_mode && self.show_dopesheet,"showDopesheet":self.show_dopesheet,
                     "animation":self.animation,"skin":self.skin,"time":self.time,"playing":self.playing,"playDirection":self.play_direction,"looping":self.looping,"zoom":self.zoom,
-                    "axes":self.axes,"toolValues":self.selected_transform().zip(self.selected_parent()).map(|(local,parent)|peachy_engine::transform_values(local,parent,self.axes)),
+                    "axes":self.axes,"toolValues":match self.selected_pose() {Ok(pose)=>Some(peachy_engine::transform_values(pose.authored,pose.parent,self.axes)),Err(_)=>None},
                     "autoKey":self.auto_key,"unkeyedPose":self.session.pose_edits(),"selectedTransform":self.selected_transform(),"locals":self.session.local_pose(self.active_animation(),self.time),
                     "keyStates":self.selected_bone().map(|bone| [Property::Rotation,Property::X,Property::ScaleX,Property::ShearX].map(|p| self.key_state(bone,&peachy_engine::transform_group(&[p])))),
                     "setupMode":self.setup_mode,"dirty":self.session.is_dirty(),"canUndo":self.session.can_undo(),"canRedo":self.session.can_redo(),"imageCount":self.textures.len(),
@@ -859,6 +887,16 @@ impl eframe::App for Editor {
                 report["weightedMeshCount"] = self.weighted_mesh_count().into();
                 report["weightsContext"] = self.weights_diagnostic();
                 report["weightsDirect"] = self.weight_direct_diagnostic();
+                report["ik"] = self.ik_diagnostic();
+                report["evaluatedPose"] = match self
+                    .session
+                    .evaluated_pose(self.weights_edit_target())
+                {
+                    Ok(pose) => {
+                        serde_json::json!({"authoredLocals":pose.authored_locals(),"appliedLocals":pose.applied_locals(),"world":pose.world()})
+                    }
+                    Err(error) => serde_json::json!({"error":error}),
+                };
                 report["transformGesture"] = self.transform_gesture_diagnostic();
                 report["evaluationError"] = self.evaluation_error.clone().into();
                 report["shearDisplayPolicy"] = "localPendingComparison".into();
@@ -877,6 +915,12 @@ impl eframe::App for Editor {
         if self.capture.is_some() {
             ctx.request_repaint_after(std::time::Duration::from_millis(25));
         }
+    }
+}
+
+impl eframe::App for Editor {
+    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        self.workspace_ui(ui);
     }
 }
 

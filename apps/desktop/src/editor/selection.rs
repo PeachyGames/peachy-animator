@@ -7,6 +7,7 @@ pub enum Folder {
     Skins,
     Animations,
     Slots,
+    Constraints,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -19,6 +20,7 @@ pub enum TreeItem {
     Attachment(AttachmentRef),
     Skin(String),
     Animation(usize),
+    Constraint(usize),
 }
 
 impl TreeItem {
@@ -32,6 +34,7 @@ impl TreeItem {
             Self::Attachment(k) => format!("attachment:{}", json!([k.skin, k.slot, k.placeholder])),
             Self::Skin(s) => format!("skin:{s}"),
             Self::Animation(i) => format!("animation:{i}"),
+            Self::Constraint(i) => format!("constraint:{i}"),
         }
     }
     pub fn exists(&self, doc: &Document) -> bool {
@@ -47,6 +50,7 @@ impl TreeItem {
             Self::Attachment(k) => doc.attachment(k).is_some(),
             Self::Skin(s) => doc.skins.contains_key(s),
             Self::Animation(i) => *i < doc.animations.len(),
+            Self::Constraint(i) => *i < doc.constraints.len(),
         }
     }
     pub fn label(&self, doc: &Document) -> String {
@@ -66,6 +70,14 @@ impl TreeItem {
                 .animations
                 .get(*i)
                 .map_or("?", |a| a.name.as_str())
+                .into(),
+            Self::Constraint(i) => doc
+                .constraints
+                .get(*i)
+                .map_or("?", |constraint| {
+                    let peachy_document::Constraint::Ik(ik) = constraint;
+                    ik.name.as_str()
+                })
                 .into(),
         }
     }
@@ -102,6 +114,7 @@ impl TreeItem {
             Self::Attachment(k) => json!({"type":"attachment","key":k}),
             Self::Skin(s) => json!({"type":"skin","name":s}),
             Self::Animation(i) => json!({"type":"animation","index":i}),
+            Self::Constraint(i) => json!({"type":"constraint","index":i}),
         }
     }
 }

@@ -320,6 +320,7 @@ impl Editor {
         }
     }
     pub(super) fn finish_idle_transactions(&mut self, ctx: &egui::Context) {
+        self.settle_ik_edit(ctx);
         self.settle_transform_edit(ctx);
         if !ctx.input(|input| input.pointer.any_down())
             && self
@@ -330,6 +331,7 @@ impl Editor {
             self.finish_weight_edit();
         }
         if self.weight_edit.is_none()
+            && self.ik_edit.is_none()
             && self.drag.is_none()
             && !ctx.input(|input| input.pointer.any_down())
         {

@@ -1,6 +1,13 @@
 //! Native controls translate input into shared engine transform operations.
 use super::*;
-use peachy_engine::{set_transform_value, transform_values, world_pose};
+use peachy_engine::{set_transform_value, transform_values};
+
+pub(super) struct SelectedPose {
+    pub authored: Transform,
+    pub applied: Transform,
+    pub parent: Affine,
+    pub world: Affine,
+}
 
 impl Tool {
     pub(super) fn transform_tool(self) -> Option<TransformTool> {
@@ -32,12 +39,32 @@ pub(super) fn item_parent(item: &TreeItem, doc: &Document, world: &[Affine]) -> 
     }
 }
 impl Editor {
-    pub(super) fn selected_parent(&self) -> Option<Affine> {
-        let world = world_pose(
-            self.session.document(),
-            &self.session.local_pose(self.active_animation(), self.time),
-        );
-        item_parent(self.selection.as_ref()?, self.session.document(), &world)
+    pub(super) fn selected_pose(&self) -> Result<SelectedPose, String> {
+        let item = self
+            .selection
+            .as_ref()
+            .ok_or("Select an editable transform")?;
+        let authored = self
+            .selected_transform()
+            .ok_or("Selected item has no editable transform")?;
+        let pose = self.session.evaluated_pose(self.weights_edit_target())?;
+        let parent = item_parent(item, self.session.document(), pose.world())
+            .ok_or("Selected parent is unavailable")?;
+        let (applied, world) = match item {
+            TreeItem::Bone(bone) => (pose.applied_locals()[*bone], pose.world()[*bone]),
+            TreeItem::Attachment(_) => (authored, parent.then(Affine::from_transform(authored))),
+            _ => return Err("Selected item has no editable transform".into()),
+        };
+        Ok(SelectedPose {
+            authored,
+            applied,
+            parent,
+            world,
+        })
+    }
+    #[cfg(test)]
+    pub(super) fn selected_parent(&self) -> Result<Affine, String> {
+        self.selected_pose().map(|pose| pose.parent)
     }
     pub(super) fn set_axes(&mut self, axes: Axes) {
         if self.axes != axes {
@@ -51,9 +78,15 @@ impl Editor {
             return;
         }
         self.cancel_gesture();
-        let Some((local, parent)) = self.selected_transform().zip(self.selected_parent()) else {
-            return;
+        let pose = match self.selected_pose() {
+            Ok(pose) => pose,
+            Err(error) => {
+                self.evaluation_error = Some(error.clone());
+                self.status = error;
+                return;
+            }
         };
+        let (local, parent) = (pose.authored, pose.parent);
         match set_transform_value(local, parent, self.axes, property, value) {
             Ok(mut transform) => {
                 if self.setup_mode && property == Property::Rotation {
@@ -71,9 +104,15 @@ impl Editor {
     }
     pub(super) fn nudge_transform(&mut self, delta: [f32; 2], fine: bool) {
         self.cancel_gesture();
-        let Some((local, parent)) = self.selected_transform().zip(self.selected_parent()) else {
-            return;
+        let pose = match self.selected_pose() {
+            Ok(pose) => pose,
+            Err(error) => {
+                self.evaluation_error = Some(error.clone());
+                self.status = error;
+                return;
+            }
         };
+        let (local, parent) = (pose.authored, pose.parent);
         let shown = transform_values(local, parent, self.axes);
         let amount = if fine { 0.1 } else { 1. };
         match self.tool {
