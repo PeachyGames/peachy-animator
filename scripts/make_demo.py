@@ -19,6 +19,11 @@ TEAL = (102, 194, 175, 255)
 DARK = (56, 77, 85, 255)
 
 
+def track(bone, property, values, curve="linear"):
+    return dict(bone=bone, property=property,
+                keys=[dict(time=time, value=value, curve=curve) for time, value in values])
+
+
 def weighted_fixtures(mesh_document):
     """Original bind data; the renderer and runtime evaluate it independently."""
     document = json.loads(json.dumps(mesh_document))
@@ -65,8 +70,6 @@ def weighted_fixtures(mesh_document):
     influences = contract["skins"]["default"]["hand.R"]["hand.R"]["vertices"]["influences"]
     influences[2] = [bind(7, positions[2], .5001), bind(8, positions[2], .5)]
     influences[3][0]["weight"] = .9999
-    def track(bone, property, values):
-        return dict(bone=bone, property=property, keys=[dict(time=t, value=v, curve="linear") for t, v in values])
     contract["animations"] = [dict(name="weighted contract", tracks=[
         track(0, "scaleX", [(0, 1), (.5, 0), (1, -1.2), (2, 1)]),
         track(7, "scaleY", [(0, 1), (.5, 0), (1, -.6), (2, 1)]),
@@ -87,6 +90,40 @@ def repeated_influence_fixture(document):
     influence["weight"] *= .5
     vertex.insert(index + 2, json.loads(json.dumps(influence)))
     return repeated
+
+
+def shear_fixture(weighted_document):
+    """Exercise angular bone axes with the original mixed geometry and artwork."""
+    document = json.loads(json.dumps(weighted_document))
+    document["name"] = "Peach Bot Shear Lab"
+    for bone in document["bones"]:
+        for field in ["shear_x", "shear_y"]:
+            bone["setup"][field] = float(bone["setup"][field])
+    indices = {bone["name"]: index for index, bone in enumerate(document["bones"])}
+    root, body, head, forearm = [indices[name] for name in ["root", "body", "head", "forearm.R"]]
+    document["bones"][root]["setup"].update(rotation=37, scale_x=-1.3, scale_y=.8)
+    document["bones"][body]["setup"].update(shear_x=11, shear_y=-7)
+    document["bones"][head]["setup"].update(shear_x=-6, shear_y=9)
+    document["bones"][forearm]["setup"].update(shear_x=5, shear_y=-3)
+    document["animations"] = [
+        dict(name="shear linear", tracks=[
+            track(body, "shearX", [(0, 0), (1, 20), (2, 0)]),
+            track(body, "shearY", [(0, 0), (1, -12), (2, 0)]),
+            track(forearm, "shearX", [(0, 0), (1, 15), (2, 0)]),
+        ]),
+        dict(name="shear stepped", tracks=[
+            track(body, "shearX", [(0, 0), (.5, 8), (1.5, -8), (2, 0)], "stepped"),
+            track(body, "shearY", [(0, 0), (.5, -6), (1.5, 10), (2, 0)], "stepped"),
+            track(head, "shearY", [(0, 0), (.5, 6), (1.5, -10), (2, 0)], "stepped"),
+        ]),
+        dict(name="shear bezier", tracks=[
+            track(head, "shearX", [(0, -10), (1, 18), (2, -10)], {"bezier":[.2, .1, .7, .9]}),
+            track(head, "shearY", [(0, 7), (1, -12), (2, 7)], {"bezier":[.35, 0, .8, 1]}),
+            track(forearm, "shearY", [(0, -4), (1, 10), (2, -4)], {"bezier":[.25, 0, .75, 1]}),
+        ]),
+        *document["animations"],
+    ]
+    return document
 
 
 class Canvas:
@@ -257,8 +294,6 @@ def main():
     region("upper-arm.R", arm_r, "upper-arm", 29)
     region("forearm.R", fore_r, "forearm", 27)
     region("hand.R", hand_r, "hand", 10, rotation=-90)
-    def track(b, prop, values, curve="linear"):
-        return dict(bone=b, property=prop, keys=[dict(time=t, value=v, curve=curve) for t,v in values])
     wave = [track(hand_r, "rotation", [(0,-15),(.3,25),(.6,-18),(.9,25),(1.2,-18),(1.5,25),(1.8,-15),(2.4,-15)]),
             track(fore_r,"rotation",[(0,0),(.6,12),(1.2,0),(1.8,12),(2.4,0)]),
             track(body,"y",[(0,0),(.6,5),(1.2,0),(1.8,5),(2.4,0)], {"bezier":[.42,0,.58,1]}),
@@ -316,7 +351,8 @@ def main():
     (ROOT/"weighted-bot.peachy").write_text(json.dumps(weighted,indent=2)+"\n")
     (ROOT/"weighted-contract.peachy").write_text(json.dumps(weighted_contract,indent=2)+"\n")
     (ROOT/"weighted-repeated.peachy").write_text(json.dumps(repeated_influence_fixture(weighted),indent=2)+"\n")
-    print(f"Wrote original fixture: {len(bones)} bones, {len(slots)} slots, 2 animations, {len(parts)} textures")
+    (ROOT/"shear-bot.peachy").write_text(json.dumps(shear_fixture(weighted),indent=2)+"\n")
+    print(f"Wrote original fixtures: {len(bones)} bones, {len(slots)} slots, {len(parts)} textures; Shear Lab has 5 animations")
 
 
 if __name__ == "__main__":
