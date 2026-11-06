@@ -1,5 +1,5 @@
 {
-  "format": 2,
+  "format": 3,
   "name": "Mesh Transform Contract",
   "fps": 30,
   "bones": [
@@ -697,7 +697,6 @@
   "animations": [
     {
       "name": "contract",
-      "duration": 2,
       "tracks": [
         {
           "bone": 1,

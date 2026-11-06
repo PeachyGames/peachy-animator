@@ -22,6 +22,8 @@ pub fn advance_playback(
     looping: bool,
     direction: PlayDirection,
 ) -> PlaybackStep {
+    // Empty and frame-zero-only clips have no interval to traverse. Stop at
+    // zero in either direction, including Loop, without division or remainder.
     if !time.is_finite()
         || !elapsed.is_finite()
         || elapsed < 0.
@@ -91,10 +93,5 @@ pub fn adjacent_key_time(
 pub fn last_key_time(doc: &Document, animation: usize) -> f32 {
     doc.animations
         .get(animation)
-        .into_iter()
-        .flat_map(|a| a.tracks.iter())
-        .flat_map(|t| t.keys.iter())
-        .map(|k| k.time)
-        .max_by(f32::total_cmp)
-        .unwrap_or(0.)
+        .map_or(0., |animation| animation.duration())
 }
