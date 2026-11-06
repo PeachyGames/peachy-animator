@@ -24,9 +24,12 @@ fn rotate(p: [f32; 2], degrees: f32) -> [f32; 2] {
     [p[0] * c - p[1] * s, p[0] * s + p[1] * c]
 }
 fn unit(p: [f32; 2]) -> [f32; 2] {
-    let n = p[0].hypot(p[1]);
-    if n > 1e-8 {
-        [p[0] / n, p[1] / n]
+    let norm = f64::from(p[0]).hypot(f64::from(p[1]));
+    if norm > 0.0 && norm.is_finite() {
+        [
+            (f64::from(p[0]) / norm) as f32,
+            (f64::from(p[1]) / norm) as f32,
+        ]
     } else {
         [0., 0.]
     }
@@ -95,14 +98,15 @@ pub fn set_transform_value(
             };
         }
         Property::Rotation if axes == Axes::World => {
+            if local.scale_x == 0.0 {
+                return Err("Cannot edit World rotation of a zero X axis".into());
+            }
             let p = parent
-                .inverse_point(
-                    parent.x + value.to_radians().cos(),
-                    parent.y + value.to_radians().sin(),
-                )
-                .ok_or("Cannot edit World rotation through a zero-scale parent")?;
-            let desired =
-                p[1].atan2(p[0]).to_degrees() + if local.scale_x < 0. { 180. } else { 0. };
+                .inverse_vector(value.to_radians().cos(), value.to_radians().sin())
+                .ok_or("Cannot edit World rotation through a singular parent")?;
+            let desired = p[1].atan2(p[0]).to_degrees()
+                + if local.scale_x < 0. { 180. } else { 0. }
+                - local.shear_x;
             result.rotation += signed_delta(local.rotation, desired);
         }
         _ => property.write(&mut result, value),
@@ -120,28 +124,43 @@ pub fn transform_axes(
     axes: Axes,
     tool: TransformTool,
 ) -> [[f32; 2]; 2] {
-    if tool != TransformTool::Scale && axes == Axes::World {
+    if matches!(tool, TransformTool::Scale | TransformTool::Shear) {
+        let world = parent.then(Affine::from_transform(local));
+        return [unit([world.a, world.c]), unit([world.b, world.d])];
+    }
+    if axes == Axes::World {
         return [[1., 0.], [0., 1.]];
     }
-    let rotation = if tool == TransformTool::Scale || axes == Axes::Local {
+    // Retain the existing rotation-based Local translation frame until its
+    // authored-shear convention is observed; do not invent a decomposed frame.
+    let rotation = if axes == Axes::Local {
         local.rotation
     } else {
         0.
     };
-    let sign_x = if tool == TransformTool::Scale && local.scale_x < 0. {
-        -1.
-    } else {
-        1.
-    };
-    let sign_y = if tool == TransformTool::Scale && local.scale_y < 0. {
-        -1.
-    } else {
-        1.
-    };
     [
-        unit(direction(parent, rotate([sign_x, 0.], rotation))),
-        unit(direction(parent, rotate([0., sign_y], rotation))),
+        unit(direction(parent, rotate([1., 0.], rotation))),
+        unit(direction(parent, rotate([0., 1.], rotation))),
     ]
+}
+
+/// A collapsed opposite axis contributes nothing, so the live axis still has
+/// one recoverable coordinate. Parallel nonzero axes remain ambiguous.
+fn scale_coordinate(world: Affine, point: [f32; 2], axis: usize) -> Option<f32> {
+    if let Some(coordinates) = world.inverse_vector(point[0], point[1]) {
+        return Some(coordinates[axis]);
+    }
+    let columns = [[world.a, world.c], [world.b, world.d]];
+    if columns[1 - axis] != [0., 0.] {
+        return None;
+    }
+    let [x, y] = columns[axis].map(f64::from);
+    let squared = x * x + y * y;
+    if squared == 0.0 || !squared.is_finite() {
+        return None;
+    }
+    let coordinate = ((f64::from(point[0]) * x + f64::from(point[1]) * y) / squared) as f32;
+    coordinate.is_finite().then_some(coordinate)
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -179,7 +198,7 @@ pub fn drag_transform(
                 delta = [basis[0] * distance, basis[1] * distance];
             }
             let p = parent
-                .inverse_point(parent.x + delta[0], parent.y + delta[1])
+                .inverse_vector(delta[0], delta[1])
                 .ok_or("Cannot translate through a zero-scale parent")?;
             result.x += p[0];
             result.y += p[1];
@@ -223,21 +242,22 @@ pub fn drag_transform(
         }
         TransformTool::Scale => {
             let origin = parent.point(local.x, local.y);
-            let basis = transform_axes(local, parent, Axes::Local, tool);
             let a = [start[0] - origin[0], start[1] - origin[1]];
             let b = [end[0] - origin[0], end[1] - origin[1]];
             let dot = |v: [f32; 2], u: [f32; 2]| v[0] * u[0] + v[1] * u[1];
             let factor = if let Some(i) = axis {
-                let denominator = dot(a, basis[i]);
-                if denominator.abs() < 1e-5 {
-                    1.
-                } else {
-                    dot(b, basis[i]) / denominator
-                }
+                // A dot projection mixes the other coordinate on an oblique
+                // basis. Solve actual bone coordinates before taking the ratio.
+                let world = parent.then(Affine::from_transform(local));
+                let a = scale_coordinate(world, a, i)
+                    .ok_or("Cannot scale through an ambiguous or zero bone axis")?;
+                let b = scale_coordinate(world, b, i)
+                    .ok_or("Cannot scale through an ambiguous or zero bone axis")?;
+                if a.abs() < 1e-5 { 1.0 } else { b / a }
             } else {
                 let denominator = dot(a, a);
                 if denominator < 1e-8 {
-                    1.
+                    1.0
                 } else {
                     dot(a, b) / denominator
                 }

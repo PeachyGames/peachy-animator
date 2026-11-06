@@ -11,3 +11,10 @@ Raw f64 angle sums with that observed coefficient predicted 157 finite held-out 
 An additional original opposite-huge input `r=f32(1e20), shear_x=shear_y=-r` produced columns `(1,1,0,0)`, establishing left-to-right association for the Y angle sum: regrouping to `(r+shear_y)+90` produces a different result. Do not pre-reduce angles or replace this with a generic tangent-skew matrix.
 
 Complete local scripts, all failed Pi/modulo/overflow variants, unchanged input SHA256 manifests, actual matrices and calibration candidate sets remain in the coordinator's local evidence `shear-runtime-probe-20261106T065302Z-369614` and `shear-core-20261106T073006Z-160bcd`. Inputs were original bone-only fixtures; no private artwork or official implementation is committed or redistributed. These are bounded numeric data observations, not proof of every platform's trig backend, UI convention, mixing policy or full Spine compatibility.
+
+
+## Tool conversion boundary
+
+World rotation entry inverse-maps the desired direction without adding the parent's translation, then accounts for existing X shear and signed scale while preserving the other authored locals. Finite f64 inverse primitives reject exact evaluated singularity and results not representable as finite f32; no determinant epsilon rejects valid tiny scales. Binding retains its separate absolute 0.001 coordinate residual policy unchanged.
+
+Scale and explicit Shear handles follow the actual world columns. Axis scaling solves oblique coordinates; if the other column is exactly zero, the live column remains independently recoverable. Parallel nonzero columns are ambiguous and rejected. Local translation retains the existing rotation-based numeric frame pending installed-editor comparison for explicit shear. Shear without an explicit handle currently returns an error: empty-space dragging exists in the public guide, but its actual mapping remains an observation gate. The core's `snap_rotation` option applies to Rotate only; it is not evidence of Spine's unobserved Shear Shift convention. No matrix decomposition rewrites rotation, shear, sign or complete turns.
