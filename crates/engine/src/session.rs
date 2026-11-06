@@ -7,6 +7,60 @@ struct WorkingState {
     pose: PoseEdits,
 }
 
+impl WorkingState {
+    /// Pure pose transition shared by ordinary edits and fixed-base previews.
+    fn edit_pose(
+        &self,
+        bone: usize,
+        target: EditTarget,
+        transform: Transform,
+        properties: &[Property],
+        auto_key: bool,
+    ) -> Result<Self, String> {
+        match target {
+            EditTarget::Setup => Ok(Self {
+                document: apply_command(
+                    &self.document,
+                    Command::SetPose {
+                        bone,
+                        target,
+                        transform,
+                        properties: properties.to_vec(),
+                    },
+                )?,
+                pose: self.pose.clone(),
+            }),
+            EditTarget::Animate { animation, time } => {
+                let pose =
+                    self.pose
+                        .edit(&self.document, animation, time, bone, transform, properties)?;
+                let mut candidate = WorkingState {
+                    document: self.document.clone(),
+                    pose,
+                };
+                if auto_key {
+                    let properties = transform_group(properties);
+                    let transform =
+                        candidate
+                            .pose
+                            .locals(&candidate.document, Some(animation), time)[bone];
+                    candidate.document = apply_command(
+                        &candidate.document,
+                        Command::SetPose {
+                            bone,
+                            target,
+                            transform,
+                            properties: properties.clone(),
+                        },
+                    )?;
+                    candidate.pose.remove(animation, bone, &properties);
+                }
+                Ok(candidate)
+            }
+        }
+    }
+}
+
 pub struct Session {
     state: WorkingState,
     undo: Vec<WorkingState>,
@@ -156,47 +210,28 @@ impl Session {
         properties: &[Property],
         auto_key: bool,
     ) -> Result<(), String> {
-        match target {
-            EditTarget::Setup => self.dispatch(Command::SetPose {
-                bone,
-                target,
-                transform,
-                properties: properties.to_vec(),
-            }),
-            EditTarget::Animate { animation, time } => {
-                let pose = self.state.pose.edit(
-                    self.document(),
-                    animation,
-                    time,
-                    bone,
-                    transform,
-                    properties,
-                )?;
-                let mut candidate = WorkingState {
-                    document: self.document().clone(),
-                    pose,
-                };
-                if auto_key {
-                    let properties = transform_group(properties);
-                    let transform =
-                        candidate
-                            .pose
-                            .locals(&candidate.document, Some(animation), time)[bone];
-                    candidate.document = apply_command(
-                        &candidate.document,
-                        Command::SetPose {
-                            bone,
-                            target,
-                            transform,
-                            properties: properties.clone(),
-                        },
-                    )?;
-                    candidate.pose.remove(animation, bone, &properties);
-                }
-                self.replace(candidate);
-                Ok(())
-            }
-        }
+        let candidate = self
+            .state
+            .edit_pose(bone, target, transform, properties, auto_key)?;
+        self.replace(candidate);
+        Ok(())
+    }
+    /// Recompute a pose gesture from its transaction's fixed document and pending pose.
+    /// Requires an active transaction. Auto Key off never creates animation keys;
+    /// failures preserve the previous valid preview, baseline, saved state and history.
+    /// Commit creates at most one Undo entry; cancel restores the exact base and redo.
+    pub fn preview_edit_pose(
+        &mut self,
+        bone: usize,
+        target: EditTarget,
+        transform: Transform,
+        properties: &[Property],
+        auto_key: bool,
+    ) -> Result<(), String> {
+        let base = self.transaction.as_ref().ok_or("No active transaction")?;
+        let candidate = base.edit_pose(bone, target, transform, properties, auto_key)?;
+        self.state = candidate;
+        Ok(())
     }
     /// Explicit key buttons and L always key, independent of Auto Key.
     pub fn key_pose(
