@@ -47,9 +47,10 @@ Region conversion bakes its attachment transform into four slot-local vertices.
 Unweighted subdivision inserts a triangle centroid and interpolates its UV while
 preserving the hull and existing indices. Both operations and setup vertex movement
 are shared serializable commands. Weighted `SetMeshVertex` and subdivision fail
-atomically, preserving pending pose/history/redo; weight authoring requires separate
-commands. The desktop shows read-only per-entry influences and posed handles without
-implementing weighted editing or inverse-bind math in the UI.
+atomically, preserving pending pose/history/redo. Initial Bind and Remove-all use
+the shared commands described below; Direct/brush weight edits and Update remain
+pending. The desktop shows influence values and posed handles without implementing
+weighted vertex editing or inverse-bind math in the UI.
 
 `peachy-spine` converts the supported 4.3 JSON subset. It owns Spine-specific naming
 and placeholder restrictions, separate from native invariants. Inspection returns a
@@ -85,8 +86,8 @@ an explicit allowlist, including a negative probe for an engine-to-UI dependency
 core was also reviewed for standard-library filesystem/clock/process calls; the graph
 check alone cannot establish their absence. See [the quality review](CODE_QUALITY.md).
 
-1. Build binding/weight editing and deform controls on explicit typed data, shared
-   evaluation and commands; keep the current weighted inspection path read-only.
+1. Extend initial Bind/Remove-all with explicit additional-binding, Direct/brush
+   and deform commands; retain imported values until an accepted edit changes them.
 2. Introduce stable entity IDs before deletion/reparenting and animation merging.
 3. Extend the shared I/O shell for formats/destinations; keep dialogs in the frontend.
 4. Add schemas and MCP around the existing serializable commands when needed.
@@ -263,3 +264,38 @@ Frame and screen/time arithmetic use wider intermediates to avoid overflow for
 finite large cursors. Empty clips do not enter division/remainder by zero. The
 external oracle independently checks exported runtime ends, including zero, and
 samples held poses after the end as well as ordinary and backward sample order.
+
+## Initial Bind and Remove-all
+
+`BindMeshToBone` and `UnbindMesh` are serializable pure transitions carrying an
+explicit `MeshBindPose` of local bone transforms. Initial Bind accepts a slot-local
+mesh and produces one weight-1 influence per vertex. Remove-all evaluates every
+existing influence, including repeats and nonunit totals, then stores the current
+vertices in slot-bone-local space. UVs, topology, hull, image metadata and bone
+transforms do not change. Later animation behavior follows the new bindings; shape
+preservation applies at the captured pose, not every former animation pose.
+
+The engine inverts only the bone required by the operation: the target bone for
+Bind or the slot bone for Remove-all. Wider intermediates avoid avoidable inversion
+loss. A zero determinant, nonfinite result or forward world-coordinate residual
+above 0.001 rejects the candidate atomically. The guard does not normalize weights
+or reject unrelated zero-scale bones merely because they do not have an inverse.
+
+`Session::bind_mesh_to_bone` and `Session::unbind_mesh` build that snapshot from an
+explicit Setup/Animate target, including pending posed locals. They preserve the
+transient pose and use the existing document-plus-pose history. The shell cancels
+gesture previews, finalizes prior numeric work and pauses playback before a concrete
+edit. It implements no binding geometry and does not key or discard the pose.
+
+`editor/weights.rs` owns pure retained selection and the imperative view/input shell.
+Its mesh/vertex/bone context survives normal bone posing, while normal transforms
+still use `TreeItem::Bone`. Binding requires a concrete target click after entering
+mode. Active-skin fallback and actual slot-placeholder resolution guard the explicit
+attachment reference; invalid contexts clear rather than redirect. Undo/Redo,
+selection-history navigation, mode/animation changes and hiding the view cancel transient Bind
+mode. Scrubbing may retain it and uses the pose at the subsequent target click.
+
+The real G tool participates in ordinary last-two-tool switching. Temporary Mesh
+inspection keeps its independent return tracking. Weights is a named resizable
+right-column view with shared independent icon cues and visibility state. This is
+provisional placement, not an implemented arbitrary docking system.

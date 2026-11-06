@@ -8,7 +8,7 @@ Do not count a rejected import or a synthetic success as a migrated game charact
 | Hurdle | Current evidence | Remaining acceptance gate |
 | --- | --- | --- |
 | Import our Spine characters | Supported 4.3 JSON includes weighted meshes; strict inspection explains refusals | November 6 UTC audit: weighted refusals 10→0, but 0/11 artist exports fully supported and all 11 require constraints. Add linked meshes/timelines/constraints and packed art, then verify an unchanged full production rig |
-| Modify a character | Bone transforms/length, region transforms, slot setup attachments, unweighted setup vertices and subdivision | Rig/image creation, pivots, remaining entity naming, delete/reparent with stable IDs; broader mesh/UV and weight authoring |
+| Modify a character | Bone transforms/length, region transforms, slot setup attachments, unweighted setup vertices/subdivision, initial one-bone Bind and Remove-all | Rig/image creation, pivots, remaining entity naming, delete/reparent with stable IDs; additional bindings, Direct/brush changes, Update and broader mesh/UV tools |
 | Work on poses | Setup and transient Animate poses, Rotate/Translate/Scale and axes, Auto Key/K/undo; weighted artwork follows posed bones | Shear/Pose tools, compensation, multi-selection, constraints and direct weight authoring |
 | Work on animations | Supported bone transforms/curves, pose keying, exact key selection/deletion, group retiming/duplication, Copy/Cut/Paste, animation rename/duplicate and transport | Broader timeline selection, extended playback, Graph, clip creation/deletion, mixing and remaining timeline types |
 | Work on slots/features | Typed slots/placeholders/attachments/skins, setup attachment edits, temporary editor visibility | Attachment/color/draw-order animation, slot creation/order/blending, sequences, events, clipping and constraints |
@@ -26,7 +26,9 @@ an entire character importable. See [the redacted audit](evidence/weighted-artis
 
 Use two continuing tracks: reference-matched authoring controls, and progressively
 broader format/evaluation support driven by a selected real rig. Weighted preview
-now works; binding/weight authoring and constraint support are the next large steps.
+now works, as do initial one-bone binding and Remove-all at the current pose.
+Additional bindings, Direct/brush weight editing, Update and constraints are next;
+these are not implied by the current G Weights tool/view.
 Tool/axis and timeline work continue alongside that track.
 Each feature needs independent core behavior, undo/save checks, native UI verification,
 export round trips and external runtime comparisons before its milestone advances.
@@ -34,3 +36,18 @@ export round trips and external runtime comparisons before its milestone advance
 Current limits are specified in [COMPATIBILITY.md](COMPATIBILITY.md); UI differences
 are tracked in [UI_PARITY.md](UI_PARITY.md). Full feature parity is the objective,
 not a current claim or a fixed completion estimate.
+
+## Initial binding checkpoint — November 6, 2026 UTC
+
+An active unweighted mesh can now be bound to one explicitly selected bone in
+Setup or Animate. Remove all captures its current shape as slot-local vertices.
+G opens the Weights tool/view; inspection context survives posing with normal bone
+tools. Save/reopen and export preserve the resulting mesh data. Pending bone poses
+still require explicit keying to become saved animation data.
+
+Command, CLI, runtime, installed-editor interchange and separate native acceptance
+are recorded in [binding validation](VALIDATION.md#initial-bind-and-remove-all--november-6-2026-utc).
+This advances a bounded rig-editing operation, not import coverage: Direct changes,
+adding bones to weighted meshes, Update, constraints, full production-rig editing
+and actual consuming-game acceptance remain separate hurdles. Native `.spine` and
+binary `.skel` decoding/writing remain unsupported.
