@@ -499,3 +499,20 @@ egui Hsva conversions. The compact custom drawing avoids global numeric-color
 style mutation or copied assets. Native bytes remain unmultiplied; premultiplication
 occurs only at rendering. The separate future IK contract is explicitly renumbered
 to native8 without changing its approved semantic requirements or gates.
+
+
+### WAV waveform and independent Audio audition — November 6, 2026
+
+The public [Audio guide](https://en.esotericsoftware.com/spine-audio-view) describes
+keyed audio events, which remain outside this bounded session auditioner. RIFF
+chunk parsing, integer/float PCM normalization and bounded channel extrema use
+independent standard-format code. Native output calls public NSSound methods
+through the already used, separately maintained objc2 AppKit bindings, following
+Apple's public [NSSound API](https://developer.apple.com/documentation/appkit/nssound)
+and [transport guide](https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/Sound/Tasks/PlayingAudioData.html).
+Native observation additionally found that NSSound can keep `isPlaying` true
+while paused; the adapter combines that value with a successful pause state and
+checks the stopped native clock. No proprietary Spine implementation, private audio or copied icons are used. Tests
+and captures generate an original PCM tone; native state verification sets only
+that owned sound's volume to zero, never system volume. No listening-quality or
+complete Spine Audio interchange/parity claim is made.

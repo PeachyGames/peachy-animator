@@ -717,3 +717,28 @@ Nine chooser tests plus actual painted-mesh tint checks cover data/gesture/rende
 behavior. Native mouse/typed acceptance and exact installed-editor layout remain
 separate gates. Color animation, dark/two-color tint, non-normal blending and free
 docking are not presented as working. See [evidence](evidence/slot-color-view.json).
+
+
+## WAV Audio view — November 6, 2026
+
+**Views → Audio** provides a real bounded waveform/audition panel rather than a
+disabled entry. Its Load WAV, independent transport/seek, Loop, Volume/Mute and
+waveform zoom/pan use an immutable validated byte snapshot. Actual native player
+time drives the cursor. macOS NSSound output is instance-owned and unnamed; it
+never changes system gain or launches an external media player. Other platforms
+retain waveform inspection and display the missing playback backend explicitly.
+
+Source/player/preferences stay outside Document/history and main transport.
+Failed replacement preserves the prior usable clip. Hide/inactive/focus/modal
+pauses, explicit pause before synchronous dialogs, successful Open clearing,
+new control epochs, held-pointer guards and actual end-frame focus ownership keep
+independent input from changing the main rig. Default editors have no player;
+normal Rust UI tests inject a mock and never initialize AppKit audio.
+
+The official [Audio guide](https://en.esotericsoftware.com/spine-audio-view) centers
+on keyed audio events. Those timelines, animation synchronization, Save/export,
+other formats and full cross-platform playback are explicit future gaps. There is
+no pretend device/rate/recording UI. [Evidence](evidence/audio-view.json) distinguishes
+mock UI behavior, native silent-volume backend state, loaded native rendering and
+pending full native mouse/keyboard acceptance. All 15 named views now have a
+functional bounded scope; this is not complete installed-editor parity.

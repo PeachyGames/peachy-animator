@@ -370,3 +370,17 @@ and other blend modes remain refused. Native7 does not add placeholder IK tracks
 the separately approved pending [IK animation contract](slices/ik-animation-design.md)
 now targets native8 with the same gates. No new private-rig acceptance audit is
 claimed. See [Slot Color evidence](evidence/slot-color-view.json).
+
+
+## Audio audition scope — November 6, 2026
+
+The Audio view adds independent session-only WAV inspection/audition, not an audio
+attachment/event model. Project format remains 7. RIFF little-endian mono/stereo
+PCM8/16/24/32 and finite float32 at 8–192 kHz are bounded to 64 MiB. Checked metadata,
+chunk bounds/padding, frame alignment and byte rate guard both the waveform and
+unchanged native playback snapshot. Waveform extrema cover all channels and the
+last sample, bounded to 4,096 bins. macOS playback uses NSSound; waveform inspection
+is available without that backend on other platforms. No new audio crate/runtime
+is redistributed. Audio timelines, synchronization, recorded data, other formats,
+cross-platform output and audio Save/export remain unsupported. [Evidence](evidence/audio-view.json)
+separates mock UI checks, silent native backend state and native input acceptance.

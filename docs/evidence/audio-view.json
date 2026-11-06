@@ -1,0 +1,99 @@
+{
+  "date": "2026-11-06",
+  "view": "Audio",
+  "nativeFormat": 7,
+  "baseline": "9cd4e11c846f57375a95075b359cad219f300c44",
+  "sourceCommits": [
+    "6571552",
+    "58246e6",
+    "311b707",
+    "3936a37"
+  ],
+  "startingWorktreeClean": true,
+  "backup": "../../../.local-backups/peachy-audio-20261106T190207Z-ed0f8a/",
+  "inventory": {
+    "implemented": 15,
+    "total": 15,
+    "remaining": []
+  },
+  "checks": {
+    "format": "passed",
+    "workspaceTests": 404,
+    "desktopTests": 173,
+    "engineTests": 153,
+    "ioLibraryTests": 10,
+    "focusedAudioGuiTests": 8,
+    "focusedWavTests": 6,
+    "standardSuiteIgnoredNativeTests": 1,
+    "separateNativeSoundTestsPassed": 1,
+    "clippyAllTargetsWarningsDenied": "passed",
+    "workspaceBuild": "passed",
+    "architectureCrates": 7,
+    "hostedCI": "not run"
+  },
+  "behavior": [
+    "Session-only immutable WAV snapshot shared by independent waveform and native output; main pose/transport/history untouched",
+    "RIFF mono/stereo PCM8/16/24/32 or finite float32, 8\u2013192 kHz, regular file at most 64 MiB; strict chunk/alignment/byte-rate guards",
+    "At most 4096 min/max bins cover every channel and last sample, including stereo antiphase",
+    "Native macOS clock, independent Play/Pause/Stop/seek/Loop/Volume/Mute; waveform zoom/pan/Fit",
+    "Pause before blocking dialogs and on hidden/inactive/focus/modal state; successful Open stops/clears; failed replacement retains previous usable clip",
+    "Held seek/control epochs and actual end-frame focus ownership isolate main clipboard/Delete/transport/nudges",
+    "No backend on other platforms: waveform inspection without simulated playback"
+  ],
+  "nativeBackend": {
+    "separatelyInvokedIgnoredTest": true,
+    "volume": 0,
+    "systemVolumeChanged": false,
+    "actualNativeClockAdvanced": true,
+    "pausedClockStable": true,
+    "repeatedPauseHarmless": true,
+    "seekResumeLoopStopPassed": true,
+    "audibleListeningAccepted": false,
+    "initialFailure": "NSSound isPlaying remained true while paused although native currentTime stopped. Adapter now combines native state with successful pause state; resume and repeated pause are verified.",
+    "probe": "native-probe-3d89d0a1/probe-result.json",
+    "finalLog": "native-visual-9dbf7a0d92/native-sound.log",
+    "testBinarySHA256": "a9827bbb32b185ae9ad4eab97128041e7be7720f20f25500a00a28ef6f2e20bd"
+  },
+  "nativeRender": {
+    "normalOnScreenWindow": true,
+    "exactPidForegroundVerified": true,
+    "windowFocusedInCapture": true,
+    "loadedOriginalArtwork": true,
+    "audioRendered": true,
+    "originalWavLoaded": true,
+    "controlsAndWaveformWithinPanel": true,
+    "nativePlaybackAvailable": true,
+    "diagnosticStartupOnly": true,
+    "nativeInputAccepted": false,
+    "capture": "editor-1793997198884636000.json",
+    "pid": 72514,
+    "verificationScriptExit": 1,
+    "interruption": "Foreground changed before an optional pointer-refresh capture. Exact-PID guard refused further input; earlier verified loaded frame retained. Owned app closed by trap.",
+    "committedCapture": "../audio-view-editor.png",
+    "sourceDifference": "Temporary startup opens Audio and loads original generated 2 sec 16000 Hz mono 440 Hz PCM tone without autoplay. Source restored byte-exact and production rebuilt.",
+    "captureSHA256": "66078be23707ee73f81f5aa17dff01aafaaf60f63d2900a58e6bfa747edb051c"
+  },
+  "nativeInput": {
+    "accepted": false,
+    "reason": "Egui interaction and real native backend checks pass; complete native mouse/keyboard acceptance remains pending. Render evidence uses diagnostic startup.",
+    "earlierEvidence": "timeline-view.json"
+  },
+  "sourceRestoredExactly": true,
+  "productionSourceSHA256": "7ff0626f1ddae18a5f12132d305ea61ef9acbfdcf59bb7396b2dacfd1b43d964",
+  "productionBinarySHA256": "f48f307112e918a8d10e683c5142dc4f43a1eaa3e40bbeb09624f4f315020546",
+  "diagnosticBinarySHA256": "f5bc2108418862020f248fae9468fb63b6b77b15f94f14d5a1b7947f5230b9e9",
+  "cleanup": {
+    "ownedPid": 72514,
+    "ownedEditorExited": true,
+    "temporaryAuthorizationAbsent": true,
+    "privateKeyWritten": false,
+    "browserLaunched": false,
+    "sourceRestored": true,
+    "productionRebuilt": true
+  },
+  "limitations": [
+    "WAV audition only: attachment/event timelines, animation synchronization, keys and audio Save/export pending",
+    "Native macOS playback; other platforms support waveform inspection only",
+    "No audible listening-quality or complete installed-editor visual/input parity acceptance"
+  ]
+}

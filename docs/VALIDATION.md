@@ -1326,3 +1326,54 @@ native6 backup; do not manually change a native7 version number or discard color
 Existing source files are unchanged until explicit Save, which retains a backup.
 The task-owned editor is verified exited, temporary GUI authorization/command
 files are removed, no private key is written, and no browser is launched.
+
+
+## Audio view and completed view inventory — November 6, 2026
+
+All **15 views** in [VIEWS.md](VIEWS.md) now open functional bounded views;
+there are no unimplemented view placeholders. Feature-level limitations and
+mode availability remain explicit. Audio completes this inventory with a
+session-only WAV waveform and independent audition, rather than an audio
+attachment/event timeline model. Project format remains native7.
+
+Final source passes formatting, **404 workspace Rust tests** (including
+**173 desktop**, **153 engine** and **10 IO library** tests), all-targets Clippy
+with warnings denied, the workspace build and seven-crate architecture guard.
+Hosted CI was not run. Eight Audio GUI/mock regressions and six WAV decoder
+checks cover actual resulting state, independent transport/preferences, source
+replacement, cancellation/focus/modal lifecycle, unsupported playback, bounded
+waveform work, malformed input and the minimum dock. An egui wheel-event phase
+and waveform arrow-focus lock were corrected before final checks.
+
+The separate, normally ignored native test also **passes** from an authenticated
+GUI context. It checks actual native clock advancement, pause stability, repeated
+Pause, seek, resume, Loop and Stop with the owned sound's volume set to zero;
+system volume is untouched. Its first run caught NSSound reporting `isPlaying`
+while successfully paused with a stopped clock. The adapter now combines native
+state with its successful pause state, allowing Resume and harmless repeated
+Pause. All workspace checks were rerun on that fix. This is native backend-state
+acceptance, not an audible listening-quality assessment.
+
+The [native capture](audio-view-editor.png) shows the original Peach Bot and a
+generated two-second mono 16 kHz tone loaded in Audio. A normal on-screen window,
+exact owned-PID foreground, loaded artwork and all waveform/controls inside the
+panel are verified. A later foreground change caused the exact-PID guard to
+refuse a redundant pointer-refresh capture; the earlier verified loaded frame
+is retained. The trap closed only the owned editor. Temporary startup opens
+Audio and loads that original tone without autoplay; final source is restored
+byte-for-byte and production rebuilt. Full native mouse/keyboard acceptance
+remains **pending**, distinct from egui checks and native backend/render evidence.
+See [Audio evidence](evidence/audio-view.json).
+
+The clean integration baseline is `9cd4e11`; Audio source checkpoints are
+`6571552`, `58246e6`, `311b707` and native pause correction `3936a37`.
+Baseline/status/diff, lane, failed probes, final checks, native artifacts/hashes
+and cleanup are retained under
+`../.local-backups/peachy-audio-20261106T190207Z-ed0f8a/`.
+Rollback: revert this documentation checkpoint, then `3936a37`,
+`311b707`, `58246e6` and `6571552` in reverse dependency order, preserving unrelated
+work. No native file migration is part of Audio. The exact owned editor PID is
+verified exited, scoped localhost authorization and temporary command files are
+removed, no private key is written, and no browser is launched. Audio event
+keys, animation synchronization, audio Save/export, other formats and
+cross-platform output remain explicit gaps.

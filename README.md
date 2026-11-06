@@ -100,6 +100,14 @@ in its panel or with **Ghosts** above the viewport.
 
 ![Ghosting in the native editor](docs/ghosting-editor.png)
 
+All **15 Views** now have functional bounded implementations; [VIEWS.md](docs/VIEWS.md)
+records each scope and remaining parity gaps.
+
+**Views → Audio** loads a session-only WAV waveform with independent audition,
+seek, zoom/pan, Loop, Volume and Mute. Playback uses native macOS output; other
+platforms support waveform inspection. Audio events, synchronization and export
+remain pending; audition data does not become part of the project.
+
 **Views → Graph** shows the selected bone's keyed transform values and edits them
 with vertical key dragging. Exact-key selection preserves close native times;
 timing and curves stay fixed. Tangents, retiming and multiple curves remain pending.

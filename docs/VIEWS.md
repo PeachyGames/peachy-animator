@@ -1,8 +1,9 @@
 # Views audit and implemented scope
 
-Implementation progress: **14 of 15 views implemented**. The latest completed
-view is **Slot Color**. The implemented views have working controls within the
-explicit scope below; Audio is the remaining view to implement.
+Implementation progress: **15 of 15 views implemented**. The latest completed
+view is **Audio**. Every named view now has functional controls within the
+explicit scope below. Feature-level parity gaps remain listed; this is not a
+claim that every Spine feature is supported.
 
 The old selector contained only **Tree, Dopesheet and Weights** because those were
 the only implemented panels. It was not an installation, license or rendering
@@ -10,14 +11,13 @@ problem. The rest of Spine's Views had not been built. Setup also hid the workin
 Dopesheet, which made the gap more apparent.
 
 On November 6, 2026 the public [user guide inventory](https://en.esotericsoftware.com/spine-user-guide)
-listed 15 views. The selector now names every one and gives unsupported entries a
-disabled state with a concrete explanation. This makes omissions visible without
-presenting empty panels as working tools.
+listed 15 views. The selector now names every one and opens a working view. Mode-specific
+availability and bounded feature scopes are explicit below.
 
 | Spine view | Peachy Animator status |
 | --- | --- |
 | Animations | New searchable animation list in Animate. Click activates without changing the current bone selection; right-click selects its Tree properties without activation; double-click opens the existing Rename dialog. |
-| Audio | Unimplemented: audio data, waveforms and playback. |
+| Audio | New session-only WAV waveform and independent audition view: Load, Play/Pause/Stop, seek, zoom/pan, Loop, Volume and Mute. Native macOS output uses the validated byte snapshot. Audio event timelines, animation synchronization and audio Save/export remain pending. |
 | Dopesheet | Existing supported bone-transform keys, curves, selection, clipboard and retiming. |
 | Ghosting | New Animate onion-skin view: fractional Frames and exact Key Frames, Current keyed-pose comparison, per-side colors, Images/Solid display and opacity, Anchor, On top, Loop, per-frame offsets and typed bone Selection with Lock/Refresh. Renders checked region/mesh/IK poses in the main viewport. |
 | Graph | New editable scalar graph for the selected bone and seven supported transform properties. Exact-key picker, engine-sampled curves, vertical value dragging, Fit and Zoom Keys. Existing key times/curves stay fixed; tangents, retiming and multiple curves remain pending. |
@@ -32,9 +32,9 @@ presenting empty panels as working tools.
 | Tree | Existing typed outline, filters, activation dots and contextual properties. The Slots filter shows draw order; Spine has no separate Slots view in this inventory. |
 | Weights | Existing bounded Bind/Remove all/Add binding/Direct workflow; still no brush, Update, locks or multi-vertex editing. |
 
-One view remains unimplemented: **Audio**.
+All 15 views now have bounded implementations; no view remains a disabled placeholder.
 
-Animations, Ghosting, Graph, Mesh Tools, Metrics, Outline, Playback, Preview, Skins, Slot Color and Weights use a resizable tabbed panel in the right rail.
+Animations, Audio, Ghosting, Graph, Mesh Tools, Metrics, Outline, Playback, Preview, Skins, Slot Color and Weights use a resizable tabbed panel in the right rail.
 With the Tree closed, they use that rail's full height. Opening an already open
 entry focuses its tab. Individual close buttons are present on these views, Tree
 and Dopesheet; they reopen from Views. F9 stores/restores all view visibility,
@@ -46,8 +46,8 @@ history. Opening another document retains workspace tabs while clearing searches
 and fitting Outline to the new document.
 
 Animations, Ghosting, Graph, Playback, Timeline and Dopesheet are unavailable in Setup; their open
-tabs are retained and return in Animate. All unsupported views remain discoverable in both
-modes. This is a local, explicit availability policy. The live public guide says
+tabs are retained and return in Animate. Audio and Slot Color remain available in both modes; Slot Color is read-only
+in Animate. This is a local, explicit availability policy. The live public guide says
 Spine's lists differ by mode, but does not enumerate the complete per-mode menu.
 An exact installed 4.3 menu comparison remains a gate. Preview in Spine can be
 useful during Setup, so it is not incorrectly labeled Animate-only here.
@@ -96,6 +96,33 @@ derived white mask; original image pixels and files are unchanged. A request ove
 layer, leaving the current pose usable. Current controls use reaches up to 60
 frames and steps down to 0.25 frames. Motion Vectors and Silhouette/Xray outlines
 remain pending; the implemented Images and Solid modes are functional rendering.
+
+Audio loads a **session-only WAV** for waveform inspection and independent
+audition. It uses one immutable, size-checked byte snapshot for both waveform
+and native playback, never rereading the path in the native player. Supported
+input is little-endian RIFF/WAVE, mono/stereo, 8–192 kHz, integer PCM8/16/24/32
+or finite float32, up to 64 MiB. Compressed/extensible/big-endian/RF64 inputs and
+malformed chunks/alignment are refused. At most 4,096 min/max bins include every
+sample across channels, so opposite stereo phases do not cancel visually.
+
+Load WAV, Play/Pause/Stop, seek, waveform zoom/pan, Loop, Volume and Mute act on
+that audition alone. The cursor polls actual player time rather than simulating
+elapsed playback from UI frames. The macOS backend uses an owned, unnamed
+NSSound with its own gain; it never changes system volume or runs an external
+player. Other platforms provide waveform inspection with playback explicitly
+unavailable. The view never changes the main pose, transport, selection or history.
+
+Hide/inactive/focus/modal actions pause audition. Synchronous file dialogs pause
+before opening; cancelled Open retains the clip paused, successful Open stops and
+clears it. Replacement errors keep the previous usable clip. New source epochs
+and held-pointer guards prevent stale input crossing clips; owned focus prevents
+main clipboard/Delete/transport/nudges from firing. Dropping a player stops only
+its own sound. Preferences and clip data stay outside Document and Save/export.
+
+This is a bounded waveform/audition view. Spine audio attachment/event timelines,
+keys, synchronization to animation, audio export, formats beyond the documented
+WAV subset and cross-platform playback remain pending. No fake device, rate or
+recording controls are shown. It does not claim full Spine Audio parity.
 
 Slot Color targets only a typed slot or an attachment's owning slot; a bone,
 constraint or skeleton selection never becomes an implicit target. Its inline
@@ -224,6 +251,7 @@ Behavior references are the public
 [Views](https://en.esotericsoftware.com/spine-views),
 [UI](https://en.esotericsoftware.com/spine-ui),
 [Animations](https://en.esotericsoftware.com/spine-animations-view),
+[Audio](https://en.esotericsoftware.com/spine-audio-view),
 [Skins](https://en.esotericsoftware.com/spine-skins-view),
 [Slot Color](https://en.esotericsoftware.com/spine-slot-color),
 [Metrics](https://en.esotericsoftware.com/spine-metrics),
@@ -265,3 +293,6 @@ in [Graph evidence](evidence/graph-view.json).
 
 Slot Color model/interchange, exact-byte input, renderer and native checks are
 recorded in [Slot Color evidence](evidence/slot-color-view.json).
+
+WAV decoding, independent Audio controls and native backend/render checks are
+recorded in [Audio evidence](evidence/audio-view.json).
