@@ -20,7 +20,7 @@ fn rename_preserves_animation_identity_tracks_pose_and_history() {
     expected.animations[0].name = "renamed".into();
     assert_eq!(renamed, expected);
     assert!(session.is_dirty());
-    for time in [0.0, 0.35, original.animations[0].duration] {
+    for time in [0.0, 0.35, original.animations[0].duration()] {
         assert_eq!(
             crate::local_pose(&original, Some(0), time),
             crate::local_pose(&renamed, Some(0), time)
@@ -45,9 +45,9 @@ fn rename_preserves_animation_identity_tracks_pose_and_history() {
 #[test]
 fn duplicate_is_an_independent_clip_with_exact_duration_keys_and_curves() {
     let mut original = fixture();
-    // Exercise a reserved duration beyond the last key, fractional times and each curve.
+    // Exercise an explicit hold beyond other tracks, fractional times and each curve.
     let source = &mut original.animations[0];
-    source.duration += 2.0;
+    let hold_time = source.duration() + 2.0;
     source.tracks[0].keys = vec![
         Keyframe {
             time: 0.0,
@@ -63,6 +63,11 @@ fn duplicate_is_an_independent_clip_with_exact_duration_keys_and_curves() {
             time: 0.719,
             value: 13.0,
             curve: Curve::Bezier([0.2, -0.3, 0.7, 1.3]),
+        },
+        Keyframe {
+            time: hold_time,
+            value: 13.0,
+            curve: Curve::Linear,
         },
     ];
     let count = original.animations.len();

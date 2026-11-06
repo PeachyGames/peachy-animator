@@ -1,5 +1,5 @@
 {
-  "format": 2,
+  "format": 3,
   "name": "Peach Bot",
   "fps": 30,
   "bones": [
@@ -511,7 +511,6 @@
   "animations": [
     {
       "name": "wave",
-      "duration": 2.4,
       "tracks": [
         {
           "bone": 8,
@@ -702,7 +701,6 @@
     },
     {
       "name": "idle",
-      "duration": 2,
       "tracks": [
         {
           "bone": 1,

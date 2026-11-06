@@ -41,7 +41,7 @@ fn fixture() -> Document {
         animations: vec![
             Animation {
                 name: "source".into(),
-                duration: 4.,
+
                 tracks: vec![
                     Track {
                         bone: 0,
@@ -67,7 +67,7 @@ fn fixture() -> Document {
             },
             Animation {
                 name: "target".into(),
-                duration: 1.,
+
                 tracks: vec![Track {
                     bone: 1,
                     property: Property::Rotation,
@@ -123,7 +123,7 @@ fn simultaneous_move_preserves_selected_ranges_and_close_unselected_keys() {
             }
         ]
     );
-    assert_eq!(moved.animations[0].duration, 4.);
+    assert_eq!(moved.animations[0].duration(), 1.5);
     assert_eq!(
         moved.animations[0].tracks[1..],
         before.animations[0].tracks[1..]
@@ -159,7 +159,7 @@ fn moving_and_copying_exact_fractional_keys_never_merge_neighbors() {
         move_keys(vec![reference(Property::Rotation, 1.)], 5., false),
     )
     .unwrap();
-    assert_eq!(shifted.animations[0].duration, 6.);
+    assert_eq!(shifted.animations[0].duration(), 6.);
 }
 
 #[test]
@@ -312,7 +312,7 @@ fn paste_to_another_bone_and_clip_uses_relative_timing_and_setup_relative_values
         keys(&result, 1, 1, Property::X),
         &[key((1. - 0.12345) + 0.25, 7., Curve::Stepped)]
     );
-    assert_eq!(result.animations[1].duration, (1. - 0.12345) + 0.25);
+    assert_eq!(result.animations[1].duration(), (1. - 0.12345) + 0.25);
     assert_eq!(crate::local_pose(&result, Some(1), 0.25)[1].rotation, 100.);
     assert_eq!(result.animations[0], before.animations[0]);
     let mut session = Session::new(before.clone()).unwrap();
