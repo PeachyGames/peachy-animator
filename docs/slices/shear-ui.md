@@ -67,3 +67,19 @@ mode/clip/time/Auto Key, properties, input and error) separately from current
 values. Targets include shearTool, value:ShearX/Y, key:ShearX,
 timelineRow:ShearX/Y, gizmo:X/Y, gizmoOrigin, mainToolsClip and dopesheetClip.
 The diagnostic shearDisplayPolicy explicitly records the bounded local policy.
+
+
+## Finite scene boundary
+
+Canvas drawing/picking and Weights world-coordinate queries use the engine's
+checked scene evaluator with Session's pending locals. A nonrepresentable pose
+shows a viewport/status error, skips geometry and handles, and preserves the
+original document, selection, authoring time and pending pose. F12 evaluationError
+and Weights diagnostic evaluationError expose the failure. Local finite inputs are
+not replaced with zero or clamped into a drawable pose.
+
+Camera/geometry projection is also checked before drawing and picking. Ordinary
+finite arithmetic is retained, with wider fallback for representable intermediate
+overflow. Decorative grid lines use a count derived from viewport width/height
+and a wider phase calculation. This avoids a nonadvancing float-addition loop for
+large finite camera offsets without changing world geometry or authoring state.

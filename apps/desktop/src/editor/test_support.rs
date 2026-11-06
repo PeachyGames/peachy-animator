@@ -83,6 +83,7 @@ pub(super) fn editor_fixture() -> Editor {
         mesh_handles: Vec::new(),
         status: String::new(),
         error: None,
+        evaluation_error: None,
         new_bone: String::new(),
         rename: None,
         duplicate_animation: None,

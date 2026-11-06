@@ -33,12 +33,14 @@ impl Editor {
         self.prepare_viewport_transform_press(ui, rect);
         let painter = ui.painter_at(rect);
         painter.rect_filled(rect, 0., Color32::from_gray(43));
+        let mut scene = match self.scene_for_view() {
+            Ok(scene) => scene,
+            Err(error) => {
+                self.show_evaluation_error(ui, rect, error);
+                return;
+            }
+        };
         let doc = self.session.document();
-        let mut scene = scene_from_locals(
-            doc,
-            &self.skin,
-            self.session.local_pose(self.active_animation(), self.time),
-        );
         scene
             .attachments
             .retain(|a| !self.hidden_slots.contains(&a.slot));
@@ -71,26 +73,27 @@ impl Editor {
         }
         let origin = rect.center() + self.pan;
         let zoom = self.zoom;
-        let screen = |p: [f32; 2]| origin + vec2(p[0] * zoom, -p[1] * zoom);
-        let world_point = |p: Pos2| [(p.x - origin.x) / zoom, -(p.y - origin.y) / zoom];
+        if let Err(error) = self.check_view_projection(&scene, rect, origin, zoom) {
+            self.show_evaluation_error(ui, rect, error);
+            return;
+        }
+        if self.evaluation_error.take().is_some() {
+            ui.ctx().request_repaint();
+        }
+        let screen = |p: [f32; 2]| scene_view::screen_point(origin, zoom, p);
+        let world_point = |p: Pos2| scene_view::view_world_point(origin, zoom, p);
         let grid = 50. * zoom;
-        if grid >= 8. {
-            let mut x = origin.x + (rect.left() - origin.x).div_euclid(grid) * grid;
-            while x < rect.right() {
-                painter.line_segment(
-                    [pos2(x, rect.top()), pos2(x, rect.bottom())],
-                    Stroke::new(1., Color32::from_gray(49)),
-                );
-                x += grid;
-            }
-            let mut y = origin.y + (rect.top() - origin.y).div_euclid(grid) * grid;
-            while y < rect.bottom() {
-                painter.line_segment(
-                    [pos2(rect.left(), y), pos2(rect.right(), y)],
-                    Stroke::new(1., Color32::from_gray(49)),
-                );
-                y += grid;
-            }
+        for x in scene_view::grid_lines(rect.left(), rect.right(), origin.x, grid) {
+            painter.line_segment(
+                [pos2(x, rect.top()), pos2(x, rect.bottom())],
+                Stroke::new(1., Color32::from_gray(49)),
+            );
+        }
+        for y in scene_view::grid_lines(rect.top(), rect.bottom(), origin.y, grid) {
+            painter.line_segment(
+                [pos2(rect.left(), y), pos2(rect.right(), y)],
+                Stroke::new(1., Color32::from_gray(49)),
+            );
         }
         painter.line_segment(
             [pos2(rect.left(), origin.y), pos2(rect.right(), origin.y)],

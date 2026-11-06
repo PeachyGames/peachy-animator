@@ -258,19 +258,18 @@ impl Editor {
         false
     }
     pub(super) fn weights_diagnostic(&self) -> serde_json::Value {
-        let scene = scene_from_locals(
-            self.session.document(),
-            &self.skin,
-            self.session.local_pose(self.active_animation(), self.time),
-        );
-        let vertices = scene
-            .attachments
-            .iter()
-            .find(|draw| Some(&draw.attachment) == self.weights.mesh.as_ref())
-            .map(|draw| &draw.vertices);
+        let scene = self.scene_for_view();
+        let evaluation_error = scene.as_ref().err();
+        let vertices = scene.as_ref().ok().and_then(|scene| {
+            scene
+                .attachments
+                .iter()
+                .find(|draw| Some(&draw.attachment) == self.weights.mesh.as_ref())
+                .map(|draw| &draw.vertices)
+        });
         serde_json::json!({"mesh":self.weights.mesh,"vertex":self.weights.vertex,"bone":self.weights.bone,
             "bindMode":match self.weights.bind {Some(BindMode::Mesh(_))=>Some("meshFirst"),Some(BindMode::Bone(_))=>Some("boneFirst"),None=>None},
-            "worldVertices":vertices,"handles":self.weights_handles,"visible":self.show_weights})
+            "worldVertices":vertices,"handles":if evaluation_error.is_some() { &[][..] } else { &self.weights_handles[..] },"evaluationError":evaluation_error,"visible":self.show_weights})
     }
     pub(super) fn weights_panel(&mut self, ui: &mut egui::Ui) {
         self.record_target("weightsPanel", ui.clip_rect());
