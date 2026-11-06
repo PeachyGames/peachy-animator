@@ -36,6 +36,7 @@ impl Editor {
         self.reconcile_dopesheet_selection();
         let view_rect = ui.max_rect();
         self.record_target("dopesheet", view_rect);
+        self.record_target("dopesheetClip", ui.clip_rect());
         ui.horizontal(|ui| {
             icons::heading(ui, Icon::Dopesheet, "Dopesheet");
             self.timeline_clipboard_toolbar(ui);
@@ -104,7 +105,11 @@ impl Editor {
         });
         ui.add_space(5.0);
         let label_width = 160.0;
-        let (_, rect) = ui.allocate_space(vec2(ui.available_width(), 157.0));
+        let pitch = layout::timeline_row_pitch(ui);
+        let (_, rect) = ui.allocate_space(vec2(
+            ui.available_width(),
+            layout::timeline_chart_height(ui),
+        ));
         // Property controls own the label column; only the grid can scrub or retime keys.
         let grid = egui::Rect::from_min_max(
             pos2((rect.left() + label_width).min(rect.right()), rect.top()),
@@ -171,7 +176,7 @@ impl Editor {
             .map_or_else(Vec::new, |a| a.tracks.clone());
         let mut key_targets = Vec::new();
         for (i, property) in Property::ALL.into_iter().enumerate() {
-            let y = rect.top() + 38.0 + i as f32 * 24.0;
+            let y = rect.top() + 26.0 + pitch * (i as f32 + 0.5);
             let (tool, name, shortcut) = match property {
                 Property::Rotation => (Tool::Rotate, "Rotate", "C"),
                 Property::X | Property::Y => (Tool::Move, "Translate", "V"),

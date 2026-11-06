@@ -153,21 +153,12 @@ impl Editor {
 
     pub(super) fn main_tools(&mut self, ui: &mut egui::Ui) {
         self.record_target("mainTools", ui.max_rect());
+        self.record_target("mainToolsClip", ui.clip_rect());
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
-                self.transform_row(ui, "Rotate  [C]", &[Property::Rotation], Some(Tool::Rotate));
-                self.transform_row(
-                    ui,
-                    "Translate  [V]",
-                    &[Property::X, Property::Y],
-                    Some(Tool::Move),
-                );
-                self.transform_row(
-                    ui,
-                    "Scale  [X]",
-                    &[Property::ScaleX, Property::ScaleY],
-                    Some(Tool::Scale),
-                );
+                for (tool, label, properties) in layout::TRANSFORM_ROWS {
+                    self.transform_row(ui, label, properties, Some(tool));
+                }
             });
             ui.separator();
             ui.vertical(|ui| {
@@ -234,7 +225,10 @@ impl Editor {
         if self.setup_mode {
             shown.rotation = shown.rotation.rem_euclid(360.);
         }
-        let editable = self.transform_editable();
+        let editable = tool.map_or_else(
+            || self.transform_editable(),
+            |tool| self.transform_tool_editable(tool),
+        );
         let scope = (
             self.selection.as_ref().map(TreeItem::key),
             format!("{:?}", self.axes),
@@ -266,10 +260,11 @@ impl Editor {
                 ui.add_sized([112.0, 22.0], egui::Label::new(label));
             }
             ui.add_enabled_ui(editable, |ui| {
+                if tool == Some(Tool::Shear) { ui.label(RichText::new("Local").small().color(MUTED)).on_hover_text("Local shear values; World/Parent display comparison is pending."); }
                 for &property in properties {
-                    let mut value = property.read(if property.is_scale(){local}else{shown});
+                    let mut value = property.read(if property.is_scale() || matches!(property, Property::ShearX | Property::ShearY) {local}else{shown});
                     if property != Property::Rotation {
-                        ui.label(if matches!(property, Property::X | Property::ScaleX) {
+                        ui.label(if matches!(property, Property::X | Property::ScaleX | Property::ShearX) {
                             "X"
                         } else {
                             "Y"
@@ -298,6 +293,7 @@ impl Editor {
                             .custom_formatter(move |v,_| format!("{:.2}",if world_scale{f64::from(display)}else{v})),
                     );
                     self.record_target(&format!("value:{property:?}"), response.rect);
+                    if matches!(property, Property::ShearX | Property::ShearY) { response.clone().on_hover_text("Local shear angle. World/Parent shear display comparison is pending."); }
                     if response.clicked() || response.gained_focus() { self.cancel_weight_edit(); self.playing=false; }
                     if property.is_scale() && self.axes==Axes::World { response.clone().on_hover_text("World scale is shown; entry and dragging edit Local scale."); }
                     if response.drag_started() {
