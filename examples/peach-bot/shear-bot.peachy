@@ -1,5 +1,5 @@
 {
-  "format": 6,
+  "format": 7,
   "constraints": [],
   "name": "Peach Bot Shear Lab",
   "fps": 30,
@@ -903,7 +903,8 @@
             }
           ]
         }
-      ]
+      ],
+      "ik_tracks": []
     },
     {
       "name": "shear stepped",
@@ -986,7 +987,8 @@
             }
           ]
         }
-      ]
+      ],
+      "ik_tracks": []
     },
     {
       "name": "shear bezier",
@@ -1117,7 +1119,8 @@
             }
           ]
         }
-      ]
+      ],
+      "ik_tracks": []
     },
     {
       "name": "wave",
@@ -1307,7 +1310,8 @@
             }
           ]
         }
-      ]
+      ],
+      "ik_tracks": []
     },
     {
       "name": "idle",
@@ -1375,7 +1379,8 @@
             }
           ]
         }
-      ]
+      ],
+      "ik_tracks": []
     }
   ]
 }
