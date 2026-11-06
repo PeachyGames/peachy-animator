@@ -2,19 +2,54 @@
 use super::dopesheet_selection::{KeyId, SelectionScope};
 use super::icons::Icon;
 use super::*;
-use peachy_engine::{KeyClipboard, TimelineKey, copy_keys};
+use peachy_engine::{AnimationKeyClipboard, KeyOwner, copy_animation_keys};
 
-fn clipboard_text(clipboard: &KeyClipboard) -> String {
+fn clipboard_text(clipboard: &AnimationKeyClipboard) -> String {
     serde_json::json!({
         "peachyAnimatorClipboard": "keys",
-        "version": 1,
+        "version": 2,
         "payload": clipboard,
     })
     .to_string()
 }
 
-fn matches_clipboard(text: &str, clipboard: &KeyClipboard) -> bool {
+fn matches_clipboard(text: &str, clipboard: &AnimationKeyClipboard) -> bool {
     text == clipboard_text(clipboard)
+}
+
+pub(super) fn clipboard_len(clipboard: &AnimationKeyClipboard) -> usize {
+    match clipboard {
+        AnimationKeyClipboard::Bone { keys } => keys.len(),
+        AnimationKeyClipboard::Ik { keys } => keys.len(),
+    }
+}
+
+fn pasted_keys(
+    clipboard: &AnimationKeyClipboard,
+    target: KeyOwner,
+    time: f32,
+) -> Result<Vec<KeyId>, String> {
+    match (clipboard, target) {
+        (AnimationKeyClipboard::Bone { keys }, KeyOwner::Bone { bone }) => Ok(keys
+            .iter()
+            .map(|key| KeyId::Bone {
+                bone,
+                property: key.property,
+                time: key.key.time + time,
+            })
+            .collect()),
+        (AnimationKeyClipboard::Ik { keys }, KeyOwner::Ik { constraint }) => Ok(keys
+            .iter()
+            .map(|key| KeyId::Ik {
+                constraint,
+                time: key.time + time,
+            })
+            .collect()),
+        _ => Err(
+            "Copied keys and target must have the same kind: bone transforms or IK constraint."
+                .into(),
+        ),
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -130,10 +165,13 @@ impl Editor {
         self.cancel_gesture();
         self.reconcile_dopesheet_selection();
         let animation = self.active_animation();
-        let bone = self.selected_bone();
-        let scope =
-            self.key_selection
-                .select_all(self.session.document(), animation, bone, &Property::ALL);
+        let owner = self.timeline_owner();
+        let scope = self.key_selection.select_all(
+            self.session.document(),
+            animation,
+            owner,
+            &dopesheet_selection::rows(owner),
+        );
         let count = self.key_selection.len();
         self.status = match scope {
             SelectionScope::None => "No keys shown".into(),
@@ -145,7 +183,7 @@ impl Editor {
     fn clipboard_context_available(&self) -> bool {
         !self.setup_mode
             && self.show_dopesheet
-            && self.selected_bone().is_some()
+            && self.timeline_owner().is_some()
             && self
                 .session
                 .document()
@@ -158,24 +196,17 @@ impl Editor {
     }
 
     /// Read only committed keys. Pending pose edits never enter the clipboard.
-    fn selected_clipboard(&mut self) -> Option<KeyClipboard> {
+    fn selected_clipboard(&mut self) -> Option<AnimationKeyClipboard> {
         self.cancel_gesture();
         self.reconcile_dopesheet_selection();
         if !self.clipboard_context_available() || self.key_selection.is_empty() {
             return None;
         }
-        let bone = self.selected_bone()?;
-        let keys: Vec<_> = self
-            .key_selection
-            .keys()
-            .iter()
-            .map(|key| TimelineKey {
-                bone,
-                property: key.property,
-                time: key.time,
-            })
-            .collect();
-        match copy_keys(self.session.document(), self.animation, &keys) {
+        match copy_animation_keys(
+            self.session.document(),
+            self.animation,
+            self.key_selection.keys(),
+        ) {
             Ok(clipboard) => Some(clipboard),
             Err(error) => {
                 self.error = Some(error);
@@ -198,7 +229,7 @@ impl Editor {
         let Some(clipboard) = self.selected_clipboard() else {
             return false;
         };
-        let count = clipboard.keys.len();
+        let count = clipboard_len(&clipboard);
         ctx.copy_text(clipboard_text(&clipboard));
         self.timeline_clipboard = Some(clipboard);
         self.clipboard_status("Copied", count);
@@ -216,7 +247,7 @@ impl Editor {
         if !self.dispatch(command) {
             return false;
         }
-        let count = clipboard.keys.len();
+        let count = clipboard_len(&clipboard);
         // A failed delete keeps the previous clipboard as well as document/history.
         ctx.copy_text(clipboard_text(&clipboard));
         self.timeline_clipboard = Some(clipboard);
@@ -264,23 +295,23 @@ impl Editor {
         if !self.clipboard_context_available() {
             return false;
         }
-        let (Some(bone), Some(clipboard)) = (self.selected_bone(), self.timeline_clipboard.clone())
+        let (Some(target), Some(clipboard)) =
+            (self.timeline_owner(), self.timeline_clipboard.clone())
         else {
             return false;
         };
         let time = self.time;
-        let selected: Vec<_> = clipboard
-            .keys
-            .iter()
-            .map(|key| KeyId {
-                property: key.property,
-                time: key.key.time + time,
-            })
-            .collect();
+        let selected = match pasted_keys(&clipboard, target, time) {
+            Ok(keys) => keys,
+            Err(error) => {
+                self.status = error;
+                return false;
+            }
+        };
         self.playing = false;
-        if !self.dispatch(Command::PasteKeys {
+        if !self.dispatch(Command::PasteAnimationKeys {
             animation: self.animation,
-            bone,
+            target,
             time,
             clipboard,
         }) {
@@ -329,7 +360,7 @@ impl Editor {
             && self
                 .timeline_clipboard
                 .as_ref()
-                .is_some_and(|c| !c.keys.is_empty());
+                .is_some_and(|c| clipboard_len(c) > 0);
         let paste = icons::toolbar_button(
             ui,
             Icon::Paste,
@@ -349,8 +380,49 @@ mod tests {
     use super::super::test_support::{editor_context, editor_fixture, select_rotation};
     use super::*;
 
-    fn clipboard() -> KeyClipboard {
-        KeyClipboard {
+    #[test]
+    fn grouped_ik_copy_paste_rejects_bone_target_and_retains_f64_handles() {
+        let mut editor = super::super::test_support::animated_ik_editor();
+        let mut document = editor.session.document().clone();
+        let curve = IkCurve::Bezier {
+            time: [0.123456789123, 0.876543219876],
+            mix: [-0.25, 1.5],
+        };
+        document.animations[0].ik_tracks[0].keys[0].curve = curve;
+        editor.session = Session::new(document).unwrap();
+        editor.reconcile_dopesheet_selection();
+        editor.key_selection.replace(vec![KeyId::Ik {
+            constraint: 1,
+            time: 0.,
+        }]);
+        let ctx = editor_context();
+        assert!(editor.copy_dopesheet_keys(&ctx));
+        let copied = editor.timeline_clipboard.clone().unwrap();
+        assert!(matches_clipboard(&clipboard_text(&copied), &copied));
+        editor.select(TreeItem::Bone(1));
+        let before = editor.session.document().clone();
+        assert!(!editor.paste_dopesheet_keys());
+        assert_eq!(editor.session.document(), &before);
+        editor.select(TreeItem::Constraint(1));
+        editor.set_time(2.);
+        assert!(editor.paste_dopesheet_keys());
+        let track = &editor.session.document().animations[0].ik_tracks[0];
+        assert_eq!(track.keys.last().unwrap().curve, curve);
+        assert_eq!(track.keys.last().unwrap().time, 2.);
+        assert_eq!(
+            editor.key_selection.keys(),
+            &[KeyId::Ik {
+                constraint: 1,
+                time: 2.
+            }]
+        );
+        editor.undo();
+        assert_eq!(editor.session.document(), &before);
+        assert!(editor.key_selection.is_empty());
+    }
+
+    fn clipboard() -> AnimationKeyClipboard {
+        AnimationKeyClipboard::Bone {
             keys: vec![peachy_engine::ClipboardKey {
                 property: Property::Rotation,
                 key: Keyframe {
@@ -368,12 +440,12 @@ mod tests {
         let text = clipboard_text(&clipboard);
         let envelope: serde_json::Value = serde_json::from_str(&text).unwrap();
         assert_eq!(envelope["peachyAnimatorClipboard"], "keys");
-        assert_eq!(envelope["version"], 1);
+        assert_eq!(envelope["version"], 2);
         assert_eq!(
             envelope["payload"],
             serde_json::to_value(&clipboard).unwrap()
         );
-        assert!(!text.contains("bone"));
+        assert!(!text.contains("\"bone\":"));
         assert!(!text.contains("path"));
         assert!(matches_clipboard(&text, &clipboard));
     }
@@ -382,14 +454,17 @@ mod tests {
     fn external_stale_or_altered_clipboard_text_cannot_paste_session_keys() {
         let clipboard = clipboard();
         let mut changed = clipboard.clone();
-        changed.keys[0].key.value = 43.;
+        let AnimationKeyClipboard::Bone { keys } = &mut changed else {
+            unreachable!()
+        };
+        keys[0].key.value = 43.;
         assert!(!matches_clipboard("external text", &clipboard));
         assert!(!matches_clipboard(&clipboard_text(&changed), &clipboard));
         let mut envelope: serde_json::Value =
             serde_json::from_str(&clipboard_text(&clipboard)).unwrap();
-        envelope["version"] = 2.into();
-        assert!(!matches_clipboard(&envelope.to_string(), &clipboard));
         envelope["version"] = 1.into();
+        assert!(!matches_clipboard(&envelope.to_string(), &clipboard));
+        envelope["version"] = 2.into();
         envelope["peachyAnimatorClipboard"] = "another application".into();
         assert!(!matches_clipboard(&envelope.to_string(), &clipboard));
     }
@@ -611,16 +686,25 @@ mod tests {
         events.insert(1, egui::Event::Copy);
         editor_frame(&mut editor, &ctx, events.clone(), false);
         assert_eq!(editor.key_selection.len(), 4);
-        assert_eq!(editor.timeline_clipboard.as_ref().unwrap().keys.len(), 4);
+        assert_eq!(
+            clipboard_len(editor.timeline_clipboard.as_ref().unwrap()),
+            4
+        );
         editor_frame(&mut editor, &ctx, events, false);
         assert_eq!(editor.key_selection.len(), 9);
-        assert_eq!(editor.timeline_clipboard.as_ref().unwrap().keys.len(), 9);
+        assert_eq!(
+            clipboard_len(editor.timeline_clipboard.as_ref().unwrap()),
+            9
+        );
         select_rotation(&mut editor);
         let mut events = a_cycle();
         events.insert(0, egui::Event::Copy);
         editor_frame(&mut editor, &ctx, events, false);
         assert_eq!(editor.key_selection.len(), 4);
-        assert_eq!(editor.timeline_clipboard.as_ref().unwrap().keys.len(), 1);
+        assert_eq!(
+            clipboard_len(editor.timeline_clipboard.as_ref().unwrap()),
+            1
+        );
         assert_eq!(editor.session.document(), &original);
         assert_eq!(editor.session.pose_edits(), &pending);
         assert_eq!(editor.time, 0.42);
@@ -750,7 +834,8 @@ mod tests {
         let original = editor.session.document().clone();
         let pending = editor.session.pose_edits().clone();
         assert!(editor.session.can_redo());
-        let selected = KeyId {
+        let selected = KeyId::Bone {
+            bone: 8,
             property: Property::X,
             time: 0.,
         };
@@ -762,8 +847,8 @@ mod tests {
         };
         editor.key_drag = super::super::key_drag::KeyDrag::new(
             0,
-            8,
-            KeyId {
+            KeyId::Bone {
+                bone: 8,
                 property: Property::Rotation,
                 time: 0.3,
             },
@@ -775,7 +860,8 @@ mod tests {
         editor.update_dopesheet_drag(60., false);
         assert!(editor.key_drag.as_ref().unwrap().active);
         assert_ne!(editor.session.document(), &original);
-        assert!(editor.key_selection.contains(KeyId {
+        assert!(editor.key_selection.contains(KeyId::Bone {
+            bone: 8,
             property: Property::Rotation,
             time: 0.6
         }));
@@ -787,13 +873,13 @@ mod tests {
         assert!(editor.session.can_redo());
         assert!(!editor.session.is_dirty());
         assert_eq!(editor.key_selection.len(), 2);
-        assert!(
-            editor
-                .key_selection
-                .keys()
-                .iter()
-                .all(|key| key.property == Property::X)
-        );
+        assert!(editor.key_selection.keys().iter().all(|key| matches!(
+            key,
+            KeyId::Bone {
+                property: Property::X,
+                ..
+            }
+        )));
         assert_eq!(editor.time, 0.42);
     }
 

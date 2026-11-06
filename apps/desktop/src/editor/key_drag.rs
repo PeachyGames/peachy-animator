@@ -1,7 +1,7 @@
 //! A fixed drag snapshot; screen input stays here and key transitions stay in the engine.
 use super::dopesheet_selection::KeyId;
 use super::*;
-use peachy_engine::TimelineKey;
+use peachy_engine::{AnimationKey, KeyOwner};
 
 /// Keep event-time modifiers even when later keys changed the frame's modifier snapshot.
 pub(super) fn primary_pointer_event(
@@ -52,9 +52,9 @@ impl ChartGeometry {
 
 pub(super) struct KeyDrag {
     pub animation: usize,
-    pub bone: usize,
+    pub owner: KeyOwner,
     pub geometry: ChartGeometry,
-    pub sources: Vec<TimelineKey>,
+    pub sources: Vec<AnimationKey>,
     selection_before: Vec<KeyId>,
     origin_x: f32,
     pressed_time: f32,
@@ -67,14 +67,16 @@ pub(super) struct KeyDrag {
 impl KeyDrag {
     pub fn new(
         animation: usize,
-        bone: usize,
         pressed: KeyId,
         selected: &[KeyId],
         geometry: ChartGeometry,
         origin_x: f32,
         modifiers: egui::Modifiers,
     ) -> Option<Self> {
-        if !geometry.is_valid() || !origin_x.is_finite() {
+        if !geometry.is_valid()
+            || !origin_x.is_finite()
+            || selected.iter().any(|key| key.owner() != pressed.owner())
+        {
             return None;
         }
         let keys = if selected.contains(&pressed) {
@@ -84,19 +86,12 @@ impl KeyDrag {
         };
         Some(Self {
             animation,
-            bone,
+            owner: pressed.owner(),
             geometry,
-            sources: keys
-                .iter()
-                .map(|key| TimelineKey {
-                    bone,
-                    property: key.property,
-                    time: key.time,
-                })
-                .collect(),
+            sources: keys,
             selection_before: selected.to_vec(),
             origin_x,
-            pressed_time: pressed.time,
+            pressed_time: pressed.time(),
             copy: (modifiers.command || modifiers.ctrl) && modifiers.shift,
             toggle: modifiers.command || modifiers.ctrl,
             offset: 0.,
@@ -133,11 +128,11 @@ impl KeyDrag {
         if !offset.is_finite() {
             return None;
         }
-        let earliest = self.sources.iter().map(|key| key.time).reduce(f32::min)?;
+        let earliest = self.sources.iter().map(|key| key.time()).reduce(f32::min)?;
         Some(offset.max(-earliest))
     }
     fn command(&self, delta: f32) -> Command {
-        Command::MoveKeys {
+        Command::MoveAnimationKeys {
             animation: self.animation,
             keys: self.sources.clone(),
             delta,
@@ -147,15 +142,26 @@ impl KeyDrag {
     fn selection_at(&self, offset: f32) -> Vec<KeyId> {
         self.sources
             .iter()
-            .map(|key| KeyId {
-                property: key.property,
-                time: key.time + offset,
+            .map(|key| match *key {
+                AnimationKey::Bone {
+                    bone,
+                    property,
+                    time,
+                } => AnimationKey::Bone {
+                    bone,
+                    property,
+                    time: time + offset,
+                },
+                AnimationKey::Ik { constraint, time } => AnimationKey::Ik {
+                    constraint,
+                    time: time + offset,
+                },
             })
             .collect()
     }
     pub fn diagnostic(&self) -> serde_json::Value {
         serde_json::json!({
-            "active":self.active,"animation":self.animation,"bone":self.bone,
+            "active":self.active,"animation":self.animation,"owner":self.owner,
             "sources":self.sources,"offset":self.offset,"copy":self.copy,
             "toggle":self.toggle,
             "pressedTime":self.pressed_time,"originX":self.origin_x,
@@ -229,8 +235,58 @@ impl Editor {
 mod tests {
     use super::*;
 
+    #[test]
+    fn ik_drag_freezes_group_identity_and_cancel_restores_selection_and_redo() {
+        let mut editor = super::super::test_support::animated_ik_editor();
+        editor
+            .session
+            .dispatch(Command::RenameAnimation {
+                animation: 0,
+                name: "redo".into(),
+            })
+            .unwrap();
+        editor.undo();
+        editor.reconcile_dopesheet_selection();
+        let selected = KeyId::Ik {
+            constraint: 1,
+            time: 1.,
+        };
+        editor.key_selection.replace(vec![selected]);
+        let original = editor.session.document().clone();
+        editor.key_drag = KeyDrag::new(
+            0,
+            selected,
+            &[selected],
+            ChartGeometry {
+                start: 0.,
+                width: 200.,
+                extent: 2.,
+            },
+            100.,
+            egui::Modifiers::NONE,
+        );
+        editor.update_dopesheet_drag(50., true);
+        assert_eq!(
+            editor.key_selection.keys(),
+            &[KeyId::Ik {
+                constraint: 1,
+                time: 0.5
+            }]
+        );
+        let keys = &editor.session.document().animations[0].ik_tracks[0].keys;
+        assert_eq!(keys[1].time, 0.5);
+        assert_eq!(keys[1].curve, IkCurve::Stepped);
+        assert_eq!(editor.time, 0.25);
+        editor.cancel_dopesheet_drag();
+        assert_eq!(editor.session.document(), &original);
+        assert_eq!(editor.key_selection.keys(), &[selected]);
+        assert!(editor.session.can_redo());
+        assert!(!editor.session.can_undo());
+    }
+
     fn key(time: f32) -> KeyId {
-        KeyId {
+        KeyId::Bone {
+            bone: 8,
             property: Property::Rotation,
             time,
         }
@@ -246,7 +302,6 @@ mod tests {
     fn fixed_mapping_snaps_relative_offsets_and_clamps_the_whole_group_at_zero() {
         let drag = KeyDrag::new(
             0,
-            8,
             key(0.12345),
             &[key(0.12345), key(0.6)],
             geometry(),
@@ -255,12 +310,12 @@ mod tests {
         )
         .unwrap();
         let offset = drag.offset_at(152., 30, false).unwrap();
-        assert!((drag.selection_at(offset)[0].time - 7. / 30.).abs() < 1e-6);
+        assert!((drag.selection_at(offset)[0].time() - 7. / 30.).abs() < 1e-6);
         assert!((drag.offset_at(152., 30, true).unwrap() - 0.12).abs() < 1e-6);
         assert_eq!(drag.offset_at(-100., 30, false), Some(-0.12345));
         let selected = drag.selection_at(-0.12345);
-        assert_eq!(selected[0].time, 0.);
-        assert!((selected[1].time - 0.47655).abs() < 1e-6);
+        assert_eq!(selected[0].time(), 0.);
+        assert!((selected[1].time() - 0.47655).abs() < 1e-6);
         assert_eq!(drag.geometry.extent, 2.4);
         assert!(drag.offset_at(f32::NAN, 30, false).is_none());
     }
@@ -268,7 +323,6 @@ mod tests {
     fn pressing_an_unselected_key_moves_only_it_and_keeps_the_prior_selection_for_cancel() {
         let drag = KeyDrag::new(
             0,
-            8,
             key(0.9),
             &[key(0.3), key(0.6)],
             geometry(),
@@ -279,7 +333,7 @@ mod tests {
         assert_eq!(drag.selection_at(0.), vec![key(0.9)]);
         assert_eq!(drag.selection_before, vec![key(0.3), key(0.6)]);
         assert!(drag.copy);
-        assert_eq!(drag.sources[0].bone, 8);
+        assert_eq!(drag.sources[0].owner(), KeyOwner::Bone { bone: 8 });
         assert!(!drag.active);
     }
     #[test]
@@ -318,11 +372,10 @@ mod tests {
         };
         let (position, modifiers) = primary_pointer_event(&raw.events, true).unwrap();
         let mut selected = KeySelection::default();
-        selected.reconcile(&document, Some(0), Some(8));
+        selected.reconcile(&document, Some(0), Some(KeyOwner::Bone { bone: 8 }));
         selected.select(key(0.), false);
         let mut drag = KeyDrag::new(
             0,
-            8,
             pressed,
             selected.keys(),
             geometry(),

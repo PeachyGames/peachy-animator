@@ -30,8 +30,6 @@ mod weight_direct;
 mod weights;
 use eframe::egui::{self, Color32, FontId, Pos2, RichText, Sense, Stroke, Vec2, pos2, vec2};
 use peachy_document::*;
-#[cfg(test)]
-use peachy_engine::scene_from_locals;
 use peachy_engine::{
     Affine, Axes, Command, EditTarget, KeyState, PlayDirection, Session, TransformTool,
 };
@@ -78,7 +76,7 @@ pub(crate) struct Editor {
     selection_history: selection_history::SelectionHistory,
     key_selection: dopesheet_selection::KeySelection,
     key_drag: Option<key_drag::KeyDrag>,
-    timeline_clipboard: Option<peachy_engine::KeyClipboard>,
+    timeline_clipboard: Option<peachy_engine::AnimationKeyClipboard>,
     timeline_input: timeline_clipboard::TimelineInput,
     tree: TreeState,
     hidden_bones: BTreeSet<usize>,
@@ -484,7 +482,7 @@ impl Editor {
             self.setup_mode
                 || !self.show_dopesheet
                 || self.animation != drag.animation
-                || self.selected_bone() != Some(drag.bone)
+                || self.timeline_owner() != Some(drag.owner)
         }) {
             self.cancel_dopesheet_drag();
         }
@@ -866,6 +864,7 @@ impl Editor {
                 }
                 let mut report = serde_json::json!({
                     "document":self.session.document(),"selection":self.selection.as_ref().map(TreeItem::diagnostic),
+                    "status":self.status,"timelineOwner":self.timeline_owner(),
                     "selectedBone":self.selected_bone(),"hasSelection":self.selection.is_some(),
                     "tool":match self.tool {Tool::Rotate=>"rotate",Tool::Move=>"translate",Tool::Scale=>"scale",Tool::Shear=>"shear",Tool::Mesh=>"vertices",Tool::Weights=>"weights"},
                     "treeVisible":self.show_tree,"dopesheetVisible":!self.setup_mode && self.show_dopesheet,"showDopesheet":self.show_dopesheet,
@@ -877,7 +876,7 @@ impl Editor {
                     "selectedKeys":self.key_selection.diagnostic(),"dopesheetFocused":self.dopesheet_has_focus(&ctx),
                     "windowFocused":ctx.input(|input|input.focused),
                     "keyDrag":self.key_drag.as_ref().map(key_drag::KeyDrag::diagnostic),
-                    "clipboardKeys":self.timeline_clipboard.as_ref().map_or(0, |clipboard| clipboard.keys.len()),
+                    "clipboardKeys":self.timeline_clipboard.as_ref().map_or(0, timeline_clipboard::clipboard_len),
                     "selectAllHeld":self.timeline_input.select_all_held(),
                     "selectedAttachment":self.selected_attachment(),"selectedVertex":self.mesh_vertex,"hiddenSlots":self.hidden_slots,
                     "pointer":ctx.input(|i|i.pointer.hover_pos().map(|p|[p.x,p.y])),
@@ -893,7 +892,7 @@ impl Editor {
                     .evaluated_pose(self.weights_edit_target())
                 {
                     Ok(pose) => {
-                        serde_json::json!({"authoredLocals":pose.authored_locals(),"appliedLocals":pose.applied_locals(),"world":pose.world()})
+                        serde_json::json!({"authoredLocals":pose.authored_locals(),"appliedLocals":pose.applied_locals(),"ikPoses":pose.ik_poses(),"world":pose.world()})
                     }
                     Err(error) => serde_json::json!({"error":error}),
                 };
