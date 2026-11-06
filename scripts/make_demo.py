@@ -126,6 +126,58 @@ def shear_fixture(weighted_document):
     return document
 
 
+def ik_fixture(weighted_document):
+    """Normal static IK with independent arm/head subtrees and original geometry.
+
+    Mix and bend are setup data. New clips animate only target X/Y offsets;
+    their names describe signed target motion, not unsupported IK timelines.
+    """
+    document = json.loads(json.dumps(weighted_document))
+    document["name"] = "Peach Bot IK Lab"
+    indices = {bone["name"]: index for index, bone in enumerate(document["bones"])}
+    root, head, arm, forearm = [indices[name] for name in ["root", "head", "arm.R", "forearm.R"]]
+    # Preserve the actual original direct-child offset (64,0), its length60,
+    # all 15 authored bone transforms, and every raw attachment influence.
+    assert document["bones"][forearm]["parent"] == arm
+    assert document["bones"][forearm]["setup"]["x"] > 0
+    assert document["bones"][forearm]["setup"]["y"] == 0
+    arm_target = len(document["bones"])
+    document["bones"].append(dict(name="arm.R target", parent=root, length=16,
+                                  setup=bone_transform(130, 255)))
+    head_target = len(document["bones"])
+    document["bones"].append(dict(name="head target", parent=root, length=16,
+                                  setup=bone_transform(96, 280)))
+    document["constraints"] = [
+        dict(type="ik", name="right arm IK", bones=[arm, forearm], target=arm_target,
+             setup=dict(mix=1.0, bend_positive=True)),
+        dict(type="ik", name="head aim", bones=[head], target=head_target,
+             setup=dict(mix=0.5, bend_positive=True)),
+    ]
+    document["animations"] = [
+        dict(name="ik positive", tracks=[
+            track(arm_target, "x", [(0,0),(.6,35),(1.5,15),(2.4,0)]),
+            track(arm_target, "y", [(0,0),(.6,20),(1.5,35),(2.4,0)]),
+            track(head_target, "x", [(.25,0),(1,24),(2.4,0)]),
+            track(head_target, "y", [(0,0),(1,20),(2.4,0)]),
+        ]),
+        dict(name="ik negative", tracks=[
+            track(arm_target, "x", [(0,0),(.5,-90),(1.5,-35),(2.4,0)], "stepped"),
+            track(arm_target, "y", [(0,0),(.5,-20),(1.5,-30),(2.4,0)], "stepped"),
+            track(head_target, "x", [(0,0),(1,-20),(2.4,0)]),
+            track(head_target, "y", [(0,0),(1,-75),(2.4,0)]),
+        ]),
+        dict(name="ik reach", tracks=[
+            # Deliberately exceed ordinary outer reach, without stretch.
+            track(arm_target, "x", [(0,0),(1,160),(2.4,0)], {"bezier":[.2,.1,.8,.95]}),
+            track(arm_target, "y", [(0,0),(1,-10),(2.4,0)], {"bezier":[.3,0,.7,1]}),
+            track(head_target, "x", [(0,0),(1,12),(2.4,0)], {"bezier":[.2,.1,.8,.9]}),
+            track(head_target, "y", [(0,0),(1,-45),(2.4,0)], {"bezier":[.25,0,.75,1]}),
+        ]),
+        *document["animations"],
+    ]
+    return document
+
+
 class Canvas:
     def __init__(self, width, height):
         self.width, self.height = width, height
@@ -352,7 +404,8 @@ def main():
     (ROOT/"weighted-contract.peachy").write_text(json.dumps(weighted_contract,indent=2)+"\n")
     (ROOT/"weighted-repeated.peachy").write_text(json.dumps(repeated_influence_fixture(weighted),indent=2)+"\n")
     (ROOT/"shear-bot.peachy").write_text(json.dumps(shear_fixture(weighted),indent=2)+"\n")
-    print(f"Wrote original fixtures: {len(bones)} bones, {len(slots)} slots, {len(parts)} textures; Shear Lab has 5 animations")
+    (ROOT/"ik-bot.peachy").write_text(json.dumps(ik_fixture(weighted),indent=2)+"\n")
+    print(f"Wrote original fixtures: {len(bones)} base bones, {len(slots)} slots, {len(parts)} textures; Shear Lab and IK Lab each have 5 animations")
 
 
 if __name__ == "__main__":
