@@ -294,3 +294,235 @@ fn native7_validation_covers_group_identity_required_fields_and_finite_unbounded
         assert!(serde_json::from_str::<IkCurve>(invalid).is_err());
     }
 }
+
+#[test]
+fn typed_ik_clipboard_owns_absolute_settings_and_rejects_wrong_kind_and_collapsed_targets() {
+    let mut document = rig();
+    let Constraint::Ik(mut other) = document.constraints[0].clone();
+    other.name = "other".into();
+    document.constraints.push(Constraint::Ik(other));
+    let close = f32::from_bits(0.25_f32.to_bits() + 1);
+    document.animations[0].ik_tracks[0].keys = vec![
+        frame(
+            0.25,
+            -0.5,
+            false,
+            IkCurve::Bezier {
+                time: [0.8, 0.2],
+                mix: [2., -1.],
+            },
+        ),
+        frame(close, 1.5, true, IkCurve::Stepped),
+    ];
+    let selection = [
+        AnimationKey::Ik {
+            constraint: 0,
+            time: close,
+        },
+        AnimationKey::Ik {
+            constraint: 0,
+            time: 0.25,
+        },
+    ];
+    let clipboard = copy_animation_keys(&document, 0, &selection).unwrap();
+    let AnimationKeyClipboard::Ik { keys } = &clipboard else {
+        panic!("IK clipboard kind");
+    };
+    assert_eq!(keys[0].mix, -0.5);
+    assert_eq!(keys[0].time, 0.);
+    assert_eq!(keys[1].time, close - 0.25);
+    document.animations[0].ik_tracks[0].keys[0].mix = 0.75;
+    let before = document.clone();
+    let pasted = apply_command(
+        &document,
+        Command::PasteAnimationKeys {
+            animation: 0,
+            target: KeyOwner::Ik { constraint: 1 },
+            time: 0.125,
+            clipboard: clipboard.clone(),
+        },
+    )
+    .unwrap();
+    let added = pasted.animations[0]
+        .ik_tracks
+        .iter()
+        .find(|t| t.constraint == 1)
+        .unwrap();
+    assert_eq!(
+        added.keys[0],
+        IkKeyframe {
+            time: 0.125,
+            ..keys[0]
+        }
+    );
+    assert_eq!(added.keys[1].time, 0.125 + close - 0.25);
+    assert_eq!(document, before);
+    for (target, time) in [
+        (KeyOwner::Bone { bone: 0 }, 0.),
+        (KeyOwner::Ik { constraint: 1 }, 2.),
+        (KeyOwner::Ik { constraint: 99 }, 0.),
+    ] {
+        assert!(
+            apply_command(
+                &document,
+                Command::PasteAnimationKeys {
+                    animation: 0,
+                    target,
+                    time,
+                    clipboard: clipboard.clone()
+                }
+            )
+            .is_err()
+        );
+        assert_eq!(document, before);
+    }
+    assert!(copy_animation_keys(&document, 0, &[selection[0], selection[0]]).is_err());
+}
+
+#[test]
+fn grouped_exact_moves_restore_overwrites_duration_pending_pose_and_redo_from_fixed_base() {
+    let mut document = rig();
+    document.animations[0].ik_tracks[0].keys = vec![
+        frame(0., 0.25, false, IkCurve::Stepped),
+        frame(0.5, 0.5, true, IkCurve::Linear),
+        frame(1., 1.5, false, IkCurve::Linear),
+    ];
+    let mut session = Session::new(document).unwrap();
+    let target = EditTarget::Animate {
+        animation: 0,
+        time: 0.5,
+    };
+    session
+        .edit_pose(
+            2,
+            target,
+            Transform {
+                x: 2.,
+                y: 10.,
+                ..Transform::default()
+            },
+            &[Property::X],
+            false,
+        )
+        .unwrap();
+    session
+        .dispatch(Command::RenameAnimation {
+            animation: 0,
+            name: "renamed".into(),
+        })
+        .unwrap();
+    session.undo();
+    let base = session.document().clone();
+    let pose = serde_json::to_value(session.pose_edits()).unwrap();
+    let selected = vec![
+        AnimationKey::Ik {
+            constraint: 0,
+            time: 0.,
+        },
+        AnimationKey::Ik {
+            constraint: 0,
+            time: 0.5,
+        },
+    ];
+    session.begin_transaction();
+    session
+        .preview_transaction(Command::MoveAnimationKeys {
+            animation: 0,
+            keys: selected.clone(),
+            delta: 0.5,
+            copy: false,
+        })
+        .unwrap();
+    assert_eq!(
+        session.document().animations[0].ik_tracks[0].keys[1].mix,
+        0.5
+    );
+    session
+        .preview_transaction(Command::MoveAnimationKeys {
+            animation: 0,
+            keys: selected.clone(),
+            delta: 0.25,
+            copy: false,
+        })
+        .unwrap();
+    assert_eq!(
+        session.document().animations[0].ik_tracks[0]
+            .keys
+            .last()
+            .unwrap()
+            .mix,
+        1.5
+    );
+    session.cancel_transaction();
+    assert_eq!(session.document(), &base);
+    assert!(session.can_redo());
+    session.begin_transaction();
+    session
+        .preview_transaction(Command::MoveAnimationKeys {
+            animation: 0,
+            keys: selected,
+            delta: 0.5,
+            copy: false,
+        })
+        .unwrap();
+    session.commit_transaction();
+    assert!(!session.can_redo());
+    session.undo();
+    assert_eq!(session.document(), &base);
+    assert_eq!(serde_json::to_value(session.pose_edits()).unwrap(), pose);
+    session
+        .dispatch(Command::DeleteAnimationKeys {
+            animation: 0,
+            keys: vec![AnimationKey::Ik {
+                constraint: 0,
+                time: 1.,
+            }],
+        })
+        .unwrap();
+    assert_eq!(session.document().animations[0].duration(), 0.5);
+    session.undo();
+    assert_eq!(session.document(), &base);
+}
+
+#[test]
+fn typed_key_commands_use_exact_identities_and_strict_payloads_without_aliasing_bones() {
+    let mut document = rig();
+    document.animations[0].tracks.push(Track {
+        bone: 0,
+        property: Property::X,
+        keys: vec![Keyframe {
+            time: 0.,
+            value: 0.,
+            curve: Curve::Linear,
+        }],
+    });
+    let before = document.clone();
+    let command = Command::DeleteAnimationKeys {
+        animation: 0,
+        keys: vec![AnimationKey::Ik {
+            constraint: 0,
+            time: 0.,
+        }],
+    };
+    let bytes = serde_json::to_vec(&command).unwrap();
+    let deleted = apply_command(&document, serde_json::from_slice(&bytes).unwrap()).unwrap();
+    assert_eq!(deleted.animations[0].tracks, before.animations[0].tracks);
+    assert_eq!(deleted.animations[0].ik_tracks[0].keys.len(), 1);
+    for value in [
+        serde_json::json!({"type":"ik","constraint":0,"time":0,"bone":0}),
+        serde_json::json!({"type":"bone","bone":0,"property":"mix","time":0}),
+    ] {
+        assert!(serde_json::from_value::<AnimationKey>(value).is_err());
+    }
+    let invalid = Command::MoveAnimationKeys {
+        animation: 0,
+        keys: vec![AnimationKey::Ik {
+            constraint: 0,
+            time: 0.1,
+        }],
+        delta: 1.,
+        copy: false,
+    };
+    assert!(apply_command(&document, invalid).is_err());
+    assert_eq!(document, before);
+}
