@@ -11,8 +11,8 @@ impl Editor {
     pub(super) fn animation_properties(&mut self, ui: &mut egui::Ui, animation: usize) {
         let a = &self.session.document().animations[animation];
         ui.label(format!(
-            "{} frames · {} tracks",
-            (a.duration * self.session.document().fps as f32).round() as u32,
+            "{:.0} frames · {} tracks",
+            animation::frame_at(a.duration(), self.session.document().fps),
             a.tracks.len()
         ));
         ui.label(if self.animation == animation {

@@ -23,7 +23,31 @@ pub(super) fn primary_pointer_event(
 pub(super) struct ChartGeometry {
     pub start: f32,
     pub width: f32,
-    pub duration: f32,
+    pub extent: f32,
+}
+
+impl ChartGeometry {
+    fn is_valid(self) -> bool {
+        self.start.is_finite()
+            && self.width.is_finite()
+            && self.width > 0.
+            && self.extent.is_finite()
+            && self.extent > 0.
+    }
+
+    pub(super) fn x_at(self, time: f32) -> f32 {
+        (f64::from(self.start) + f64::from(self.width) * (f64::from(time) / f64::from(self.extent)))
+            as f32
+    }
+
+    pub(super) fn time_at(self, pointer_x: f32) -> Option<f32> {
+        if !self.is_valid() || !pointer_x.is_finite() {
+            return None;
+        }
+        let fraction =
+            ((f64::from(pointer_x) - f64::from(self.start)) / f64::from(self.width)).clamp(0., 1.);
+        Some((fraction * f64::from(self.extent)) as f32)
+    }
 }
 
 pub(super) struct KeyDrag {
@@ -50,13 +74,7 @@ impl KeyDrag {
         origin_x: f32,
         modifiers: egui::Modifiers,
     ) -> Option<Self> {
-        if !geometry.start.is_finite()
-            || !geometry.width.is_finite()
-            || geometry.width <= 0.
-            || !geometry.duration.is_finite()
-            || geometry.duration <= 0.
-            || !origin_x.is_finite()
-        {
+        if !geometry.is_valid() || !origin_x.is_finite() {
             return None;
         }
         let keys = if selected.contains(&pressed) {
@@ -100,14 +118,18 @@ impl KeyDrag {
         }
     }
     pub fn offset_at(&self, pointer_x: f32, fps: u32, unsnapped: bool) -> Option<f32> {
-        let mut offset = (pointer_x - self.origin_x) / self.geometry.width * self.geometry.duration;
+        let mut offset = (f64::from(pointer_x) - f64::from(self.origin_x))
+            / f64::from(self.geometry.width)
+            * f64::from(self.geometry.extent);
         if !offset.is_finite() || fps == 0 {
             return None;
         }
         if !unsnapped {
-            offset = ((self.pressed_time + offset) * fps as f32).round() / fps as f32
-                - self.pressed_time;
+            offset = ((f64::from(self.pressed_time) + offset) * f64::from(fps)).round()
+                / f64::from(fps)
+                - f64::from(self.pressed_time);
         }
+        let offset = offset as f32;
         if !offset.is_finite() {
             return None;
         }
@@ -137,7 +159,7 @@ impl KeyDrag {
             "sources":self.sources,"offset":self.offset,"copy":self.copy,
             "toggle":self.toggle,
             "pressedTime":self.pressed_time,"originX":self.origin_x,
-            "chart":{"start":self.geometry.start,"width":self.geometry.width,"duration":self.geometry.duration}
+            "chart":{"start":self.geometry.start,"width":self.geometry.width,"extent":self.geometry.extent}
         })
     }
 }
@@ -217,7 +239,7 @@ mod tests {
         ChartGeometry {
             start: 100.,
             width: 240.,
-            duration: 2.4,
+            extent: 2.4,
         }
     }
     #[test]
@@ -239,7 +261,7 @@ mod tests {
         let selected = drag.selection_at(-0.12345);
         assert_eq!(selected[0].time, 0.);
         assert!((selected[1].time - 0.47655).abs() < 1e-6);
-        assert_eq!(drag.geometry.duration, 2.4);
+        assert_eq!(drag.geometry.extent, 2.4);
         assert!(drag.offset_at(f32::NAN, 30, false).is_none());
     }
     #[test]
