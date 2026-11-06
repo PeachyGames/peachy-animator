@@ -9,6 +9,7 @@ mod mesh;
 mod panels;
 mod properties;
 mod rename;
+mod scene_view;
 mod selection;
 mod selection_history;
 mod shortcuts;
@@ -28,9 +29,10 @@ mod weight_direct;
 mod weights;
 use eframe::egui::{self, Color32, FontId, Pos2, RichText, Sense, Stroke, Vec2, pos2, vec2};
 use peachy_document::*;
+#[cfg(test)]
+use peachy_engine::scene_from_locals;
 use peachy_engine::{
     Affine, Axes, Command, EditTarget, KeyState, PlayDirection, Session, TransformTool,
-    scene_from_locals,
 };
 use peachy_io as files;
 use std::{
@@ -116,6 +118,7 @@ pub(crate) struct Editor {
     mesh_handles: Vec<[f32; 2]>,
     status: String,
     error: Option<String>,
+    evaluation_error: Option<String>,
     new_bone: String,
     rename: Option<rename::RenameState>,
     duplicate_animation: Option<animation_management::DuplicateAnimationState>,
@@ -220,6 +223,7 @@ impl Editor {
             mesh_handles: vec![],
             status: "Original Peach Bot • select a bone and make it yours".into(),
             error: initial_error,
+            evaluation_error: None,
             new_bone: String::new(),
             rename: None,
             duplicate_animation: None,
@@ -592,6 +596,7 @@ impl Editor {
                     self.duplicate_animation = None;
                     self.reconcile_selection();
                     self.error = None;
+                    self.evaluation_error = None;
                     self.load_textures(ctx);
                     self.status = "Project opened".into();
                 }
@@ -709,7 +714,15 @@ impl eframe::App for Editor {
                         );
                     }
                     ui.separator();
-                    ui.label(RichText::new(&self.status).small().color(MUTED));
+                    ui.label(
+                        RichText::new(self.evaluation_error.as_deref().unwrap_or(&self.status))
+                            .small()
+                            .color(if self.evaluation_error.is_some() {
+                                ACCENT
+                            } else {
+                                MUTED
+                            }),
+                    );
                 });
             });
         if self.show_tree || self.show_weights {
@@ -847,6 +860,7 @@ impl eframe::App for Editor {
                 report["weightsContext"] = self.weights_diagnostic();
                 report["weightsDirect"] = self.weight_direct_diagnostic();
                 report["transformGesture"] = self.transform_gesture_diagnostic();
+                report["evaluationError"] = self.evaluation_error.clone().into();
                 report["shearDisplayPolicy"] = "localPendingComparison".into();
                 report["meshInspection"] = self.mesh_inspection().unwrap_or_default();
                 report["displayExtent"] = self
