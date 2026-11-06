@@ -247,9 +247,14 @@ impl Editor {
             _ => (current, current),
         }
     }
-    pub(super) fn prepare_transform_numeric(&self, ui: &mut egui::Ui, id: egui::Id) {
+    pub(super) fn prepare_transform_numeric(&mut self, ui: &mut egui::Ui, id: egui::Id) {
         if self.transform_blocked_control == Some(id) {
-            ui.memory_mut(|memory| memory.surrender_focus(id));
+            if ui.memory(|memory| memory.has_focus(id) && !memory.had_focus_last_frame(id)) {
+                // Fresh keyboard/accessibility entry resets DragValue's old edit state.
+                self.transform_blocked_control = None;
+            } else {
+                ui.memory_mut(|memory| memory.surrender_focus(id));
+            }
         }
     }
     pub(super) fn transform_numeric_response(
@@ -450,6 +455,14 @@ mod tests {
             .collect()
     }
     fn frame(editor: &mut Editor, ctx: &egui::Context, events: Vec<egui::Event>) {
+        frame_with_focus(editor, ctx, events, None);
+    }
+    fn frame_with_focus(
+        editor: &mut Editor,
+        ctx: &egui::Context,
+        events: Vec<egui::Event>,
+        focus: Option<egui::Id>,
+    ) {
         let mut output = ctx.run_ui(
             egui::RawInput {
                 screen_rect: Some(egui::Rect::from_min_size(Pos2::ZERO, vec2(1500., 960.))),
@@ -460,6 +473,9 @@ mod tests {
             |ui| {
                 editor.reconcile_selection();
                 editor.shortcuts(ui.ctx());
+                if let Some(id) = focus {
+                    ui.memory_mut(|memory| memory.request_focus(id));
+                }
                 egui::Panel::top("test-toolbar").show(ui, |ui| editor.toolbar(ui));
                 if editor.show_weights {
                     egui::Panel::right("test-weights")
@@ -861,5 +877,66 @@ mod tests {
         let saved = files::load(&folder.join("rig.peachy")).unwrap();
         assert_eq!(saved.bones, original.bones);
         std::fs::remove_dir_all(folder).unwrap();
+    }
+    #[test]
+    fn escape_then_keyboard_tab_can_reenter_the_same_numeric_control() {
+        let mut editor = editor_fixture();
+        let ctx = editor_context();
+        editor.set_tool(Tool::Shear);
+        frame(&mut editor, &ctx, vec![]);
+        click(&mut editor, &ctx, "value:ShearX");
+        let control = match editor.drag.as_ref().unwrap().input {
+            Input::Numeric { control, .. } => control,
+            _ => panic!(),
+        };
+        frame(&mut editor, &ctx, vec![egui::Event::Text("25".into())]);
+        frame(
+            &mut editor,
+            &ctx,
+            key(egui::Key::Escape, egui::Modifiers::NONE),
+        );
+        assert!(editor.session.pose_edits().is_empty());
+        let mut entered = false;
+        for _ in 0..64 {
+            frame(
+                &mut editor,
+                &ctx,
+                key(egui::Key::Tab, egui::Modifiers::NONE),
+            );
+            if editor.drag.as_ref().is_some_and(
+                |edit| matches!(edit.input,Input::Numeric {control:id,..} if id==control),
+            ) {
+                entered = true;
+                break;
+            }
+        }
+        assert!(
+            entered,
+            "Canceled field must be reachable by normal Tab traversal"
+        );
+        frame(&mut editor, &ctx, vec![egui::Event::Text("15".into())]);
+        frame(
+            &mut editor,
+            &ctx,
+            key(egui::Key::Enter, egui::Modifiers::NONE),
+        );
+        assert_eq!(editor.selected_transform().unwrap().shear_x, 15.);
+        click(&mut editor, &ctx, "value:ShearX");
+        frame(
+            &mut editor,
+            &ctx,
+            key(egui::Key::Escape, egui::Modifiers::NONE),
+        );
+        // A host/accessibility focus transfer occurs before the widget is rendered.
+        // Verify actual text reaches the model, not just that focus was requested.
+        frame_with_focus(&mut editor, &ctx, vec![], Some(control));
+        assert!(ctx.text_edit_focused());
+        frame(&mut editor, &ctx, vec![egui::Event::Text("20".into())]);
+        frame(
+            &mut editor,
+            &ctx,
+            key(egui::Key::Enter, egui::Modifiers::NONE),
+        );
+        assert_eq!(editor.selected_transform().unwrap().shear_x, 20.);
     }
 }

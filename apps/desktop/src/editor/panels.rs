@@ -297,6 +297,52 @@ impl Editor {
         }); });
     }
 
+    fn exact_inspected_key(&self, bone: usize, property: Property, time: f32) -> Option<Keyframe> {
+        self.session
+            .document()
+            .animations
+            .get(self.animation)?
+            .tracks
+            .iter()
+            .find(|track| track.bone == bone && track.property == property)?
+            .keys
+            .iter()
+            .find(|key| key.time == time)
+            .copied()
+    }
+    pub(super) fn set_key_curve(
+        &mut self,
+        bone: usize,
+        property: Property,
+        time: f32,
+        curve: Curve,
+    ) {
+        self.cancel_gesture();
+        // A live Auto Key preview is not the source of the inspected key's value/identity.
+        let Some(key) = self.exact_inspected_key(bone, property, time) else {
+            return;
+        };
+        if key.curve != curve {
+            self.playing = false;
+            self.dispatch(Command::SetKey {
+                animation: self.animation,
+                bone,
+                property,
+                key: Keyframe { curve, ..key },
+            });
+        }
+    }
+    pub(super) fn remove_inspected_key(&mut self, bone: usize, property: Property, time: f32) {
+        self.cancel_gesture();
+        if self.exact_inspected_key(bone, property, time).is_some() {
+            self.dispatch(Command::DeleteKey {
+                animation: self.animation,
+                bone,
+                property,
+                time,
+            });
+        }
+    }
     pub(super) fn bone_curves(&mut self, ui: &mut egui::Ui, bone: usize) {
         ui.add_space(10.0);
         ui.separator();
@@ -353,7 +399,11 @@ impl Editor {
                 {
                     let range = if i % 2 == 0 { 0.0..=1.0 } else { -1.0..=2.0 };
                     let response = ui.add(egui::Slider::new(&mut handles[i], range).text(*label));
+                    if response.gained_focus() {
+                        self.cancel_transform_edit();
+                    }
                     if response.drag_started() {
+                        self.cancel_transform_edit();
                         self.cancel_weight_edit();
                         self.session.begin_transaction();
                     }
@@ -378,21 +428,10 @@ impl Editor {
                     .add(egui::Shape::line(points, Stroke::new(2.0, MINT)));
             }
             if curve != key.curve {
-                self.playing = false;
-                self.dispatch(Command::SetKey {
-                    animation: self.animation,
-                    bone,
-                    property,
-                    key: Keyframe { curve, ..key },
-                });
+                self.set_key_curve(bone, property, key.time, curve);
             }
             if ui.small_button("Remove key").clicked() {
-                self.dispatch(Command::DeleteKey {
-                    animation: self.animation,
-                    bone,
-                    property,
-                    time: key.time,
-                });
+                self.remove_inspected_key(bone, property, key.time);
             }
         }
         if ambiguous {
@@ -408,5 +447,106 @@ impl Editor {
                     .color(MUTED),
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod curve_preview_tests {
+    use super::super::test_support::editor_fixture;
+    use super::*;
+
+    fn preview(editor: &mut Editor) {
+        editor.set_tool(Tool::Shear);
+        editor.auto_key = true;
+        let local = editor.selected_transform().unwrap();
+        let parent = editor.selected_parent().unwrap();
+        editor.begin_viewport_transform(parent.point(local.x + 40., local.y), Some(0));
+        editor.update_viewport_transform(
+            parent.point(
+                local.x + 40. * 20f32.to_radians().cos(),
+                local.y + 40. * 20f32.to_radians().sin(),
+            ),
+            false,
+        );
+    }
+    #[test]
+    fn editing_a_curve_uses_the_original_key_value_and_groups_after_preview_cancellation() {
+        let mut editor = editor_fixture();
+        editor.set_time(0.4);
+        let mut document = editor.session.document().clone();
+        document.animations[0].tracks.push(Track {
+            bone: 8,
+            property: Property::ShearX,
+            keys: vec![Keyframe {
+                time: 0.4,
+                value: 3.,
+                curve: Curve::Linear,
+            }],
+        });
+        editor.session = Session::new(document).unwrap();
+        let original = editor.session.document().clone();
+        preview(&mut editor);
+        assert!((editor.selected_transform().unwrap().shear_x - 23.).abs() < 0.001);
+        editor.set_key_curve(8, Property::ShearX, 0.4, Curve::Stepped);
+        assert!(editor.drag.is_none());
+        let key = editor
+            .exact_inspected_key(8, Property::ShearX, 0.4)
+            .unwrap();
+        assert_eq!(key.value, 3.);
+        assert_eq!(key.curve, Curve::Stepped);
+        editor.undo();
+        assert_eq!(editor.session.document(), &original);
+        assert!(!editor.session.can_undo());
+        preview(&mut editor);
+        editor.cancel_transform_edit();
+        editor.session.begin_transaction();
+        editor.set_key_curve(
+            8,
+            Property::ShearX,
+            0.4,
+            Curve::Bezier([0.3, 0.2, 0.7, 0.8]),
+        );
+        editor.set_key_curve(
+            8,
+            Property::ShearX,
+            0.4,
+            Curve::Bezier([0.4, 0.2, 0.7, 0.8]),
+        );
+        editor.session.commit_transaction();
+        editor.undo();
+        assert_eq!(editor.session.document(), &original);
+        assert!(!editor.session.can_undo());
+    }
+    #[test]
+    fn preview_only_curve_and_delete_actions_cannot_create_or_retarget_a_nearby_key() {
+        let mut editor = editor_fixture();
+        editor.set_time(0.4);
+        let mut document = editor.session.document().clone();
+        document.animations[0].tracks.push(Track {
+            bone: 8,
+            property: Property::ShearX,
+            keys: vec![Keyframe {
+                time: 0.400005,
+                value: 7.,
+                curve: Curve::Linear,
+            }],
+        });
+        editor.session = Session::new(document).unwrap();
+        let original = editor.session.document().clone();
+        // AutoKey's existing SetPose near-key policy can edit the nearby key. The inspector's
+        // cancellation/requery must still use the original exact identity/value, never its preview.
+        preview(&mut editor);
+        editor.set_key_curve(8, Property::ShearY, 0.4, Curve::Stepped);
+        assert_eq!(editor.session.document(), &original);
+        assert!(!editor.session.can_undo());
+        editor.transform_blocked = false;
+        preview(&mut editor);
+        editor.remove_inspected_key(8, Property::ShearY, 0.4);
+        assert_eq!(editor.session.document(), &original);
+        assert!(!editor.session.can_undo());
+        editor.set_key_curve(8, Property::ShearX, 0.4, Curve::Stepped);
+        editor.remove_inspected_key(8, Property::ShearX, 0.4);
+        assert_eq!(editor.session.document(), &original);
+        assert!(!editor.session.can_undo());
     }
 }
