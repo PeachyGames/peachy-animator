@@ -147,11 +147,29 @@ pub enum Command {
     },
 }
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
-#[serde(tag = "mode", rename_all = "camelCase", deny_unknown_fields)]
+#[derive(Clone, Copy, Debug, Serialize)]
+#[serde(tag = "mode", rename_all = "camelCase")]
 pub enum EditTarget {
     Setup,
     Animate { animation: usize, time: f32 },
+}
+
+impl<'de> Deserialize<'de> for EditTarget {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        #[derive(Deserialize)]
+        #[serde(deny_unknown_fields)]
+        struct Empty {}
+        #[derive(Deserialize)]
+        #[serde(tag = "mode", rename_all = "camelCase", deny_unknown_fields)]
+        enum Wire {
+            Setup(Empty),
+            Animate { animation: usize, time: f32 },
+        }
+        Ok(match Wire::deserialize(deserializer)? {
+            Wire::Setup(_) => Self::Setup,
+            Wire::Animate { animation, time } => Self::Animate { animation, time },
+        })
+    }
 }
 
 /// Pure document transition. Neither the input nor history changes on failure.
