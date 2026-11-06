@@ -25,6 +25,7 @@ fn rig() -> Document {
         slots: vec![],
         skins: Default::default(),
         animations: vec![Animation {
+            ik_tracks: vec![],
             name: "shear".into(),
             tracks: vec![],
         }],
@@ -927,7 +928,7 @@ fn bind_add_direct_and_unbind_share_sheared_pending_pose_geometry_and_one_step_h
         time: 0.137,
     };
     let geometry = |session: &Session| {
-        scene_from_locals(
+        checked_setup_scene_from_locals(
             session.document(),
             "default",
             session.local_pose(Some(0), 0.137),
@@ -1043,6 +1044,7 @@ fn shear_clipboard_and_retiming_keep_scalar_identity_curves_fractional_neighbors
         },
     ];
     document.animations.push(Animation {
+        ik_tracks: vec![],
         name: "destination".into(),
         tracks: vec![],
     });

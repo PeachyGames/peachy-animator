@@ -41,6 +41,7 @@ fn fixture() -> Document {
         skins: BTreeMap::new(),
         animations: vec![
             Animation {
+                ik_tracks: vec![],
                 name: "source".into(),
 
                 tracks: vec![
@@ -67,6 +68,7 @@ fn fixture() -> Document {
                 ],
             },
             Animation {
+                ik_tracks: vec![],
                 name: "target".into(),
 
                 tracks: vec![Track {
