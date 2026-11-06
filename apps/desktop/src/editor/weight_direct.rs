@@ -320,6 +320,17 @@ impl Editor {
         }
     }
     pub(super) fn finish_idle_transactions(&mut self, ctx: &egui::Context) {
+        // A menu/modal can open during this frame, after keyboard routing queued an action.
+        if !ctx.input(|input| input.focused)
+            || self.error.is_some()
+            || self.rename.is_some()
+            || self.duplicate_animation.is_some()
+            || egui::Popup::is_any_open(ctx)
+        {
+            self.cancel_gesture();
+        }
+        self.settle_ik_bend();
+        self.settle_pose_key();
         self.settle_ik_edit(ctx);
         self.settle_transform_edit(ctx);
         if !ctx.input(|input| input.pointer.any_down())

@@ -4,10 +4,13 @@ mod dopesheet;
 mod dopesheet_selection;
 mod icons;
 mod ik;
+#[cfg(test)]
+mod ik_animation_tests;
 mod key_drag;
 mod layout;
 mod mesh;
 mod panels;
+mod pose_key;
 mod properties;
 mod rename;
 mod scene_view;
@@ -110,6 +113,8 @@ pub(crate) struct Editor {
     ik_edit: Option<ik::IkEdit>,
     ik_blocked: Option<egui::Id>,
     ik_target: Option<ik::IkTargetPicker>,
+    ik_bend_request: Option<ik::IkBendRequest>,
+    pose_key_request: Option<pose_key::PoseKeyRequest>,
     drag: Option<TransformEdit>,
     transform_blocked: bool,
     transform_blocked_control: Option<egui::Id>,
@@ -216,6 +221,8 @@ impl Editor {
             ik_edit: None,
             ik_blocked: None,
             ik_target: None,
+            ik_bend_request: None,
+            pose_key_request: None,
             hidden_views: None,
             drag: None,
             transform_blocked: false,
@@ -864,7 +871,6 @@ impl Editor {
                 }
                 let mut report = serde_json::json!({
                     "document":self.session.document(),"selection":self.selection.as_ref().map(TreeItem::diagnostic),
-                    "status":self.status,"timelineOwner":self.timeline_owner(),
                     "selectedBone":self.selected_bone(),"hasSelection":self.selection.is_some(),
                     "tool":match self.tool {Tool::Rotate=>"rotate",Tool::Move=>"translate",Tool::Scale=>"scale",Tool::Shear=>"shear",Tool::Mesh=>"vertices",Tool::Weights=>"weights"},
                     "treeVisible":self.show_tree,"dopesheetVisible":!self.setup_mode && self.show_dopesheet,"showDopesheet":self.show_dopesheet,
@@ -882,6 +888,8 @@ impl Editor {
                     "pointer":ctx.input(|i|i.pointer.hover_pos().map(|p|[p.x,p.y])),
                     "targets":self.capture_targets,"meshHandles":self.mesh_handles,"innerSize":[ctx.content_rect().width(),ctx.content_rect().height()]
                 });
+                report["status"] = self.status.clone().into();
+                report["timelineOwner"] = serde_json::json!(self.timeline_owner());
                 report["animationEnd"] = self.animation_end().into();
                 report["weightedMeshCount"] = self.weighted_mesh_count().into();
                 report["weightsContext"] = self.weights_diagnostic();

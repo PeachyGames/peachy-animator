@@ -169,10 +169,15 @@ impl Editor {
                 [start, end],
                 Stroke::new(if selected { 2.5 } else { 1.3 }, color),
             );
-            if doc.constraints.iter().any(|constraint| {
-                let Constraint::Ik(ik) = constraint;
-                ik.setup.mix > 0. && ik.bones.contains(&i)
-            }) {
+            if doc
+                .constraints
+                .iter()
+                .enumerate()
+                .any(|(index, constraint)| {
+                    let Constraint::Ik(ik) = constraint;
+                    scene.ik_poses[index].mix != 0. && ik.bones.contains(&i)
+                })
+            {
                 painter.circle_stroke(
                     start,
                     if selected { 5. } else { 3. },
