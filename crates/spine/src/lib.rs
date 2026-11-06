@@ -1,5 +1,6 @@
 //! Independently written Spine 4.3 JSON adapter. No runtime implementation dependency.
 mod attachments;
+mod constraints;
 use attachments::{inspect_attachment, read_attachment, write_attachment};
 use peachy_document::*;
 use serde::Serialize;
@@ -33,6 +34,7 @@ pub struct Inspection {
     pub skins: usize,
     pub attachments: usize,
     pub animations: usize,
+    pub constraints: usize,
     pub supported: bool,
     pub unsupported: Vec<String>,
 }
@@ -52,18 +54,12 @@ pub fn inspect(value: &Value) -> Inspection {
     if !version.starts_with("4.3.") {
         unsupported.push(format!("Spine {version}: only 4.3.x JSON is supported"));
     }
-    for field in [
-        "constraints",
-        "ik",
-        "transform",
-        "path",
-        "physics",
-        "events",
-    ] {
+    for field in ["ik", "transform", "path", "physics", "events"] {
         if nonempty(&value[field]) {
             unsupported.push(format!("{field}: not supported in slice 1"));
         }
     }
+    constraints::inspect(value, &mut unsupported);
     for bone in array(&value["bones"]) {
         let name = bone["name"].as_str().unwrap_or("?");
         inspect_numbers(
@@ -239,6 +235,14 @@ pub fn inspect(value: &Value) -> Inspection {
         "Skeleton",
         &mut unsupported,
     );
+    // For nonempty IK, use the same strict graph/source checks as import. This
+    // is decoding only, with no engine dependency or second solver.
+    if unsupported.is_empty()
+        && !array(&value["constraints"]).is_empty()
+        && let Err(error) = read_document(value, "Inspection")
+    {
+        unsupported.push(error);
+    }
     unsupported.sort();
     unsupported.dedup();
     Inspection {
@@ -248,6 +252,7 @@ pub fn inspect(value: &Value) -> Inspection {
         skins: array(&value["skins"]).len(),
         attachments,
         animations: value["animations"].as_object().map_or(0, |v| v.len()),
+        constraints: array(&value["constraints"]).len(),
         supported: unsupported.is_empty(),
         unsupported,
     }
@@ -261,6 +266,10 @@ pub fn import_json(value: &Value, name: &str) -> Result<Document, String> {
             report.unsupported.join("\n")
         ));
     }
+    read_document(value, name)
+}
+
+fn read_document(value: &Value, name: &str) -> Result<Document, String> {
     let mut bones = vec![];
     let mut indices = BTreeMap::new();
     for bone in array(&value["bones"]) {
@@ -389,7 +398,7 @@ pub fn import_json(value: &Value, name: &str) -> Result<Document, String> {
         return Err("FPS must be 1–240".into());
     }
     let doc = Document {
-        constraints: vec![],
+        constraints: constraints::read(value, &indices)?,
         format: FORMAT_VERSION,
         name: name.into(),
         fps: fps as u32,
@@ -399,14 +408,12 @@ pub fn import_json(value: &Value, name: &str) -> Result<Document, String> {
         animations,
     };
     doc.validate()?;
+    constraints::validate_source(&doc)?;
     Ok(doc)
 }
 
 pub fn export_json(doc: &Document) -> Result<Value, String> {
-    if !doc.constraints.is_empty() {
-        return Err("IK export implementation is pending".into());
-    }
-    doc.validate()?;
+    constraints::validate_source(doc)?;
     validate_export_names(doc)?;
     let bones: Vec<_> = doc
         .bones
@@ -488,9 +495,11 @@ pub fn export_json(doc: &Document) -> Result<Value, String> {
         }
         animations[&animation.name] = json!({"bones":bone_timelines});
     }
-    Ok(
-        json!({"skeleton":{"spine":TARGET_VERSION,"images":"./images/","fps":doc.fps},"bones":bones,"slots":slots,"skins":skins,"animations":animations}),
-    )
+    let mut output = json!({"skeleton":{"spine":TARGET_VERSION,"images":"./images/","fps":doc.fps},"bones":bones,"slots":slots,"skins":skins,"animations":animations});
+    if !doc.constraints.is_empty() {
+        output["constraints"] = constraints::write(doc);
+    }
+    Ok(output)
 }
 
 fn checked_curve_coordinate(value: f64, context: &str) -> Result<f32, String> {
