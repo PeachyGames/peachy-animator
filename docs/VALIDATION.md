@@ -320,3 +320,69 @@ images stay outside Git and no proprietary image/font is bundled. The new vector
 use a 16-point grid and egui's scaling. Exact pixel matching, other display scales,
 other platforms and screen-reader operation were not verified. Accessible names and
 native checkbox roles are attached in code. Hosted CI was not run.
+
+## Parallel authoring slices — November 5, 2026
+
+Three implementation agents worked in isolated worktrees on Dopesheet selection,
+bone/slot renaming and animation rename/duplicate. The coordinator reviewed the
+combined source, integrated shared dialogs/icons/focus rules and verified it.
+Each lane ultimately used its own Cargo target directory. The coordinator cleaned
+all six workspace packages and rebuilt the integrated source; lane results are not
+used as a substitute for this check. After the Tree interaction fix, all **58 Rust
+tests** pass (desktop 10, CLI 4, engine 32, I/O 4, adapter 8), along with formatting,
+warnings-denied Clippy, workspace build and architecture checks. New core functions
+were reviewed for filesystem, process, clock and GUI effects; none were introduced.
+
+Tests cover names and all-skin references, unchanged evaluated geometry, exact owned
+animation copies, native/Spine serialization, invalid-batch atomicity, preservation
+of redo, stale typed selection/group pruning, exact fractional-key selection and
+close-neighbor deletion safety. No schema or dependency changes were needed.
+
+The integrated CLI applied five commands to the original Peach Bot: rename a bone,
+rename a slot, rename an animation, duplicate it, then delete a key from the copy.
+Native validation and a Spine JSON export/import/reexport preserve the result.
+Packed export succeeds. An initial harness attempt omitted the required existing
+bundle parent; the corrected final check retained its own output directory.
+The artist sources remain unchanged.
+
+The resulting packed export was loaded by the separately licensed external Spine
+4.3 runtime across three animations and three skins. **41,310** world-component and
+**48,960** region-coordinate comparisons pass at tolerance 0.001. Maximum errors
+were 0.000027367 and 0.000045777 respectively. This fixture contains regions; mesh
+naming preservation is covered by the engine scene tests, and prior mesh geometry
+oracle evidence remains applicable. See [runtime evidence](evidence/authoring-runtime.json)
+and [CLI evidence](evidence/authoring-interop.json).
+
+Native review exposed the Tree auto-scroll moving a clicked row before its second
+click. Tree-origin selection now leaves the visible row in place; viewport/history
+selection still uses the reveal path. Several later runner attempts exposed unreliable synthetic text/Select All input;
+a focused probe established that the app received the unchanged draft. The final
+runner uses ordinary OS keyboard events for literal input, explicit field focus,
+bounded plain-key clearing and rendered-state synchronization. Function-key captures
+remain targeted to the owned PID. Each action group starts with owned foreground/
+normal-window verification; all mouse coordinates are calibrated. Temporary traces
+were removed. Failed attempts and captures remain in local task evidence.
+
+The bounded scope and remaining UI differences are recorded in UI_PARITY.md and
+docs/slices/. Exact installed-editor duplication autoactivation, other display
+scales/platforms and screen-reader operation remain unverified. Native `.spine` and
+binary `.skel` support are unchanged and remain unavailable. Hosted CI was not run.
+
+
+Native acceptance confirms bone/slot/animation naming, inline validation and cancel,
+animation copying without implicit activation, exact key selection independent of
+the playhead, Cmd/Ctrl toggling, focused deletion, toolbar deletion, double-click key
+deletion and one-step undo/redo. Two verified native save backups are retained; the
+working document and saved file were restored. See
+[feature acceptance](evidence/authoring-native.json). The long run stopped at its last
+Tree double-click assertion; a separate focused probe with an explicit pointer move
+and two ordinary clicks confirms that Rename opens and the row stays in place. See
+[Tree evidence](evidence/authoring-tree.json). Acceptance is recorded by feature;
+there was no claim that the long automation script passed uninterrupted. Some Tree
+selection steps needed a bounded retry after verified activation, so exact first-
+click behavior across host focus transitions remains a manual comparison gate.
+
+Captures: [editor](authoring-editor.png), [selected keys](authoring-keys.png),
+[Rename](authoring-rename.png), and [Duplicate](authoring-duplicate.png).
+All review processes and temporary login authorizations were cleaned up; earlier
+user windows were preserved. No new interactive handoff remains.

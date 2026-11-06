@@ -10,6 +10,9 @@ covers those controls with independently drawn vectors and a shared vocabulary.
 | Save | Floppy disk | Compact titlebar button; name and shortcut tooltip; same icon in file menu |
 | Undo / Redo | Curved arrows pointing backward / forward | Enabled only when their history operation is available |
 | Export | Arrow leaving a tray | File menu, beside its label and shortcut |
+| Rename | Text with an insertion caret | Compact properties action; F2 tooltip |
+| Duplicate animation | Overlapping pages | Compact properties action with a named tooltip |
+| Delete selected keys | Cross inside a circle | Dopesheet toolbar; availability follows selected keys |
 | Views | Divided window | Menu heading with a dropdown corner cue |
 | Tree | Connected hierarchy boxes | Same warm hierarchy icon in Views and Tree heading |
 | Dopesheet | Timeline lanes with colored keys | Same icon in Views and Dopesheet heading; unavailable state remains dimmed in Setup |

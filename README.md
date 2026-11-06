@@ -1,10 +1,10 @@
 # Peachy Animator
 
 A native 2D skeletal animation editor from Team Peachy, with an independent Rust
-core and Spine-compatible exports. The current slice adds Spine-style transform
-tools and axes; this is still a bounded subset of Spine.
+core and Spine-compatible exports. The current slices add Spine-style naming dialogs, animation duplication and
+Dopesheet key selection/deletion; this is still a bounded subset of Spine.
 
-![Peach Bot in the editor](docs/tree-editor.png)
+![Peach Bot in the editor](docs/authoring-editor.png)
 
 ## Try it
 
@@ -29,6 +29,13 @@ cargo run -p peachy-animator -- examples/peach-bot/mesh-bot.peachy
 File/history shortcuts use compact icons with named shortcut tooltips. The Views
 menu and view headings share the same visual cues; see the
 [iconography contract](docs/ICONOGRAPHY.md).
+
+Select a bone, slot or animation and use **F2**, double-click its Tree name, or
+click the properties **Rename** icon. Animation properties also offer **Duplicate**;
+the copy is selected for inspection while the active animation stays unchanged.
+Click Dopesheet keys to select them, **Cmd/Ctrl-click** to toggle several, then
+press **Delete** while the canvas has focus or click its Delete icon. Double-click
+a key to delete it. Each naming action or selected-key deletion is one undo step.
 
 The workspace follows Spine’s default arrangement: viewport left, Tree and item
 properties right, transform controls below the viewport, and Dopesheet below those

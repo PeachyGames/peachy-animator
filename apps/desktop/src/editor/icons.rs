@@ -12,6 +12,9 @@ pub(super) enum Icon {
     Undo,
     Redo,
     Export,
+    Rename,
+    Duplicate,
+    Delete,
     Views,
     Tree,
     Dopesheet,
@@ -50,7 +53,11 @@ pub(super) fn toolbar_button(
         response.widget_info(|| {
             egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), name)
         });
-        let hint = format!("{name} · {shortcut}");
+        let hint = if shortcut.is_empty() {
+            name.to_owned()
+        } else {
+            format!("{name} · {shortcut}")
+        };
         response
             .on_hover_text(hint.clone())
             .on_disabled_hover_text(hint)
@@ -213,6 +220,28 @@ fn paint(ui: &Ui, rect: Rect, icon: Icon, response: &Response) {
             line(&[[2., 8.], [2., 14.], [14., 14.], [14., 8.]], ink);
             line(&[[8., 11.], [8., 2.], [4.5, 5.5]], ink);
             line(&[[8., 2.], [11.5, 5.5]], ink);
+        }
+        Icon::Rename => {
+            line(&[[8., 2.], [13., 2.]], ink);
+            line(&[[10.5, 2.], [10.5, 14.]], ink);
+            line(&[[8., 14.], [13., 14.]], ink);
+            line(&[[2., 5.], [2., 11.], [6., 11.], [6., 5.], [2., 5.]], ink);
+        }
+        Icon::Duplicate => {
+            box_at([1.5, 1.5], [10.5, 11.5], ink);
+            painter.rect_filled(
+                Rect::from_min_max(p(5.5, 5.), p(14.5, 15.)),
+                0.5,
+                ui.visuals().panel_fill,
+            );
+            box_at([5.5, 5.], [14.5, 15.], ink);
+            line(&[[8., 8.], [12., 8.]], ink);
+            line(&[[8., 11.], [12., 11.]], ink);
+        }
+        Icon::Delete => {
+            painter.circle_stroke(p(8., 8.), 6. * rect.width() / SIZE, stroke(ink));
+            line(&[[5.5, 5.5], [10.5, 10.5]], ink);
+            line(&[[10.5, 5.5], [5.5, 10.5]], ink);
         }
         Icon::Views | Icon::RestoreWorkspace => {
             box_at([1.5, 2.], [14.5, 14.], ink);

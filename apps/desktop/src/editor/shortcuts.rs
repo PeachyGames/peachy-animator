@@ -86,6 +86,12 @@ impl Editor {
         {
             return;
         }
+        if ctx.input_mut(|input| input.consume_key(egui::Modifiers::NONE, egui::Key::F2)) {
+            if let Some(item) = self.selection.clone() {
+                self.begin_rename(item);
+            }
+            return;
+        }
         if self.dopesheet_has_focus(ctx)
             && ctx.input_mut(|input| {
                 input.consume_key(egui::Modifiers::NONE, egui::Key::Delete)

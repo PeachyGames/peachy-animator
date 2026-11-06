@@ -40,7 +40,7 @@ attachment properties. Interpolation labels are Linear, Stepped and Bezier.
 
 - Align detailed spacing, fonts, control sizing, tool glyphs and visual states using
   Setup/Animate reference screenshots at matched viewport sizes.
-- Extend the typed Tree with multi/range selection, rename/create
+- Extend the typed Tree with multi/range selection, creation and remaining rename
   workflows and drag/drop parenting/draw order. Introduce stable IDs before deletion
   or reparenting. Exact glyphs, spacing and every Tree preference remain to align.
 - Complete main tool organization with Shear/Pose/Create/Weights and compensation.
@@ -188,3 +188,29 @@ Dopesheet reuse theirs in their headings. View visibility retains its checked st
 and Hide/Restore views changes both its symbol and label. See
 [the iconography contract](ICONOGRAPHY.md) for the shared vocabulary and remaining
 coverage. No proprietary UI image or font is bundled.
+
+## Naming and Dopesheet authoring slices
+
+Bone, slot and animation names use the Tree properties Rename action and a modal
+name dialog. F2 and double-clicking a supported Tree name open the same dialog,
+following the public [Tree guide](https://esotericsoftware.com/spine-tree).
+Enter/OK confirms; Escape/Cancel discards the draft. Blank or duplicate names leave
+the document and history unchanged and show the error in the dialog. Names can be
+changed in either Setup or Animate without altering transform keys. Multi-item,
+skin, placeholder and attachment renaming remain pending.
+
+Animation properties provide Duplicate with an explicit new-name dialog. The copy
+retains duration, keys and curves and becomes the inspected selection. The active
+animation stays unchanged until explicitly activated. This activation policy is a
+bounded implementation choice; exact installed-editor duplication focus/activation
+behavior has not yet been established. Creation/deletion/folders and full animation
+management remain incomplete.
+
+Dopesheet clicks select exact source keys independently of playhead position.
+Cmd/Ctrl-click toggles keys; Delete/Backspace requires focus in the visible canvas.
+Double-click deletes the clicked key. The toolbar offers the same deletion command
+with an independent icon. Rotation/translation/scale keys use narrow green/blue/red
+bars, following the public row images. Only the selected bone's supported scalar
+tracks are covered; multi-bone rows, overview rows, box selection, dragging,
+clipboard, select-all and Graph synchronization remain pending. Jump-to-key is on;
+configurable selection/scrubbing preferences remain pending.

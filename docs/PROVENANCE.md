@@ -147,3 +147,19 @@ open folder, disk, directional history arrows, windows, hierarchy and keyed time
 primitives. No reference pixels, proprietary icons or fonts are copied or loaded.
 Public reference images remain only in the local task evidence directory. Repository
 screenshots use our application and original Peach Bot artwork.
+
+## Naming and key selection references — November 5, 2026
+
+The public [Tree guide](https://esotericsoftware.com/spine-tree) documents the
+properties Duplicate/Rename buttons and F2/double-click rename dialog conventions.
+The [Animations view guide](https://esotericsoftware.com/spine-animations-view)
+distinguishes inspection from activation. The [Dopesheet guide](https://esotericsoftware.com/spine-dopesheet)
+and [Keys guide](https://esotericsoftware.com/spine-keys) document key selection,
+Cmd/Ctrl toggling, deletion and double-click deletion. Their public properties and
+Dopesheet row images were visually inspected outside Git. Shared rename/duplicate/
+delete drawings were made independently with our vector primitives. No proprietary
+editor or runtime implementation was inspected or copied.
+
+Public guides do not establish every mode/activation/focus detail. The implementation
+and remaining differences are recorded in UI_PARITY.md and the slice notes. Runtime
+checks use the separately licensed runtime only as an external black-box consumer.

@@ -11,6 +11,8 @@ impl Editor {
         !self.setup_mode
             && self.show_dopesheet
             && self.error.is_none()
+            && self.rename.is_none()
+            && self.duplicate_animation.is_none()
             && !egui::Popup::is_any_open(ctx)
             && !ctx.text_edit_focused()
             && ctx.memory(|memory| memory.has_focus(Self::dopesheet_id()))
@@ -34,6 +36,17 @@ impl Editor {
         self.record_target("dopesheet", ui.max_rect());
         ui.horizontal(|ui| {
             icons::heading(ui, Icon::Dopesheet, "Dopesheet");
+            let delete = icons::toolbar_button(
+                ui,
+                Icon::Delete,
+                "Delete selected keys",
+                "Delete",
+                !self.key_selection.is_empty(),
+            );
+            self.record_target("timelineDelete", delete.rect);
+            if delete.clicked() {
+                self.delete_dopesheet_keys();
+            }
             for (direction, name) in [
                 (PlayDirection::Backward, "playBackward"),
                 (PlayDirection::Forward, "playForward"),

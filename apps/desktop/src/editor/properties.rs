@@ -10,13 +10,20 @@ impl Editor {
             {
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if let TreeItem::Animation(animation) = item {
-                        let duplicate = ui.button("Duplicate");
+                        let duplicate = icons::toolbar_button(
+                            ui,
+                            icons::Icon::Duplicate,
+                            "Duplicate animation",
+                            "",
+                            true,
+                        );
                         self.record_target("animationDuplicate", duplicate.rect);
                         if duplicate.clicked() {
                             self.begin_duplicate_animation(animation);
                         }
                     }
-                    let rename = ui.button("Rename").on_hover_text("Rename · F2");
+                    let rename =
+                        icons::toolbar_button(ui, icons::Icon::Rename, "Rename", "F2", true);
                     self.record_target("rename", rename.rect);
                     if matches!(item, TreeItem::Animation(_)) {
                         self.record_target("animationRename", rename.rect);

@@ -1,0 +1,11 @@
+{
+  "commandsApplied": 5,
+  "sourceUnchanged": true,
+  "nativeValidated": {
+    "animations": 3,
+    "bones": 15,
+    "valid": true
+  },
+  "spineJsonRoundtrip": true,
+  "bundle": "bundle/peachy-export-1793925830082576000"
+}

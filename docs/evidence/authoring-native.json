@@ -1,0 +1,19 @@
+{
+  "boneRenameValidationCancelAndHistory": true,
+  "slotRenameAllSkinsAndNativeSave": true,
+  "animationRenameAndIndependentDuplicate": true,
+  "activeAnimationPreserved": true,
+  "dopesheetSelectionPlayheadIndependenceAndToggle": true,
+  "focusedKeyDeleteUndoRedoAndToolbar": true,
+  "doubleClickKeyDeletion": true,
+  "textInputDoesNotDeleteKeys": true,
+  "nativeSaveBackups": 2,
+  "documentAndSavedFileRestored": true,
+  "verificationScope": "The full interaction run passed these checks before its final Tree double-click assertion. The Tree convention is checked separately; no full UI parity claim.",
+  "captures": {
+    "rename": "editor-1793927564814638000.json",
+    "duplicate": "editor-1793927675147743000.json",
+    "keys": "editor-1793927715316531000.json",
+    "editor": "editor-1793927758727807000.json"
+  }
+}

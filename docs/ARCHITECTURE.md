@@ -168,3 +168,25 @@ button hit areas, focus and disabled behavior. File/history buttons have explici
 accessible names and shortcut tooltips; view visibility rows expose checkbox state.
 The same view icon is used in its menu and heading. This is presentation-only code:
 no document, history, file-service, adapter or engine dependency changes are involved.
+
+## Naming and timeline selection
+
+Bone and slot renaming are pure commands; slot renaming moves the slot's map entry
+in every skin while preserving indices, draw order, attachment names and image paths.
+Animation renaming preserves its index; duplication appends a fully owned clip copy.
+Validation and Session provide atomic failure and a single undo entry. No schema or
+format version changes are involved. Stable IDs are still required before general
+entity deletion or reparenting.
+
+The desktop shares one name-dialog renderer with explicit pending targets and
+transient draft/error state. Confirmation dispatches a command; cancellation has no
+document effect. Global editing shortcuts do not run behind the modal. The Tree and
+selection history reconcile name-based references after a rename.
+
+`dopesheet_selection.rs` is a pure presentation model, separate from playhead and
+bone selection. It identifies supported keys by animation, bone, property and exact
+source time. Context changes clear it and document changes prune missing keys.
+`dopesheet.rs` owns layout, hit testing and focus, and dispatches a shared Batch of
+DeleteKey commands. Exact source matches take precedence over the command's
+single-match time tolerance; ambiguous near matches fail atomically. No screen or
+platform types enter the engine.

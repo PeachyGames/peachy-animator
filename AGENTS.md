@@ -58,3 +58,19 @@ in `editor/icons.rs`; do not substitute Unicode/emoji or copy proprietary UI ass
 Reuse a view's icon in its menu and heading. Compact icon buttons need accessible
 names, shortcut tooltips and visible enabled/disabled/hover states. Keep text labels
 in menus. Preserve command and visibility behavior when replacing a text control.
+
+## Parallel development
+
+The user has authorized coordinated subagent development toward Spine parity.
+Use bounded slices in isolated worktrees when parallel work helps; the coordinating
+agent owns integration, shared conventions and final native/compatibility checks.
+Agree on APIs and ownership before editing shared boundaries. Keep each lane's
+Cargo target directory separate: shared workspace package artifacts can be reused
+incorrectly across different worktrees despite Cargo's write lock. Rebuild and
+verify the combined source after integration rather than treating lane results as
+evidence for the merged application. Keep GUI launches/focus under one coordinator.
+
+Native acceptance must verify actual typed values and resulting document state.
+Requested focus, highlighted text and a synthesized key event alone do not prove
+input reached a field. Keep native OS input confined to the verified task-owned
+foreground window, preserve other applications and remove temporary diagnostics.

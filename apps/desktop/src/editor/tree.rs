@@ -4,6 +4,7 @@ use tree_model::{Entry, Filters, project, row_visible};
 enum Action {
     Key(usize),
     Select(TreeItem),
+    Rename(TreeItem),
     Dot(TreeItem, bool),
     Branch(usize, bool),
     All(bool),
@@ -177,7 +178,9 @@ impl Editor {
                         if row.rect.intersects(ui.clip_rect()) {
                             self.record_target(&key, row.rect);
                         }
-                        if row.clicked() {
+                        if row.double_clicked() {
+                            actions.push(Action::Rename(e.item.clone()));
+                        } else if row.clicked() {
                             actions.push(Action::Select(e.item.clone()));
                         }
                         if row.secondary_clicked() && children[index] {
@@ -212,7 +215,17 @@ impl Editor {
         for action in actions {
             match action {
                 Action::Key(bone) => self.key_edited(Some(bone)),
-                Action::Select(item) => self.select(item),
+                Action::Select(item) => {
+                    self.select(item);
+                    // A clicked row is already visible. Scrolling it here can move
+                    // the target away between the two clicks of a double-click.
+                    self.tree.reveal = None;
+                }
+                Action::Rename(item) => {
+                    self.select(item.clone());
+                    self.tree.reveal = None;
+                    self.begin_rename(item);
+                }
                 Action::Dot(item, branch) => self.toggle_tree_dot(item, branch, &entries),
                 Action::All(collapsed) => {
                     for e in &entries {
