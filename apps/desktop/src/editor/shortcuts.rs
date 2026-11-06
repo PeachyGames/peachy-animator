@@ -102,14 +102,6 @@ impl Editor {
             return;
         }
         self.timeline_clipboard_shortcuts(ctx);
-        if self.dopesheet_has_focus(ctx)
-            && ctx.input_mut(|input| {
-                input.consume_key(egui::Modifiers::NONE, egui::Key::Delete)
-                    || input.consume_key(egui::Modifiers::NONE, egui::Key::Backspace)
-            })
-        {
-            self.delete_dopesheet_keys();
-        }
         // Consume modified keys first so Cmd+R never also advances a frame.
         for (index, key) in [
             (0, egui::Key::Num0),

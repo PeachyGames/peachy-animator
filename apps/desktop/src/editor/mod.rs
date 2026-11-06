@@ -68,6 +68,7 @@ pub(crate) struct Editor {
     key_selection: dopesheet_selection::KeySelection,
     key_drag: Option<key_drag::KeyDrag>,
     timeline_clipboard: Option<peachy_engine::KeyClipboard>,
+    timeline_input: timeline_clipboard::TimelineInput,
     tree: TreeState,
     hidden_bones: BTreeSet<usize>,
     hidden_slots: BTreeSet<usize>,
@@ -180,6 +181,7 @@ impl Editor {
             key_selection: Default::default(),
             key_drag: None,
             timeline_clipboard: None,
+            timeline_input: Default::default(),
             tree,
             hidden_bones: BTreeSet::new(),
             hidden_slots: BTreeSet::new(),
@@ -505,6 +507,7 @@ impl Editor {
                     self.key_selection = Default::default();
                     self.key_drag = None;
                     self.timeline_clipboard = None;
+                    self.timeline_input = Default::default();
                     self.selection = Some(TreeItem::Skeleton);
                     self.animation = 0;
                     self.time = 0.0;
@@ -589,6 +592,7 @@ impl eframe::App for Editor {
         self.mesh_handles.clear();
         self.reconcile_selection();
         self.shortcuts(&ctx);
+        self.observe_timeline_input(&ctx);
         self.reconcile_selection();
         if self.playing {
             let step = peachy_engine::advance_playback(
@@ -736,6 +740,7 @@ impl eframe::App for Editor {
                     "selectedKeys":self.key_selection.diagnostic(),"dopesheetFocused":self.dopesheet_has_focus(&ctx),
                     "keyDrag":self.key_drag.as_ref().map(key_drag::KeyDrag::diagnostic),
                     "clipboardKeys":self.timeline_clipboard.as_ref().map_or(0, |clipboard| clipboard.keys.len()),
+                    "selectAllHeld":self.timeline_input.select_all_held(),
                     "selectedAttachment":self.selected_attachment(),"selectedVertex":self.mesh_vertex,"hiddenSlots":self.hidden_slots,
                     "pointer":ctx.input(|i|i.pointer.hover_pos().map(|p|[p.x,p.y])),
                     "targets":self.capture_targets,"meshHandles":self.mesh_handles,"innerSize":[ctx.content_rect().width(),ctx.content_rect().height()]

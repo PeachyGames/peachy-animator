@@ -1,5 +1,5 @@
 //! Clipboard presentation coordinates the shared key commands and editor-session state.
-use super::dopesheet_selection::KeyId;
+use super::dopesheet_selection::{KeyId, SelectionScope};
 use super::icons::Icon;
 use super::*;
 use peachy_engine::{KeyClipboard, TimelineKey, copy_keys};
@@ -18,16 +18,38 @@ fn matches_clipboard(text: &str, clipboard: &KeyClipboard) -> bool {
 }
 
 #[derive(Debug, PartialEq)]
-enum ClipboardAction {
+enum TimelineAction {
+    SelectAll,
+    Delete,
     Copy,
     Cut,
     PasteText(String),
     PasteCurrent,
 }
 
-/// Native hosts translate clipboard shortcuts into dedicated events, not Key presses.
+/// Per-editor key latch; no selection, document or clipboard data is stored here.
+#[derive(Default)]
+pub(super) struct TimelineInput {
+    select_all_held: bool,
+}
+
+impl TimelineInput {
+    pub(super) fn select_all_held(&self) -> bool {
+        self.select_all_held
+    }
+
+    fn observe_key_state(&mut self, down: bool) {
+        self.select_all_held = down;
+    }
+}
+
+/// Native clipboard events and Select All share one ordered action stream.
 /// Preserve every event when text or another control owns input.
-fn take_clipboard_actions(events: &mut Vec<egui::Event>, focused: bool) -> Vec<ClipboardAction> {
+fn take_timeline_actions(
+    events: &mut Vec<egui::Event>,
+    focused: bool,
+    state: &mut TimelineInput,
+) -> Vec<TimelineAction> {
     if !focused {
         return Vec::new();
     }
@@ -41,9 +63,34 @@ fn take_clipboard_actions(events: &mut Vec<egui::Event>, focused: bool) -> Vec<C
     let mut actions = Vec::new();
     for event in std::mem::take(events) {
         let action = match event {
-            egui::Event::Copy => ClipboardAction::Copy,
-            egui::Event::Cut => ClipboardAction::Cut,
-            egui::Event::Paste(text) => ClipboardAction::PasteText(text),
+            egui::Event::Key {
+                key: egui::Key::A,
+                pressed,
+                repeat,
+                modifiers,
+                ..
+            } => {
+                let held = state.select_all_held;
+                state.select_all_held = pressed;
+                if pressed && modifiers.matches_exact(egui::Modifiers::COMMAND) {
+                    if held || repeat {
+                        continue;
+                    }
+                    TimelineAction::SelectAll
+                } else {
+                    events.push(event);
+                    continue;
+                }
+            }
+            egui::Event::Copy => TimelineAction::Copy,
+            egui::Event::Cut => TimelineAction::Cut,
+            egui::Event::Paste(text) => TimelineAction::PasteText(text),
+            egui::Event::Key {
+                key: egui::Key::Delete | egui::Key::Backspace,
+                pressed: true,
+                modifiers,
+                ..
+            } if modifiers.matches_exact(egui::Modifiers::NONE) => TimelineAction::Delete,
             egui::Event::Key {
                 key,
                 pressed: true,
@@ -53,9 +100,9 @@ fn take_clipboard_actions(events: &mut Vec<egui::Event>, focused: bool) -> Vec<C
                 && matches!(key, egui::Key::C | egui::Key::X | egui::Key::V) =>
             {
                 match key {
-                    egui::Key::C if !native_copy => ClipboardAction::Copy,
-                    egui::Key::X if !native_cut => ClipboardAction::Cut,
-                    egui::Key::V if !native_paste => ClipboardAction::PasteCurrent,
+                    egui::Key::C if !native_copy => TimelineAction::Copy,
+                    egui::Key::X if !native_cut => TimelineAction::Cut,
+                    egui::Key::V if !native_paste => TimelineAction::PasteCurrent,
                     // A host may emit both forms. The dedicated paste text remains
                     // authoritative, so a raw key cannot bypass envelope validation.
                     _ => continue,
@@ -72,6 +119,29 @@ fn take_clipboard_actions(events: &mut Vec<egui::Event>, focused: bool) -> Vec<C
 }
 
 impl Editor {
+    /// Run after shortcut routing, including its text/modal early-return paths.
+    /// Observing physical state does not consume input owned by another control.
+    pub(super) fn observe_timeline_input(&mut self, ctx: &egui::Context) {
+        let down = ctx.input(|input| input.focused && input.key_down(egui::Key::A));
+        self.timeline_input.observe_key_state(down);
+    }
+
+    fn select_all_dopesheet_keys(&mut self) {
+        self.cancel_gesture();
+        self.reconcile_dopesheet_selection();
+        let animation = self.active_animation();
+        let bone = self.selected_bone();
+        let scope =
+            self.key_selection
+                .select_all(self.session.document(), animation, bone, &Property::ALL);
+        let count = self.key_selection.len();
+        self.status = match scope {
+            SelectionScope::None => "No keys shown".into(),
+            SelectionScope::Rows => format!("Selected {count} keys in selected rows"),
+            SelectionScope::Shown => format!("Selected all {count} shown keys"),
+        };
+    }
+
     fn clipboard_context_available(&self) -> bool {
         !self.setup_mode
             && self.show_dopesheet
@@ -155,17 +225,21 @@ impl Editor {
     }
 
     pub(super) fn timeline_clipboard_shortcuts(&mut self, ctx: &egui::Context) {
-        let focused = self.dopesheet_has_focus(ctx);
-        let actions = ctx.input_mut(|input| take_clipboard_actions(&mut input.events, focused));
+        let focused = self.dopesheet_has_focus(ctx) && ctx.input(|input| input.focused);
+        let actions = ctx.input_mut(|input| {
+            take_timeline_actions(&mut input.events, focused, &mut self.timeline_input)
+        });
         for action in actions {
             match action {
-                ClipboardAction::Copy => {
+                TimelineAction::SelectAll => self.select_all_dopesheet_keys(),
+                TimelineAction::Delete => self.delete_dopesheet_keys(),
+                TimelineAction::Copy => {
                     self.copy_dopesheet_keys(ctx);
                 }
-                ClipboardAction::Cut => {
+                TimelineAction::Cut => {
                     self.cut_dopesheet_keys(ctx);
                 }
-                ClipboardAction::PasteText(text) => {
+                TimelineAction::PasteText(text) => {
                     if self
                         .timeline_clipboard
                         .as_ref()
@@ -177,7 +251,7 @@ impl Editor {
                             "Clipboard does not contain the keys copied in this project".into();
                     }
                 }
-                ClipboardAction::PasteCurrent => {
+                TimelineAction::PasteCurrent => {
                     self.paste_dopesheet_keys();
                 }
             }
@@ -328,15 +402,18 @@ mod tests {
             egui::Event::Paste("payload".into()),
         ];
         let mut text_events = events.clone();
-        assert!(take_clipboard_actions(&mut text_events, false).is_empty());
+        assert!(
+            take_timeline_actions(&mut text_events, false, &mut TimelineInput::default())
+                .is_empty()
+        );
         assert_eq!(text_events, events);
         let mut chart_events = events;
         assert_eq!(
-            take_clipboard_actions(&mut chart_events, true),
+            take_timeline_actions(&mut chart_events, true, &mut TimelineInput::default()),
             vec![
-                ClipboardAction::Copy,
-                ClipboardAction::Cut,
-                ClipboardAction::PasteText("payload".into())
+                TimelineAction::Copy,
+                TimelineAction::Cut,
+                TimelineAction::PasteText("payload".into())
             ]
         );
         assert_eq!(chart_events, vec![egui::Event::Text("editing".into())]);
@@ -354,8 +431,8 @@ mod tests {
         let plain = key(egui::Modifiers::NONE);
         let mut events = vec![plain.clone(), key(egui::Modifiers::COMMAND)];
         assert_eq!(
-            take_clipboard_actions(&mut events, true),
-            vec![ClipboardAction::PasteCurrent]
+            take_timeline_actions(&mut events, true, &mut TimelineInput::default()),
+            vec![TimelineAction::PasteCurrent]
         );
         assert_eq!(events, vec![plain]);
     }
@@ -377,16 +454,489 @@ mod tests {
             raw(egui::Key::X),
             egui::Event::Cut,
         ];
-        let actions = take_clipboard_actions(&mut events, true);
+        let actions = take_timeline_actions(&mut events, true, &mut TimelineInput::default());
         assert_eq!(
             actions,
             vec![
-                ClipboardAction::PasteText("external text".into()),
-                ClipboardAction::Copy,
-                ClipboardAction::Cut,
+                TimelineAction::PasteText("external text".into()),
+                TimelineAction::Copy,
+                TimelineAction::Cut,
             ]
         );
         assert!(!matches_clipboard("external text", &clipboard()));
         assert!(events.is_empty());
+    }
+
+    fn a_event(pressed: bool, repeat: bool, modifiers: egui::Modifiers) -> egui::Event {
+        egui::Event::Key {
+            key: egui::Key::A,
+            physical_key: None,
+            pressed,
+            repeat,
+            modifiers,
+        }
+    }
+
+    #[test]
+    fn select_all_latch_requires_release_and_keeps_clipboard_actions_in_order() {
+        let down = || a_event(true, false, egui::Modifiers::COMMAND);
+        let up = || a_event(false, false, egui::Modifiers::NONE);
+        let mut state = TimelineInput::default();
+        let mut events = vec![down(), egui::Event::Copy, down(), up()];
+        assert_eq!(
+            take_timeline_actions(&mut events, true, &mut state),
+            vec![TimelineAction::SelectAll, TimelineAction::Copy]
+        );
+        assert!(!state.select_all_held());
+        assert_eq!(events, vec![up()]);
+
+        let mut events = vec![down(), up(), down(), egui::Event::Copy, up()];
+        assert_eq!(
+            take_timeline_actions(&mut events, true, &mut state),
+            vec![
+                TimelineAction::SelectAll,
+                TimelineAction::SelectAll,
+                TimelineAction::Copy
+            ]
+        );
+        assert!(!state.select_all_held());
+
+        let mut events = vec![down()];
+        assert_eq!(
+            take_timeline_actions(&mut events, true, &mut state),
+            vec![TimelineAction::SelectAll]
+        );
+        let mut next_batch = vec![down(), a_event(true, true, egui::Modifiers::COMMAND)];
+        assert!(take_timeline_actions(&mut next_batch, true, &mut state).is_empty());
+        assert!(next_batch.is_empty());
+        let mut released = vec![up(), down()];
+        assert_eq!(
+            take_timeline_actions(&mut released, true, &mut state),
+            vec![TimelineAction::SelectAll]
+        );
+    }
+
+    #[test]
+    fn select_all_repeats_do_not_advance_and_other_controls_keep_their_a_events() {
+        let mut state = TimelineInput::default();
+        let mut repeated = vec![a_event(true, true, egui::Modifiers::COMMAND)];
+        assert!(take_timeline_actions(&mut repeated, true, &mut state).is_empty());
+        assert!(state.select_all_held());
+        let untouched = vec![
+            a_event(false, false, egui::Modifiers::NONE),
+            a_event(true, false, egui::Modifiers::COMMAND),
+            delete_event(egui::Key::Delete),
+            delete_event(egui::Key::Backspace),
+            egui::Event::Text("text editing".into()),
+        ];
+        let mut text_events = untouched.clone();
+        assert!(take_timeline_actions(&mut text_events, false, &mut state).is_empty());
+        assert_eq!(text_events, untouched);
+        let plain = vec![
+            a_event(true, false, egui::Modifiers::NONE),
+            a_event(false, false, egui::Modifiers::NONE),
+        ];
+        let mut events = plain.clone();
+        assert!(take_timeline_actions(&mut events, true, &mut state).is_empty());
+        assert_eq!(events, plain);
+    }
+
+    fn editor_fixture() -> Editor {
+        let mut doc: Document = serde_json::from_str(include_str!(
+            "../../../../examples/peach-bot/peach-bot.peachy"
+        ))
+        .unwrap();
+        let track = |bone, property, times: &[f32]| Track {
+            bone,
+            property,
+            keys: times
+                .iter()
+                .map(|&time| Keyframe {
+                    time,
+                    value: property.neutral(),
+                    curve: Curve::Linear,
+                })
+                .collect(),
+        };
+        doc.animations[0].tracks = vec![
+            track(8, Property::Rotation, &[0., 0.3, 0.300005, 0.6]),
+            track(8, Property::X, &[0., 0.4]),
+            track(8, Property::Y, &[0.2]),
+            track(8, Property::ScaleX, &[0., 0.8]),
+            track(7, Property::Rotation, &[0., 0.5]),
+        ];
+        let tree = TreeState::for_document(&doc, "peach");
+        let mut editor = Editor {
+            session: Session::new(doc).unwrap(),
+            project_path: None,
+            asset_root: PathBuf::new(),
+            textures: BTreeMap::new(),
+            selection: Some(TreeItem::Bone(8)),
+            selection_history: Default::default(),
+            key_selection: Default::default(),
+            key_drag: None,
+            timeline_clipboard: None,
+            timeline_input: Default::default(),
+            tree,
+            hidden_bones: BTreeSet::new(),
+            hidden_slots: BTreeSet::new(),
+            animation: 0,
+            skin: "peach".into(),
+            setup_mode: false,
+            playing: false,
+            play_direction: PlayDirection::Forward,
+            looping: true,
+            auto_key: false,
+            time: 0.42,
+            pose_view_generation: 0,
+            show_bones: true,
+            zoom: 1.,
+            pan: Vec2::ZERO,
+            fit: false,
+            tool: Tool::Rotate,
+            last_tool: Tool::Move,
+            axes: Axes::Parent,
+            show_tree: true,
+            show_dopesheet: true,
+            hidden_views: None,
+            drag: None,
+            mesh_vertex: 0,
+            mesh_triangle: 0,
+            mesh_drag: None,
+            capture_targets: BTreeMap::new(),
+            mesh_handles: Vec::new(),
+            status: String::new(),
+            error: None,
+            new_bone: String::new(),
+            rename: None,
+            duplicate_animation: None,
+            capture: None,
+            capture_directory: PathBuf::new(),
+            frames: 0,
+        };
+        editor.reconcile_selection();
+        select_rotation(&mut editor);
+        editor
+    }
+
+    fn select_rotation(editor: &mut Editor) {
+        editor.key_selection.select(
+            KeyId {
+                property: Property::Rotation,
+                time: 0.3,
+            },
+            false,
+        );
+    }
+
+    fn editor_frame(
+        editor: &mut Editor,
+        ctx: &egui::Context,
+        events: Vec<egui::Event>,
+        text_focus: bool,
+    ) {
+        let mut output = ctx.run_ui(
+            egui::RawInput {
+                events,
+                focused: true,
+                ..Default::default()
+            },
+            |ui| {
+                let ctx = ui.ctx().clone();
+                let canvas = ui.interact(
+                    ui.max_rect(),
+                    Editor::dopesheet_id(),
+                    Sense::click_and_drag(),
+                );
+                if text_focus {
+                    let mut text = "editable".to_owned();
+                    let text = ui
+                        .add(egui::TextEdit::singleline(&mut text).id(egui::Id::new("test-field")));
+                    text.request_focus();
+                } else {
+                    canvas.request_focus();
+                }
+                editor.reconcile_selection();
+                editor.shortcuts(&ctx);
+                editor.observe_timeline_input(&ctx);
+                editor.reconcile_selection();
+            },
+        );
+        // These input/controller checks intentionally have no GPU texture backend.
+        output.textures_delta.clear();
+    }
+
+    fn a_cycle() -> Vec<egui::Event> {
+        vec![
+            a_event(true, false, egui::Modifiers::COMMAND),
+            a_event(false, false, egui::Modifiers::NONE),
+        ]
+    }
+
+    #[test]
+    fn editor_select_all_and_copy_follow_event_order_without_touching_pose_time_or_history() {
+        let mut editor = editor_fixture();
+        let original = editor.session.document().clone();
+        let mut pose = editor.session.local_pose(Some(0), editor.time)[8];
+        pose.rotation += 12.;
+        editor
+            .session
+            .edit_pose(
+                8,
+                EditTarget::Animate {
+                    animation: 0,
+                    time: editor.time,
+                },
+                pose,
+                &[Property::Rotation],
+                false,
+            )
+            .unwrap();
+        let pending = editor.session.pose_edits().clone();
+        let ctx = egui::Context::default();
+        let mut events = a_cycle();
+        events.insert(1, egui::Event::Copy);
+        editor_frame(&mut editor, &ctx, events.clone(), false);
+        assert_eq!(editor.key_selection.len(), 4);
+        assert_eq!(editor.timeline_clipboard.as_ref().unwrap().keys.len(), 4);
+        editor_frame(&mut editor, &ctx, events, false);
+        assert_eq!(editor.key_selection.len(), 9);
+        assert_eq!(editor.timeline_clipboard.as_ref().unwrap().keys.len(), 9);
+        select_rotation(&mut editor);
+        let mut events = a_cycle();
+        events.insert(0, egui::Event::Copy);
+        editor_frame(&mut editor, &ctx, events, false);
+        assert_eq!(editor.key_selection.len(), 4);
+        assert_eq!(editor.timeline_clipboard.as_ref().unwrap().keys.len(), 1);
+        assert_eq!(editor.session.document(), &original);
+        assert_eq!(editor.session.pose_edits(), &pending);
+        assert_eq!(editor.time, 0.42);
+        assert!(!editor.playing);
+        assert!(!editor.session.is_dirty());
+        editor.session.undo();
+        assert!(editor.session.pose_edits().is_empty());
+        assert!(!editor.session.can_undo());
+        assert!(editor.session.can_redo());
+        editor_frame(&mut editor, &ctx, a_cycle(), false);
+        assert!(editor.session.can_redo());
+        assert!(!editor.session.can_undo());
+    }
+
+    #[test]
+    fn editor_latch_observes_release_in_modal_and_text_fields_without_routing_selection() {
+        let mut editor = editor_fixture();
+        let original = editor.session.document().clone();
+        let ctx = egui::Context::default();
+        editor_frame(
+            &mut editor,
+            &ctx,
+            vec![a_event(true, false, egui::Modifiers::COMMAND)],
+            false,
+        );
+        assert_eq!(editor.key_selection.len(), 4);
+        assert!(editor.timeline_input.select_all_held());
+        editor_frame(
+            &mut editor,
+            &ctx,
+            vec![a_event(true, false, egui::Modifiers::COMMAND)],
+            false,
+        );
+        assert_eq!(editor.key_selection.len(), 4);
+        editor.begin_rename(TreeItem::Bone(8));
+        editor_frame(
+            &mut editor,
+            &ctx,
+            vec![a_event(false, false, egui::Modifiers::NONE)],
+            false,
+        );
+        assert!(!editor.timeline_input.select_all_held());
+        assert_eq!(editor.key_selection.len(), 4);
+        editor.rename = None;
+        editor_frame(&mut editor, &ctx, a_cycle(), false);
+        assert_eq!(editor.key_selection.len(), 9);
+        select_rotation(&mut editor);
+        editor_frame(&mut editor, &ctx, Vec::new(), true);
+        let mut text_events = a_cycle();
+        text_events.push(delete_event(egui::Key::Backspace));
+        editor_frame(&mut editor, &ctx, text_events, true);
+        assert_eq!(editor.key_selection.len(), 1);
+        assert!(!editor.timeline_input.select_all_held());
+        editor_frame(&mut editor, &ctx, a_cycle(), false);
+        assert_eq!(editor.key_selection.len(), 4);
+        assert_eq!(editor.session.document(), &original);
+        assert!(!editor.session.can_undo());
+        editor.timeline_input.select_all_held = true;
+        let mut output = ctx.run_ui(
+            egui::RawInput {
+                focused: false,
+                ..Default::default()
+            },
+            |ui| {
+                let before = ui.ctx().input(|input| input.events.clone());
+                editor.observe_timeline_input(ui.ctx());
+                assert_eq!(ui.ctx().input(|input| input.events.clone()), before);
+            },
+        );
+        output.textures_delta.clear();
+        assert!(!editor.timeline_input.select_all_held());
+    }
+
+    #[test]
+    fn editor_two_complete_a_chords_in_one_batch_progress_exactly_twice() {
+        let mut editor = editor_fixture();
+        let ctx = egui::Context::default();
+        let mut events = a_cycle();
+        events.extend(a_cycle());
+        editor_frame(&mut editor, &ctx, events, false);
+        assert_eq!(editor.key_selection.len(), 9);
+        assert!(!editor.timeline_input.select_all_held());
+        assert!(!editor.playing);
+        assert_eq!(editor.play_direction, PlayDirection::Forward);
+        assert_eq!(editor.time, 0.42);
+        assert!(!editor.session.can_undo());
+        let plain = || {
+            vec![
+                a_event(true, false, egui::Modifiers::NONE),
+                a_event(false, false, egui::Modifiers::NONE),
+            ]
+        };
+        editor_frame(&mut editor, &ctx, plain(), false);
+        assert!(editor.playing);
+        assert_eq!(editor.play_direction, PlayDirection::Backward);
+        editor_frame(&mut editor, &ctx, plain(), false);
+        assert!(!editor.playing);
+        assert_eq!(editor.key_selection.len(), 9);
+    }
+
+    #[test]
+    fn editor_select_all_cancels_preview_and_expands_prepress_rows_without_losing_redo() {
+        let mut editor = editor_fixture();
+        let mut pose = editor.session.local_pose(Some(0), editor.time)[8];
+        pose.rotation += 12.;
+        editor
+            .session
+            .edit_pose(
+                8,
+                EditTarget::Animate {
+                    animation: 0,
+                    time: editor.time,
+                },
+                pose,
+                &[Property::Rotation],
+                false,
+            )
+            .unwrap();
+        editor
+            .session
+            .dispatch(Command::RenameAnimation {
+                animation: 0,
+                name: "redo branch".into(),
+            })
+            .unwrap();
+        editor.session.undo();
+        let original = editor.session.document().clone();
+        let pending = editor.session.pose_edits().clone();
+        assert!(editor.session.can_redo());
+        let selected = KeyId {
+            property: Property::X,
+            time: 0.,
+        };
+        editor.key_selection.replace(vec![selected]);
+        let geometry = super::super::key_drag::ChartGeometry {
+            start: 0.,
+            width: 240.,
+            duration: 2.4,
+        };
+        editor.key_drag = super::super::key_drag::KeyDrag::new(
+            0,
+            8,
+            KeyId {
+                property: Property::Rotation,
+                time: 0.3,
+            },
+            editor.key_selection.keys(),
+            geometry,
+            30.,
+            egui::Modifiers::NONE,
+        );
+        editor.update_dopesheet_drag(60., false);
+        assert!(editor.key_drag.as_ref().unwrap().active);
+        assert_ne!(editor.session.document(), &original);
+        assert!(editor.key_selection.contains(KeyId {
+            property: Property::Rotation,
+            time: 0.6
+        }));
+        let ctx = egui::Context::default();
+        editor_frame(&mut editor, &ctx, a_cycle(), false);
+        assert!(editor.key_drag.is_none());
+        assert_eq!(editor.session.document(), &original);
+        assert_eq!(editor.session.pose_edits(), &pending);
+        assert!(editor.session.can_redo());
+        assert!(!editor.session.is_dirty());
+        assert_eq!(editor.key_selection.len(), 2);
+        assert!(
+            editor
+                .key_selection
+                .keys()
+                .iter()
+                .all(|key| key.property == Property::X)
+        );
+        assert_eq!(editor.time, 0.42);
+    }
+
+    fn delete_event(key: egui::Key) -> egui::Event {
+        egui::Event::Key {
+            key,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers: egui::Modifiers::NONE,
+        }
+    }
+
+    #[test]
+    fn editor_delete_and_select_all_respect_the_original_keyboard_event_order() {
+        let ctx = egui::Context::default();
+        let mut editor = editor_fixture();
+        let original = editor.session.document().clone();
+        let expected = peachy_engine::apply_command(
+            &original,
+            Command::DeleteKey {
+                animation: 0,
+                bone: 8,
+                property: Property::Rotation,
+                time: 0.3,
+            },
+        )
+        .unwrap();
+        let mut events = vec![delete_event(egui::Key::Delete)];
+        events.extend(a_cycle());
+        editor_frame(&mut editor, &ctx, events, false);
+        assert_eq!(editor.session.document(), &expected);
+        assert_eq!(editor.key_selection.len(), 8);
+        editor.undo();
+        assert_eq!(editor.session.document(), &original);
+        assert!(!editor.session.can_undo());
+
+        select_rotation(&mut editor);
+        let mut events = a_cycle();
+        events.push(delete_event(egui::Key::Backspace));
+        editor_frame(&mut editor, &ctx, events, false);
+        assert!(editor.key_selection.is_empty());
+        assert!(
+            !editor.session.document().animations[0]
+                .tracks
+                .iter()
+                .any(|track| track.bone == 8 && track.property == Property::Rotation)
+        );
+        assert!(
+            editor.session.document().animations[0]
+                .tracks
+                .iter()
+                .any(|track| track.bone == 7 && track.property == Property::Rotation)
+        );
+        editor.undo();
+        assert_eq!(editor.session.document(), &original);
+        assert!(!editor.session.can_undo());
     }
 }
