@@ -39,6 +39,7 @@ impl Editor {
     }
     pub(super) fn set_setup_mode(&mut self, setup: bool) {
         if self.setup_mode != setup {
+            self.weights.bind = None;
             self.cancel_gesture();
             self.session.discard_pose(false);
             self.setup_mode = setup;

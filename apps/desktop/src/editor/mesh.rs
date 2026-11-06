@@ -300,58 +300,8 @@ impl Editor {
 
 #[cfg(test)]
 mod tests {
-    use super::super::test_support::editor_fixture;
+    use super::super::test_support::mesh_editor;
     use super::*;
-
-    fn mesh_editor(weighted: bool) -> (Editor, AttachmentRef) {
-        let mut editor = editor_fixture();
-        let key = editor
-            .session
-            .document()
-            .resolved_attachment(&editor.skin, 0)
-            .unwrap()
-            .0;
-        let mut document = peachy_engine::apply_command(
-            editor.session.document(),
-            Command::ConvertRegionToMesh {
-                attachment: key.clone(),
-            },
-        )
-        .unwrap();
-        let Attachment::Mesh(mesh) = document.attachment_mut(&key).unwrap() else {
-            unreachable!()
-        };
-        if weighted {
-            mesh.vertices = MeshVertices::Weighted {
-                influences: mesh
-                    .slot_local_positions()
-                    .unwrap()
-                    .iter()
-                    .map(|&position| {
-                        vec![
-                            BoneInfluence {
-                                bone: 0,
-                                position,
-                                weight: 0.25,
-                            },
-                            BoneInfluence {
-                                bone: 8,
-                                position,
-                                weight: 0.75,
-                            },
-                        ]
-                    })
-                    .collect(),
-            };
-        }
-        editor.session = Session::new(document).unwrap();
-        editor.setup_mode = true;
-        editor.selection = Some(TreeItem::Attachment(key.clone()));
-        editor.time = 0.;
-        editor.fit = true;
-        editor.reconcile_selection();
-        (editor, key)
-    }
 
     fn frame(editor: &mut Editor, ctx: &egui::Context, events: Vec<egui::Event>, canvas: bool) {
         let mut output = ctx.run_ui(

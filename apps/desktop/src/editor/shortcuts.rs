@@ -11,6 +11,12 @@ impl Editor {
         }
     }
     pub(super) fn set_tool(&mut self, tool: Tool) {
+        if tool == Tool::Weights {
+            self.open_weights_view();
+            if let Some(key) = self.selected_attachment().cloned() {
+                self.capture_weights_mesh(&key);
+            }
+        }
         if tool == Tool::Mesh
             && !matches!(
                 self.selected_attachment()
@@ -22,6 +28,9 @@ impl Editor {
         }
         if self.tool != tool {
             self.cancel_gesture();
+            if tool != Tool::Weights {
+                self.weights.bind = None;
+            }
             if tool == Tool::Mesh {
                 // Inspection is temporary; keep the previous transform pair intact.
                 self.mesh_return_tool = Some(self.tool);
@@ -52,13 +61,20 @@ impl Editor {
     }
     pub(super) fn toggle_views(&mut self) {
         self.cancel_dopesheet_drag();
-        if let Some((tree, dopesheet)) = self.hidden_views.take() {
-            self.show_tree = tree;
-            self.show_dopesheet = dopesheet;
+        self.weights.bind = None;
+        if let Some(views) = self.hidden_views.take() {
+            self.show_tree = views.tree;
+            self.show_dopesheet = views.dopesheet;
+            self.show_weights = views.weights;
         } else {
-            self.hidden_views = Some((self.show_tree, self.show_dopesheet));
+            self.hidden_views = Some(ViewVisibility {
+                tree: self.show_tree,
+                dopesheet: self.show_dopesheet,
+                weights: self.show_weights,
+            });
             self.show_tree = false;
             self.show_dopesheet = false;
+            self.show_weights = false;
         }
     }
 
@@ -104,9 +120,16 @@ impl Editor {
             self.capture = Some(self.capture_directory.join(format!("editor-{stamp}.png")));
             ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
         }
-        if self.rename.is_some()
+        if self.weights_shortcuts(ctx) {
+            return;
+        }
+        if self.error.is_some()
+            || egui::Popup::is_any_open(ctx)
+            || self.rename.is_some()
             || self.duplicate_animation.is_some()
-            || (ctx.egui_wants_keyboard_input() && !self.dopesheet_has_focus(ctx))
+            || (ctx.egui_wants_keyboard_input()
+                && !self.dopesheet_has_focus(ctx)
+                && !ctx.memory(|memory| memory.has_focus(Self::weights_id())))
         {
             return;
         }

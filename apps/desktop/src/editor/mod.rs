@@ -20,6 +20,7 @@ mod tree_model;
 use selection::{Folder, TreeItem};
 use tree_model::TreeState;
 mod viewport;
+mod weights;
 use eframe::egui::{self, Color32, FontId, Pos2, RichText, Sense, Stroke, Vec2, pos2, vec2};
 use peachy_document::*;
 use peachy_engine::{
@@ -43,6 +44,13 @@ enum Tool {
     Move,
     Scale,
     Mesh,
+    Weights,
+}
+
+struct ViewVisibility {
+    tree: bool,
+    dopesheet: bool,
+    weights: bool,
 }
 
 struct MeshDrag {
@@ -93,7 +101,10 @@ pub(crate) struct Editor {
     axes: Axes,
     show_tree: bool,
     show_dopesheet: bool,
-    hidden_views: Option<(bool, bool)>,
+    show_weights: bool,
+    hidden_views: Option<ViewVisibility>,
+    weights: weights::WeightsState,
+    weights_handles: Vec<[f32; 2]>,
     drag: Option<TransformDrag>,
     mesh_vertex: usize,
     mesh_triangle: usize,
@@ -207,6 +218,9 @@ impl Editor {
             axes: Axes::Parent,
             show_tree: true,
             show_dopesheet: true,
+            show_weights: false,
+            weights: Default::default(),
+            weights_handles: Vec::new(),
             hidden_views: None,
             drag: None,
 
@@ -386,6 +400,9 @@ impl Editor {
     }
 
     fn select(&mut self, item: TreeItem) {
+        if self.weights_bind_selection(&item) {
+            return;
+        }
         self.cancel_gesture();
         if !item.exists(self.session.document()) {
             return;
@@ -396,8 +413,12 @@ impl Editor {
     }
     fn restore_selection(&mut self, item: Option<TreeItem>) {
         self.cancel_gesture();
+        self.weights.bind = None;
         self.selection = item.clone();
         let Some(item) = item else { return };
+        if let Some(key) = item.attachment() {
+            self.capture_weights_mesh(key);
+        }
         self.mesh_vertex = 0;
         self.mesh_triangle = 0;
         if self.tool == Tool::Mesh
@@ -421,6 +442,7 @@ impl Editor {
     }
     fn activate_animation(&mut self, animation: usize) {
         if animation < self.session.document().animations.len() {
+            self.weights.bind = None;
             self.cancel_gesture();
             self.session.discard_pose(false);
             self.pose_view_generation = self.pose_view_generation.wrapping_add(1);
@@ -460,9 +482,11 @@ impl Editor {
         self.hidden_slots
             .retain(|&i| i < self.session.document().slots.len());
         self.reconcile_attachment();
+        self.reconcile_weights();
         self.reconcile_dopesheet_selection();
     }
     fn undo(&mut self) {
+        self.weights.bind = None;
         if self.key_drag.is_some() {
             self.cancel_dopesheet_drag();
             return;
@@ -474,6 +498,7 @@ impl Editor {
         self.reconcile_selection();
     }
     fn redo(&mut self) {
+        self.weights.bind = None;
         if self.key_drag.is_some() {
             self.cancel_dopesheet_drag();
             return;
@@ -521,6 +546,8 @@ impl Editor {
                     self.key_drag = None;
                     self.timeline_clipboard = None;
                     self.timeline_input = Default::default();
+                    self.weights = Default::default();
+                    self.weights_handles.clear();
                     self.selection = Some(TreeItem::Skeleton);
                     self.animation = 0;
                     self.time = 0.0;
@@ -603,6 +630,7 @@ impl eframe::App for Editor {
         }
         self.capture_targets.clear();
         self.mesh_handles.clear();
+        self.weights_handles.clear();
         self.reconcile_selection();
         self.shortcuts(&ctx);
         self.observe_timeline_input(&ctx);
@@ -654,27 +682,51 @@ impl eframe::App for Editor {
                     ui.label(RichText::new(&self.status).small().color(MUTED));
                 });
             });
-        if self.show_tree {
+        if self.show_tree || self.show_weights {
             egui::Panel::right("tree")
                 .default_size(310.0)
                 .min_size(260.0)
                 .resizable(true)
                 .frame(egui::Frame::new().fill(PANEL).inner_margin(6))
                 .show(ui, |ui| {
-                    egui::Panel::bottom("item-properties")
-                        .default_size(350.0)
-                        .min_size(160.0)
-                        .resizable(true)
-                        .frame(egui::Frame::new().fill(PANEL).inner_margin(6))
-                        .show(ui, |ui| {
-                            egui::ScrollArea::vertical()
-                                .id_salt("properties-scroll")
-                                .auto_shrink([false, false])
-                                .show(ui, |ui| self.inspector(ui));
-                        });
+                    if self.show_tree {
+                        egui::Panel::bottom("item-properties")
+                            .default_size(350.0)
+                            .min_size(160.0)
+                            .resizable(true)
+                            .frame(egui::Frame::new().fill(PANEL).inner_margin(6))
+                            .show(ui, |ui| {
+                                egui::ScrollArea::vertical()
+                                    .id_salt("properties-scroll")
+                                    .auto_shrink([false, false])
+                                    .show(ui, |ui| self.inspector(ui));
+                            });
+                    }
+                    if self.show_tree && self.show_weights {
+                        egui::Panel::bottom("weights-view-panel")
+                            .default_size(240.0)
+                            .min_size(150.0)
+                            .resizable(true)
+                            .frame(egui::Frame::new().fill(PANEL).inner_margin(6))
+                            .show(ui, |ui| {
+                                egui::ScrollArea::vertical()
+                                    .id_salt("weights-scroll")
+                                    .auto_shrink([false, false])
+                                    .show(ui, |ui| self.weights_panel(ui));
+                            });
+                    }
                     egui::CentralPanel::default()
                         .frame(egui::Frame::new().fill(PANEL).inner_margin(3))
-                        .show(ui, |ui| self.hierarchy(ui));
+                        .show(ui, |ui| {
+                            if self.show_tree {
+                                self.hierarchy(ui);
+                            } else {
+                                egui::ScrollArea::vertical()
+                                    .id_salt("weights-scroll")
+                                    .auto_shrink([false, false])
+                                    .show(ui, |ui| self.weights_panel(ui));
+                            }
+                        });
                 });
         }
         if !self.setup_mode && self.show_dopesheet {
@@ -744,7 +796,7 @@ impl eframe::App for Editor {
                 let mut report = serde_json::json!({
                     "document":self.session.document(),"selection":self.selection.as_ref().map(TreeItem::diagnostic),
                     "selectedBone":self.selected_bone(),"hasSelection":self.selection.is_some(),
-                    "tool":match self.tool {Tool::Rotate=>"rotate",Tool::Move=>"translate",Tool::Scale=>"scale",Tool::Mesh=>"vertices"},
+                    "tool":match self.tool {Tool::Rotate=>"rotate",Tool::Move=>"translate",Tool::Scale=>"scale",Tool::Mesh=>"vertices",Tool::Weights=>"weights"},
                     "treeVisible":self.show_tree,"dopesheetVisible":!self.setup_mode && self.show_dopesheet,"showDopesheet":self.show_dopesheet,
                     "animation":self.animation,"skin":self.skin,"time":self.time,"playing":self.playing,"playDirection":self.play_direction,"looping":self.looping,"zoom":self.zoom,
                     "axes":self.axes,"toolValues":self.selected_transform().zip(self.selected_parent()).map(|(local,parent)|peachy_engine::transform_values(local,parent,self.axes)),
@@ -762,6 +814,7 @@ impl eframe::App for Editor {
                 });
                 report["animationEnd"] = self.animation_end().into();
                 report["weightedMeshCount"] = self.weighted_mesh_count().into();
+                report["weightsContext"] = self.weights_diagnostic();
                 report["meshInspection"] = self.mesh_inspection().unwrap_or_default();
                 report["displayExtent"] = self
                     .key_drag

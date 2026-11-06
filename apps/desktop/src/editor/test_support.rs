@@ -60,6 +60,9 @@ pub(super) fn editor_fixture() -> Editor {
         axes: Axes::Parent,
         show_tree: true,
         show_dopesheet: true,
+        show_weights: false,
+        weights: Default::default(),
+        weights_handles: Vec::new(),
         hidden_views: None,
         drag: None,
         mesh_vertex: 0,
@@ -89,4 +92,54 @@ pub(super) fn select_rotation(editor: &mut Editor) {
         },
         false,
     );
+}
+
+pub(super) fn mesh_editor(weighted: bool) -> (Editor, AttachmentRef) {
+    let mut editor = editor_fixture();
+    let key = editor
+        .session
+        .document()
+        .resolved_attachment(&editor.skin, 0)
+        .unwrap()
+        .0;
+    let mut document = peachy_engine::apply_command(
+        editor.session.document(),
+        Command::ConvertRegionToMesh {
+            attachment: key.clone(),
+        },
+    )
+    .unwrap();
+    let Attachment::Mesh(mesh) = document.attachment_mut(&key).unwrap() else {
+        unreachable!()
+    };
+    if weighted {
+        mesh.vertices = MeshVertices::Weighted {
+            influences: mesh
+                .slot_local_positions()
+                .unwrap()
+                .iter()
+                .map(|&position| {
+                    vec![
+                        BoneInfluence {
+                            bone: 0,
+                            position,
+                            weight: 0.25,
+                        },
+                        BoneInfluence {
+                            bone: 8,
+                            position,
+                            weight: 0.75,
+                        },
+                    ]
+                })
+                .collect(),
+        };
+    }
+    editor.session = Session::new(document).unwrap();
+    editor.setup_mode = true;
+    editor.selection = Some(TreeItem::Attachment(key.clone()));
+    editor.time = 0.;
+    editor.fit = true;
+    editor.reconcile_selection();
+    (editor, key)
 }
