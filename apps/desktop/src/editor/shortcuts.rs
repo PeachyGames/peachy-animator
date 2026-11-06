@@ -108,6 +108,30 @@ impl Editor {
         }
     }
 
+    fn file_history_shortcuts(&mut self, ctx: &egui::Context) {
+        if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::O)) {
+            self.open_project(ctx);
+        }
+        if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::S)) {
+            self.save_project();
+        }
+        if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::E)) {
+            self.export();
+        }
+        if ctx.input_mut(|i| {
+            i.consume_key(
+                egui::Modifiers::COMMAND | egui::Modifiers::SHIFT,
+                egui::Key::Z,
+            )
+        }) {
+            self.redo();
+        } else if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::Z)) {
+            self.undo();
+        } else if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::Y)) {
+            self.redo();
+        }
+    }
+
     pub(super) fn shortcuts(&mut self, ctx: &egui::Context) {
         if ctx.input(|i| i.viewport().close_requested()) && !self.confirm_discard() {
             ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
@@ -131,10 +155,18 @@ impl Editor {
             || egui::Popup::is_any_open(ctx)
             || self.rename.is_some()
             || self.duplicate_animation.is_some()
-            || (ctx.egui_wants_keyboard_input()
-                && !self.dopesheet_has_focus(ctx)
-                && !ctx.memory(|memory| memory.has_focus(Self::weights_id()))
-                && !self.weight_control_has_focus(ctx))
+        {
+            return;
+        }
+        // Buttons and other navigable controls request keyboard input too. Global
+        // file/history actions remain available there, while text owns its undo.
+        if !ctx.text_edit_focused() {
+            self.file_history_shortcuts(ctx);
+        }
+        if ctx.egui_wants_keyboard_input()
+            && !self.dopesheet_has_focus(ctx)
+            && !ctx.memory(|memory| memory.has_focus(Self::weights_id()))
+            && !self.weight_control_has_focus(ctx)
         {
             return;
         }
@@ -179,15 +211,6 @@ impl Editor {
             }
         }
 
-        if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::O)) {
-            self.open_project(ctx);
-        }
-        if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::S)) {
-            self.save_project();
-        }
-        if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::E)) {
-            self.export();
-        }
         if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::L))
             && !self.setup_mode
             && self.selected_bone().is_some()
@@ -197,18 +220,6 @@ impl Editor {
         }
         if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::R)) {
             self.looping = !self.looping;
-        }
-        if ctx.input_mut(|i| {
-            i.consume_key(
-                egui::Modifiers::COMMAND | egui::Modifiers::SHIFT,
-                egui::Key::Z,
-            )
-        }) {
-            self.redo();
-        } else if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::Z)) {
-            self.undo();
-        } else if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::Y)) {
-            self.redo();
         }
         if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::H)) {
             self.hidden_bones.clear();
@@ -304,5 +315,123 @@ impl Editor {
                 self.nudge(delta, modifiers.shift);
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::test_support::{editor_context, editor_fixture};
+    use super::*;
+
+    fn chord(modifiers: egui::Modifiers) -> Vec<egui::Event> {
+        [true, false]
+            .into_iter()
+            .map(|pressed| egui::Event::Key {
+                key: egui::Key::Z,
+                physical_key: None,
+                pressed,
+                repeat: false,
+                modifiers,
+            })
+            .collect()
+    }
+
+    #[test]
+    fn focused_text_keeps_undo_redo_without_consuming_document_history() {
+        let mut editor = editor_fixture();
+        editor
+            .session
+            .dispatch(Command::RenameAnimation {
+                animation: 0,
+                name: "committed document edit".into(),
+            })
+            .unwrap();
+        let document = editor.session.document().clone();
+        let ctx = editor_context();
+        let field = egui::Id::new("shortcut-text-priority");
+        let mut text = "base".to_string();
+        let mut frame = |events: Vec<egui::Event>, focus: bool| {
+            let mut available = false;
+            let mut output = ctx.run_ui(
+                egui::RawInput {
+                    focused: true,
+                    events,
+                    ..Default::default()
+                },
+                |ui| {
+                    editor.shortcuts(ui.ctx());
+                    available = ui.input(|input| input.key_pressed(egui::Key::Z));
+                    if focus {
+                        ui.memory_mut(|memory| memory.request_focus(field));
+                    }
+                    ui.add(egui::TextEdit::singleline(&mut text).id(field));
+                },
+            );
+            output.textures_delta.clear();
+            (available, text.clone(), editor.session.document().clone())
+        };
+        frame(vec![], true);
+        let (_, typed, _) = frame(vec![egui::Event::Text(" authored".into())], false);
+        frame(vec![], false);
+        assert!(ctx.text_edit_focused());
+        let (available, undone, after_undo) = frame(chord(egui::Modifiers::COMMAND), false);
+        assert!(available, "TextEdit must receive its undo event");
+        assert_ne!(undone, typed);
+        assert_eq!(after_undo, document);
+        let (available, redone, after_redo) = frame(
+            chord(egui::Modifiers::COMMAND | egui::Modifiers::SHIFT),
+            false,
+        );
+        assert!(available, "TextEdit must receive its redo event");
+        assert_eq!(redone, typed);
+        assert_eq!(after_redo, document);
+        assert!(editor.session.can_undo());
+        assert!(!editor.session.can_redo());
+    }
+
+    #[test]
+    fn popup_and_modal_keep_history_events_with_a_normal_control_focused() {
+        let mut editor = editor_fixture();
+        let original = editor.session.document().clone();
+        editor
+            .session
+            .dispatch(Command::RenameAnimation {
+                animation: 0,
+                name: "committed document edit".into(),
+            })
+            .unwrap();
+        let edited = editor.session.document().clone();
+        let ctx = editor_context();
+        let frame = |editor: &mut Editor, events| {
+            let mut available = false;
+            let mut output = ctx.run_ui(
+                egui::RawInput {
+                    focused: true,
+                    events,
+                    ..Default::default()
+                },
+                |ui| {
+                    editor.shortcuts(ui.ctx());
+                    available = ui.input(|input| input.key_pressed(egui::Key::Z));
+                    ui.button("Normal focused control").request_focus();
+                },
+            );
+            output.textures_delta.clear();
+            available
+        };
+        frame(&mut editor, vec![]);
+        assert!(ctx.egui_wants_keyboard_input());
+        assert!(!ctx.text_edit_focused());
+        let popup = egui::Id::new("shortcut-priority-popup");
+        egui::Popup::open_id(&ctx, popup);
+        assert!(frame(&mut editor, chord(egui::Modifiers::COMMAND)));
+        assert_eq!(editor.session.document(), &edited);
+        egui::Popup::close_id(&ctx, popup);
+        editor.error = Some("Modal owns keyboard input".into());
+        assert!(frame(&mut editor, chord(egui::Modifiers::COMMAND)));
+        assert_eq!(editor.session.document(), &edited);
+        editor.error = None;
+        assert!(!frame(&mut editor, chord(egui::Modifiers::COMMAND)));
+        assert_eq!(editor.session.document(), &original);
     }
 }
