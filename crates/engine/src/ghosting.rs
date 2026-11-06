@@ -174,6 +174,21 @@ fn sign(side: GhostSide) -> f64 {
     if side == GhostSide::Before { -1. } else { 1. }
 }
 
+fn sampling_frame(time: f32, fps: f64, step: f64, anchor: bool) -> f64 {
+    let frame = f64::from(time) * fps;
+    if anchor {
+        let lattice = (frame / step).round() * step;
+        // A native time can exactly identify a lattice pose even though its
+        // widened frame product is just above/below that pose (0.6 * 30, for
+        // example). Only canonicalize when the lattice round-trips exactly;
+        // nearby distinct native times must remain distinct, with no epsilon.
+        if (lattice / fps) as f32 == time {
+            return lattice;
+        }
+    }
+    frame
+}
+
 fn frame_samples(
     result: &mut Vec<GhostSample>,
     time: f32,
@@ -182,9 +197,9 @@ fn frame_samples(
     settings: &GhostSampling,
     side: GhostSide,
 ) -> Result<(), String> {
-    let frame = f64::from(time) * fps;
-    let end_frame = f64::from(end) * fps;
     let step = f64::from(settings.frames.step);
+    let frame = sampling_frame(time, fps, step, settings.anchor);
+    let end_frame = sampling_frame(end, fps, step, settings.anchor);
     let requested = reach(settings.frames, side);
     if requested == 0. {
         return Ok(());
@@ -248,8 +263,12 @@ fn frame_samples(
         let sample_time = if settings.looping && !(0.0..=end_frame).contains(&candidate_frame) {
             // Reduce the cursor before adding a small delta: MAX + one frame
             // cannot represent that delta, even in f64, but its phase can.
-            (f64::from(time).rem_euclid(f64::from(end)) + offset / fps).rem_euclid(f64::from(end))
-                as f32
+            let (cursor, period) = if settings.anchor {
+                (frame / fps, end_frame / fps)
+            } else {
+                (f64::from(time), f64::from(end))
+            };
+            (cursor.rem_euclid(period) + offset / fps).rem_euclid(period) as f32
         } else if candidate_frame == end_frame {
             end
         } else {
@@ -512,6 +531,92 @@ mod tests {
             snapped.iter().map(|sample| sample.time).collect::<Vec<_>>(),
             [0.1, 0.2, 0.5, 0.4]
         );
+    }
+
+    #[test]
+    fn anchored_native_lattice_cursor_keeps_both_reach_endpoints_at_thirty_fps() {
+        let mut doc = document(&[0., 2.]);
+        doc.fps = 30;
+        for looping in [false, true] {
+            let settings = GhostSampling {
+                frames: GhostRange {
+                    before: 6.,
+                    after: 6.,
+                    step: 1.5,
+                },
+                anchor: true,
+                looping,
+                ..disabled()
+            };
+            let result = ghost_samples(&doc, 0, 0.6, &settings).unwrap();
+            assert_eq!(result.len(), 8);
+            assert_eq!(
+                result
+                    .iter()
+                    .map(|sample| sample.frame_offset)
+                    .collect::<Vec<_>>(),
+                [-6., -4.5, -3., -1.5, 6., 4.5, 3., 1.5]
+            );
+            assert_eq!(
+                result.iter().map(|sample| sample.time).collect::<Vec<_>>(),
+                [0.4, 0.45, 0.5, 0.55, 0.8, 0.75, 0.7, 0.65]
+            );
+            let settings = GhostSampling {
+                frames: GhostRange {
+                    step: 3.,
+                    ..settings.frames
+                },
+                ..settings
+            };
+            let result = ghost_samples(&doc, 0, 0.3, &settings).unwrap();
+            assert_eq!(
+                result
+                    .iter()
+                    .map(|sample| sample.frame_offset)
+                    .collect::<Vec<_>>(),
+                [-6., -3., 6., 3.]
+            );
+            assert_eq!(
+                result.iter().map(|sample| sample.time).collect::<Vec<_>>(),
+                [0.1, 0.2, 0.5, 0.4]
+            );
+        }
+        let settings = GhostSampling {
+            frames: GhostRange {
+                before: 6.,
+                after: 6.,
+                step: 1.5,
+            },
+            anchor: true,
+            ..disabled()
+        };
+        let distinct = f32::from_bits(0.6f32.to_bits() + 1);
+        let result = ghost_samples(&doc, 0, distinct, &settings).unwrap();
+        let nearest_before = result
+            .iter()
+            .rfind(|sample| sample.side == GhostSide::Before)
+            .unwrap();
+        assert_eq!(nearest_before.time, 0.6);
+        assert!(nearest_before.frame_offset < 0. && nearest_before.frame_offset > -0.0001);
+        let mut endpoint_doc = document(&[0., 0.7]);
+        endpoint_doc.fps = 30;
+        for looping in [false, true] {
+            let result = ghost_samples(
+                &endpoint_doc,
+                0,
+                0.6,
+                &GhostSampling {
+                    looping,
+                    ..settings
+                },
+            )
+            .unwrap();
+            assert!(
+                result
+                    .iter()
+                    .any(|sample| sample.time == 0.7 && sample.frame_offset == 3.)
+            );
+        }
     }
 
     #[test]
