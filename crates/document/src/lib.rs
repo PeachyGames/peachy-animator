@@ -2,7 +2,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
-pub const FORMAT_VERSION: u32 = 3;
+pub const FORMAT_VERSION: u32 = 4;
 pub const KEY_TIME_EPSILON: f32 = 0.00001;
 pub fn same_key_time(a: f32, b: f32) -> bool {
     (a - b).abs() < KEY_TIME_EPSILON
@@ -103,14 +103,30 @@ impl Attachment {
     }
 }
 
-/// Unweighted setup vertices in the slot bone's local space. UV origin is top-left.
+/// Bind positions are local to either the slot bone or each influencing bone.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "mode", rename_all = "camelCase", deny_unknown_fields)]
+pub enum MeshVertices {
+    SlotLocal { positions: Vec<[f32; 2]> },
+    Weighted { influences: Vec<Vec<BoneInfluence>> },
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct BoneInfluence {
+    pub bone: usize,
+    pub position: [f32; 2],
+    pub weight: f32,
+}
+
+/// Triangulated mesh with one UV per logical vertex. UV origin is top-left.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Mesh {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     pub path: String,
-    pub vertices: Vec<[f32; 2]>,
+    pub vertices: MeshVertices,
     pub uvs: Vec<[f32; 2]>,
     pub triangles: Vec<u32>,
     pub hull: usize,
@@ -125,13 +141,70 @@ pub struct Mesh {
 }
 
 impl Mesh {
+    pub fn vertex_count(&self) -> usize {
+        match &self.vertices {
+            MeshVertices::SlotLocal { positions } => positions.len(),
+            MeshVertices::Weighted { influences } => influences.len(),
+        }
+    }
+    pub fn is_weighted(&self) -> bool {
+        matches!(self.vertices, MeshVertices::Weighted { .. })
+    }
+    pub fn slot_local_positions(&self) -> Option<&[[f32; 2]]> {
+        match &self.vertices {
+            MeshVertices::SlotLocal { positions } => Some(positions),
+            MeshVertices::Weighted { .. } => None,
+        }
+    }
+    pub fn slot_local_positions_mut(&mut self) -> Option<&mut Vec<[f32; 2]>> {
+        match &mut self.vertices {
+            MeshVertices::SlotLocal { positions } => Some(positions),
+            MeshVertices::Weighted { .. } => None,
+        }
+    }
+    /// Bone-reference validation needs document context, including inactive skins.
+    pub fn validate_bones(&self, bone_count: usize) -> Result<(), String> {
+        if let MeshVertices::Weighted { influences } = &self.vertices
+            && influences
+                .iter()
+                .flatten()
+                .any(|influence| influence.bone >= bone_count)
+        {
+            return Err("Weighted mesh references an unknown bone".into());
+        }
+        Ok(())
+    }
     pub fn validate(&self) -> Result<(), String> {
-        let n = self.vertices.len();
+        let n = self.vertex_count();
+        match &self.vertices {
+            MeshVertices::SlotLocal { positions } => {
+                if positions.iter().flatten().any(|v| !v.is_finite()) {
+                    return Err("Mesh positions must be finite".into());
+                }
+            }
+            MeshVertices::Weighted { influences } => {
+                for vertex in influences {
+                    if vertex.is_empty()
+                        || vertex.iter().any(|influence| {
+                            influence.position.iter().any(|v| !v.is_finite())
+                                || !influence.weight.is_finite()
+                                || !(0.0..=1.0).contains(&influence.weight)
+                        })
+                        || vertex
+                            .iter()
+                            .map(|influence| f64::from(influence.weight))
+                            .sum::<f64>()
+                            <= 0.0
+                    {
+                        return Err("Weighted vertices need finite bone-local positions and weights in 0–1 with a positive total".into());
+                    }
+                }
+            }
+        }
         if n < 3
             || n > u32::MAX as usize / 2
             || self.uvs.len() != n
             || !(3..=n).contains(&self.hull)
-            || self.vertices.iter().flatten().any(|v| !v.is_finite())
             || self
                 .uvs
                 .iter()
@@ -325,6 +398,9 @@ impl Document {
                         return Err("Attachment placeholders must be nonempty".into());
                     }
                     attachment.validate()?;
+                    if let Attachment::Mesh(mesh) = attachment {
+                        mesh.validate_bones(self.bones.len())?;
+                    }
                 }
             }
         }

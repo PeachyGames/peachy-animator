@@ -495,7 +495,7 @@ fn subdivision_preserves_uv_mapping_hull_and_undo_and_rejects_invalid_batches() 
         panic!()
     };
     assert_eq!(mesh.hull, 4);
-    assert_eq!(mesh.vertices.len(), 5);
+    assert_eq!(mesh.vertex_count(), 5);
     assert_eq!(mesh.triangles.len(), 12);
     assert_eq!(mesh.uvs[4], [2.0 / 3.0, 2.0 / 3.0]);
     let split = session.document().clone();
