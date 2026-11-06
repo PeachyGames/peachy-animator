@@ -14,6 +14,9 @@ pub(super) enum Icon {
     Export,
     Rename,
     Duplicate,
+    Copy,
+    Cut,
+    Paste,
     Delete,
     Views,
     Tree,
@@ -227,7 +230,7 @@ fn paint(ui: &Ui, rect: Rect, icon: Icon, response: &Response) {
             line(&[[8., 14.], [13., 14.]], ink);
             line(&[[2., 5.], [2., 11.], [6., 11.], [6., 5.], [2., 5.]], ink);
         }
-        Icon::Duplicate => {
+        Icon::Duplicate | Icon::Copy => {
             box_at([1.5, 1.5], [10.5, 11.5], ink);
             painter.rect_filled(
                 Rect::from_min_max(p(5.5, 5.), p(14.5, 15.)),
@@ -237,6 +240,25 @@ fn paint(ui: &Ui, rect: Rect, icon: Icon, response: &Response) {
             box_at([5.5, 5.], [14.5, 15.], ink);
             line(&[[8., 8.], [12., 8.]], ink);
             line(&[[8., 11.], [12., 11.]], ink);
+        }
+        Icon::Cut => {
+            for y in [4.5, 11.5] {
+                painter.circle_stroke(p(4., y), 2.5 * rect.width() / SIZE, stroke(ink));
+            }
+            line(&[[6., 6.], [14., 13.5]], ink);
+            line(&[[6., 10.], [14., 2.5]], ink);
+            painter.circle_filled(p(8., 8.), rect.width() / SIZE, ink);
+        }
+        Icon::Paste => {
+            box_at([2.5, 3.], [13.5, 15.], ink);
+            painter.rect_filled(
+                Rect::from_min_max(p(5., 1.), p(11., 5.)),
+                0.5,
+                ui.visuals().panel_fill,
+            );
+            box_at([5., 1.], [11., 5.], ink);
+            line(&[[5., 8.], [11., 8.]], ink);
+            line(&[[5., 11.], [11., 11.]], ink);
         }
         Icon::Delete => {
             painter.circle_stroke(p(8., 8.), 6. * rect.width() / SIZE, stroke(ink));
