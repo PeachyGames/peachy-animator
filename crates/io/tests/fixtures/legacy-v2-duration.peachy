@@ -1,0 +1,209 @@
+{
+  "format": 2,
+  "name": "Original legacy duration fixture",
+  "fps": 30,
+  "bones": [
+    {
+      "name": "root",
+      "parent": null,
+      "length": 0,
+      "setup": {
+        "x": 0,
+        "y": 0,
+        "rotation": 0,
+        "scale_x": 1,
+        "scale_y": 1
+      }
+    },
+    {
+      "name": "child",
+      "parent": 0,
+      "length": 10,
+      "setup": {
+        "x": 10,
+        "y": 0,
+        "rotation": 0,
+        "scale_x": 1,
+        "scale_y": 1
+      }
+    }
+  ],
+  "slots": [],
+  "skins": {},
+  "animations": [
+    {
+      "name": "reserved",
+      "duration": 4,
+      "tracks": [
+        {
+          "bone": 0,
+          "property": "rotation",
+          "keys": [
+            {
+              "time": 0,
+              "value": 2,
+              "curve": {
+                "bezier": [
+                  0.2,
+                  0.1,
+                  0.7,
+                  0.9
+                ]
+              }
+            },
+            {
+              "time": 1,
+              "value": 8,
+              "curve": {
+                "bezier": [
+                  0.2,
+                  0.1,
+                  0.7,
+                  0.9
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "bone": 1,
+          "property": "x",
+          "keys": [
+            {
+              "time": 0,
+              "value": 3,
+              "curve": "stepped"
+            },
+            {
+              "time": 2,
+              "value": 7,
+              "curve": "stepped"
+            }
+          ]
+        },
+        {
+          "bone": 1,
+          "property": "scaleX",
+          "keys": [
+            {
+              "time": 1,
+              "value": 1.5,
+              "curve": "linear"
+            }
+          ]
+        },
+        {
+          "bone": 1,
+          "property": "y",
+          "keys": []
+        }
+      ]
+    },
+    {
+      "name": "no_tracks",
+      "duration": 4,
+      "tracks": []
+    },
+    {
+      "name": "empty_root",
+      "duration": 2,
+      "tracks": [
+        {
+          "bone": 1,
+          "property": "x",
+          "keys": []
+        },
+        {
+          "bone": 0,
+          "property": "rotation",
+          "keys": []
+        },
+        {
+          "bone": 0,
+          "property": "scaleY",
+          "keys": []
+        }
+      ]
+    },
+    {
+      "name": "empty_other",
+      "duration": 3,
+      "tracks": [
+        {
+          "bone": 1,
+          "property": "x",
+          "keys": []
+        }
+      ]
+    },
+    {
+      "name": "at_end",
+      "duration": 2,
+      "tracks": [
+        {
+          "bone": 0,
+          "property": "rotation",
+          "keys": [
+            {
+              "time": 0,
+              "value": 0,
+              "curve": {
+                "bezier": [
+                  0.2,
+                  0.1,
+                  0.7,
+                  0.9
+                ]
+              }
+            },
+            {
+              "time": 2,
+              "value": 9,
+              "curve": {
+                "bezier": [
+                  0.2,
+                  0.1,
+                  0.7,
+                  0.9
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "bone": 1,
+          "property": "y",
+          "keys": [
+            {
+              "time": 0,
+              "value": 3,
+              "curve": "linear"
+            },
+            {
+              "time": 1,
+              "value": 5,
+              "curve": "linear"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tiny",
+      "duration": 0.001,
+      "tracks": [
+        {
+          "bone": 0,
+          "property": "rotation",
+          "keys": [
+            {
+              "time": 0,
+              "value": 1,
+              "curve": "linear"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

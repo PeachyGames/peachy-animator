@@ -1,0 +1,176 @@
+{
+  "animations": {
+    "at_end": {
+      "bones": {
+        "child": {
+          "translatey": [
+            {
+              "time": 0.0,
+              "value": 3.0
+            },
+            {
+              "time": 1.0,
+              "value": 5.0
+            },
+            {
+              "time": 2.0,
+              "value": 5.0
+            }
+          ]
+        },
+        "root": {
+          "rotate": [
+            {
+              "curve": [
+                0.4000000059604645,
+                0.9000000357627869,
+                1.399999976158142,
+                8.09999942779541
+              ],
+              "time": 0.0,
+              "value": 0.0
+            },
+            {
+              "time": 2.0,
+              "value": 9.0
+            }
+          ]
+        }
+      }
+    },
+    "empty_other": {
+      "bones": {
+        "root": {
+          "rotate": [
+            {
+              "time": 3.0,
+              "value": 0.0
+            }
+          ]
+        }
+      }
+    },
+    "empty_root": {
+      "bones": {
+        "root": {
+          "rotate": [
+            {
+              "time": 2.0,
+              "value": 0.0
+            }
+          ]
+        }
+      }
+    },
+    "no_tracks": {
+      "bones": {
+        "root": {
+          "rotate": [
+            {
+              "time": 4.0,
+              "value": 0.0
+            }
+          ]
+        }
+      }
+    },
+    "reserved": {
+      "bones": {
+        "child": {
+          "scalex": [
+            {
+              "time": 1.0,
+              "value": 1.5
+            },
+            {
+              "time": 4.0,
+              "value": 1.5
+            }
+          ],
+          "translatex": [
+            {
+              "curve": "stepped",
+              "time": 0.0,
+              "value": 3.0
+            },
+            {
+              "curve": "stepped",
+              "time": 2.0,
+              "value": 7.0
+            },
+            {
+              "time": 4.0,
+              "value": 7.0
+            }
+          ]
+        },
+        "root": {
+          "rotate": [
+            {
+              "curve": [
+                0.20000000298023224,
+                2.5999999046325684,
+                0.699999988079071,
+                7.399999618530273
+              ],
+              "time": 0.0,
+              "value": 2.0
+            },
+            {
+              "time": 1.0,
+              "value": 8.0
+            },
+            {
+              "time": 4.0,
+              "value": 8.0
+            }
+          ]
+        }
+      }
+    },
+    "tiny": {
+      "bones": {
+        "root": {
+          "rotate": [
+            {
+              "time": 0.0,
+              "value": 1.0
+            },
+            {
+              "time": 0.0010000000474974513,
+              "value": 1.0
+            }
+          ]
+        }
+      }
+    }
+  },
+  "bones": [
+    {
+      "length": 0.0,
+      "name": "root",
+      "rotation": 0.0,
+      "scaleX": 1.0,
+      "scaleY": 1.0,
+      "x": 0.0,
+      "y": 0.0
+    },
+    {
+      "length": 10.0,
+      "name": "child",
+      "parent": "root",
+      "rotation": 0.0,
+      "scaleX": 1.0,
+      "scaleY": 1.0,
+      "x": 10.0,
+      "y": 0.0
+    }
+  ],
+  "skeleton": {
+    "fps": 30,
+    "images": "./images/",
+    "spine": "4.3.26"
+  },
+  "skins": [],
+  "slots": []
+}
