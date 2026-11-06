@@ -2,6 +2,7 @@ mod animation;
 mod animation_management;
 mod dopesheet;
 mod dopesheet_selection;
+mod ghosting;
 mod icons;
 mod ik;
 mod key_drag;
@@ -109,6 +110,7 @@ pub(crate) struct Editor {
     show_weights: bool,
     hidden_views: Option<ViewVisibility>,
     view_tabs: views::ViewTabs,
+    ghosting: ghosting::GhostingState,
     weights: weights::WeightsState,
     weight_edit: Option<weight_direct::WeightEdit>,
     weight_blocked: Option<egui::Id>,
@@ -226,6 +228,7 @@ impl Editor {
             ik_target: None,
             hidden_views: None,
             view_tabs: Default::default(),
+            ghosting: Default::default(),
             drag: None,
             transform_blocked: false,
             transform_blocked_control: None,
@@ -252,6 +255,7 @@ impl Editor {
 
     fn load_textures(&mut self, ctx: &egui::Context) {
         self.textures.clear();
+        self.ghosting.solid_textures.clear();
         let paths: Vec<_> = self
             .session
             .document()
@@ -266,6 +270,18 @@ impl Editor {
                 Ok(image) => {
                     let image = image.into_rgba8();
                     let size = [image.width() as usize, image.height() as usize];
+                    let mut solid = image.clone();
+                    for pixel in solid.pixels_mut() {
+                        pixel.0[..3].fill(255);
+                    }
+                    self.ghosting.solid_textures.insert(
+                        path.clone(),
+                        ctx.load_texture(
+                            format!("ghost-solid:{path}"),
+                            egui::ColorImage::from_rgba_unmultiplied(size, solid.as_raw()),
+                            egui::TextureOptions::LINEAR,
+                        ),
+                    );
                     self.textures.insert(
                         path.clone(),
                         ctx.load_texture(
@@ -496,6 +512,7 @@ impl Editor {
             self.cancel_dopesheet_drag();
         }
         selection::reconcile(&mut self.selection, self.session.document());
+        self.ghosting.reconcile(self.session.document().bones.len());
         self.reconcile_ik();
         self.selection_history.reconcile(self.session.document());
         self.animation = self
@@ -610,6 +627,7 @@ impl Editor {
                     self.timeline_input = Default::default();
                     self.weights = Default::default();
                     self.view_tabs.reset_document();
+                    self.ghosting.reset_document();
                     self.weight_blocked = None;
                     self.weight_controls = None;
                     self.ik_edit = None;
@@ -876,6 +894,7 @@ impl Editor {
                     "targets":self.capture_targets,"meshHandles":self.mesh_handles,"innerSize":[ctx.content_rect().width(),ctx.content_rect().height()]
                 });
                 report["views"] = self.views_diagnostic();
+                report["ghosting"] = self.ghosting_diagnostic();
                 report["playbackSpeed"] = self.playback_speed.into();
                 report["animationEnd"] = self.animation_end().into();
                 report["weightedMeshCount"] = self.weighted_mesh_count().into();

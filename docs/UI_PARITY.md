@@ -543,3 +543,36 @@ interaction comparison remains pending; the live public guide does not establish
 pixel parity. Rust input checks cover actual typed percentage entry, independent
 transport, workspace lifecycle and preserved document/pending-pose state. Native
 acceptance and its limits are recorded in `evidence/playback.json`.
+
+
+## Ghosting view — November 6, 2026
+
+Animate's **Views → Ghosting** opens real onion-skin settings, with an independent
+three-figure icon shared by the menu, tab and heading. Frames, Key Frames, Display
+and Options follow the public [Ghosting guide](https://en.esotericsoftware.com/spine-ghosting).
+The settings use collapsible sections in the existing right rail; primary controls
+fit its default height at the minimum supported window size. The viewport's
+**Ghosts** checkbox controls the same enabled state. Closing/minimizing settings
+keeps the preview; Setup suppresses it, and Restore default workspace disables it.
+
+Frames supports fractional reaches/steps and separate before/after colors. Key
+Frames samples exact authored times rather than merging close keys. Current
+shows committed animation at the live cursor so an unkeyed pose remains visible
+for comparison. Images preserves texture detail; Solid uses independently derived
+white alpha masks, with shared opacity. Anchor, On top, Loop, per-frame X/Y offsets
+and a typed bone Selection filter with Lock/Refresh are working controls. Ghosts
+reuse checked region, mesh, weighted and static IK evaluation. They are drawn
+without changing picking, Fit, authoring selection, pending poses or undo history.
+
+The engine bounds output to 64 samples and rejects invalid/over-budget requests.
+A failed ghost layer leaves the current pose usable and displays its reason.
+Native-f32 cursor values on an anchored sampling grid are recognized by exact
+round-trip identity, avoiding a missing outer pose without an epsilon that merges
+nearby authored times. Whole-number Key frame step and loop endpoint collision
+policies are explicit bounded choices rather than claimed installed observations.
+
+Motion Vectors, Silhouette/Xray outlines, multiple selected bones, persisted
+preferences and exact installed-Spine visual/interaction comparison remain pending.
+The public guide is live and unversioned. [Ghosting evidence](evidence/ghosting.json)
+records engine/editor/native checks and the [native capture](ghosting-editor.png).
+No proprietary images, icons or implementation were copied into the application.

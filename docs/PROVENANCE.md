@@ -413,3 +413,21 @@ bounded local policy. The UI, play/slider icon and speed adaptation are original
 Rust code over our existing engine transport; no proprietary implementation,
 reference images or UI assets were copied into the application. Native project
 format and exported animation timing are unchanged.
+
+
+## Independent Ghosting — November 6, 2026
+
+The official [Ghosting guide](https://en.esotericsoftware.com/spine-ghosting)
+supplies the public onion-skin workflow and control vocabulary. Our pure sampler,
+checked-scene presentation, transient settings, figure icon and alpha-mask display
+are original Rust code. Sampling math uses general frame/time arithmetic; whole-key
+stride, 64-pose capacity and coincident-loop-endpoint behavior are explicitly
+bounded local contracts. Exact native time identities preserve nearby distinct
+keys and identify anchored lattice positions without a general authoring epsilon.
+
+The existing exporter and evaluator are checked against the separately licensed
+Spine 4.3.13 runtime through its public API, using only our original Peach Bot,
+weighted and IK fixtures. No runtime/editor implementation is read or redistributed.
+The guide's live content is not evidence of exact installed 4.3 UI parity. Native
+captures show our own original artwork. Motion Vectors and Silhouette/Xray outlines
+are not approximated or presented as implemented modes.

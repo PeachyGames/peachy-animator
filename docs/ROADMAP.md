@@ -44,7 +44,9 @@ Spine runtime. Subsequent work should grow that working loop.
 5. **Animation editing.** Exact selection, copy/paste and group retiming now work.
    [Key-derived duration](slices/key-derived-duration.md), empty clips and beyond-end
    authoring are now implemented. Next add broader selection, animation creation UI,
-   extended playback, ghosting and timeline/curve editor refinement. Group
+   broader Playback settings and timeline/curve editor refinement. Bounded
+   [Ghosting](VIEWS.md) frame/key onion skins now work; Motion Vectors and
+   Silhouette/Xray outlines remain. Group
    inspector keyboard edits into one undo transaction. Pointer drags in the inspector
    and canvas already group their updates.
 6. **Agent interfaces.** The standalone [MCP server](MCP.md) exposes discoverable

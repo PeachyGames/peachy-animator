@@ -22,6 +22,7 @@ pub(super) enum Icon {
     Tree,
     Dopesheet,
     Animations,
+    Ghosting,
     Skins,
     Metrics,
     Outline,
@@ -347,6 +348,17 @@ fn paint(ui: &Ui, rect: Rect, icon: Icon, response: &Response) {
                 green,
                 Stroke::NONE,
             ));
+        }
+        Icon::Ghosting => {
+            for (x, color) in [
+                (1., blue.gamma_multiply(0.5)),
+                (5., ink),
+                (9., red.gamma_multiply(0.7)),
+            ] {
+                painter.circle_stroke(p(x + 2., 4.), 2. * rect.width() / SIZE, stroke(color));
+                line(&[[x + 2., 6.], [x + 2., 11.], [x, 14.]], color);
+                line(&[[x + 2., 11.], [x + 4., 14.]], color);
+            }
         }
         Icon::Skins => {
             line(

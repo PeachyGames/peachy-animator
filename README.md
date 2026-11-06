@@ -88,12 +88,18 @@ properties right, transform controls below the viewport, and Dopesheet below tho
 in Animate mode. UI parity is an ongoing acceptance requirement; see the
 [UI parity contract](docs/UI_PARITY.md) for remaining differences.
 
-**Views** also opens Animations and Playback (in Animate), Skins, Metrics and Outline. These
+**Views** also opens Animations, Ghosting and Playback (in Animate), Skins, Metrics and Outline. These
 share a resizable tabbed panel in the right rail. Outline displays the current
 pose without editing handles; Animations and Skins switch the active preview
 without changing the saved document. Playback adds a shared preview-speed slider,
 percentage presets and transport that works with Dopesheet closed. Its Timeline
 FPS display is read-only; FPS retiming and interpolation overrides are pending.
+Ghosting adds before/after onion skins, a keyed **Current** comparison, tint and
+solid-color display, frame/key sampling, offsets and selection controls. Enable it
+in its panel or with **Ghosts** above the viewport.
+
+![Ghosting in the native editor](docs/ghosting-editor.png)
+
 The menu lists the remaining Spine views
 with an explanation of each missing feature. See [the complete inventory](docs/VIEWS.md).
 
@@ -221,6 +227,8 @@ supported controls can edit it. Inactive skin attachments remain inspectable.
 - Additional zero-weight bindings and Direct percentage editing of one vertex and
   one bound bone, with proportional redistribution and transactional previews.
 - Deterministic timeline playback, scrubbing, frame stepping and looping.
+- Ghosting with frame/key onion skins, pending-pose comparison, tinted or solid
+  rendering, anchor/loop/offset controls and a lockable bone selection filter.
 - Scalar keys with linear, stepped and editable Bezier interpolation.
 - Auto Key, unkeyed multi-bone posing, Key Edited (K), colored key indicators,
   explicit transform/Tree key buttons and pose-aware transactional history.

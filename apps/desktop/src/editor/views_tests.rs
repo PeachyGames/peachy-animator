@@ -76,6 +76,13 @@ fn full_view_inventory_is_discoverable_and_setup_rejects_animate_panels() {
         egui::PointerButton::Primary,
     );
     assert!(!editor.view_tabs.open.contains(&DockView::Playback));
+    click(
+        &mut editor,
+        &ctx,
+        "viewGhosting",
+        egui::PointerButton::Primary,
+    );
+    assert!(!editor.view_tabs.open.contains(&DockView::Ghosting));
     click(&mut editor, &ctx, "viewGraph", egui::PointerButton::Primary);
     assert!(!editor.has_dock_views());
     click(
@@ -196,7 +203,7 @@ fn f9_round_trip_preserves_all_views_and_each_view_can_close_and_reopen() {
     editor.toggle_views();
     editor.open_weights_view();
     assert!(editor.show_weights && editor.show_tree && editor.show_dopesheet);
-    assert_eq!(editor.view_tabs.open.len(), 4);
+    assert_eq!(editor.view_tabs.open.len(), 5);
     assert!(editor.hidden_views.is_none());
 }
 

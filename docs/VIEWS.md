@@ -15,7 +15,7 @@ presenting empty panels as working tools.
 | Animations | New searchable animation list in Animate. Click activates without changing the current bone selection; right-click selects its Tree properties without activation; double-click opens the existing Rename dialog. |
 | Audio | Unimplemented: audio data, waveforms and playback. |
 | Dopesheet | Existing supported bone-transform keys, curves, selection, clipboard and retiming. |
-| Ghosting | Unimplemented: sampled poses and controls. |
+| Ghosting | New Animate onion-skin view: fractional Frames and exact Key Frames, Current keyed-pose comparison, per-side colors, Images/Solid display and opacity, Anchor, On top, Loop, per-frame offsets and typed bone Selection with Lock/Refresh. Renders checked region/mesh/IK poses in the main viewport. |
 | Graph | Unimplemented: editable value graph. Current curve controls belong to Dopesheet. |
 | Mesh Tools | Separate view unimplemented. Existing attachment Vertices/subdivision controls cover only the documented mesh subset. |
 | Metrics | New counts for bones, constraints, slots, all attachments, visible attachments, visible vertices and triangles. Animate additionally shows native scalar-track and key counts. |
@@ -28,7 +28,9 @@ presenting empty panels as working tools.
 | Tree | Existing typed outline, filters, activation dots and contextual properties. The Slots filter shows draw order; Spine has no separate Slots view in this inventory. |
 | Weights | Existing bounded Bind/Remove all/Add binding/Direct workflow; still no brush, Update, locks or multi-vertex editing. |
 
-Animations, Metrics, Outline, Playback, Skins and Weights use a resizable tabbed panel in the right rail.
+Six views remain unimplemented: **Audio, Graph, Mesh Tools, Preview, Slot Color and Timeline**.
+
+Animations, Ghosting, Metrics, Outline, Playback, Skins and Weights use a resizable tabbed panel in the right rail.
 With the Tree closed, they use that rail's full height. Opening an already open
 entry focuses its tab. Individual close buttons are present on these views, Tree
 and Dopesheet; they reopen from Views. F9 stores/restores all view visibility,
@@ -37,8 +39,8 @@ and restores Tree plus the Animate Dopesheet. View changes stay outside document
 history. Opening another document retains workspace tabs while clearing searches
 and fitting Outline to the new document.
 
-Animations, Playback and Dopesheet are unavailable in Setup; open Animations and
-Playback tabs are retained and return in Animate. All unsupported views remain discoverable in both
+Animations, Ghosting, Playback and Dopesheet are unavailable in Setup; their open
+tabs are retained and return in Animate. All unsupported views remain discoverable in both
 modes. This is a local, explicit availability policy. The live public guide says
 Spine's lists differ by mode, but does not enumerate the complete per-mode menu.
 An exact installed 4.3 menu comparison remains a gate. Preview in Spine can be
@@ -63,12 +65,39 @@ Stepped and Interpolated preview overrides are not presented as working settings
 The 1–200% range and preset choices are bounded local policy, not measured
 installed-Spine limits.
 
+Ghosting samples committed animation data at the document's FPS without applying
+pending unkeyed edits to the ghosts. **Current** therefore compares a keyed pose
+with the live unkeyed pose. **Frames** uses before/after reaches and fractional
+steps; **Anchor** fixes that sampling grid to frame zero. **Key Frames** samples
+exact distinct native key times, with an integer Step selecting every Nth nearest
+key on each side. Its key-step and coincident loop-endpoint policies are explicitly
+bounded local choices; exact installed behavior remains a comparison gate.
+
+Enable Ghosting in its panel or with **Ghosts** above the viewport. Closing the
+panel or using F9 keeps the enabled preview; Setup suppresses it, and Restore
+default workspace turns it off. **Loop** applies only while transport Loop is also
+on. X/Y offsets are pixels per frame using each sample's signed unwrapped distance,
+so they retain direction across loop boundaries. **Selection** includes only slots
+on the selected bone; with no selected bone it includes all slots. Lock freezes
+that one-bone filter and Refresh captures the current typed selection. Open clears
+that lock while preserving appearance preferences for the editor session.
+
+Ghosts never participate in picking, Fit, bounds, keying, document history or
+Save/export. They use the checked scene evaluator for regions, weighted meshes
+and static IK. Solid display preserves the PNG alpha through an independently
+derived white mask; original image pixels and files are unchanged. A request over
+64 poses or a failed sampled evaluation shows an error and suppresses the ghost
+layer, leaving the current pose usable. Current controls use reaches up to 60
+frames and steps down to 0.25 frames. Motion Vectors and Silhouette/Xray outlines
+remain pending; the implemented Images and Solid modes are functional rendering.
+
 Behavior references are the public
 [Views](https://en.esotericsoftware.com/spine-views),
 [UI](https://en.esotericsoftware.com/spine-ui),
 [Animations](https://en.esotericsoftware.com/spine-animations-view),
 [Skins](https://en.esotericsoftware.com/spine-skins-view),
 [Metrics](https://en.esotericsoftware.com/spine-metrics),
+[Ghosting](https://en.esotericsoftware.com/spine-ghosting),
 [Outline](https://en.esotericsoftware.com/spine-outline),
 [Playback](https://en.esotericsoftware.com/spine-playback) and
 [Preview](https://en.esotericsoftware.com/spine-preview) guides. Their live content
@@ -83,3 +112,7 @@ unkeyed pose, mode switches and minimum-window close-control visibility. Playbac
 visibility checks. Its [render and native-input evidence](evidence/playback.json)
 separates diagnostic rendering from the incomplete native mouse/keyboard attempts;
 these egui event checks alone do not claim native visual parity.
+
+Ghosting sampling and full-editor controls, including pending-pose comparisons,
+weighted/IK geometry and selection/workspace lifecycle, are covered separately in
+[Ghosting evidence](evidence/ghosting.json).

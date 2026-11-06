@@ -1063,3 +1063,52 @@ are retained outside Git at
 Rollback: revert the Playback feature commit; consult the retained starting status
 and diff before applying changes so unrelated later work is preserved. Task-owned
 native processes are closed and temporary local-login authorization is removed.
+
+
+## Ghosting view — November 6, 2026
+
+The final integrated source passes formatting, **317 workspace Rust tests**
+(including **141 engine** and **112 desktop** tests), Clippy across all targets
+with warnings denied, the workspace build and the seven-crate architecture guard.
+Hosted CI was not run. Eight engine Ghosting tests cover fractional/anchored
+sampling, exact close keys, loop endpoints, empty clips, numeric extremes and the
+64-pose budget. Six desktop Ghosting checks exercise real egui input, keyed versus
+pending Current poses, checked weighted/IK geometry, lock reconciliation,
+minimum-dock control visibility, unchanged Fit/selection/history and failure
+isolation. The generic Views tests also cover Ghosting's inventory and mode gates.
+
+A native workflow verifies actual typed 1.5-frame steps, 45% opacity and 2.5-pixel
+per-frame offsets, Current, Solid display, Anchor/On top/Loop, Selection/Lock/Refresh,
+F9, mode suppression, close/reopen, viewport enable and use without Dopesheet.
+It uses original artwork and leaves document/history unchanged. This run exposed
+an anchored f32 boundary that omitted the furthest preceding pose at native
+0.6 seconds. The engine fix recognizes exact native lattice identities rather
+than merging nearby times; a new regression protects that case. The final native
+recheck verifies all eight expected offsets and preceding ghosts wrapping at zero.
+The [evidence](evidence/ghosting.json) distinguishes the full control workflow,
+final timing recheck and intermediate harness failures. The [capture](ghosting-editor.png)
+shows our native editor and original artwork; it is not installed-Spine parity.
+
+The final CLI's original Peach Bot, weighted and IK exports/evaluation also pass
+the external Spine 4.3.13 public-API oracle. Across these finite fixtures there
+are 135,720 bone-transform component, 135,200 region-coordinate and 18,200 mesh-coordinate
+comparisons (10,920 weighted), plus 36,400 UV comparisons. Maximum region error is
+0.000038147 and maximum mesh error is 0.000030518, below the unchanged 0.001
+tolerance. These checks validate the geometry used for ghosts, while frame/key
+sampling is checked separately. No private artwork or runtime implementation is
+copied into this repository, and no runtime is redistributed.
+
+Native verification uses isolated task-owned temporary macOS app bundles and
+exact-PID foreground/window guards through the documented serialized fresh local
+GUI login. Only owned windows are raised/positioned. Temporary authorization is
+removed immediately after authentication and again during cleanup; no private key
+is written. All owned editors are closed. No application-startup diagnostic or
+special ghosting fixture flag is added to the product.
+
+The readable starting commit/status/diff, engine lane, complete logs, native
+scripts and cleanup records are retained at
+`../.local-backups/peachy-ghosting-20261106T163038Z-3621ce/`.
+The clean baseline is `b5fc141cdfc490a32a04dee029acb1471b318a76`.
+Rollback: revert the desktop Ghosting commit and the two engine Ghosting commits
+in reverse order; consult the retained baseline and preserve unrelated later work.
+Motion Vectors, Silhouette/Xray and exact installed-editor comparison remain gaps.

@@ -5,6 +5,7 @@ use super::*;
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(super) enum DockView {
     Animations,
+    Ghosting,
     Metrics,
     Outline,
     Playback,
@@ -17,8 +18,9 @@ pub(super) enum DockView {
 mod tests;
 
 impl DockView {
-    const ALL: [Self; 6] = [
+    const ALL: [Self; 7] = [
         Self::Animations,
+        Self::Ghosting,
         Self::Metrics,
         Self::Outline,
         Self::Playback,
@@ -28,6 +30,7 @@ impl DockView {
     fn label(self) -> &'static str {
         match self {
             Self::Animations => "Animations",
+            Self::Ghosting => "Ghosting",
             Self::Metrics => "Metrics",
             Self::Outline => "Outline",
             Self::Playback => "Playback",
@@ -38,6 +41,7 @@ impl DockView {
     fn icon(self) -> Icon {
         match self {
             Self::Animations => Icon::Animations,
+            Self::Ghosting => Icon::Ghosting,
             Self::Metrics => Icon::Metrics,
             Self::Outline => Icon::Outline,
             Self::Playback => Icon::Playback,
@@ -47,7 +51,7 @@ impl DockView {
     }
 
     fn available_in_setup(self) -> bool {
-        !matches!(self, Self::Animations | Self::Playback)
+        !matches!(self, Self::Animations | Self::Ghosting | Self::Playback)
     }
 }
 
@@ -86,14 +90,10 @@ impl ViewTabs {
 }
 
 /// The public guide's complete view inventory. Unsupported entries remain discoverable.
-const UNIMPLEMENTED: [(&str, &str); 7] = [
+const UNIMPLEMENTED: [(&str, &str); 6] = [
     (
         "Audio",
         "Audio assets, waveform display and playback are not implemented.",
-    ),
-    (
-        "Ghosting",
-        "Ghosting samples and its display controls are not implemented.",
     ),
     (
         "Graph",
@@ -223,6 +223,7 @@ impl Editor {
             self.show_dopesheet = true;
             self.show_weights = false;
             self.view_tabs.open.clear();
+            self.ghosting.enabled = false;
             self.weights.bind = None;
             self.hidden_views = None;
             ui.close();
@@ -292,6 +293,7 @@ impl Editor {
                 .auto_shrink([false, false])
                 .show(ui, |ui| match view {
                     DockView::Animations => self.animations_panel(ui),
+                    DockView::Ghosting => self.ghosting_panel(ui),
                     DockView::Metrics => self.metrics_panel(ui),
                     DockView::Playback => self.playback_panel(ui),
                     DockView::Skins => self.skins_panel(ui),

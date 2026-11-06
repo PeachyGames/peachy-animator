@@ -3,6 +3,8 @@ use peachy_engine::{attachment_bounds, pick_attachment};
 
 impl Editor {
     pub(super) fn canvas(&mut self, ui: &mut egui::Ui) {
+        self.ghosting.rendered_samples = 0;
+        self.ghosting.error = None;
         ui.horizontal(|ui| {
             let mode = ui.button(
                 RichText::new(if self.setup_mode { "SETUP" } else { "ANIMATE" })
@@ -26,6 +28,17 @@ impl Editor {
                     self.fit = true;
                 }
                 ui.checkbox(&mut self.show_bones, "Bones");
+                let ghosts = ui
+                    .add_enabled_ui(!self.setup_mode, |ui| {
+                        ui.checkbox(&mut self.ghosting.enabled, "Ghosts")
+                    })
+                    .inner
+                    .on_disabled_hover_text("Available in Animate mode.")
+                    .on_hover_text("Onion-skin preview · settings in Views → Ghosting");
+                self.record_target("ghostViewportEnabled", ghosts.rect);
+                if ghosts.changed() {
+                    self.cancel_gesture();
+                }
             });
         });
         let (rect, response) = ui.allocate_exact_size(ui.available_size(), Sense::click_and_drag());
@@ -40,7 +53,6 @@ impl Editor {
                 return;
             }
         };
-        let doc = self.session.document();
         scene
             .attachments
             .retain(|a| !self.hidden_slots.contains(&a.slot));
@@ -80,6 +92,10 @@ impl Editor {
         if self.evaluation_error.take().is_some() {
             ui.ctx().request_repaint();
         }
+        let ghosts = self.ghost_frame(rect, origin, zoom);
+        self.ghosting.error = ghosts.as_ref().err().cloned();
+        self.ghosting.rendered_samples = ghosts.as_ref().map_or(0, |frame| frame.sample_count());
+        let ghosts = ghosts.unwrap_or_default();
         let screen = |p: [f32; 2]| scene_view::screen_point(origin, zoom, p);
         let world_point = |p: Pos2| scene_view::view_world_point(origin, zoom, p);
         let grid = 50. * zoom;
@@ -103,6 +119,19 @@ impl Editor {
             [pos2(origin.x, rect.top()), pos2(origin.x, rect.bottom())],
             Stroke::new(1., Color32::from_rgb(38, 67, 60)),
         );
+        if !self.ghosting.on_top {
+            self.paint_ghosts(&painter, &ghosts, zoom);
+        }
+        if let Some(error) = &self.ghosting.error {
+            painter.text(
+                rect.left_top() + vec2(10., 10.),
+                egui::Align2::LEFT_TOP,
+                format!("Ghosting: {error}"),
+                FontId::proportional(12.),
+                ACCENT,
+            );
+        }
+        let doc = self.session.document();
         let selected_key = self.selected_attachment().cloned();
         if let Some(draw) = scene
             .attachments
@@ -140,6 +169,9 @@ impl Editor {
                     .collect();
                 painter.add(egui::Shape::closed_line(points, Stroke::new(1., ACCENT)));
             }
+        }
+        if self.ghosting.on_top {
+            self.paint_ghosts(&painter, &ghosts, zoom);
         }
         let selected_bone = self.selected_bone();
         let mut nearest_bone: Option<(usize, f32)> = None;
