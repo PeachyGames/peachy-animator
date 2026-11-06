@@ -1,6 +1,10 @@
 use super::*;
 
-pub(super) fn read_attachment(value: &Value, placeholder: &str) -> Result<Attachment, String> {
+pub(super) fn read_attachment(
+    value: &Value,
+    placeholder: &str,
+    bone_count: usize,
+) -> Result<Attachment, String> {
     let name = value["name"].as_str().map(str::to_owned);
     let path = value["path"]
         .as_str()
@@ -17,10 +21,7 @@ pub(super) fn read_attachment(value: &Value, placeholder: &str) -> Result<Attach
         }),
         "mesh" => {
             let uvs = pairs(&value["uvs"], "Mesh UVs")?;
-            let vertices = pairs(&value["vertices"], "Mesh vertices")?;
-            if vertices.len() != uvs.len() {
-                return Err("Weighted meshes are not supported yet".into());
-            }
+            let vertices = read_mesh_vertices(&value["vertices"], uvs.len(), bone_count)?;
             Attachment::Mesh(Mesh {
                 name,
                 path,
@@ -43,7 +44,84 @@ pub(super) fn read_attachment(value: &Value, placeholder: &str) -> Result<Attach
         kind => return Err(format!("Unsupported attachment type {kind}")),
     };
     attachment.validate()?;
+    if let Attachment::Mesh(mesh) = &attachment {
+        mesh.validate_bones(bone_count)?;
+    }
     Ok(attachment)
+}
+
+fn read_mesh_vertices(
+    value: &Value,
+    vertex_count: usize,
+    bone_count: usize,
+) -> Result<MeshVertices, String> {
+    let raw = value.as_array().ok_or("Mesh vertices must be an array")?;
+    let coordinate_count = vertex_count
+        .checked_mul(2)
+        .ok_or("Too many mesh vertices")?;
+    if raw.len() == coordinate_count {
+        return Ok(MeshVertices::SlotLocal {
+            positions: pairs(value, "Mesh vertices")?,
+        });
+    }
+    if raw.len() < coordinate_count {
+        return Err("Mesh vertex count does not match UVs".into());
+    }
+    let mut influences = Vec::with_capacity(vertex_count);
+    let mut cursor = 0_usize;
+    for _ in 0..vertex_count {
+        let count = integer(
+            raw.get(cursor).ok_or("Missing weighted vertex")?,
+            "Influence count",
+        )?;
+        if count == 0 {
+            return Err("A weighted vertex needs at least one influence".into());
+        }
+        cursor = cursor.checked_add(1).ok_or("Too many mesh influences")?;
+        let end = count
+            .checked_mul(4)
+            .and_then(|size| cursor.checked_add(size))
+            .ok_or("Too many mesh influences")?;
+        let groups = raw
+            .get(cursor..end)
+            .ok_or("Truncated weighted vertex influences")?;
+        let mut vertex = Vec::with_capacity(count);
+        for group in groups.as_chunks::<4>().0 {
+            let bone = integer(&group[0], "Influence bone")?;
+            if bone >= bone_count {
+                return Err("Influence references an unknown bone".into());
+            }
+            vertex.push(BoneInfluence {
+                bone,
+                position: [
+                    finite_number(&group[1], "Influence position")?,
+                    finite_number(&group[2], "Influence position")?,
+                ],
+                weight: finite_number(&group[3], "Influence weight")?,
+            });
+        }
+        influences.push(vertex);
+        cursor = end;
+    }
+    if cursor != raw.len() {
+        return Err("Trailing weighted vertex data".into());
+    }
+    Ok(MeshVertices::Weighted { influences })
+}
+
+fn integer(value: &Value, context: &str) -> Result<usize, String> {
+    value
+        .as_u64()
+        .and_then(|n| usize::try_from(n).ok())
+        .ok_or_else(|| format!("{context} must be a nonnegative integer"))
+}
+
+fn finite_number(value: &Value, context: &str) -> Result<f32, String> {
+    value
+        .as_f64()
+        .map(|n| n as f32)
+        .filter(|n| n.is_finite())
+        .ok_or_else(|| format!("{context} must be finite numbers"))
 }
 
 fn pairs(value: &Value, context: &str) -> Result<Vec<[f32; 2]>, String> {
@@ -58,13 +136,10 @@ fn pairs(value: &Value, context: &str) -> Result<Vec<[f32; 2]>, String> {
         .0
         .iter()
         .map(|p| {
-            let n = |v: &Value| {
-                v.as_f64()
-                    .map(|n| n as f32)
-                    .filter(|n| n.is_finite())
-                    .ok_or_else(|| format!("{context} must be finite numbers"))
-            };
-            Ok([n(&p[0])?, n(&p[1])?])
+            Ok([
+                finite_number(&p[0], context)?,
+                finite_number(&p[1], context)?,
+            ])
         })
         .collect()
 }
@@ -90,7 +165,27 @@ pub(super) fn write_attachment(attachment: &Attachment) -> Value {
             v
         }
         Attachment::Mesh(m) => {
-            let mut v = json!({"type":"mesh", "vertices":m.vertices.iter().flatten().collect::<Vec<_>>(), "uvs":m.uvs.iter().flatten().collect::<Vec<_>>(), "triangles":m.triangles, "hull":m.hull});
+            let vertices = match &m.vertices {
+                MeshVertices::SlotLocal { positions } => {
+                    json!(positions.iter().flatten().collect::<Vec<_>>())
+                }
+                MeshVertices::Weighted { influences } => {
+                    let mut values = vec![];
+                    for vertex in influences {
+                        values.push(json!(vertex.len()));
+                        for influence in vertex {
+                            values.extend([
+                                json!(influence.bone),
+                                json!(influence.position[0]),
+                                json!(influence.position[1]),
+                                json!(influence.weight),
+                            ]);
+                        }
+                    }
+                    json!(values)
+                }
+            };
+            let mut v = json!({"type":"mesh", "vertices":vertices, "uvs":m.uvs.iter().flatten().collect::<Vec<_>>(), "triangles":m.triangles, "hull":m.hull});
             if m.width > 0.0 {
                 v["width"] = json!(m.width);
             }
@@ -110,7 +205,13 @@ pub(super) fn write_attachment(attachment: &Attachment) -> Value {
     value
 }
 
-pub(super) fn inspect_attachment(region: &Value, slot: &str, name: &str, issues: &mut Vec<String>) {
+pub(super) fn inspect_attachment(
+    region: &Value,
+    slot: &str,
+    name: &str,
+    bone_count: usize,
+    issues: &mut Vec<String>,
+) {
     let context = format!("Attachment {slot}/{name}");
     inspect_numbers(
         region,
@@ -151,7 +252,7 @@ pub(super) fn inspect_attachment(region: &Value, slot: &str, name: &str, issues:
         }
     };
     unknown_fields(region, fields, &context, issues);
-    if let Err(error) = read_attachment(region, name) {
+    if let Err(error) = read_attachment(region, name, bone_count) {
         issues.push(format!("{context}: {error}"));
     }
 }
