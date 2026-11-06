@@ -419,7 +419,7 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
                     clip.ik_tracks.len() - 1
                 });
             let keys = &mut clip.ik_tracks[index].keys;
-            if let Some(index) = key_index_by_time(keys, key.time, |k| k.time)? {
+            if let Some(index) = keys.iter().position(|existing| existing.time == key.time) {
                 keys[index] = key;
             } else {
                 keys.push(key);

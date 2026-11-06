@@ -526,3 +526,48 @@ fn typed_key_commands_use_exact_identities_and_strict_payloads_without_aliasing_
     assert!(apply_command(&document, invalid).is_err());
     assert_eq!(document, before);
 }
+
+#[test]
+fn explicit_set_ik_key_preserves_every_close_identity_including_ambiguous_neighborhoods() {
+    let mut document = rig();
+    document.animations[0].ik_tracks.clear();
+    let first = 0.25_f32;
+    let close = f32::from_bits(first.to_bits() + 1);
+    let third = f32::from_bits(first.to_bits() + 2);
+    for (time, mix) in [(first, -0.5), (close, 0.5), (third, 1.5)] {
+        document = apply_command(
+            &document,
+            Command::SetIkKey {
+                animation: 0,
+                constraint: 0,
+                key: frame(time, mix, true, IkCurve::Linear),
+            },
+        )
+        .unwrap();
+    }
+    let keys = &document.animations[0].ik_tracks[0].keys;
+    assert_eq!(
+        keys.iter().map(|k| k.time.to_bits()).collect::<Vec<_>>(),
+        vec![first.to_bits(), close.to_bits(), third.to_bits()]
+    );
+    assert_eq!(
+        keys.iter().map(|k| k.mix).collect::<Vec<_>>(),
+        vec![-0.5, 0.5, 1.5]
+    );
+    let query = first - 0.000001;
+    assert!(ik_keyframe_at(keys, query).is_err());
+    document = apply_command(
+        &document,
+        Command::SetIkKey {
+            animation: 0,
+            constraint: 0,
+            key: frame(close, 2., false, IkCurve::Stepped),
+        },
+    )
+    .unwrap();
+    let keys = &document.animations[0].ik_tracks[0].keys;
+    assert_eq!(keys.len(), 3);
+    assert_eq!(keys[0].mix, -0.5);
+    assert_eq!(keys[2].mix, 1.5);
+    assert_eq!(keys[1].mix, 2.);
+}
