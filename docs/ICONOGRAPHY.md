@@ -17,6 +17,8 @@ covers those controls with independently drawn vectors and a shared vocabulary.
 | Views | Divided window | Menu heading with a dropdown corner cue |
 | Tree | Connected hierarchy boxes | Same warm hierarchy icon in Views and Tree heading |
 | Dopesheet | Timeline lanes with colored keys | Same icon in Views and Dopesheet heading; unavailable state remains dimmed in Setup |
+| Timeline | Ruler with an orange key and cyan playhead | Same independent icon in Views and the bottom Timeline heading |
+| Timeline navigation | Directional triangles, boundary bars and key diamonds | Named first/last/frame/key controls; shortcut tooltips |
 | Ghosting | Three offset figures in preceding/current/subsequent colors | Same independent icon in Views, its tab and heading; dimmed in Setup |
 | Playback | Play triangle above a speed slider | Same independent icon in Views, its tab and heading; dimmed in Setup |
 | Restore default workspace | Window layout with a return arrow | Full labelled menu row |

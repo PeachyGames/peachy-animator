@@ -1,5 +1,9 @@
 # Views audit and implemented scope
 
+Implementation progress: **10 of 15 views implemented**. The latest completed
+view is **Timeline**. Playback, Ghosting and Timeline have working controls within
+the explicit scope below; five views still need implementation.
+
 The old selector contained only **Tree, Dopesheet and Weights** because those were
 the only implemented panels. It was not an installation, license or rendering
 problem. The rest of Spine's Views had not been built. Setup also hid the working
@@ -24,22 +28,24 @@ presenting empty panels as working tools.
 | Preview | Unimplemented: independent playback, tracks and animation mixing. Outline deliberately follows the current pose. |
 | Skins | New searchable named-skin list. Click activates, right-click selects Tree properties, Clear skin uses shared default attachments. Single active skin only. |
 | Slot Color | Unimplemented: slot-color model and timelines. |
-| Timeline | Separate compact view unimplemented. Use Dopesheet. |
+| Timeline | New compact Animate ruler below the viewport. Shared cursor/transport/Loop, exact all-track key markers, decimal frame entry, snapped or Shift-subframe scrubbing, wheel/slider zoom, right-drag pan and Zoom Keys. Works with Dopesheet closed. |
 | Tree | Existing typed outline, filters, activation dots and contextual properties. The Slots filter shows draw order; Spine has no separate Slots view in this inventory. |
 | Weights | Existing bounded Bind/Remove all/Add binding/Direct workflow; still no brush, Update, locks or multi-vertex editing. |
 
-Six views remain unimplemented: **Audio, Graph, Mesh Tools, Preview, Slot Color and Timeline**.
+Five views remain unimplemented: **Audio, Graph, Mesh Tools, Preview and Slot Color**.
 
 Animations, Ghosting, Metrics, Outline, Playback, Skins and Weights use a resizable tabbed panel in the right rail.
 With the Tree closed, they use that rail's full height. Opening an already open
 entry focuses its tab. Individual close buttons are present on these views, Tree
 and Dopesheet; they reopen from Views. F9 stores/restores all view visibility,
 including inactive animation tabs. Restore default workspace closes optional panels
-and restores Tree plus the Animate Dopesheet. View changes stay outside document
+and restores Tree plus the Animate Dopesheet. Timeline has its own closeable
+compact panel below the viewport and main transform toolbar, above Dopesheet when
+both are open. View changes stay outside document
 history. Opening another document retains workspace tabs while clearing searches
 and fitting Outline to the new document.
 
-Animations, Ghosting, Playback and Dopesheet are unavailable in Setup; their open
+Animations, Ghosting, Playback, Timeline and Dopesheet are unavailable in Setup; their open
 tabs are retained and return in Animate. All unsupported views remain discoverable in both
 modes. This is a local, explicit availability policy. The live public guide says
 Spine's lists differ by mode, but does not enumerate the complete per-mode menu.
@@ -91,6 +97,36 @@ layer, leaving the current pose usable. Current controls use reaches up to 60
 frames and steps down to 0.25 frames. Motion Vectors and Silhouette/Xray outlines
 remain pending; the implemented Images and Solid modes are functional rendering.
 
+Timeline shares the active animation, time and playback state rather than owning a
+second clock. Orange diamonds summarize exact distinct key times across all
+supported bone tracks, including unselected bones; an orange end marker follows
+the last key and a cyan playhead shows the current position. The markers are
+read-only: Timeline never selects, deletes, copies or retimes Dopesheet keys.
+
+Click or drag to seek whole frames; Shift seeks subframes. A scrub freezes its
+mapping at press. With Loop on, dragging past the end wraps only when the gesture
+started before the end; starting past it remains available for beyond-end
+posing. Decimal **Frame** entry applies on Enter/Tab. Escape or clicking away
+cancels uncommitted text; focus/no-op/invalid text does not round an existing
+cursor or discard a pose. Starting entry pauses playback, and an actual seek uses
+Session's existing pending-pose discard/recovery policy. Undo can recover the pose
+at the new frame, with the established document-selection history behavior.
+
+Wheel zoom, right-drag pan, Zoom and Zoom Keys change only the ruler. Zoom Keys
+fits committed keys with an authoring margin; an empty clip keeps a positive
+one-second view. The minimum zoom span is one frame. Frame entry reveals its new
+cursor, including finite extreme times, without adding reserve keys. Context,
+file/history actions, hiding views, focus loss and modal errors cancel active
+input; a cancelled held pointer cannot restart before release. Text Undo keeps
+priority over document Undo. Timeline visibility participates in close/reopen,
+mode switches and F9; Open retains visibility and refits the new document.
+
+Timeline's range is independent of the current Dopesheet range. Free docking,
+shared pan/zoom across views, persisted workspace/range preferences and full
+installed-editor equivalence remain pending. The existing bounded transport still
+stops at the last key when Loop is off; its Loop setting is session-wide, not a
+new per-animation serialized preference. No document format or export data changed.
+
 Behavior references are the public
 [Views](https://en.esotericsoftware.com/spine-views),
 [UI](https://en.esotericsoftware.com/spine-ui),
@@ -99,7 +135,9 @@ Behavior references are the public
 [Metrics](https://en.esotericsoftware.com/spine-metrics),
 [Ghosting](https://en.esotericsoftware.com/spine-ghosting),
 [Outline](https://en.esotericsoftware.com/spine-outline),
-[Playback](https://en.esotericsoftware.com/spine-playback) and
+[Playback](https://en.esotericsoftware.com/spine-playback),
+[Timeline](https://en.esotericsoftware.com/spine-timeline),
+[Keys / Timeline](https://en.esotericsoftware.com/spine-keys#Timeline) and
 [Preview](https://en.esotericsoftware.com/spine-preview) guides. Their live content
 is not proof of exact installed Spine 4.3 visuals or behavior. Implementation and
 icons are independent original Rust code; no proprietary code or UI assets were
@@ -116,3 +154,6 @@ these egui event checks alone do not claim native visual parity.
 Ghosting sampling and full-editor controls, including pending-pose comparisons,
 weighted/IK geometry and selection/workspace lifecycle, are covered separately in
 [Ghosting evidence](evidence/ghosting.json).
+
+Timeline model, real editor input, pending-pose/history and native acceptance
+checks are recorded in [Timeline evidence](evidence/timeline-view.json).

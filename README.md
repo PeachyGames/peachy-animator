@@ -100,6 +100,10 @@ in its panel or with **Ghosts** above the viewport.
 
 ![Ghosting in the native editor](docs/ghosting-editor.png)
 
+**Views → Timeline** opens a compact ruler below the viewport, with playback,
+frame/key navigation, decimal frame entry, key markers, scrubbing, zoom and pan.
+It shares the current animation and works with Dopesheet closed.
+
 The menu lists the remaining Spine views
 with an explanation of each missing feature. See [the complete inventory](docs/VIEWS.md).
 
@@ -227,6 +231,8 @@ supported controls can edit it. Inactive skin attachments remain inspectable.
 - Additional zero-weight bindings and Direct percentage editing of one vertex and
   one bound bone, with proportional redistribution and transactional previews.
 - Deterministic timeline playback, scrubbing, frame stepping and looping.
+- A separate compact Timeline with shared transport, fractional frame entry,
+  all-track key markers, snapped/subframe seeking, pan and zoom.
 - Ghosting with frame/key onion skins, pending-pose comparison, tinted or solid
   rendering, anchor/loop/offset controls and a lockable bone selection filter.
 - Scalar keys with linear, stepped and editable Bezier interpolation.

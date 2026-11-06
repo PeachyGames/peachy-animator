@@ -1112,3 +1112,47 @@ The clean baseline is `b5fc141cdfc490a32a04dee029acb1471b318a76`.
 Rollback: revert the desktop Ghosting commit and the two engine Ghosting commits
 in reverse order; consult the retained baseline and preserve unrelated later work.
 Motion Vectors, Silhouette/Xray and exact installed-editor comparison remain gaps.
+
+
+## Timeline view — November 6, 2026
+
+The final source passes formatting, **334 workspace Rust tests** (including
+**129 desktop** and **141 engine** tests), Clippy across all targets with warnings
+denied, the workspace build and the seven-crate architecture guard. Hosted CI was
+not run. Seven pure model tests cover exact distinct keys, coordinate mapping,
+snapping, zoom/pan, empty clips and bounded ticks at extreme times. Ten desktop
+Timeline checks exercise actual egui input through the full editor: decimal Frame
+entry, Enter/Tab apply, no-op/invalid/cancel preservation, pending-pose discard and
+Undo recovery, snapped/subframe/loop scrubs, held-pointer cancellation, focus and
+modal guards, file/history/context actions, shared transport, range controls and
+minimum-window layout. These are distinct from native OS-input acceptance.
+
+A normal task-owned native window renders the original Peach Bot with Timeline
+open and Dopesheet closed. The [capture](timeline-view-editor.png) shows the compact
+controls, key markers and cyan playhead within the panel. This rendering-only
+check uses an isolated diagnostic build with temporary initial mode/view/time
+assignments. The source is restored byte-for-byte and the final application rebuilt
+without those assignments. Three separate native mouse attempts could not activate
+even the existing Setup/Animate control, so **native mouse/keyboard acceptance is
+pending**. No native typed-frame or installed-editor parity claim is made. The
+[evidence](evidence/timeline-view.json) records this distinction and binary hashes.
+
+The original Peach Bot also passes the separately installed Spine 4.3.13 public-API
+oracle: 28,080 bone-transform component and 33,280 region-coordinate comparisons,
+two clips, three skins and 52 samples per clip/skin. Maximum world error is
+0.000026438 and maximum region error is 0.000030518, below the unchanged 0.001
+tolerance. No runtime implementation or private artwork is inspected or copied;
+the runtime remains external and is not redistributed. No native/export format
+or engine geometry changes are part of Timeline.
+
+The clean starting commit is `613973fa2e56cd9c4d884f635d2d2e5af5e2aeb4`.
+Readable source baseline/status/diff, model worktree, build/check logs, native
+attempts, diagnostic capture and final cleanup audit are retained at
+`../.local-backups/peachy-timeline-20261106T172510Z-b653c1/`.
+Rollback: revert the desktop Timeline feature commit, then model commit `dd00baf`;
+consult the retained baseline and preserve unrelated later work. Disk recovery
+removed only this task's redundant build artifacts; source, logs and evidence remain.
+All four recorded task-owned editor PIDs are verified exited. Temporary localhost
+GUI authorization and command directories are removed, no private key was written,
+and no browser was launched. Independent session-only ranges, free docking,
+per-animation Repeat and exact installed-editor comparison remain gaps.

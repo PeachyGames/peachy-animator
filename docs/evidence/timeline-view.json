@@ -1,0 +1,164 @@
+{
+  "date": "2026-11-06",
+  "view": "Timeline",
+  "baseline": "613973fa2e56cd9c4d884f635d2d2e5af5e2aeb4",
+  "startingWorktreeClean": true,
+  "modelCommit": "dd00baf",
+  "backup": "../../../.local-backups/peachy-timeline-20261106T172510Z-b653c1/",
+  "inventory": {
+    "implemented": 10,
+    "total": 15,
+    "remaining": [
+      "Audio",
+      "Graph",
+      "Mesh Tools",
+      "Preview",
+      "Slot Color"
+    ]
+  },
+  "checks": {
+    "format": "passed",
+    "workspaceTests": 334,
+    "desktopTests": 129,
+    "engineTests": 141,
+    "timelineModelTests": 7,
+    "timelineEditorTests": 10,
+    "clippyAllTargetsWarningsDenied": "passed",
+    "workspaceBuild": "passed",
+    "architectureCrates": 7,
+    "hostedCI": "not run"
+  },
+  "interactionTests": [
+    "Actual egui pointer and keyboard events through the editor update loop, distinct from native OS input",
+    "Decimal Frame entry applies with Enter/Tab; invalid, cancelled and rounded no-op entries preserve raw cursor, pending pose and redo",
+    "Actual seek follows Session pending-pose discard and Undo recovery; exact all-track keys are read-only markers",
+    "Snapped and Shift-subframe scrubs freeze their mapping; Loop wraps only if the press started before the end",
+    "Cancelled held pointer remains blocked until release; context, hide, F9, mode, focus, modal and file/history actions cancel",
+    "Owned text Undo takes priority; real toolbar Save and keyboard Save cancel uncommitted input",
+    "Zoom, pan and Zoom Keys affect only the ruler; close/reopen and minimum-window controls remain usable",
+    "Exact close native keys, empty clips, one-frame minimum range, extreme finite cursor reveal and bounded ticks"
+  ],
+  "nativeInput": {
+    "accepted": false,
+    "attempts": [
+      {
+        "directory": "native",
+        "pid": 62064,
+        "result": "Setup/Animate mouse activation did not reach the existing mode control; Timeline interaction workflow not completed"
+      },
+      {
+        "directory": "native-targeted",
+        "pid": 67211,
+        "result": "Setup/Animate mouse activation did not reach the existing mode control; Timeline interaction workflow not completed"
+      },
+      {
+        "directory": "native-active",
+        "pid": 68849,
+        "result": "Setup/Animate mouse activation did not reach the existing mode control; Timeline interaction workflow not completed"
+      }
+    ],
+    "claim": "Rust egui event checks and the render capture do not establish native mouse/keyboard acceptance"
+  },
+  "nativeRender": {
+    "normalOnScreenWindow": true,
+    "loadedOriginalArtwork": true,
+    "timelineRendered": true,
+    "controlsWithinPanel": true,
+    "exactPidForegroundVerified": true,
+    "diagnosticStartupOnly": true,
+    "nativeInputAccepted": false,
+    "sourceDifference": "Temporary diagnostic startup selects Animate, opens Timeline, closes Dopesheet and sets time to 0.6; removed byte-for-byte before rebuilding the final application.",
+    "finalCapture": "editor-1793988583739947000.json",
+    "pid": 78375,
+    "capture": "../timeline-view-editor.png"
+  },
+  "productionSourceRestoredExactly": true,
+  "productionSourceSHA256": "918068450f46a45fea215789ec6c688306bc7059c857e44c8162e3eadaa9ebd0",
+  "productionBinarySHA256": "54393fff556a5d5cb92b07cb5620d30371defb4851137830e7e177e39276f72b",
+  "diagnosticBinarySHA256": "f9f21815fc376f6e994115875c92c8455a8836def91cf9fc746e2a7a3d748a2f",
+  "externalRuntime": {
+    "version": "4.3.13",
+    "fixture": "original Peach Bot; two clips, three skins, 52 samples per clip/skin",
+    "report": {
+      "regionComparisons": 33280,
+      "maxRegionError": 3.0517578125e-05,
+      "meshComparisons": 0,
+      "weightedMeshComparisons": 0,
+      "maxMeshError": 0,
+      "uvComparisons": 0,
+      "maxUVError": 0,
+      "runtime": "Spine 4.3 external oracle",
+      "bones": 15,
+      "slots": 14,
+      "skins": [
+        "default",
+        "mint",
+        "peach"
+      ],
+      "clips": [
+        {
+          "name": "idle",
+          "nativeEnd": 2,
+          "runtimeEnd": 2,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 1.933524876562842e-05
+        },
+        {
+          "name": "wave",
+          "nativeEnd": 2.4000000953674316,
+          "runtimeEnd": 2.4000000953674316,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 2.6437081885433145e-05
+        }
+      ],
+      "tolerance": 0.001,
+      "maxWorldError": 2.6437081885433145e-05,
+      "comparisons": 28080
+    },
+    "implementationInspected": false,
+    "runtimeRedistributed": false
+  },
+  "cleanup": {
+    "ownedEditors": [
+      {
+        "attempt": "native",
+        "pid": 62064,
+        "exited": true
+      },
+      {
+        "attempt": "native-targeted",
+        "pid": 67211,
+        "exited": true
+      },
+      {
+        "attempt": "native-active",
+        "pid": 68849,
+        "exited": true
+      },
+      {
+        "attempt": "native-visual",
+        "pid": 78375,
+        "exited": true
+      }
+    ],
+    "temporaryAuthorizationExists": false,
+    "browserLaunched": false
+  },
+  "limitations": [
+    "Native input acceptance and exact installed Spine editor comparison remain pending",
+    "Read-only key markers; Dopesheet owns key selection and editing",
+    "Independent session-only ruler range; no free docking or persisted workspace",
+    "Existing nonloop transport stops at last key; Loop remains session-wide",
+    "No format, export, FPS-retiming or key changes"
+  ]
+}

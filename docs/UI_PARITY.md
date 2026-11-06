@@ -576,3 +576,37 @@ preferences and exact installed-Spine visual/interaction comparison remain pendi
 The public guide is live and unversioned. [Ghosting evidence](evidence/ghosting.json)
 records engine/editor/native checks and the [native capture](ghosting-editor.png).
 No proprietary images, icons or implementation were copied into the application.
+
+
+## Compact Timeline view — November 6, 2026
+
+**Views → Timeline** opens an optional compact panel below the viewport and main
+transform toolbar. When both animation views are open, Timeline sits above
+Dopesheet; closing Dopesheet leaves it usable. Its independent ruler/key/playhead
+icon is shared by the menu and heading. Navigation uses independently drawn
+triangles, bars and key diamonds with accessible names and shortcut tooltips.
+The actual default editor style fits every control at the minimum window size.
+
+The public [Timeline guide](https://en.esotericsoftware.com/spine-timeline) and
+[Keys / Timeline guide](https://en.esotericsoftware.com/spine-keys#Timeline)
+inform the compact placement, global key diamonds, last-key marker, cyan cursor,
+mouse seeking, Shift subframes, wheel zoom, right-button pan and looping drag
+convention. Current data and transport are shared with the existing editor.
+Frame entry accepts decimals on Enter/Tab; Escape or clicking away cancels.
+Rounded display-only focus/no-op and invalid text preserve exact cursor/pending
+pose/history state. Pan, zoom and Zoom Keys remain presentation operations.
+
+A fixed scrub map prevents playhead movement from resizing its input mapping.
+Escape, context/file/history/view changes, focus loss and modal/error guards
+cancel ownership. A cancelled held pointer waits for release. Text Undo stays
+with text; Timeline-ruler focus enables transport shortcuts while key clipboard
+and deletion remain restricted to Dopesheet focus. Seeking uses Session's existing
+pose discard/recovery rules, with no second undo stack or new animation data.
+
+The local ruler range is independent of Dopesheet, with a one-frame minimum span
+and finite native-time bounds. Source key identities remain distinct even if
+markers overlap on screen. Free docking, persisted preferences, shared pan/zoom,
+per-animation Repeat and exact installed-editor comparison remain pending. The
+existing nonlooping transport stops at the last key. The live guides are not a
+versioned pixel reference. See [evidence](evidence/timeline-view.json) and the
+[native capture](timeline-view-editor.png).

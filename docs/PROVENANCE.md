@@ -431,3 +431,19 @@ weighted and IK fixtures. No runtime/editor implementation is read or redistribu
 The guide's live content is not evidence of exact installed 4.3 UI parity. Native
 captures show our own original artwork. Motion Vectors and Silhouette/Xray outlines
 are not approximated or presented as implemented modes.
+
+
+## Independent compact Timeline — November 6, 2026
+
+The official [Timeline](https://en.esotericsoftware.com/spine-timeline) and
+[Keys / Timeline](https://en.esotericsoftware.com/spine-keys#Timeline) guides
+inform the placement and ruler workflow. The range/map/tick math, exact key-time
+aggregation, transient input ownership, frame field and vector icons are original
+Rust implementation. General f64 view arithmetic and native f32 endpoint
+identities prevent nonfinite or invisible cursors without changing authored keys.
+
+No proprietary implementation or visual asset was inspected/copied, and no new
+runtime dependency, document format or export field was introduced. The existing
+separately licensed public runtime API remains an external geometry/export oracle.
+The live public guides do not prove exact installed 4.3 interaction or pixel parity.
+The screenshot uses only our original Peach Bot artwork.

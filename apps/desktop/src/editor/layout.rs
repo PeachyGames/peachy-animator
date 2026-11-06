@@ -52,6 +52,11 @@ pub(super) fn timeline_panel_height(ui: &egui::Ui) -> f32 {
         + 12.
 }
 
+pub(super) fn compact_timeline_height(ui: &egui::Ui) -> f32 {
+    let row = ui.spacing().interact_size.y.max(22.);
+    2. * row + 44. + 2. * ui.spacing().item_spacing.y + 12.
+}
+
 #[cfg(test)]
 mod tests {
     use super::super::test_support::{editor_context, editor_fixture};

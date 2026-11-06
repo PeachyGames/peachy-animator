@@ -81,6 +81,8 @@ pub(super) fn editor_fixture() -> Editor {
         axes: Axes::Parent,
         show_tree: true,
         show_dopesheet: true,
+        show_timeline: false,
+        timeline_view: Default::default(),
         show_weights: false,
         weights: Default::default(),
         weight_edit: None,

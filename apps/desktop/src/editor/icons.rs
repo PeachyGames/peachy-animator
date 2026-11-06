@@ -21,6 +21,13 @@ pub(super) enum Icon {
     Views,
     Tree,
     Dopesheet,
+    Timeline,
+    FirstFrame,
+    LastFrame,
+    PreviousFrame,
+    NextFrame,
+    PreviousKey,
+    NextKey,
     Animations,
     Ghosting,
     Skins,
@@ -417,6 +424,43 @@ fn paint(ui: &Ui, rect: Rect, icon: Icon, response: &Response) {
                 painter.add(Shape::convex_polygon(
                     vec![p(x, y - 1.8), p(x + 1.8, y), p(x, y + 1.8), p(x - 1.8, y)],
                     color,
+                    Stroke::NONE,
+                ));
+            }
+        }
+        Icon::Timeline => {
+            line(&[[1., 4.], [15., 4.]], ink);
+            for x in [2., 5., 8., 11., 14.] {
+                line(&[[x, 4.], [x, 7.]], ink);
+            }
+            line(&[[9., 2.], [9., 14.]], blue);
+            painter.add(Shape::convex_polygon(
+                vec![p(3., 10.), p(5., 12.), p(3., 14.), p(1., 12.)],
+                warm,
+                Stroke::NONE,
+            ));
+        }
+        Icon::FirstFrame
+        | Icon::LastFrame
+        | Icon::PreviousFrame
+        | Icon::NextFrame
+        | Icon::PreviousKey
+        | Icon::NextKey => {
+            let forward = matches!(icon, Icon::LastFrame | Icon::NextFrame | Icon::NextKey);
+            let q = |x: f32, y: f32| p(if forward { 16. - x } else { x }, y);
+            painter.add(Shape::convex_polygon(
+                vec![q(4., 8.), q(10., 3.), q(10., 13.)],
+                ink,
+                Stroke::NONE,
+            ));
+            if matches!(icon, Icon::FirstFrame | Icon::LastFrame) {
+                painter.line_segment([q(2., 2.), q(2., 14.)], stroke(ink));
+            } else if matches!(icon, Icon::PreviousFrame | Icon::NextFrame) {
+                painter.line_segment([q(12., 3.), q(12., 13.)], stroke(ink));
+            } else {
+                painter.add(Shape::convex_polygon(
+                    vec![q(12.5, 5.), q(15., 8.), q(12.5, 11.), q(10., 8.)],
+                    warm,
                     Stroke::NONE,
                 ));
             }

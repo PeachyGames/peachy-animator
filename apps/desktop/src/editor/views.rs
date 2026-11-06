@@ -90,7 +90,7 @@ impl ViewTabs {
 }
 
 /// The public guide's complete view inventory. Unsupported entries remain discoverable.
-const UNIMPLEMENTED: [(&str, &str); 6] = [
+const UNIMPLEMENTED: [(&str, &str); 5] = [
     (
         "Audio",
         "Audio assets, waveform display and playback are not implemented.",
@@ -110,10 +110,6 @@ const UNIMPLEMENTED: [(&str, &str); 6] = [
     (
         "Slot Color",
         "Slot color data and color timelines are not implemented.",
-    ),
-    (
-        "Timeline",
-        "A separate compact Timeline view is not implemented. Use Dopesheet.",
     ),
 ];
 
@@ -159,6 +155,7 @@ impl Editor {
         if let Some(views) = self.hidden_views.take() {
             self.show_tree = views.tree;
             self.show_dopesheet = views.dopesheet;
+            self.show_timeline = views.timeline;
             self.show_weights = views.weights;
             self.view_tabs.open = views.dock;
         }
@@ -193,6 +190,20 @@ impl Editor {
             ui.memory_mut(|memory| memory.request_focus(Self::dopesheet_id()));
             ui.close();
         }
+        let timeline = ui
+            .add_enabled_ui(!self.setup_mode, |ui| {
+                icons::tool_button(ui, Icon::Timeline, "Timeline", self.show_timeline)
+            })
+            .inner
+            .on_disabled_hover_text("Available in Animate mode.");
+        self.record_target("viewTimeline", timeline.rect);
+        if timeline.clicked() {
+            self.cancel_gesture();
+            self.restore_hidden_views();
+            self.show_timeline = true;
+            ui.memory_mut(|memory| memory.request_focus(Self::timeline_id()));
+            ui.close();
+        }
         let tree = icons::tool_button(ui, Icon::Tree, "Tree", self.show_tree);
         self.record_target("viewTree", tree.rect);
         if tree.clicked() {
@@ -221,6 +232,7 @@ impl Editor {
             self.cancel_gesture();
             self.show_tree = true;
             self.show_dopesheet = true;
+            self.show_timeline = false;
             self.show_weights = false;
             self.view_tabs.open.clear();
             self.ghosting.enabled = false;
@@ -519,6 +531,6 @@ impl Editor {
     }
 
     pub(super) fn views_diagnostic(&self) -> serde_json::Value {
-        serde_json::json!({"open": self.visible_dock_views().iter().map(|view| view.label()).collect::<Vec<_>>(), "storedOpen":DockView::ALL.into_iter().filter(|&view| self.dock_view_open(view)).map(DockView::label).collect::<Vec<_>>(), "active":self.view_tabs.active.label(), "tree":self.show_tree,"dopesheet":self.show_dopesheet && !self.setup_mode,"weights":self.show_weights,"minimized":self.hidden_views.is_some(), "outlineZoom": self.view_tabs.outline_zoom, "outlinePan":[self.view_tabs.outline_pan.x,self.view_tabs.outline_pan.y],"unimplemented":UNIMPLEMENTED.map(|(name,_)|name)})
+        serde_json::json!({"open": self.visible_dock_views().iter().map(|view| view.label()).collect::<Vec<_>>(), "storedOpen":DockView::ALL.into_iter().filter(|&view| self.dock_view_open(view)).map(DockView::label).collect::<Vec<_>>(), "active":self.view_tabs.active.label(), "tree":self.show_tree,"dopesheet":self.show_dopesheet && !self.setup_mode,"timeline":self.show_timeline && !self.setup_mode,"storedTimeline":self.show_timeline,"weights":self.show_weights,"minimized":self.hidden_views.is_some(), "outlineZoom": self.view_tabs.outline_zoom, "outlinePan":[self.view_tabs.outline_pan.x,self.view_tabs.outline_pan.y],"unimplemented":UNIMPLEMENTED.map(|(name,_)|name)})
     }
 }

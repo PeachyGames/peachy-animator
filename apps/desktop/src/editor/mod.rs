@@ -20,6 +20,8 @@ mod style;
 #[cfg(test)]
 mod test_support;
 mod timeline_clipboard;
+mod timeline_model;
+mod timeline_view;
 mod tools;
 mod transform_gesture;
 use transform_gesture::TransformEdit;
@@ -62,6 +64,7 @@ enum Tool {
 struct ViewVisibility {
     tree: bool,
     dopesheet: bool,
+    timeline: bool,
     weights: bool,
     dock: BTreeSet<views::DockView>,
 }
@@ -107,6 +110,8 @@ pub(crate) struct Editor {
     axes: Axes,
     show_tree: bool,
     show_dopesheet: bool,
+    show_timeline: bool,
+    timeline_view: timeline_view::TimelineView,
     show_weights: bool,
     hidden_views: Option<ViewVisibility>,
     view_tabs: views::ViewTabs,
@@ -217,6 +222,8 @@ impl Editor {
             axes: Axes::Parent,
             show_tree: true,
             show_dopesheet: true,
+            show_timeline: false,
+            timeline_view: Default::default(),
             show_weights: false,
             weights: Default::default(),
             weight_edit: None,
@@ -497,6 +504,7 @@ impl Editor {
             self.pose_view_generation = self.pose_view_generation.wrapping_add(1);
             self.animation = animation;
             self.time = 0.0;
+            self.timeline_view.reset_range();
             self.setup_mode = false;
         }
     }
@@ -539,6 +547,7 @@ impl Editor {
         self.reconcile_dopesheet_selection();
     }
     fn undo(&mut self) {
+        self.cancel_timeline_interaction();
         self.ik_target = None;
         if self.ik_edit.is_some() {
             self.cancel_ik_edit();
@@ -564,6 +573,7 @@ impl Editor {
         self.reconcile_selection();
     }
     fn redo(&mut self) {
+        self.cancel_timeline_interaction();
         self.ik_target = None;
         if self.ik_edit.is_some() {
             self.cancel_ik_edit();
@@ -627,6 +637,7 @@ impl Editor {
                     self.timeline_input = Default::default();
                     self.weights = Default::default();
                     self.view_tabs.reset_document();
+                    self.timeline_view.reset_document();
                     self.ghosting.reset_document();
                     self.weight_blocked = None;
                     self.weight_controls = None;
@@ -721,6 +732,7 @@ impl Editor {
         self.mesh_handles.clear();
         self.weights_handles.clear();
         self.reconcile_selection();
+        self.reconcile_timeline_input(&ctx);
         self.shortcuts(&ctx);
         self.observe_timeline_input(&ctx);
         self.reconcile_selection();
@@ -819,6 +831,20 @@ impl Editor {
                 .frame(egui::Frame::new().fill(PANEL).inner_margin(6))
                 .show(ui, |ui| self.timeline(ui));
         }
+        if !self.setup_mode && self.show_timeline {
+            let height = layout::compact_timeline_height(ui);
+            let enabled = self.error.is_none()
+                && self.rename.is_none()
+                && self.duplicate_animation.is_none()
+                && !egui::Popup::is_any_open(&ctx)
+                && ctx.input(|input| input.focused);
+            egui::Panel::bottom("compact-timeline")
+                .exact_size(height)
+                .frame(egui::Frame::new().fill(PANEL).inner_margin(6))
+                .show(ui, |ui| {
+                    ui.add_enabled_ui(enabled, |ui| self.compact_timeline(ui));
+                });
+        }
         egui::CentralPanel::default()
             .frame(
                 egui::Frame::new()
@@ -894,6 +920,7 @@ impl Editor {
                     "targets":self.capture_targets,"meshHandles":self.mesh_handles,"innerSize":[ctx.content_rect().width(),ctx.content_rect().height()]
                 });
                 report["views"] = self.views_diagnostic();
+                report["compactTimeline"] = self.timeline_view_diagnostic();
                 report["ghosting"] = self.ghosting_diagnostic();
                 report["playbackSpeed"] = self.playback_speed.into();
                 report["animationEnd"] = self.animation_end().into();

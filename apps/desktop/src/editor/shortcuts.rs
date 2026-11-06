@@ -3,6 +3,7 @@ use super::*;
 
 impl Editor {
     pub(super) fn cancel_gesture(&mut self) {
+        self.cancel_timeline_interaction();
         self.cancel_ik_edit();
         self.ik_target = None;
         self.cancel_weight_edit();
@@ -68,17 +69,20 @@ impl Editor {
         if let Some(views) = self.hidden_views.take() {
             self.show_tree = views.tree;
             self.show_dopesheet = views.dopesheet;
+            self.show_timeline = views.timeline;
             self.show_weights = views.weights;
             self.view_tabs.open = views.dock;
         } else {
             self.hidden_views = Some(ViewVisibility {
                 tree: self.show_tree,
                 dopesheet: self.show_dopesheet,
+                timeline: self.show_timeline,
                 weights: self.show_weights,
                 dock: self.view_tabs.open.clone(),
             });
             self.show_tree = false;
             self.show_dopesheet = false;
+            self.show_timeline = false;
             self.show_weights = false;
             self.view_tabs.open.clear();
         }
@@ -198,6 +202,7 @@ impl Editor {
         if self.ik_shortcuts(ctx)
             || self.transform_shortcuts(ctx)
             || self.weight_edit_shortcuts(ctx)
+            || self.timeline_view_shortcuts(ctx)
         {
             return;
         }
@@ -219,6 +224,7 @@ impl Editor {
         }
         if ctx.egui_wants_keyboard_input()
             && !self.dopesheet_has_focus(ctx)
+            && !self.timeline_has_focus(ctx)
             && !ctx.memory(|memory| memory.has_focus(Self::weights_id()))
             && !self.weight_control_has_focus(ctx)
         {

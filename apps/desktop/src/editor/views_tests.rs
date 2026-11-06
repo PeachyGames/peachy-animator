@@ -83,6 +83,13 @@ fn full_view_inventory_is_discoverable_and_setup_rejects_animate_panels() {
         egui::PointerButton::Primary,
     );
     assert!(!editor.view_tabs.open.contains(&DockView::Ghosting));
+    click(
+        &mut editor,
+        &ctx,
+        "viewTimeline",
+        egui::PointerButton::Primary,
+    );
+    assert!(!editor.show_timeline);
     click(&mut editor, &ctx, "viewGraph", egui::PointerButton::Primary);
     assert!(!editor.has_dock_views());
     click(
