@@ -103,8 +103,14 @@ impl Editor {
             });
         });
         ui.add_space(5.0);
+        let label_width = 160.0;
         let (_, rect) = ui.allocate_space(vec2(ui.available_width(), 157.0));
-        let response = ui.interact(rect, Self::dopesheet_id(), Sense::click_and_drag());
+        // Property controls own the label column; only the grid can scrub or retime keys.
+        let grid = egui::Rect::from_min_max(
+            pos2((rect.left() + label_width).min(rect.right()), rect.top()),
+            rect.max,
+        );
+        let response = ui.interact(grid, Self::dopesheet_id(), Sense::click_and_drag());
         response.widget_info(|| {
             egui::WidgetInfo::labeled(egui::WidgetType::Other, true, "Dopesheet keys")
         });
@@ -121,7 +127,6 @@ impl Editor {
         }
         let painter = ui.painter_at(rect);
         painter.rect_filled(rect, 5.0, Color32::from_rgb(21, 26, 33));
-        let label_width = 160.0;
         let geometry = self.key_drag.as_ref().map_or(
             ChartGeometry {
                 start: rect.left() + label_width,
@@ -166,12 +171,47 @@ impl Editor {
         let mut key_targets = Vec::new();
         for (i, property) in Property::ALL.into_iter().enumerate() {
             let y = rect.top() + 38.0 + i as f32 * 24.0;
+            let (tool, name, shortcut) = match property {
+                Property::Rotation => (Tool::Rotate, "Rotate", "C"),
+                Property::X | Property::Y => (Tool::Move, "Translate", "V"),
+                Property::ScaleX | Property::ScaleY => (Tool::Scale, "Scale", "X"),
+            };
+            let label_rect = egui::Rect::from_min_max(
+                pos2(rect.left() + 6.0, y - 10.0),
+                pos2(rect.left() + label_width - 6.0, y + 10.0),
+            )
+            .intersect(rect);
+            let label = ui
+                .interact(
+                    label_rect,
+                    ui.id().with(("timeline-row", i)),
+                    Sense::click(),
+                )
+                .on_hover_cursor(egui::CursorIcon::PointingHand)
+                .on_hover_text(format!("Select {name} tool · {shortcut}"));
+            label.widget_info(|| {
+                egui::WidgetInfo::labeled(
+                    egui::WidgetType::Button,
+                    ui.is_enabled(),
+                    format!("{}: select {name} tool", property.label()),
+                )
+            });
+            self.record_target(&format!("timelineRow:{property:?}"), label.rect);
+            if label.clicked() {
+                self.set_tool(tool);
+                ui.ctx()
+                    .memory_mut(|memory| memory.request_focus(Self::dopesheet_id()));
+            }
             painter.text(
                 pos2(rect.left() + 12.0, y),
                 egui::Align2::LEFT_CENTER,
                 property.label(),
                 FontId::proportional(12.0),
-                MUTED,
+                if label.hovered() || label.has_focus() {
+                    ACCENT
+                } else {
+                    MUTED
+                },
             );
             if let Some(track) = tracks
                 .iter()
@@ -320,16 +360,19 @@ impl Editor {
             response.request_focus();
             self.scrub_dopesheet(pointer, start, width, duration);
         }
-        if !self.key_selection.is_empty() {
-            ui.label(
+        // Keep one line reserved: selection changes must not resize the view and move key targets.
+        let footer = ui.add(
+            egui::Label::new(
                 RichText::new(format!(
                     "{} selected · Delete to remove · Cmd/Ctrl-click toggles · Drag to retime",
                     self.key_selection.len()
                 ))
                 .small()
                 .color(MUTED),
-            );
-        }
+            )
+            .truncate(),
+        );
+        self.record_target("timelineFooter", footer.rect);
     }
     fn scrub_dopesheet(&mut self, pointer: Pos2, start: f32, width: f32, duration: f32) {
         if pointer.x >= start {
