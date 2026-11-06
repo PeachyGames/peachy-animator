@@ -211,7 +211,7 @@ Cmd/Ctrl-click toggles keys; Delete/Backspace requires focus in the visible canv
 Double-click deletes the clicked key. The toolbar offers the same deletion command
 with an independent icon. Rotation/translation/scale keys use narrow green/blue/red
 bars, following the public row images. Only the selected bone's supported scalar
-tracks are covered; multi-bone rows, overview rows, box selection, select-all
+tracks are covered; multi-bone rows, overview rows, box selection
 and Graph synchronization remain pending. Jump-to-key is on;
 configurable selection/scrubbing preferences remain pending.
 
@@ -251,3 +251,34 @@ Spine clipboard format interoperability remain pending. Text fields, modal dialo
 hidden views and Setup retain their own shortcut behavior. Interpolation controls
 resolve the exact playhead key before considering a unique near match, and refuse
 ambiguous near matches.
+
+
+## Selection expansion and row controls
+
+With Dopesheet focus, Cmd/Ctrl+A expands an existing selection to all keys in its
+selected property rows, then to every shown key. With no keys selected it selects
+all shown keys immediately. Further presses keep that selection. A held chord does
+not advance phases. Manual selection, replacement, context changes and stale-key
+pruning reset progression; ordinary frame reconciliation does not. Singleton rows
+still consume the first phase even when their selected-key count stays unchanged.
+Keys remain scoped to the current bone/animation; no hidden bone keys are included.
+
+This follows the public [selection guide](https://esotericsoftware.com/spine-dopesheet#Selection)
+and [official clarification](https://esotericsoftware.com/forum/d/17539-select-bones-keyframes-in-timeline-hotkey).
+The selected-row union for a multi-row selection is a conservative implementation
+choice pending installed-editor comparison. Overview/all-bone rows remain pending.
+
+Selection and Copy/Cut/Paste/Delete share an ordered focused input stream. Delete
+before Select All removes only the earlier selection; the reverse deletes expanded
+keys. Text fields, modal dialogs and hidden/Setup views retain their inputs. Plain A
+retains backward playback. Releases outside the Dopesheet still reset the held-key
+latch. Active previews cancel to their prepress selection before expansion, retaining
+the document, unkeyed pose and redo branch. Global history shortcuts remain outside
+this stream: same-frame Undo followed by Select All currently leaves selection
+empty, a known selection-order gap for a future unified shortcut dispatcher.
+
+Clicking Rotation chooses Rotate, X/Y choose Translate and Scale X/Y choose Scale.
+Row labels expose named button roles, shortcut hints and a hover cue. The label
+column owns its input separately from the key grid, so label clicks cannot start
+scrubbing or retiming. Right-click behavior is unchanged. A permanent single-line
+footer keeps row geometry stable when selection changes.

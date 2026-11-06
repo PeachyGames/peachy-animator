@@ -176,3 +176,11 @@ informed bounded overwrite/snapping behavior. Exact advanced handle reshaping,
 group corner cases and cross-project clipboard preferences remain comparison gates.
 No proprietary implementation was read or copied. The clipboard and gesture code
 are independently implemented on the existing pure commands and egui shell.
+
+
+Selection expansion and row tool controls use the public
+[Dopesheet guide](https://esotericsoftware.com/spine-dopesheet#Selection) and
+[official empty-selection clarification](https://esotericsoftware.com/forum/d/17539-select-bones-keyframes-in-timeline-hotkey).
+Selected-row union across several rows remains an explicitly recorded inference.
+The footer stability change fixes movement observed in our own native captures;
+no proprietary UI image or implementation was copied.

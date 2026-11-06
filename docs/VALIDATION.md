@@ -443,3 +443,37 @@ gesture tests and source review are not presented as native interaction evidence
 All nine task-owned review processes have exited. Nine cleanup records confirm no
 temporary authorization, private-key file or temporary command directory remains.
 No new interactive handoff is retained; existing user windows were preserved.
+
+
+## Selection expansion and row controls — November 5, 2026
+
+The integrated selection slice passes **93 Rust tests** (desktop 33, CLI 4, engine
+44, I/O 4, adapter 8), formatting, warnings-denied Clippy, workspace build and the
+six-crate architecture guard. New checks cover explicit expansion phases, singleton
+and multi-row selections, exact close fractional keys, context/stale pruning,
+Delete/Undo scope, repeat/release handling, action order, text/modal priority,
+window focus loss and cancellation of a live preview to its original selection,
+document, pending pose and redo branch.
+
+Review caught a destructive event-order issue before integration: Delete followed
+by Select All in one input batch used to expand first. Deletion now belongs to the
+ordered timeline stream, with tests for both event orders. Global history shortcuts
+remain outside it; mixed same-frame Undo/Select All ordering is a known selection
+result gap, documented in UI_PARITY.md.
+
+A complete native run on an original-only disposable nine-key fixture passes:
+1 → 4 → 9 → 9 selection counts; matching Copy counts; all three row tool mappings;
+unchanged document, selected bone/keys and playhead; stable row geometry from empty
+through expanded selection; expanded deletion/one-step Undo; empty-selection Select
+All without consuming redo; and Cmd+A in a text field without timeline expansion or
+backward playback. The working document and complete original system clipboard are
+restored. Clipboard preservation keeps all item flavors in memory and only restores
+from a complete flavor snapshot verified as this run's explicit copy; a newer
+external copy is preserved.
+
+See [native acceptance](evidence/selection-native.json) and
+[expanded selection](selection-editor.png). The task-owned review process and
+fresh-login authorization were cleaned up; no interactive handoff remains.
+The engine and adapters are unchanged, so the preceding timeline runtime/round-trip
+evidence remains applicable. This slice does not claim all-bone timelines, marquee,
+Graph, pixel parity, other platforms or hosted CI.

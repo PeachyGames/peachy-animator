@@ -9,8 +9,9 @@ Spine runtime. Subsequent work should grow that working loop.
    selection, filters, activation dots, viewport picking and unkeyed/Auto Key posing.
    Rotate/Translate/Scale and axis controls now follow the public reference.
    Selection history, single-item groups, reverse playback and key navigation are also available.
-   Next complete Graph/view tabs and multi-selection in
-   [UI parity](UI_PARITY.md) before expanding the authoring UI.
+   Key retiming/duplication and focused clipboard actions are available. Next extend
+   selection controls and correct duration behavior, then Graph/view tabs and
+   multi-selection in [UI parity](UI_PARITY.md).
 
 2. **Weights and broader mesh editing.** Unweighted mesh import/export, rendering,
    region conversion, fixed-UV setup vertex transforms and triangle subdivision now
@@ -26,8 +27,10 @@ Spine runtime. Subsequent work should grow that working loop.
 4. **Constraint parity.** Begin with one- and two-bone IK, then transform/path
    constraints and physics. Specify each through controlled fixtures and compare
    observed outputs at boundaries as well as ordinary poses.
-5. **Animation editing.** Key selection, copy/paste, retiming, editable clip lengths,
-   animation creation UI, ghosting, and timeline/curve editor refinement. Group
+5. **Animation editing.** Exact selection, copy/paste and group retiming now work.
+   Next add broader selection, [Spine's last-key duration](slices/key-derived-duration.md)
+   (including empty clips),
+   animation creation UI, ghosting and timeline/curve editor refinement. Group
    inspector keyboard edits into one undo transaction. Pointer drags in the inspector
    and canvas already group their updates.
 6. **Agent interfaces.** Publish a discoverable command registry and schemas, then

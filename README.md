@@ -5,7 +5,7 @@ core and Spine-compatible exports. The current slices add Spine-style naming dia
 animation duplication, Dopesheet key selection, retiming and clipboard actions.
 This is still a bounded subset of Spine.
 
-![Peach Bot in the editor](docs/authoring-editor.png)
+![Peach Bot in the editor](docs/selection-editor.png)
 
 ## Try it
 
@@ -40,7 +40,10 @@ a key to delete it. Drag selected keys to retime them together; **Shift** disabl
 frame snapping and **Cmd/Ctrl+Shift-drag** duplicates them. **Cmd/Ctrl+C/X/V**
 copies/cuts/pastes focused Dopesheet keys. Paste targets the selected bone at the
 playhead, retaining relative timing and curves. The matching toolbar icons share
-these actions. Escape cancels a live drag; each committed edit is one undo step.
+these actions. **Cmd/Ctrl+A** expands selection to its rows, then all shown keys;
+with no selection it selects all shown keys immediately. Click a property row label
+to select its Rotate/Translate/Scale tool. Escape cancels a live drag; each
+committed edit is one undo step.
 
 The workspace follows Spine’s default arrangement: viewport left, Tree and item
 properties right, transform controls below the viewport, and Dopesheet below those

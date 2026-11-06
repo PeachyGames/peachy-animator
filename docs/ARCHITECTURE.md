@@ -212,3 +212,12 @@ versioned JSON envelope through egui's native clipboard output. Dedicated clipbo
 input events take precedence over raw-key fallbacks and only run for chart focus.
 Keyboard Paste requires the current envelope; text fields keep their input. The
 system clipboard is not an engine dependency or native-project field.
+
+
+The pure `KeySelection` model keeps an explicit Rows/Shown expansion phase separate
+from key count. It reconciles exact identities before expanding and excludes keys
+outside the shown rows/current bone/clip. The desktop's ordered action stream
+combines Select All, clipboard and deletion. A release-aware input latch suppresses
+held repeats; passive observation after shortcut routing handles releases while a
+text field/modal owns input without consuming that control's events. Selection
+expansion never dispatches a document command or moves the playhead.
