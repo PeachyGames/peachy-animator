@@ -265,7 +265,7 @@ fn world_delta_uses_frozen_linear_inverse_and_preserves_weighted_direction() {
 }
 
 #[test]
-fn frozen_batches_skip_unchanged_vertices_and_preserve_topology_uvs_and_raw_bits() {
+fn frozen_batches_skip_unaffected_vertices_and_preserve_topology_uvs_and_raw_bits() {
     let shape = mesh(&[[0., -0.], [10., 0.], [0., 10.], [2., 2.], [3., 2.]]);
     let original = rig(shape.clone());
     let translation = MeshTranslation::new(
@@ -278,8 +278,9 @@ fn frozen_batches_skip_unchanged_vertices_and_preserve_topology_uvs_and_raw_bits
         },
     )
     .unwrap();
-    let empty = translation.command(reference(), [-0., 0.]).unwrap();
-    assert!(commands(&empty).is_empty());
+    let baseline = translation.command(reference(), [-0., 0.]).unwrap();
+    assert_eq!(commands(&baseline).len(), 2);
+    assert_eq!(apply_command(&original, baseline).unwrap(), original);
     let first = translation.command(reference(), [1., 2.]).unwrap();
     let repeated = translation.command(reference(), [1., 2.]).unwrap();
     assert_eq!(
@@ -541,4 +542,34 @@ fn session_previews_remain_frozen_atomic_and_one_undo_step_with_pending_pose() {
     session.redo();
     assert_eq!(session.document(), &edited);
     assert_eq!(session.pose_edits(), &pending);
+}
+
+#[test]
+fn live_previews_restore_baseline_for_zero_and_rounded_tiny_deltas_without_history() {
+    let shape = mesh(&[[10., 10.], [15., 10.], [17.5, 10.], [20., 10.]]);
+    let original = rig(shape.clone());
+    let translation = MeshTranslation::new(&shape, identity(), 0, settings(10., 0.5)).unwrap();
+    for world in [false, true] {
+        for restore_delta in [[0., -0.], [f32::MIN_POSITIVE, f32::MIN_POSITIVE]] {
+            let command = |delta| {
+                if world {
+                    translation.world_command(reference(), delta).unwrap()
+                } else {
+                    translation.command(reference(), delta).unwrap()
+                }
+            };
+            let mut session = pending_with_redo(original.clone());
+            let pending = session.pose_edits().clone();
+            session.begin_transaction();
+            session.preview_transaction(command([10., 10.])).unwrap();
+            assert_ne!(session.document(), &original);
+            session.preview_transaction(command(restore_delta)).unwrap();
+            assert_eq!(session.document(), &original);
+            session.commit_transaction();
+            assert_eq!(session.document(), &original);
+            assert_eq!(session.pose_edits(), &pending);
+            assert!(!session.can_undo());
+            assert!(session.can_redo());
+        }
+    }
 }

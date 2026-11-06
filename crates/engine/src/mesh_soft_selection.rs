@@ -102,7 +102,8 @@ impl MeshTranslation {
     }
 
     /// Numeric/nudge translation in slot-local coordinates. The returned batch
-    /// contains only changed vertices and is validated/applied atomically as usual.
+    /// contains every affected vertex and is validated/applied atomically as usual.
+    /// Baseline-equal positions must be included to restore earlier live previews.
     pub fn command(&self, attachment: AttachmentRef, delta: [f32; 2]) -> Result<Command, String> {
         self.translate(attachment, delta.map(f64::from))
     }
@@ -159,13 +160,11 @@ impl MeshTranslation {
                 );
             }
             check_projection(self.slot_world, position)?;
-            if position.map(f32::to_bits) != baseline.map(f32::to_bits) {
-                commands.push(Command::SetMeshVertex {
-                    attachment: attachment.clone(),
-                    vertex,
-                    position,
-                });
-            }
+            commands.push(Command::SetMeshVertex {
+                attachment: attachment.clone(),
+                vertex,
+                position,
+            });
         }
         Ok(Command::Batch { commands })
     }
