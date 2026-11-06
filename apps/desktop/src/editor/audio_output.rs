@@ -59,10 +59,12 @@ mod native {
             self.sound.currentTime()
         }
         fn is_playing(&self) -> bool {
-            self.sound.isPlaying()
+            // NSSound can report isPlaying while paused. Its clock is stopped,
+            // so expose the successful pause state to the editor transport.
+            !self.paused && self.sound.isPlaying()
         }
         fn play(&mut self) -> Result<(), String> {
-            if self.sound.isPlaying() {
+            if self.is_playing() {
                 return Ok(());
             }
             let position = self.sound.currentTime();
@@ -89,7 +91,7 @@ mod native {
             Ok(())
         }
         fn pause(&mut self) -> Result<(), String> {
-            if self.sound.isPlaying() {
+            if self.is_playing() {
                 if !self.sound.pause() {
                     return Err("The audio output could not pause".into());
                 }
@@ -172,7 +174,15 @@ mod native {
             player.pause().unwrap();
             let paused = player.position();
             std::thread::sleep(Duration::from_millis(80));
-            assert!(!player.is_playing() && (player.position() - paused).abs() < 0.025);
+            assert!(
+                !player.is_playing() && (player.position() - paused).abs() < 0.025,
+                "Paused transport must be inactive with a stopped native clock: native={}, paused={paused}, now={}",
+                player.sound.isPlaying(),
+                player.position()
+            );
+            // A second pause must be harmless rather than treating NSSound's
+            // already-paused return value as an output failure.
+            player.pause().unwrap();
             player.seek(0.5).unwrap();
             assert!((player.position() - 0.5).abs() < 0.025);
             player.play().unwrap();
