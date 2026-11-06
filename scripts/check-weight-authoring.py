@@ -308,6 +308,11 @@ def exercise(check, sources):
     singular_bind[target]["scale_x"] = 0
     singular_unbind = copy.deepcopy(locals_)
     singular_unbind[slot["bone"]]["scale_y"] = 0
+    precision_bind = copy.deepcopy(locals_)
+    separate_bone = next(i for i, bone in enumerate(document["bones"]) if bone["name"] == "head")
+    precision_bind[separate_bone]["x"] = 1e8
+    precision_unbind = copy.deepcopy(locals_)
+    precision_unbind[slot["bone"]]["x"] = 1e8
     failures = [
         (source, "singular-bind", [bind_command(target, singular_bind)], "singular bone transform"),
         (setup_bound, "singular-unbind", [unbind_command(singular_unbind)], "singular bone transform"),
@@ -315,6 +320,8 @@ def exercise(check, sources):
         (source, "invalid-pose", [bind_command(target, [])], "one finite local transform per bone"),
         (source, "invalid-noop-pose", [unbind_command([])], "one finite local transform per bone"),
         (source, "invalid-bone-batch", [{"command": "setBoneLength", "bone": 0, "length": 123}, bind_command(len(document["bones"]), locals_)], "Unknown bind bone"),
+        (source, "coordinate-precision-bind", [bind_command(separate_bone, precision_bind)], "coordinate precision"),
+        (setup_bound, "coordinate-precision-unbind", [unbind_command(precision_unbind)], "coordinate precision"),
     ]
     for input_, name, commands, expected_error in failures:
         check.apply(input_, name, commands, failure=True, expected_error=expected_error)
