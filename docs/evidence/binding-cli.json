@@ -1,0 +1,88 @@
+{
+  "status": "passed",
+  "nativeFormat": 4,
+  "tolerance": 0.001,
+  "coreSessionTests": {
+    "status": "passed",
+    "tests": 13
+  },
+  "limitations": [
+    "CLI creates new native outputs; overwrite Save/backup behavior is not exercised.",
+    "Explicit posed CLI snapshots are not transient Session state; --cargo checks pending pose/history regressions.",
+    "Spine JSON roundtrips use our independent adapter; no installed-editor or external-runtime acceptance is claimed.",
+    "Only initial one-bone Bind and Remove-all are checked; no Direct, normalization, Update or Auto weighting."
+  ],
+  "cases": [
+    {
+      "case": "Setup Bind: reflected/nonuniform, different slot bone",
+      "native": "projects/bound-setup.peachy",
+      "export": "exports/bound-setup.json",
+      "bundle": "bundles/bound-setup/peachy-export-1793943955669762000",
+      "imageCount": 10
+    },
+    {
+      "case": "Animate held-pose Bind",
+      "time": 2.137,
+      "native": "projects/bound-animate.peachy",
+      "export": "exports/bound-animate.json",
+      "bundle": "bundles/bound-animate/peachy-export-1793943956232975000",
+      "imageCount": 10
+    },
+    {
+      "case": "Explicit posed snapshot Bind (Session pending behavior is checked by core tests)",
+      "native": "projects/bound-explicit-pose.peachy",
+      "export": "exports/bound-explicit-pose.json",
+      "bundle": "bundles/bound-explicit-pose/peachy-export-1793943956790840000",
+      "imageCount": 10
+    },
+    {
+      "case": "Remove-all weighted-bot",
+      "native": "projects/removed-weighted-bot.peachy",
+      "export": "exports/removed-weighted-bot.json",
+      "bundle": "bundles/removed-weighted-bot/peachy-export-1793943957362450000",
+      "imageCount": 10
+    },
+    {
+      "case": "Remove-all weighted-contract",
+      "native": "projects/removed-weighted-contract.peachy",
+      "export": "exports/removed-weighted-contract.json",
+      "bundle": "bundles/removed-weighted-contract/peachy-export-1793943958151365000",
+      "imageCount": 10
+    },
+    {
+      "case": "Remove-all weighted-repeated",
+      "native": "projects/removed-weighted-repeated.peachy",
+      "export": "exports/removed-weighted-repeated.json",
+      "bundle": "bundles/removed-weighted-repeated/peachy-export-1793943958721607000",
+      "imageCount": 10
+    },
+    {
+      "case": "Validated unweighted Remove-all no-op",
+      "native": "projects/unweighted-noop.peachy"
+    }
+  ],
+  "failures": [
+    "singular-bind",
+    "singular-unbind",
+    "already-weighted-bind",
+    "invalid-pose",
+    "invalid-noop-pose",
+    "invalid-bone-batch",
+    "coordinate-precision-bind",
+    "coordinate-precision-unbind",
+    "existing-output-refused-with-bytes-preserved"
+  ],
+  "sourceAndBaselineBytesUnchanged": true,
+  "metrics": {
+    "sceneComparisons": 271,
+    "worldCoordinates": 24390,
+    "vertexCoordinates": 29726,
+    "maxWorldError": 0.0,
+    "maxVertexError": 3.0517578125e-05,
+    "maxUVError": 0.0
+  },
+  "processInvocations": 489,
+  "sourceFiles": 19,
+  "scriptSHA256": "642a50c070f27ead82592cd8b4d17904878e4c44357eb99c8eabaf9b433a83fd",
+  "cliSHA256": "e22a51fd5277b3059a6c59900f2a0228d83f34eb6d8634f63f0606eb25554d73"
+}

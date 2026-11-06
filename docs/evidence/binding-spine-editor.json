@@ -1,0 +1,20 @@
+{
+  "spineVersion": "4.3.26",
+  "fixtures": {
+    "bound-setup": {
+      "sourceSha256": "630a6c26080d35ccf3f6c75973903bbab800f95c989ca739b5f637f1ff778a6e",
+      "sourceUnchanged": true,
+      "nativeEditorProjectCreated": true,
+      "editorReexportCreated": true,
+      "independentAdapterAccepted": true
+    },
+    "removed-weighted-contract": {
+      "sourceSha256": "ca70f28216a0d750848331f47ac45ad1766d1a04b7c51148bfc45e043b45f711",
+      "sourceUnchanged": true,
+      "nativeEditorProjectCreated": true,
+      "editorReexportCreated": true,
+      "independentAdapterAccepted": true
+    }
+  },
+  "scope": "CLI import/re-export and independent adapter acceptance; no UI or lossless original-data comparison claim"
+}

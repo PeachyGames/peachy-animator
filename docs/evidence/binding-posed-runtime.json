@@ -1,0 +1,47 @@
+{
+  "regionComparisons": 29120,
+  "maxRegionError": 7.62939453125e-05,
+  "meshComparisons": 5200,
+  "weightedMeshComparisons": 3120,
+  "maxMeshError": 3.0517578125e-05,
+  "uvComparisons": 10400,
+  "maxUVError": 0,
+  "runtime": "Spine 4.3 external oracle",
+  "bones": 15,
+  "slots": 14,
+  "skins": [
+    "default",
+    "mint",
+    "peach"
+  ],
+  "clips": [
+    {
+      "name": "contract",
+      "nativeEnd": 2,
+      "runtimeEnd": 2,
+      "samplesPerSkin": 52,
+      "skins": [
+        "default",
+        "mint",
+        "peach"
+      ],
+      "maxWorldError": 3.187913491586869e-05
+    },
+    {
+      "name": "weight authoring setup",
+      "nativeEnd": 0,
+      "runtimeEnd": 0,
+      "samplesPerSkin": 52,
+      "skins": [
+        "default",
+        "mint",
+        "peach"
+      ],
+      "maxWorldError": 1.9332543558903126e-05
+    }
+  ],
+  "tolerance": 0.001,
+  "maxWorldError": 3.187913491586869e-05,
+  "comparisons": 28080,
+  "sourceSha256": "e3162060964446036f0521ccb9feeedb5f82f583881b977dd945019950ef0eb2"
+}

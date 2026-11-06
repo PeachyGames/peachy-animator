@@ -1,0 +1,18 @@
+{
+  "captures": {
+    "bound": "editor-1793944487788958000.json",
+    "posed": "editor-1793944510833593000.json"
+  },
+  "weightsShortcutToolHistoryAndViews": true,
+  "setupUnbindMaxWorldError": 0.0,
+  "setupRemoveAllAndHistory": true,
+  "setupBindMaxWorldError": 0.0,
+  "initialSingleBoneBindSaveAndHistory": true,
+  "posedUnbindMaxWorldError": 0.0,
+  "animateRemoveAllPreservesPendingPoseAndBindEscape": true,
+  "documentAndFileRestored": true,
+  "nativeSaveBackups": 2,
+  "originalClipboardRestored": true,
+  "restoreComparison": "f32 document equivalence; exact initial working-copy bytes verified in first backup",
+  "repoOriginalSourceFilesUnchanged": 19
+}
