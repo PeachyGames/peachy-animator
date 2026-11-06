@@ -1,0 +1,48 @@
+{
+  "regionComparisons": 29120,
+  "maxRegionError": 3.0517578125e-05,
+  "meshComparisons": 5200,
+  "weightedMeshComparisons": 3120,
+  "maxMeshError": 6.103515625e-05,
+  "uvComparisons": 10400,
+  "maxUVError": 0,
+  "runtime": "Spine 4.3 external oracle",
+  "bones": 15,
+  "slots": 14,
+  "skins": [
+    "default",
+    "mint",
+    "peach"
+  ],
+  "clips": [
+    {
+      "name": "idle",
+      "nativeEnd": 2,
+      "runtimeEnd": 2,
+      "samplesPerSkin": 52,
+      "skins": [
+        "default",
+        "mint",
+        "peach"
+      ],
+      "maxWorldError": 2.610741984199194e-05
+    },
+    {
+      "name": "wave",
+      "nativeEnd": 2.4000000953674316,
+      "runtimeEnd": 2.4000000953674316,
+      "samplesPerSkin": 52,
+      "skins": [
+        "default",
+        "mint",
+        "peach"
+      ],
+      "maxWorldError": 2.7366272476569975e-05
+    }
+  ],
+  "tolerance": 0.001,
+  "maxWorldError": 2.7366272476569975e-05,
+  "comparisons": 28080,
+  "sourceSha256": "65c55a42d8c53174c970e2acba3e831f205c2e96d89303ce0bcd0eb7f8bd2ae9",
+  "sourceUnchanged": true
+}

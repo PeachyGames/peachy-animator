@@ -1,0 +1,10 @@
+{
+  "sampledExports": 11,
+  "fullySupported": 0,
+  "allSourceBytesUnchangedDuringAudit": true,
+  "unchangedSincePriorAudit": 11,
+  "weightedUnsupportedReports": 0,
+  "priorWeightedUnsupportedReports": 10,
+  "exportsWithNewInspectionIssues": 0,
+  "constraintReports": 11
+}
