@@ -1,6 +1,6 @@
 //! Pure attachment geometry and topology edits; no renderer or file dependencies.
 use crate::Affine;
-use peachy_document::{Mesh, Region};
+use peachy_document::{Mesh, MeshVertices, Region};
 
 pub const REGION_UVS: [[f32; 2]; 4] = [[0., 1.], [1., 1.], [1., 0.], [0., 0.]];
 pub const REGION_TRIANGLES: [u32; 6] = [0, 1, 2, 0, 2, 3];
@@ -15,7 +15,9 @@ pub fn region_to_mesh(region: &Region) -> Mesh {
     Mesh {
         name: region.name.clone(),
         path: region.path.clone(),
-        vertices: region_vertices(region).to_vec(),
+        vertices: MeshVertices::SlotLocal {
+            positions: region_vertices(region).to_vec(),
+        },
         uvs: REGION_UVS.to_vec(),
         triangles: REGION_TRIANGLES.to_vec(),
         hull: 4,
@@ -25,9 +27,37 @@ pub fn region_to_mesh(region: &Region) -> Mesh {
     }
 }
 
+/// Evaluate validated bind positions using the current world bone transforms.
+/// Weighted positions already name their bones; the slot transform is not applied again.
+pub fn mesh_world_vertices(mesh: &Mesh, slot_bone: usize, world: &[Affine]) -> Vec<[f32; 2]> {
+    match &mesh.vertices {
+        MeshVertices::SlotLocal { positions } => positions
+            .iter()
+            .map(|position| world[slot_bone].point(position[0], position[1]))
+            .collect(),
+        MeshVertices::Weighted { influences } => influences
+            .iter()
+            .map(|vertex| {
+                let mut point = [0.0, 0.0];
+                for influence in vertex {
+                    let transformed =
+                        world[influence.bone].point(influence.position[0], influence.position[1]);
+                    for axis in 0..2 {
+                        point[axis] += influence.weight * transformed[axis];
+                    }
+                }
+                point
+            })
+            .collect(),
+    }
+}
+
 /// Insert a triangle centroid without changing the hull, UV mapping or winding.
 /// Existing vertex indices remain stable. This is a local subdivision, not Delaunay.
 pub fn split_triangle(mesh: &mut Mesh, triangle: usize) -> Result<(), String> {
+    let MeshVertices::SlotLocal { positions } = &mut mesh.vertices else {
+        return Err("Weighted mesh subdivision is not implemented".into());
+    };
     let start = triangle.checked_mul(3).ok_or("Unknown triangle")?;
     let t = mesh
         .triangles
@@ -39,10 +69,10 @@ pub fn split_triangle(mesh: &mut Mesh, triangle: usize) -> Result<(), String> {
             (points[a as usize][axis] + points[b as usize][axis] + points[c as usize][axis]) / 3.0
         })
     };
-    let position = average(&mesh.vertices);
+    let position = average(positions);
     let uv = average(&mesh.uvs);
-    let vertex = u32::try_from(mesh.vertices.len()).map_err(|_| "Too many vertices")?;
-    mesh.vertices.push(position);
+    let vertex = u32::try_from(positions.len()).map_err(|_| "Too many vertices")?;
+    positions.push(position);
     mesh.uvs.push(uv);
     mesh.triangles
         .splice(start..start + 3, [a, b, vertex, b, c, vertex, c, a, vertex]);

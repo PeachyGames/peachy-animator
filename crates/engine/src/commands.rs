@@ -211,7 +211,10 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
             let Some(Attachment::Mesh(mesh)) = doc.attachment_mut(&attachment) else {
                 return Err("Unknown mesh attachment".into());
             };
-            *mesh.vertices.get_mut(vertex).ok_or("Unknown mesh vertex")? = position;
+            let positions = mesh
+                .slot_local_positions_mut()
+                .ok_or("Weighted mesh vertex editing is not implemented")?;
+            *positions.get_mut(vertex).ok_or("Unknown mesh vertex")? = position;
         }
         Command::SplitMeshTriangle {
             attachment,

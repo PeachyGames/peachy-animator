@@ -2,7 +2,7 @@
 use crate::{
     Affine, local_pose,
     mesh::{REGION_TRIANGLES, REGION_UVS, region_vertices},
-    world_pose,
+    mesh_world_vertices, world_pose,
 };
 use peachy_document::{Attachment, AttachmentRef, Document, Transform};
 use serde::Serialize;
@@ -73,22 +73,21 @@ pub fn scene_from_locals(doc: &Document, skin: &str, locals: Vec<Transform>) -> 
         };
         let (vertices, uvs, triangles, hull) = match attachment {
             Attachment::Region(r) => (
-                region_vertices(r).to_vec(),
+                region_vertices(r)
+                    .into_iter()
+                    .map(|point| world[slot.bone].point(point[0], point[1]))
+                    .collect(),
                 REGION_UVS.to_vec(),
                 REGION_TRIANGLES.to_vec(),
                 4,
             ),
             Attachment::Mesh(m) => (
-                m.vertices.clone(),
+                mesh_world_vertices(m, slot.bone, &world),
                 m.uvs.clone(),
                 m.triangles.clone(),
                 m.hull,
             ),
         };
-        let vertices: Vec<_> = vertices
-            .into_iter()
-            .map(|p| world[slot.bone].point(p[0], p[1]))
-            .collect();
         attachments.push(AttachmentDraw {
             slot: slot_index,
             attachment: key,
