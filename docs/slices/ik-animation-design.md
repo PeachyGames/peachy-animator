@@ -4,6 +4,11 @@ Status: internally approved for staged implementation, November 6, 2026. Native6
 Phase A is the accepted baseline. This contract does not claim accepted native7,
 compiled sampling parity or interactive UI parity; those gates remain below.
 
+The unaccepted slice's numeric representation is superseded by the
+[raw-value/frame correction](ik-raw-precision.md), based on subsequent original
+public-API counterexamples. Apply that correction before implementing or accepting
+the numeric and IK clipboard details below.
+
 ## Scope and evidence
 
 Add animation and pending authoring for the two existing IK settings: Mix and
