@@ -110,10 +110,20 @@ fn read_mesh_vertices(
 }
 
 fn integer(value: &Value, context: &str) -> Result<usize, String> {
+    let invalid = || format!("{context} must be a nonnegative integer within platform bounds");
+    if let Some(number) = value.as_u64() {
+        return usize::try_from(number).map_err(|_| invalid());
+    }
+    // JSON may spell integer-valued counts and indices as 1.0. Use an exact,
+    // exclusive power-of-two bound: usize::MAX rounds up when cast to f64 on 64-bit.
+    let upper_bound = 2.0_f64.powi(usize::BITS as i32);
     value
-        .as_u64()
-        .and_then(|n| usize::try_from(n).ok())
-        .ok_or_else(|| format!("{context} must be a nonnegative integer"))
+        .as_f64()
+        .filter(|number| {
+            number.is_finite() && *number >= 0.0 && number.fract() == 0.0 && *number < upper_bound
+        })
+        .map(|number| number as usize)
+        .ok_or_else(invalid)
 }
 
 fn finite_number(value: &Value, context: &str) -> Result<f32, String> {
@@ -254,5 +264,20 @@ pub(super) fn inspect_attachment(
     unknown_fields(region, fields, &context, issues);
     if let Err(error) = read_attachment(region, name, bone_count) {
         issues.push(format!("{context}: {error}"));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn integer_tokens_keep_exact_integer_maximum_but_reject_the_float_upper_bound() {
+        assert_eq!(integer(&json!(usize::MAX), "test").unwrap(), usize::MAX);
+        let upper_bound = 2.0_f64.powi(usize::BITS as i32);
+        assert!(integer(&json!(upper_bound), "test").is_err());
+        assert!(integer(&json!(upper_bound * 2.0), "test").is_err());
+        assert!(integer(&json!(-1.0), "test").is_err());
+        assert!(integer(&json!(1.5), "test").is_err());
     }
 }

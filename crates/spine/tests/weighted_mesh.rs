@@ -54,11 +54,41 @@ fn weighted_mesh_roundtrip_keeps_all_influences_including_repeats_zeros_and_roun
 }
 
 #[test]
+fn integral_json_float_counts_and_bone_indices_import_and_roundtrip_identically() {
+    let expected = import_json(&fixture(), "integer representations").unwrap();
+    let mut source = fixture();
+    let raw = vertices(&mut source).as_array_mut().unwrap();
+    let mut cursor = 0;
+    while cursor < raw.len() {
+        let count = raw[cursor].as_u64().unwrap() as usize;
+        raw[cursor] = json!(count as f64);
+        assert!(raw[cursor].as_u64().is_none());
+        cursor += 1;
+        for _ in 0..count {
+            raw[cursor] = json!(raw[cursor].as_u64().unwrap() as f64);
+            assert!(raw[cursor].as_u64().is_none());
+            cursor += 4;
+        }
+    }
+    // Exercise real JSON decimal spellings, including 0.0 and 1.0, at the boundary.
+    let encoded = serde_json::to_string(&source).unwrap();
+    let source: Value = serde_json::from_str(&encoded).unwrap();
+    assert!(inspect(&source).supported);
+    let actual = import_json(&source, &expected.name).unwrap();
+    assert_eq!(actual, expected);
+    let output = export_json(&actual).unwrap();
+    assert_eq!(output, export_json(&expected).unwrap());
+    assert_eq!(import_json(&output, &expected.name).unwrap(), expected);
+}
+
+#[test]
 fn malformed_weighted_counts_groups_numbers_and_references_are_rejected_by_inspection_and_import() {
     for (index, bad) in [
         (0, json!(0)),
         (0, json!(-1)),
         (0, json!(1.5)),
+        (0, json!(2.0_f64.powi(usize::BITS as i32))),
+        (0, json!(1e100)),
         (0, json!("6")),
         (0, json!(u64::MAX)),
         (1, json!(99)),
