@@ -2,7 +2,8 @@
 
 A native 2D skeletal animation editor from Team Peachy, with an independent Rust
 core and Spine-compatible exports. The current slices add Spine-style naming dialogs,
-animation duplication, Dopesheet key selection, retiming and clipboard actions.
+animation duplication, Dopesheet selection/retiming/clipboard actions and key-derived
+animation duration.
 This is still a bounded subset of Spine.
 
 ![Peach Bot in the editor](docs/timeline-selection-editor.png)
@@ -81,6 +82,10 @@ new frame. Switching animation or mode clears the pending pose.
 Save/export include setup data and animation keys; **unkeyed poses are excluded**.
 The status bar calls out a pending pose even if the document itself is saved.
 **Setup** edits change the underlying rig.
+Animation length follows the highest key and shrinks when it moves or is deleted.
+You can seek and pose beyond the last key; keying there extends the animation.
+Empty clips and frame-zero-only clips both end at zero while retaining different
+key data. The timeline keeps a positive display range independently of that end.
 Local/Parent/World select transform coordinates. Numeric entry accepts relative
 `+value`, `+-value`, `*factor` and `/divisor` on Enter/Tab. World scale entry uses
 local values. Arrows nudge the active transform; Shift uses smaller steps; the **Fit** button fits the scene. Scroll zooms,
@@ -147,8 +152,10 @@ CLI outputs must be new files; it refuses to overwrite existing output. The CLI
 `export` command writes JSON only. Use the desktop exporter for a packed bundle.
 The CLI `bundle` command uses that same shared exporter.
 Native projects reference loose images in `images/` beside the project. Native
-format v2 uses tagged attachments; the loader migrates v1 region projects in memory.
-Saving writes v2 and backs up the previous file. Older binaries cannot open v2.
+format v3 derives animation duration from its last key, including empty clips. The
+loader migrates v1/v2 projects in memory, materializing their previous exported hold
+keys. Loading leaves source bytes unchanged. Explicit Save writes v3 and backs up
+the previous file; older binaries cannot open v3.
 `pose` accepts an optional skin name and also emits evaluated attachment geometry.
 
 ## Architecture and verification

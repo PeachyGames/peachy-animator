@@ -221,3 +221,26 @@ combines Select All, clipboard and deletion. A release-aware input latch suppres
 held repeats; passive observation after shortcut routing handles releases while a
 text field/modal owns input without consuming that control's events. Selection
 expansion never dispatches a document command or moves the playhead.
+
+
+## Key-derived duration
+
+Native v3 `Animation::duration()` reads the last key of each validated ordered track
+and returns their maximum or zero. There is no stored cache to update during edits,
+Undo or baseline previews. SetKey/SetPose and transient authoring accept finite
+nonnegative times beyond that end. DeleteKey is a source query and retains its
+upper-bound guard to prevent a near-match query beyond the end deleting a last key.
+The compatible AddAnimation duration argument becomes an explicit visible hold.
+
+The I/O decoder chains v1 region tagging into strict v2 duration migration. It
+validates the complete schema, curves/order and legacy time bounds before adding
+the prior exporter's hold keys. It does not use an export/import round trip or
+weaken target-independent native validation. Source bytes stay unchanged until
+explicit Save; the existing verified backup/atomic replacement path is reused.
+
+The desktop separates `animation_end` from a positive `display_extent`, which
+includes the cursor. Fixed drag geometry uses the latter; playback uses the former.
+Frame and screen/time arithmetic use wider intermediates to avoid overflow for
+finite large cursors. Empty clips do not enter division/remainder by zero. The
+external oracle independently checks exported runtime ends, including zero, and
+samples held poses after the end as well as ordinary and backward sample order.

@@ -1,0 +1,13 @@
+{
+  "captures": {
+    "keyed": "editor-1793937928131543000.json",
+    "editor": "editor-1793937942815421000.json"
+  },
+  "emptyPlaybackAndPastEndSeek": true,
+  "pastEndPoseRemainsTransientAndSaveExcludesIt": true,
+  "keyingExtendsEndAndUndoRedoPreserveCursor": true,
+  "zeroEndNonloopPlaybackSafe": true,
+  "documentRestored": true,
+  "nativeSaveBackups": 3,
+  "originalClipboardRestored": true
+}

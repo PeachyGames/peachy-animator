@@ -1,4 +1,4 @@
-# Compatibility contract — mesh slice
+# Compatibility contract
 
 Target: Spine **4.3.x JSON**, with export metadata `4.3.26`. The initial external
 oracle is separately installed `@esotericsoftware/spine-core` **4.3.13**.
@@ -14,7 +14,7 @@ Compatibility applies to the subset below, not every 4.3 project or future patch
 | Curves | Linear, stepped, normalized monotone-time cubic handles | Nonfinite or unordered controls; overshooting curves between equal values |
 | Constraints | None | IK, transform, path, physics and other constraints |
 | Images | Loose PNGs for editing; one untrimmed atlas page for desktop export | Packed-atlas import, rotated/trimmed atlas regions, multipage export |
-| Files | `.peachy` v2; in-memory v1 migration; Spine JSON adapter | Native `.spine` projects and binary `.skel` |
+| Files | `.peachy` v3; in-memory v1/v2 migration; Spine JSON adapter | Native `.spine` projects and binary `.skel` |
 
 Our own project format is JSON and holds the editable rig, skin references and clips.
 It is distinct from a runtime export. The importer ignores documented editor-only
@@ -72,8 +72,9 @@ may omit dimensions/edges. Missing hulls are refused. Tint other than white, lin
 meshes, sequences, weights and all attachment/deform timelines remain blocked.
 
 Native v2 tags each attachment as `region` or `mesh`. The loader migrates v1 regions
-in memory, then applies the strict v2 schema. Save writes v2, preserving a verified
-backup of any previous native file. Unknown native fields/future versions are refused.
+in memory. Native v3 additionally migrates stored duration to actual hold keys; Save
+writes v3 and preserves a verified backup. Unknown native fields/future versions
+are refused.
 
 The external harness now checks all three fixture skins. Across mesh demo and reflected,
 nonuniform-scale contract fixtures it checks 7,650 world coordinates and 15,300 local/
@@ -88,8 +89,8 @@ rendering equivalence, weight/deform behavior or complete Spine parity.
 
 The native Tree and viewport now share typed selection for bones, slots, placeholders,
 attachments, skins and animations. Setup region transforms, bone lengths and slot
-setup attachments are shared commands, used by both frontends. Native format stays v2;
-export remains the same bounded Spine 4.3 JSON target.
+setup attachments are shared commands, used by both frontends. At that slice the
+native format was v2; export remains the same bounded Spine 4.3 JSON target.
 
 Skin/animation activation, search, type filtering and temporary visibility are editor
 state and do not change exported data. Attachment visibility in Setup changes the
@@ -112,7 +113,8 @@ existing 5,100 mesh and 27,540 bone values across all three skins and two clips.
 Auto Key off changes a transient engine pose; explicit keying converts it into the
 same supported transform timelines. Default authoring keys translation/scale axes
 as pairs; imported scalar tracks and the low-level command API remain supported.
-Native format remains v2 and Spine target remains 4.3.x JSON. Unkeyed poses are not
+That authoring slice retained native v2; the current native format is v3 and the
+Spine target remains 4.3.x JSON. Unkeyed poses are not
 serialized or exported. Save is not a substitute for pressing K to preserve a pose.
 The UI distinguishes unkeyed edits from document dirty state and warns on discard.
 
@@ -121,3 +123,26 @@ all source hashes are unchanged. This slice changes authoring, not the accepted
 production feature set. See [workflow milestones](WORKFLOWS.md) for every hurdle,
 including the distinction between editable `.peachy`, Spine runtime JSON/atlas, and
 unsupported native `.spine`/binary `.skel` files.
+
+
+## Key-derived duration and native v3
+
+Animation duration is the highest authored key time. Empty and frame-zero-only
+clips both have duration zero; their key/property coverage remains distinct.
+Import preserves tiny positive durations without a frame-length floor. Export
+writes actual keys only, with no synthetic padding or empty-animation root key.
+Manual/automatic keying, paste and retiming extend or shrink the derived end.
+
+Native v3 stores no duration field; stale duration fields are rejected. Legacy v2
+clips materialize every hold the old exporter emitted, including its neutral root
+hold for all-empty clips. A formerly final unused Bezier is normalized to Linear
+when a hold is appended, matching the previous exporter; Stepped is retained.
+This preserves prior exported behavior, rather than promising identical unused
+native curve metadata. v1 regions follow the same duration migration after tagging.
+Loading never rewrites a file. Explicit Save retains a byte-exact verified backup.
+
+`AddAnimation { name, duration }` remains a compatible command: zero creates an
+empty clip and a positive value creates a visible neutral root hold. The editor's
+New animation UI remains pending. Nonlooping playback remains bounded to the last
+key; extended playback, loop ranges and exact installed-editor empty-playback UI
+behavior remain parity gaps. Native `.spine`/binary `.skel` support is unchanged.

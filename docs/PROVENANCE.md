@@ -184,3 +184,11 @@ Selection expansion and row tool controls use the public
 Selected-row union across several rows remains an explicitly recorded inference.
 The footer stability change fixes movement observed in our own native captures;
 no proprietary UI image or implementation was copied.
+
+
+Key-derived duration follows the public [Keys/Timeline guide](https://esotericsoftware.com/spine-keys#Timeline)
+and [Animation.duration API contract](https://en.esotericsoftware.com/spine-api-reference#Animation-duration).
+The legacy hold migration is defined by our own preceding v2 exporter, captured as
+an original golden fixture before changing that code. Installed Spine 4.3.26 is used
+only to import/re-export original inputs; the separately supplied runtime is an
+external geometry/end oracle. Neither implementation was inspected or copied.

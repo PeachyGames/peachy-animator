@@ -1,0 +1,108 @@
+{
+  "spineVersion": "4.3.26",
+  "nativeSpineProjectCreated": true,
+  "editorReexportAccepted": true,
+  "clipEnds": {
+    "empty": 0,
+    "explicit hold": 4.0,
+    "frame zero": 0,
+    "idle": 2.0,
+    "tiny": 0.001,
+    "wave": 2.4
+  },
+  "emptyClipStillEmpty": true,
+  "frameZeroKeyRetained": true,
+  "runtime": {
+    "regionComparisons": 87360,
+    "maxRegionError": 3.0517578125e-05,
+    "meshComparisons": 15600,
+    "maxMeshError": 3.814697265625e-05,
+    "uvComparisons": 31200,
+    "maxUVError": 0,
+    "runtime": "Spine 4.3 external oracle",
+    "bones": 15,
+    "slots": 14,
+    "skins": [
+      "default",
+      "mint",
+      "peach"
+    ],
+    "clips": [
+      {
+        "name": "empty",
+        "nativeEnd": 0,
+        "runtimeEnd": 0,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default",
+          "mint",
+          "peach"
+        ],
+        "maxWorldError": 2.1110102849775103e-05
+      },
+      {
+        "name": "explicit hold",
+        "nativeEnd": 4,
+        "runtimeEnd": 4,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default",
+          "mint",
+          "peach"
+        ],
+        "maxWorldError": 2.1110102849775103e-05
+      },
+      {
+        "name": "frame zero",
+        "nativeEnd": 0,
+        "runtimeEnd": 0,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default",
+          "mint",
+          "peach"
+        ],
+        "maxWorldError": 2.1110102849775103e-05
+      },
+      {
+        "name": "idle",
+        "nativeEnd": 2,
+        "runtimeEnd": 2,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default",
+          "mint",
+          "peach"
+        ],
+        "maxWorldError": 2.610741984199194e-05
+      },
+      {
+        "name": "tiny",
+        "nativeEnd": 0.0010000000474974513,
+        "runtimeEnd": 0.0010000000474974513,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default",
+          "mint",
+          "peach"
+        ],
+        "maxWorldError": 2.1110102849775103e-05
+      },
+      {
+        "name": "wave",
+        "nativeEnd": 2.4000000953674316,
+        "runtimeEnd": 2.4000000953674316,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default",
+          "mint",
+          "peach"
+        ],
+        "maxWorldError": 2.7366272476569975e-05
+      }
+    ],
+    "tolerance": 0.001,
+    "maxWorldError": 2.7366272476569975e-05,
+    "comparisons": 84240
+  }
+}

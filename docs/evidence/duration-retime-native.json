@@ -1,0 +1,13 @@
+{
+  "captures": {
+    "retimed": "editor-1793938041701692000.json"
+  },
+  "shrinkingPreviewFreezesGeometryAndEscapeRestoresEnd": true,
+  "saveCancelsLivePreviewBeforeWriting": true,
+  "modifierDragDuplicates": true,
+  "fractionalClickDoesNotSnapOrAddHistory": true,
+  "retimeDeleteAndUndoRedoDeriveEndWithoutClampingCursor": true,
+  "documentRestored": true,
+  "nativeSaveBackups": 2,
+  "originalClipboardRestored": true
+}

@@ -168,8 +168,8 @@ playing switches direction. Independently drawn reverse/forward buttons use the 
 transition. Looping wraps in either direction, including reversing from frame zero.
 
 W/S navigate the nearest next/previous distinct key in the active animation's supported
-tracks, and stop playback. Q goes to zero; E goes to the actual last key, including when
-native clip duration reserves additional time after it. Key navigation uses the same
+tracks, and stop playback. Q goes to zero; E goes to the actual last key.
+Key navigation uses the same
 unkeyed-pose discard/recovery path as ordinary timeline movement. Selection and document
 data do not change. Text-entry focus retains priority over these shortcuts.
 
@@ -232,8 +232,8 @@ it. Release commits one undo step. This is bounded scalar-track retiming, inform
 by the public [Dopesheet guide](https://esotericsoftware.com/spine-dopesheet#Moving-keys)
 and [Keys guide](https://esotericsoftware.com/spine-keys). Timeline zoom/pan,
 auto-pan, persistent selection boxes/scaling and full gesture preferences remain
-pending. Native duration currently grows to contain later keys but does not shrink
-when the last key moves earlier. Spine's key-derived duration is a separate gap.
+pending. Duration now follows the highest key, including shrinkage when the last
+key moves earlier; the display range remains separate.
 
 Copy/Cut/Paste icons have the same session actions as focused Cmd/Ctrl+C/X/V.
 Copy stores committed selected keys with relative times, scalar values and curves;
@@ -282,3 +282,23 @@ Row labels expose named button roles, shortcut hints and a hover cue. The label
 column owns its input separately from the key grid, so label clicks cannot start
 scrubbing or retiming. Right-click behavior is unchanged. A permanent single-line
 footer keeps row geometry stable when selection changes.
+
+
+## Animation end and authoring range
+
+The frame counter shows cursor / highest keyed frame. An empty clip or keys only
+at frame zero end at zero. The Dopesheet still displays at least one second and
+includes the cursor, so it remains usable without reserve keys. This is a bounded
+view policy until proper timeline pan/zoom, not a claim of exact Spine zoom behavior.
+Keys and the playhead use the positive display extent; retiming freezes that extent
+for the gesture even while the animation end changes.
+
+Seeking, frame stepping and unkeyed posing can pass the last key without adding
+keys. Keying there extends the animation; moving/deleting the last key shrinks it.
+Undo/Redo and cancellation restore keys and therefore the end. The cursor remains
+where the artist put it. A frame-zero key can be dragged into positive time.
+
+For zero-length clips, current playback safely stops at zero in either direction,
+including Loop. Nonlooping playback remains bounded to the last key. Exact Spine
+empty-playback behavior and extended nonlooping transport remain comparison gates;
+the installed-editor data round trip establishes file semantics, not those UI rules.

@@ -477,3 +477,71 @@ fresh-login authorization were cleaned up; no interactive handoff remains.
 The engine and adapters are unchanged, so the preceding timeline runtime/round-trip
 evidence remains applicable. This slice does not claim all-bone timelines, marquee,
 Graph, pixel parity, other platforms or hosted CI.
+
+## Key-derived duration and native v3 — November 5, 2026
+
+The integrated source passes **115 Rust tests** (desktop 37, CLI 4, engine 54,
+I/O 10, adapter 10), formatting, warnings-denied Clippy, workspace build and all
+six architecture checks. New semantic tests cover shrinking across tracks/bones,
+Undo/Redo and cancelled collision previews, pending poses and redo preservation,
+empty/frame-zero/tiny clips, beyond-end authoring, large finite cursor arithmetic,
+strict v3 decoding, and safe last-key deletion queries. Shared desktop fixtures
+replace the duplicate clipboard-only constructor.
+
+Native v3 removes stored duration. Migration golden data was captured from our
+unchanged v2 exporter before modifying it. Tests compare the entire migrated
+export with that original golden, including reserved holds, all-empty clips,
+empty root tracks, final unused Bezier normalization and Stepped retention.
+Malformed legacy bounds, schema/curve/order errors and stale v3 duration fields
+are rejected. Load leaves source bytes unchanged; explicit Save keeps an exact
+verified backup. The 4 → 6 → delete 6 → 4 case survives save/reopen.
+
+The CLI performs ten commands on our original mesh fixture, producing empty,
+frame-zero, tiny and explicit-hold clips, plus a moved key on a shorter track.
+Native validation, packed export and import/re-export pass **333 pose samples**,
+maximum round-trip error 4.1611888e-9. Both original inputs and the legacy fixture
+remain byte-for-byte unchanged. The native v3 output contains no duration fields.
+See [CLI acceptance](evidence/duration-interop.json).
+
+The external Spine 4.3 runtime checks exact clip ends and geometry across six
+clips, three skins and 52 times per clip/skin, including the end plus one second
+and backwards sample order. **84,240** world components, **87,360** region
+coordinates, **15,600** mesh coordinates and **31,200** UV values pass. Maximum
+world/region/mesh errors are 0.000027367, 0.000030518 and 0.000038147 at tolerance
+0.001; UV error is zero. A further **3,744** world components pass for legacy
+migration cases, maximum error 0.000001206. See
+[runtime acceptance](evidence/duration-runtime.json) and
+[legacy runtime acceptance](evidence/duration-legacy-runtime.json).
+
+Installed Spine Editor **4.3.26** imports the original duration fixture into a new
+`.spine` project and re-exports it. Our importer accepts the result; empty clips
+stay empty, frame-zero keys remain, and tiny/ordinary clip ends are retained.
+The same external geometry/end checks pass on the editor's re-export. This is a
+black-box CLI/data check; it does not establish installed-editor UI/playback parity.
+The `.spine` project and raw CLI logs stay outside Git. See
+[editor round-trip acceptance](evidence/duration-spine-editor.json).
+
+Two complete native runs verify real pointer/keyboard behavior:
+
+- Empty playback remains finite with Loop on/off. Seeking and posing beyond the
+  end do not add keys or dirty the document. Save excludes the pending pose;
+  explicit keying extends the end, and Undo/Redo restores it without moving the
+  cursor. Three native save backups are retained.
+- Last-key retiming shrinks the end while chart geometry stays frozen. Escape
+  restores it; Save during preview cancels before writing. Modifier duplication
+  and fractional-key clicks pass the native checks left pending in the earlier
+  timeline batch. Delete shrinks to zero without clamping the cursor; history
+  restores the expected key/end. Two further save backups are retained.
+
+Both native working documents/files and original system clipboards are restored.
+Task-owned review/CLI processes exited and all temporary recovery authorizations
+were removed; existing user windows were preserved. No interactive handoff remains.
+See [empty authoring](evidence/duration-empty-native.json),
+[retiming](evidence/duration-retime-native.json),
+[keyed pose](duration-keyed.png) and [shortened clip](duration-retimed.png).
+
+Nonlooping playback is still bounded to the last key; exact Spine empty-playback
+UI behavior, extended transport, timeline pan/zoom/ranges, animation creation UI,
+other platforms and hosted CI remain pending. Weighted meshes, constraints and the
+other production import blockers remain separate work; native v3 does not claim
+that an existing artist character is now fully supported.

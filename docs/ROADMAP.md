@@ -10,7 +10,7 @@ Spine runtime. Subsequent work should grow that working loop.
    Rotate/Translate/Scale and axis controls now follow the public reference.
    Selection history, single-item groups, reverse playback and key navigation are also available.
    Key retiming/duplication and focused clipboard actions are available. Next extend
-   selection controls and correct duration behavior, then Graph/view tabs and
+   box selection, then Graph/view tabs and
    multi-selection in [UI parity](UI_PARITY.md).
 
 2. **Weights and broader mesh editing.** Unweighted mesh import/export, rendering,
@@ -28,9 +28,9 @@ Spine runtime. Subsequent work should grow that working loop.
    constraints and physics. Specify each through controlled fixtures and compare
    observed outputs at boundaries as well as ordinary poses.
 5. **Animation editing.** Exact selection, copy/paste and group retiming now work.
-   Next add broader selection, [Spine's last-key duration](slices/key-derived-duration.md)
-   (including empty clips),
-   animation creation UI, ghosting and timeline/curve editor refinement. Group
+   [Key-derived duration](slices/key-derived-duration.md), empty clips and beyond-end
+   authoring are now implemented. Next add broader selection, animation creation UI,
+   extended playback, ghosting and timeline/curve editor refinement. Group
    inspector keyboard edits into one undo transaction. Pointer drags in the inspector
    and canvas already group their updates.
 6. **Agent interfaces.** Publish a discoverable command registry and schemas, then

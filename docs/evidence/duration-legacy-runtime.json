@@ -1,0 +1,65 @@
+{
+  "regionComparisons": 0,
+  "maxRegionError": 0,
+  "meshComparisons": 0,
+  "maxMeshError": 0,
+  "uvComparisons": 0,
+  "maxUVError": 0,
+  "runtime": "Spine 4.3 external oracle",
+  "bones": 2,
+  "slots": 0,
+  "skins": [],
+  "clips": [
+    {
+      "name": "at_end",
+      "nativeEnd": 2,
+      "runtimeEnd": 2,
+      "samplesPerSkin": 52,
+      "skins": [],
+      "maxWorldError": 0.0000012053678215551145
+    },
+    {
+      "name": "empty_other",
+      "nativeEnd": 3,
+      "runtimeEnd": 3,
+      "samplesPerSkin": 52,
+      "skins": [],
+      "maxWorldError": 4.641020666628483e-8
+    },
+    {
+      "name": "empty_root",
+      "nativeEnd": 2,
+      "runtimeEnd": 2,
+      "samplesPerSkin": 52,
+      "skins": [],
+      "maxWorldError": 4.641020666628483e-8
+    },
+    {
+      "name": "no_tracks",
+      "nativeEnd": 4,
+      "runtimeEnd": 4,
+      "samplesPerSkin": 52,
+      "skins": [],
+      "maxWorldError": 4.641020666628483e-8
+    },
+    {
+      "name": "reserved",
+      "nativeEnd": 4,
+      "runtimeEnd": 4,
+      "samplesPerSkin": 52,
+      "skins": [],
+      "maxWorldError": 7.529744951995099e-7
+    },
+    {
+      "name": "tiny",
+      "nativeEnd": 0.0010000000474974513,
+      "runtimeEnd": 0.0010000000474974513,
+      "samplesPerSkin": 52,
+      "skins": [],
+      "maxWorldError": 4.7332564409585665e-8
+    }
+  ],
+  "tolerance": 0.001,
+  "maxWorldError": 0.0000012053678215551145,
+  "comparisons": 3744
+}

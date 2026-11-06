@@ -1,6 +1,8 @@
-# Key-derived animation duration — planned slice
+# Key-derived animation duration
 
-Status: specification for the next data-model slice; native format remains v2.
+Status: implemented in native v3. Integrated source, native interactions, migration,
+installed-editor round trip and external runtime results are recorded in
+[VALIDATION.md](../VALIDATION.md#key-derived-duration-and-native-v3--november-5-2026).
 
 Spine defines animation duration by the highest key. Empty animations and clips with
 only frame-zero keys therefore have duration zero. Public references:
@@ -8,10 +10,10 @@ only frame-zero keys therefore have duration zero. Public references:
 [Animation.duration](https://en.esotericsoftware.com/spine-api-reference#Animation-duration).
 No proprietary implementation is an implementation reference.
 
-Our v2 model instead stores a positive duration. Import floors it at 1/30 second;
-export adds implicit last-value holds or a neutral root rotation key. Moving a last
-key earlier does not shorten the clip. Fix these together, with an explicit native
-migration, rather than introducing another cached duration or hidden reserve.
+The preceding v2 model stored a positive duration. Import floored it at 1/30 second;
+export added implicit last-value holds or a neutral root rotation key. Moving a
+last key earlier did not shorten the clip. The v3 change fixes these together with
+an explicit migration.
 
 ## Contract
 
@@ -29,7 +31,7 @@ migration, rather than introducing another cached duration or hidden reserve.
   or take a remainder by zero. Exact empty-editor playback requires observation;
   do not infer its UI behavior solely from a runtime API.
 
-## Lossless v2 migration
+## Preserve v2 exported behavior
 
 Materialize the keys that the old exporter already emitted as visible editable
 keys. Pad every nonempty track to its old duration when needed. For an all-empty

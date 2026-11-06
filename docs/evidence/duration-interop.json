@@ -1,0 +1,21 @@
+{
+  "commandsApplied": 10,
+  "sourceUnchanged": true,
+  "nativeFormat": 3,
+  "nativeValidated": true,
+  "roundtripPoseSamples": 333,
+  "maxRoundtripError": 4.161188726925502e-09,
+  "clipEnds": {
+    "wave": 2.4,
+    "idle": 2.0,
+    "empty": 0,
+    "frame zero": 0,
+    "tiny": 0.001,
+    "explicit hold": 4.0
+  },
+  "nativeDurationFieldsAbsent": true,
+  "emptyAndFrameZeroRemainDistinct": true,
+  "legacyGoldenExact": true,
+  "legacySourceUnchanged": true,
+  "bundle": "bundle/peachy-export-1793937672792732000"
+}
