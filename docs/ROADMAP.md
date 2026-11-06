@@ -13,11 +13,14 @@ Spine runtime. Subsequent work should grow that working loop.
    box selection, then Graph/view tabs and
    multi-selection in [UI parity](UI_PARITY.md).
 
-2. **Weights and broader mesh editing.** Unweighted mesh import/export, rendering,
-   region conversion, fixed-UV setup vertex transforms and triangle subdivision now
-   work. Next add typed bone influences and deterministic weighted evaluation, then
-   binding/weight editing. Follow with UV/hull editing and controlled triangulation.
-   These remain major gaps for our existing characters.
+2. **Weight authoring and broader mesh editing.** Unweighted editing and weighted
+   import/export, deterministic bone-driven evaluation and read-only influence
+   inspection now work through native v4. Next implement Bind/Unbind, manual weight
+   changes and Update bindings as explicit shared commands with Spine-matched
+   controls; Direct/brush behavior, zero recipients and locks need their own gates.
+   Follow with UV/hull editing and controlled triangulation. Linked meshes, deform
+   timelines and constraints remain major gaps for existing characters; weighted
+   support alone leaves 0/11 sampled production exports fully supported.
    Use the [workflow milestones](WORKFLOWS.md) and private asset inventory to select
    the smallest representative production character and track its missing features. Refuse unsupported imports
    without changing their source files.

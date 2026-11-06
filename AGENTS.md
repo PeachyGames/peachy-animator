@@ -30,7 +30,24 @@ Run `python3 scripts/check-architecture.py` too. Its allowlist checks real Cargo
 
 `apply_command(&Document, Command)` is the pure editing boundary. `Session` wraps it with in-memory history; pointer gestures use begin/commit/cancel transactions. Native documents and commands reject unknown fields. Export-target restrictions belong to the adapter, not native document validation. Reconcile transient editor selections after history/document changes. Introduce stable entity IDs before deletion/reparenting.
 
-Native format v3 uses tagged `Attachment::Region` / `Attachment::Mesh` and derives animation ends from keys. The I/O decoder explicitly migrates v1 regions and v2 stored durations before strict deserialization; materialized hold keys preserve prior exports. Mesh topology, UVs and slot-bone-local setup vertices belong in document/engine. `evaluate_scene` emits shared vertex/UV/index buffers for rendering, bounds and CLI diagnostics. Mesh commands address an explicit skin/slot/placeholder; resolve default fallback before building a command. Existing vertex indices remain stable under centroid subdivision. Add stable vertex identity before removal/reindexing or cross-topology animation references.
+Native format v4 uses tagged `Attachment::Region` / `Attachment::Mesh` and derives
+animation ends from keys. `MeshVertices` distinguishes slot-bone-local positions
+from per-vertex lists of bone-local `BoneInfluence` values. The I/O decoder chains
+v1 region tags, v2 duration capture and v3 mesh-array wrapping into strict v4
+validation before materializing prior exported holds. Validate influence references
+in every skin, including zero-weight entries and inactive attachments. Preserve
+influence order, repeated bones, zero entries and positive nonunit totals;
+imports/exports must not silently normalize, merge, sort or prune them.
+
+Mesh topology, UVs, binding data and weighted geometry belong in document/engine.
+`evaluate_scene` emits shared vertex/UV/index buffers for rendering, bounds and CLI
+diagnostics. Mesh commands address an explicit skin/slot/placeholder; resolve default
+fallback before building a command. Existing unweighted vertex indices remain stable
+under centroid subdivision. Weighted meshes currently expose read-only influence
+inspection; the shell and engine reject slot-local vertex edits and subdivision on
+them. Binding/weight editing requires explicit commands and separate acceptance.
+Add stable vertex identity before removal/reindexing or cross-topology animation
+references, and remap all influences before any future bone reordering/deletion.
 
 Track concrete Spine behavior and gaps in `docs/PARITY.md`. Check new geometry against the external runtime and exported data against the installed editor using original fixtures before claiming parity for a feature.
 

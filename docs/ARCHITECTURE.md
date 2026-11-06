@@ -29,13 +29,27 @@ transactions for both bone and region pointer gestures. Rendering and fit-to-vie
 those same vertices; frontends never rebuild attachment geometry. The external 4.3
 curve observations are recorded in PROVENANCE.md.
 
-Mesh vertices live in slot-bone local coordinates; UVs use a top-left origin.
-Region conversion bakes its attachment transform into four local vertices, using
-the same geometry function as region rendering. Subdivision inserts a triangle
-centroid and interpolates its UV; it preserves the hull and existing vertex indices.
-Both operations and setup vertex movement are shared serializable commands. The
-canvas converts pointer motion to bone-local coordinates and dispatches a Session
-transaction. Mesh rendering, bounds and CLI geometry all use `evaluate_scene`.
+Native v4 `MeshVertices` distinguishes `SlotLocal { positions }` from
+`Weighted { influences }`. Each weighted vertex stores an ordered list of
+`BoneInfluence { bone, position, weight }`; positions are local to the referenced
+bone. UVs use a top-left origin. All influence references are validated against
+the document, including inactive skins and zero-weight entries. Finite weights
+must be in 0–1 with a positive total; raw nonunit totals, order and repeated bones
+remain valid and are preserved.
+
+`mesh_world_vertices` applies the slot bone to unweighted positions. For weighted
+vertices it sums `weight * world[bone].point(bind_position)` for every influence,
+without applying the slot transform again or renormalizing. `scene_from_locals`
+feeds both keyed and transient posed bones through this shared evaluator. Rendering,
+triangle picking, fit/bounds and CLI output consume its `AttachmentDraw` vertices.
+
+Region conversion bakes its attachment transform into four slot-local vertices.
+Unweighted subdivision inserts a triangle centroid and interpolates its UV while
+preserving the hull and existing indices. Both operations and setup vertex movement
+are shared serializable commands. Weighted `SetMeshVertex` and subdivision fail
+atomically, preserving pending pose/history/redo; weight authoring requires separate
+commands. The desktop shows read-only per-entry influences and posed handles without
+implementing weighted editing or inverse-bind math in the UI.
 
 `peachy-spine` converts the supported 4.3 JSON subset. It owns Spine-specific naming
 and placeholder restrictions, separate from native invariants. Inspection returns a
@@ -48,8 +62,12 @@ exports. It depends on document/spine, not the engine or a UI toolkit. The CLI c
 the pure transition for batches and uses this same file service. Its model-only
 import/apply outputs still require loose images beside the project; desktop Save copies
 images when saving to another directory. Both frontends use the same bundle exporter.
-The decoder explicitly migrates native v1 region data to v2 tagged attachments
-before strict deserialization. It does not weaken unknown-field validation.
+The decoder chains v1 region tagging, v2 legacy duration capture and v3 mesh-array
+wrapping into native v4. It rejects object-shaped legacy mesh vertices and raw-array
+v4 vertices. Complete strict schema, geometry, curve/order and legacy time-bound
+validation happens before v2 hold normalization. Native v3/v4 stale duration fields
+remain errors; migration does not use the Spine adapter or weaken unknown-field
+validation.
 
 The desktop owns dialogs, texture upload, camera and pointer coordinates, labels and
 platform events. Its entrypoint parses arguments and starts the app. `editor/mod.rs`
@@ -67,7 +85,8 @@ an explicit allowlist, including a negative probe for an engine-to-UI dependency
 core was also reviewed for standard-library filesystem/clock/process calls; the graph
 check alone cannot establish their absence. See [the quality review](CODE_QUALITY.md).
 
-1. Extend typed native data and evaluated draw operations before building weights or deform controls.
+1. Build binding/weight editing and deform controls on explicit typed data, shared
+   evaluation and commands; keep the current weighted inspection path read-only.
 2. Introduce stable entity IDs before deletion/reparenting and animation merging.
 3. Extend the shared I/O shell for formats/destinations; keep dialogs in the frontend.
 4. Add schemas and MCP around the existing serializable commands when needed.
@@ -225,8 +244,8 @@ expansion never dispatches a document command or moves the playhead.
 
 ## Key-derived duration
 
-Native v3 `Animation::duration()` reads the last key of each validated ordered track
-and returns their maximum or zero. There is no stored cache to update during edits,
+`Animation::duration()`, introduced in native v3 and retained in v4, reads the last
+key of each validated ordered track and returns their maximum or zero. There is no stored cache to update during edits,
 Undo or baseline previews. SetKey/SetPose and transient authoring accept finite
 nonnegative times beyond that end. DeleteKey is a source query and retains its
 upper-bound guard to prevent a near-match query beyond the end deleting a last key.
