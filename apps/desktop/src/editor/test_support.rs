@@ -56,6 +56,7 @@ pub(super) fn editor_fixture() -> Editor {
         fit: false,
         tool: Tool::Rotate,
         last_tool: Tool::Move,
+        mesh_return_tool: None,
         axes: Axes::Parent,
         show_tree: true,
         show_dopesheet: true,

@@ -89,6 +89,7 @@ pub(crate) struct Editor {
     fit: bool,
     tool: Tool,
     last_tool: Tool,
+    mesh_return_tool: Option<Tool>,
     axes: Axes,
     show_tree: bool,
     show_dopesheet: bool,
@@ -202,6 +203,7 @@ impl Editor {
             fit: true,
             tool: Tool::Rotate,
             last_tool: Tool::Move,
+            mesh_return_tool: None,
             axes: Axes::Parent,
             show_tree: true,
             show_dopesheet: true,
@@ -405,7 +407,7 @@ impl Editor {
                 Some(Attachment::Mesh(_))
             )
         {
-            self.tool = self.last_tool;
+            self.return_from_mesh_tool();
         }
         self.tree
             .reveal(self.session.document(), &self.skin, self.setup_mode, &item);
@@ -504,6 +506,7 @@ impl Editor {
         {
             match files::load(&path).and_then(Session::new) {
                 Ok(session) => {
+                    self.return_from_mesh_tool();
                     self.session = session;
                     self.pose_view_generation = self.pose_view_generation.wrapping_add(1);
                     self.asset_root = path.parent().unwrap().to_path_buf();

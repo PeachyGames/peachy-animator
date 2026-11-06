@@ -388,7 +388,7 @@ impl Editor {
             MUTED,
         );
         if response.clicked_by(egui::PointerButton::Secondary) {
-            self.set_tool(self.last_tool);
+            self.toggle_transform_tool();
             return;
         }
         if self.tool == Tool::Mesh && (self.setup_mode || self.selected_mesh_is_weighted()) {
