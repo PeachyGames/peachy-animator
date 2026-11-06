@@ -1,6 +1,7 @@
 //! Independently written Spine 4.3 JSON adapter. No runtime implementation dependency.
 mod attachments;
 mod constraints;
+mod ik_timelines;
 use attachments::{inspect_attachment, read_attachment, write_attachment};
 use peachy_document::*;
 use serde::Serialize;
@@ -164,7 +165,7 @@ pub fn inspect(value: &Value) -> Inspection {
         for (name, animation) in animations {
             if let Some(fields) = animation.as_object() {
                 for (field, contents) in fields {
-                    if field != "bones" && nonempty(contents) {
+                    if field != "bones" && field != "ik" && nonempty(contents) {
                         unsupported.push(format!("Animation {name}: {field} timelines"));
                     }
                 }
@@ -319,6 +320,8 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
             return Err(format!("Duplicate skin name {name}"));
         }
     }
+    let constraints = constraints::read(value, &indices)?;
+    let constraint_indices = ik_timelines::indices(&constraints);
     let mut animations = vec![];
     if let Some(entries) = value["animations"].as_object() {
         for (name, animation) in entries {
@@ -390,7 +393,7 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
             animations.push(Animation {
                 name: name.clone(),
                 tracks,
-                ik_tracks: vec![],
+                ik_tracks: ik_timelines::read(animation, &constraint_indices)?,
             });
         }
     }
@@ -399,7 +402,7 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
         return Err("FPS must be 1–240".into());
     }
     let doc = Document {
-        constraints: constraints::read(value, &indices)?,
+        constraints,
         format: FORMAT_VERSION,
         name: name.into(),
         fps: fps as u32,
@@ -414,18 +417,8 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
 }
 
 pub fn export_json(doc: &Document) -> Result<Value, String> {
+    doc.validate()?;
     constraints::validate_source(doc)?;
-    if doc
-        .animations
-        .iter()
-        .any(|animation| !animation.ik_tracks.is_empty())
-        || doc
-            .constraints
-            .iter()
-            .any(|Constraint::Ik(ik)| !(0.0..=1.0).contains(&ik.setup.mix))
-    {
-        return Err("Animated IK export implementation pending".into());
-    }
     validate_export_names(doc)?;
     let bones: Vec<_> = doc
         .bones
@@ -506,6 +499,10 @@ pub fn export_json(doc: &Document) -> Result<Value, String> {
             bone_timelines[bone][timeline] = json!(keys);
         }
         animations[&animation.name] = json!({"bones":bone_timelines});
+        let ik = ik_timelines::write(doc, animation)?;
+        if !ik.as_object().unwrap().is_empty() {
+            animations[&animation.name]["ik"] = ik;
+        }
     }
     let mut output = json!({"skeleton":{"spine":TARGET_VERSION,"images":"./images/","fps":doc.fps},"bones":bones,"slots":slots,"skins":skins,"animations":animations});
     if !doc.constraints.is_empty() {
