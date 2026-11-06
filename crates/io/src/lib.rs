@@ -1,5 +1,5 @@
 //! Shared imperative shell for project files, image copying and packed exports.
-use peachy_document::Document;
+use peachy_document::{Curve, Document, Keyframe, Property, Track};
 use std::{
     fs,
     io::Write,
@@ -27,7 +27,7 @@ pub fn load(path: &Path) -> Result<Document, String> {
 pub fn decode_project(text: &str) -> Result<Document, String> {
     let mut value: serde_json::Value = serde_json::from_str(text).map_err(|e| e.to_string())?;
     // Version 1 had only regions and no attachment discriminator. Add that tag,
-    // then let the strict v2 schema validate every field before accepting the file.
+    // then take the same v2-to-v3 path as tagged legacy attachments.
     if value["format"].as_u64() == Some(1) {
         if let Some(skins) = value["skins"].as_object_mut() {
             for skin in skins.values_mut() {
@@ -49,9 +49,90 @@ pub fn decode_project(text: &str) -> Result<Document, String> {
                 }
             }
         }
-        value["format"] = peachy_document::FORMAT_VERSION.into();
+        value["format"] = 2.into();
+    }
+    if value["format"].as_u64() == Some(2) {
+        return migrate_v2(value);
     }
     let doc: Document = serde_json::from_value(value).map_err(|e| e.to_string())?;
+    doc.validate()?;
+    Ok(doc)
+}
+
+fn migrate_v2(mut value: serde_json::Value) -> Result<Document, String> {
+    let animations = value["animations"]
+        .as_array_mut()
+        .ok_or("Legacy animations must be an array")?;
+    let mut durations = Vec::with_capacity(animations.len());
+    for animation in animations {
+        let duration = animation
+            .as_object_mut()
+            .ok_or("Invalid legacy animation")?
+            .remove("duration")
+            .ok_or("Legacy animation is missing duration")?;
+        let duration: f32 = serde_json::from_value(duration).map_err(|e| e.to_string())?;
+        if !duration.is_finite() || duration <= 0.0 {
+            return Err("Legacy animation duration must be finite and positive".into());
+        }
+        durations.push(duration);
+    }
+    value["format"] = peachy_document::FORMAT_VERSION.into();
+    let mut doc: Document = serde_json::from_value(value).map_err(|e| e.to_string())?;
+    // Validate the entire input before normalizing an unused curve or adding keys.
+    // The v3 schema is identical apart from duration; unknown fields stay errors.
+    doc.validate()?;
+    for (animation, &duration) in doc.animations.iter().zip(&durations) {
+        if animation
+            .tracks
+            .iter()
+            .flat_map(|track| &track.keys)
+            .any(|key| key.time > duration)
+        {
+            return Err(format!(
+                "Key exceeds legacy duration in animation {}",
+                animation.name
+            ));
+        }
+    }
+    for (animation, duration) in doc.animations.iter_mut().zip(durations) {
+        if animation.tracks.iter().all(|track| track.keys.is_empty()) {
+            let root_rotation = animation
+                .tracks
+                .iter()
+                .position(|track| track.bone == 0 && track.property == Property::Rotation);
+            let index = root_rotation.unwrap_or_else(|| {
+                animation.tracks.push(Track {
+                    bone: 0,
+                    property: Property::Rotation,
+                    keys: vec![],
+                });
+                animation.tracks.len() - 1
+            });
+            animation.tracks[index].keys.push(Keyframe {
+                time: duration,
+                value: 0.0,
+                curve: Curve::Linear,
+            });
+        } else {
+            for track in &mut animation.tracks {
+                if let Some(last) = track.keys.last_mut()
+                    && last.time < duration
+                {
+                    // The old exporter omitted a final Bezier without a next key.
+                    // Do not activate that formerly unused curve by appending a hold.
+                    if matches!(last.curve, Curve::Bezier(_)) {
+                        last.curve = Curve::Linear;
+                    }
+                    let value = last.value;
+                    track.keys.push(Keyframe {
+                        time: duration,
+                        value,
+                        curve: Curve::Linear,
+                    });
+                }
+            }
+        }
+    }
     doc.validate()?;
     Ok(doc)
 }
@@ -252,6 +333,14 @@ mod tests {
         .unwrap();
         let mut v = serde_json::to_value(&doc).unwrap();
         v["format"] = 1.into();
+        for (animation, source) in v["animations"]
+            .as_array_mut()
+            .unwrap()
+            .iter_mut()
+            .zip(&doc.animations)
+        {
+            animation["duration"] = serde_json::json!(source.duration());
+        }
         for skin in v["skins"].as_object_mut().unwrap().values_mut() {
             for slot in skin.as_object_mut().unwrap().values_mut() {
                 for attachment in slot.as_object_mut().unwrap().values_mut() {
@@ -263,7 +352,7 @@ mod tests {
         let mut bad = v.clone();
         bad["skins"]["default"]["hand.R"]["hand.R"]["vertices"] = serde_json::json!([]);
         assert!(decode_project(&bad.to_string()).is_err());
-        v["format"] = 3.into();
+        v["format"] = 4.into();
         assert!(decode_project(&v.to_string()).is_err());
     }
     #[test]
