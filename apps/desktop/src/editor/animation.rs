@@ -171,8 +171,8 @@ mod tests {
         };
         let drag = KeyDrag::new(
             0,
-            8,
-            KeyId {
+            KeyId::Bone {
+                bone: 8,
                 property: Property::Rotation,
                 time: 0.,
             },
@@ -234,7 +234,8 @@ mod tests {
         let mut editor = empty_editor();
         editor.set_time(2.);
         editor.key_transform(&[Property::Rotation]);
-        let end_key = KeyId {
+        let end_key = KeyId::Bone {
+            bone: 8,
             property: Property::Rotation,
             time: 2.,
         };
@@ -248,7 +249,6 @@ mod tests {
         };
         editor.key_drag = KeyDrag::new(
             0,
-            8,
             end_key,
             &[end_key],
             geometry,

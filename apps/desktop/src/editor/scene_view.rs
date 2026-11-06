@@ -1,6 +1,6 @@
 //! Checked scene output and view-coordinate guards, without changing authoring state.
 use super::*;
-use peachy_engine::{Scene, checked_scene_from_locals};
+use peachy_engine::{Scene, checked_scene_from_authored};
 
 pub(super) fn screen_point(origin: Pos2, zoom: f32, point: [f32; 2]) -> Pos2 {
     let ordinary = origin + vec2(point[0] * zoom, -point[1] * zoom);
@@ -50,10 +50,10 @@ pub(super) fn grid_lines(min: f32, max: f32, origin: f32, step: f32) -> impl Ite
 
 impl Editor {
     pub(super) fn scene_for_view(&self) -> Result<Scene, String> {
-        checked_scene_from_locals(
+        checked_scene_from_authored(
             self.session.document(),
             &self.skin,
-            self.session.local_pose(self.active_animation(), self.time),
+            &self.session.authored_pose(self.weights_edit_target())?,
         )
     }
     pub(super) fn check_view_projection(
@@ -124,6 +124,27 @@ impl Editor {
 mod tests {
     use super::super::test_support::{editor_context, editor_fixture};
     use super::*;
+
+    #[test]
+    fn scene_uses_animated_ik_capsule_and_reuses_the_checked_applied_frame() {
+        let editor = super::super::test_support::animated_ik_editor();
+        let scene = editor.scene_for_view().unwrap();
+        assert_eq!(scene.ik_poses[1].mix, 0.375);
+        assert!(scene.ik_poses[1].bend_positive);
+        let pose = editor
+            .session
+            .evaluated_pose(editor.weights_edit_target())
+            .unwrap();
+        assert_eq!(
+            serde_json::to_value(&scene.world).unwrap(),
+            serde_json::to_value(pose.world()).unwrap()
+        );
+        assert_eq!(scene.applied_locals, pose.applied_locals());
+        assert_eq!(scene.locals, pose.authored_locals());
+        let setup = editor.session.evaluated_pose(EditTarget::Setup).unwrap();
+        assert_ne!(scene.world[2].point(1., 0.), setup.world()[2].point(1., 0.));
+        assert!(!editor.session.can_undo());
+    }
 
     #[test]
     fn large_finite_grid_offsets_remain_bounded_and_projection_failures_are_explicit() {

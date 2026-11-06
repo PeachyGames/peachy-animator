@@ -1,6 +1,17 @@
 //! Constraint controls route explicit identities into shared commands and checked queries.
 use super::*;
 
+/// A percentage may exceed the slider range; only actual authoring is parsed.
+fn parse_mix_percent(text: &str) -> Option<f64> {
+    let value = text
+        .trim()
+        .trim_end_matches('%')
+        .trim()
+        .parse::<f64>()
+        .ok()?;
+    (value.is_finite() && ((value / 100.) as f32).is_finite()).then_some(value)
+}
+
 pub(super) struct IkEdit {
     constraint: usize,
     base: IkConstraint,
@@ -9,6 +20,7 @@ pub(super) struct IkEdit {
     control: egui::Id,
     numeric: bool,
     touched: bool,
+    valid_text: bool,
     percent: f64,
     finish_pending: bool,
     error: Option<String>,
@@ -61,6 +73,7 @@ impl Editor {
             control,
             numeric,
             touched: false,
+            valid_text: true,
             finish_pending: false,
             error: None,
         });
@@ -204,7 +217,13 @@ impl Editor {
         }
         false
     }
-    fn ik_mix_response(&mut self, response: &egui::Response, percent: f64, numeric: bool) {
+    fn ik_mix_response(
+        &mut self,
+        response: &egui::Response,
+        percent: f64,
+        numeric: bool,
+        parsed: Option<bool>,
+    ) {
         if self.ik_blocked.is_some() {
             return;
         }
@@ -227,11 +246,13 @@ impl Editor {
             .as_ref()
             .is_some_and(|edit| edit.control == response.id)
         {
+            if let Some(valid) = parsed {
+                self.ik_edit.as_mut().unwrap().valid_text = valid;
+            }
             if response.changed()
-                && self
-                    .ik_edit
-                    .as_ref()
-                    .is_some_and(|edit| (!edit.numeric || edit.touched) && edit.percent != percent)
+                && self.ik_edit.as_ref().is_some_and(|edit| {
+                    edit.valid_text && (!edit.numeric || edit.touched) && edit.percent != percent
+                })
             {
                 self.preview_ik_mix(percent);
             }
@@ -316,19 +337,27 @@ impl Editor {
         ui.push_id(("ik-mix", index), |ui| {
             ui.add_enabled_ui(self.setup_mode && self.ik_target.is_none(), |ui| {
                 ui.horizontal(|ui| {
+                    let parsed = std::cell::Cell::new(None);
                     let value = ui.add(
                         egui::DragValue::new(&mut percent)
-                            .range(0.0..=100.0)
+                            .custom_parser(|text| {
+                                let value = parse_mix_percent(text);
+                                parsed.set(Some(value.is_some()));
+                                value
+                            })
                             .fixed_decimals(2)
                             .suffix("%")
                             .speed(0.2),
                     );
                     self.record_target("ikMixValue", value.rect);
-                    self.ik_mix_response(&value, percent, true);
-                    let slider =
-                        ui.add(egui::Slider::new(&mut percent, 0.0..=100.0).show_value(false));
+                    self.ik_mix_response(&value, percent, true, parsed.get());
+                    let slider = ui.add(
+                        egui::Slider::new(&mut percent, 0.0..=100.0)
+                            .clamping(egui::SliderClamping::Edits)
+                            .show_value(false),
+                    );
                     self.record_target("ikMixSlider", slider.rect);
-                    self.ik_mix_response(&slider, percent, false);
+                    self.ik_mix_response(&slider, percent, false, None);
                 });
             });
         });
@@ -363,6 +392,13 @@ impl Editor {
         if let Some(error) = self.ik_edit.as_ref().and_then(|edit| edit.error.as_ref()) {
             ui.label(RichText::new(error).small().color(ACCENT));
         }
+        if self.ik_edit.as_ref().is_some_and(|edit| !edit.valid_text) {
+            ui.label(
+                RichText::new("Enter a finite Mix percentage before keying.")
+                    .small()
+                    .color(ACCENT),
+            );
+        }
         if let Err(error) = self.session.evaluated_pose(self.weights_edit_target()) {
             ui.label(
                 RichText::new(format!("Pose cannot be evaluated: {error}"))
@@ -396,8 +432,9 @@ impl Editor {
     }
     pub(super) fn ik_diagnostic(&self) -> serde_json::Value {
         serde_json::json!({"selected":self.selected_ik(),"targetPicker":self.ik_target.as_ref().map(|picker|picker.constraint),
+            "authored":self.session.authored_pose(self.weights_edit_target()).ok().and_then(|pose| self.selected_ik().and_then(|index|pose.ik_poses().get(index).copied())),
             "edit":self.ik_edit.as_ref().map(|edit|serde_json::json!({"constraint":edit.constraint,"percent":edit.percent,
-                "animation":edit.animation,"time":edit.time,"numeric":edit.numeric,"finishPending":edit.finish_pending,"error":edit.error}))})
+                "animation":edit.animation,"time":edit.time,"numeric":edit.numeric,"validText":edit.valid_text,"finishPending":edit.finish_pending,"error":edit.error}))})
     }
 }
 
@@ -407,6 +444,48 @@ mod tests {
         editor_context, editor_fixture, mesh_editor, workspace_frame,
     };
     use super::*;
+
+    #[test]
+    fn finite_mix_parser_accepts_overrange_values_and_rejects_invalid_authoring() {
+        assert_eq!(parse_mix_percent("-25%"), Some(-25.));
+        assert_eq!(parse_mix_percent("125"), Some(125.));
+        for invalid in ["junk", "NaN", "inf", "1e100"] {
+            assert_eq!(parse_mix_percent(invalid), None);
+        }
+    }
+
+    #[test]
+    fn overrange_mix_focus_and_blur_preserve_raw_document_and_redo() {
+        for mix in [-0.25, 1.234567] {
+            let mut editor = super::super::test_support::animated_ik_editor();
+            let mut document = editor.session.document().clone();
+            let Constraint::Ik(ik) = &mut document.constraints[1];
+            ik.setup.mix = mix;
+            editor.session = Session::new(document).unwrap();
+            editor.set_setup_mode(true);
+            editor
+                .session
+                .dispatch(Command::RenameAnimation {
+                    animation: 0,
+                    name: "redo".into(),
+                })
+                .unwrap();
+            editor.undo();
+            let original = editor.session.document().clone();
+            let ctx = editor_context();
+            workspace_frame(&mut editor, &ctx, vec![]);
+            click(&mut editor, &ctx, "ikMixValue");
+            workspace_frame(
+                &mut editor,
+                &ctx,
+                key(egui::Key::Tab, egui::Modifiers::NONE),
+            );
+            workspace_frame(&mut editor, &ctx, vec![]);
+            assert_eq!(editor.session.document(), &original);
+            assert!(editor.session.can_redo());
+            assert!(!editor.session.can_undo());
+        }
+    }
 
     fn install_ik(editor: &mut Editor, two: bool, mix: f32) -> usize {
         let mut document = editor.session.document().clone();
@@ -467,6 +546,7 @@ mod tests {
         document.slots.clear();
         document.skins = BTreeMap::from([("default".into(), BTreeMap::new())]);
         document.animations = vec![Animation {
+            ik_tracks: vec![],
             name: "pose".into(),
             tracks: vec![],
         }];

@@ -20,9 +20,18 @@ impl Editor {
     }
     pub(super) fn reconcile_dopesheet_selection(&mut self) {
         let animation = self.active_animation();
-        let bone = self.selected_bone();
+        let owner = self.timeline_owner();
         self.key_selection
-            .reconcile(self.session.document(), animation, bone);
+            .reconcile(self.session.document(), animation, owner);
+    }
+    pub(super) fn timeline_owner(&self) -> Option<peachy_engine::KeyOwner> {
+        match self.selection {
+            Some(TreeItem::Bone(bone)) => Some(peachy_engine::KeyOwner::Bone { bone }),
+            Some(TreeItem::Constraint(constraint)) => {
+                Some(peachy_engine::KeyOwner::Ik { constraint })
+            }
+            _ => None,
+        }
     }
     pub(super) fn delete_dopesheet_keys(&mut self) {
         self.cancel_gesture();
@@ -168,20 +177,43 @@ impl Editor {
                 MUTED,
             );
         }
-        let tracks = self
-            .session
-            .document()
-            .animations
-            .get(self.animation)
-            .map_or_else(Vec::new, |a| a.tracks.clone());
+        let owner = self.timeline_owner();
+        let rows = dopesheet_selection::rows(owner);
         let mut key_targets = Vec::new();
-        for (i, property) in Property::ALL.into_iter().enumerate() {
+        for (i, row) in rows.into_iter().enumerate() {
             let y = rect.top() + 26.0 + pitch * (i as f32 + 0.5);
-            let (tool, name, shortcut) = match property {
-                Property::Rotation => (Tool::Rotate, "Rotate", "C"),
-                Property::X | Property::Y => (Tool::Move, "Translate", "V"),
-                Property::ScaleX | Property::ScaleY => (Tool::Scale, "Scale", "X"),
-                Property::ShearX | Property::ShearY => (Tool::Shear, "Shear", "Z"),
+            let (name, tool, target, color) = match row {
+                dopesheet_selection::TimelineRow::Bone(property) => {
+                    let tool = match property {
+                        Property::Rotation => Tool::Rotate,
+                        Property::X | Property::Y => Tool::Move,
+                        Property::ScaleX | Property::ScaleY => Tool::Scale,
+                        Property::ShearX | Property::ShearY => Tool::Shear,
+                    };
+                    let color = match property {
+                        Property::Rotation => Color32::from_rgb(109, 189, 126),
+                        Property::X | Property::Y => Color32::from_rgb(105, 168, 225),
+                        Property::ScaleX | Property::ScaleY => Color32::from_rgb(211, 116, 116),
+                        Property::ShearX | Property::ShearY => Color32::from_rgb(190, 145, 210),
+                    };
+                    (
+                        property.label().to_owned(),
+                        Some(tool),
+                        format!("timelineRow:{property:?}"),
+                        color,
+                    )
+                }
+                dopesheet_selection::TimelineRow::Ik => {
+                    let Some(peachy_engine::KeyOwner::Ik { constraint }) = owner else {
+                        continue;
+                    };
+                    (
+                        "IK constraint".to_owned(),
+                        None,
+                        format!("timelineRow:ik:{constraint}"),
+                        MINT,
+                    )
+                }
             };
             let label_rect = egui::Rect::from_min_max(
                 pos2(rect.left() + 6.0, y - 10.0),
@@ -194,25 +226,34 @@ impl Editor {
                     ui.id().with(("timeline-row", i)),
                     Sense::click(),
                 )
-                .on_hover_cursor(egui::CursorIcon::PointingHand)
-                .on_hover_text(format!("Select {name} tool · {shortcut}"));
+                .on_hover_cursor(egui::CursorIcon::PointingHand);
+            let label = if let Some(tool) = tool {
+                let (name, shortcut) = match tool {
+                    Tool::Rotate => ("Rotate", "C"),
+                    Tool::Move => ("Translate", "V"),
+                    Tool::Scale => ("Scale", "X"),
+                    Tool::Shear => ("Shear", "Z"),
+                    _ => ("Transform", ""),
+                };
+                label.on_hover_text(format!("Select {name} tool · {shortcut}"))
+            } else {
+                label.on_hover_text("IK constraint keys group Mix and Positive")
+            };
             label.widget_info(|| {
-                egui::WidgetInfo::labeled(
-                    egui::WidgetType::Button,
-                    ui.is_enabled(),
-                    format!("{}: select {name} tool", property.label()),
-                )
+                egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), &name)
             });
-            self.record_target(&format!("timelineRow:{property:?}"), label.rect);
+            self.record_target(&target, label.rect);
             if label.clicked() {
-                self.set_tool(tool);
+                if let Some(tool) = tool {
+                    self.set_tool(tool);
+                }
                 ui.ctx()
                     .memory_mut(|memory| memory.request_focus(Self::dopesheet_id()));
             }
             painter.text(
                 pos2(rect.left() + 12.0, y),
                 egui::Align2::LEFT_CENTER,
-                property.label(),
+                name,
                 FontId::proportional(12.0),
                 if label.hovered() || label.has_focus() {
                     ACCENT
@@ -220,36 +261,27 @@ impl Editor {
                     MUTED
                 },
             );
-            if let Some(track) = tracks
-                .iter()
-                .find(|t| self.selected_bone() == Some(t.bone) && t.property == property)
-            {
-                for (index, key) in track.keys.iter().enumerate() {
-                    let x = geometry.x_at(key.time);
-                    let p = pos2(x, y);
-                    let key_id = KeyId {
-                        property,
-                        time: key.time,
-                    };
-                    let key_rect = egui::Rect::from_center_size(p, vec2(9., 9.));
-                    key_targets.push((key_id, p));
-                    self.record_target(&format!("timelineKey:{property:?}:{index}"), key_rect);
-                    let color = match property {
-                        Property::Rotation => Color32::from_rgb(109, 189, 126),
-                        Property::X | Property::Y => Color32::from_rgb(105, 168, 225),
-                        Property::ScaleX | Property::ScaleY => Color32::from_rgb(211, 116, 116),
-                        Property::ShearX | Property::ShearY => Color32::from_rgb(190, 145, 210),
-                    };
-                    painter.rect_filled(
-                        egui::Rect::from_center_size(p, vec2(5., 13.)),
-                        0.5,
-                        if self.key_selection.contains(key_id) {
-                            ACCENT
-                        } else {
-                            color
-                        },
-                    );
-                }
+            let keys = owner.map_or_else(Vec::new, |owner| {
+                dopesheet_selection::row_keys(self.session.document(), self.animation, owner, row)
+            });
+            for (index, key_id) in keys.into_iter().enumerate() {
+                let p = pos2(geometry.x_at(key_id.time()), y);
+                let key_rect = egui::Rect::from_center_size(p, vec2(9., 9.));
+                key_targets.push((key_id, p));
+                let target = match key_id {
+                    KeyId::Bone { property, .. } => format!("timelineKey:{property:?}:{index}"),
+                    KeyId::Ik { constraint, .. } => format!("timelineKey:ik:{constraint}:{index}"),
+                };
+                self.record_target(&target, key_rect);
+                painter.rect_filled(
+                    egui::Rect::from_center_size(p, vec2(5., 13.)),
+                    0.5,
+                    if self.key_selection.contains(key_id) {
+                        ACCENT
+                    } else {
+                        color
+                    },
+                );
             }
         }
         let playhead = geometry.x_at(self.time);
@@ -282,13 +314,11 @@ impl Editor {
             && (response.contains_pointer() || response.is_pointer_button_down_on())
             && let Some((origin, modifiers)) = press_event
             && let Some(pressed) = hit_key(origin)
-            && let Some(bone) = self.selected_bone()
         {
             self.cancel_gesture();
             self.reconcile_dopesheet_selection();
             self.key_drag = KeyDrag::new(
                 self.animation,
-                bone,
                 pressed,
                 self.key_selection.keys(),
                 geometry,
@@ -335,17 +365,13 @@ impl Editor {
                 .or_else(|| response.interact_pointer_pos());
             if let Some(key) = pointer.and_then(hit_key) {
                 self.playing = false;
-                self.set_time(key.time);
+                self.set_time(key.time());
                 if response.double_clicked() {
                     self.cancel_gesture();
-                    if let Some(bone) = self.selected_bone() {
-                        self.dispatch(Command::DeleteKey {
-                            animation: self.animation,
-                            bone,
-                            property: key.property,
-                            time: key.time,
-                        });
-                    }
+                    self.dispatch(Command::DeleteAnimationKeys {
+                        animation: self.animation,
+                        keys: vec![key],
+                    });
                 } else {
                     self.key_selection.select(key, toggle);
                 }
