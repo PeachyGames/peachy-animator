@@ -204,14 +204,14 @@ def main():
         peach[slot] = {slot: {**skin[slot][slot], "name": slot+".peach"}}
     # Skin placeholders must not collide with direct attachments in default.
     shared = {slot: entries for slot, entries in skin.items() if slot not in peach}
-    doc = dict(format=2, name="Peach Bot", fps=30, bones=bones, slots=slots, skins={"default":shared,"peach":peach,"mint":mint}, animations=[dict(name="wave",duration=2.4,tracks=wave),dict(name="idle",duration=2,tracks=idle)])
+    doc = dict(format=3, name="Peach Bot", fps=30, bones=bones, slots=slots, skins={"default":shared,"peach":peach,"mint":mint}, animations=[dict(name="wave",tracks=wave),dict(name="idle",tracks=idle)])
     (ROOT/"peach-bot.peachy").write_text(json.dumps(doc, indent=2)+"\n")
     contract = json.loads(json.dumps(doc))
     contract["name"] = "Transform Contract"
     contract["bones"][0]["setup"].update(rotation=37, scale_x=1.3, scale_y=.8)
     def contract_keys(a, b, curve):
         return [dict(time=0, value=a, curve=curve), dict(time=1, value=b, curve="linear"), dict(time=2, value=a, curve="linear")]
-    contract["animations"] = [dict(name="contract", duration=2, tracks=[
+    contract["animations"] = [dict(name="contract", tracks=[
         dict(bone=1, property="x", keys=contract_keys(-10, 28, {"bezier":[.2,.3,.8,1]})),
         dict(bone=1, property="y", keys=contract_keys(0, 20, "stepped")),
         dict(bone=6, property="scaleX", keys=contract_keys(1, 1.4, {"bezier":[.42,0,.58,1]})),

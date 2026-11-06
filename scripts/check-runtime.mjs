@@ -38,11 +38,18 @@ for (const page of atlas.pages) {
 const sourceProject = JSON.parse(readFileSync(source, 'utf8'));
 const data = new SkeletonJson(new AtlasAttachmentLoader(atlas)).readSkeletonData(readFileSync(exportPath, 'utf8'));
 assert.equal(data.version.split('.').slice(0, 2).join('.'), '4.3');
+assert.equal(data.animations.length, sourceProject.animations.length, 'Every native clip is exported, including empty clips');
 const report = { regionComparisons: 0, maxRegionError: 0, meshComparisons: 0, maxMeshError: 0, uvComparisons: 0, maxUVError: 0, runtime: 'Spine 4.3 external oracle', bones: data.bones.length, slots: data.slots.length, skins:data.skins.map(s=>s.name), clips: [], tolerance: 0.001, maxWorldError: 0, comparisons: 0 };
 for (const animation of data.animations) {
+  const native = sourceProject.animations.find(clip => clip.name === animation.name);
+  assert.ok(native, 'Exported clip has a native source');
+  const nativeEnd = sourceProject.format >= 3
+    ? native.tracks.reduce((end, track) => track.keys.reduce((end, key) => Math.max(end, Math.fround(key.time)), end), 0)
+    : Math.fround(native.duration);
+  assert.equal(animation.duration, nativeEnd, `${animation.name}: runtime end matches native end`);
   let maxError = 0;
-  // Include the exact last frame, boundaries and backwards scrubbing.
-  const times = [...Array.from({ length: 49 }, (_, i) => animation.duration * i / 48), animation.duration * 0.31, 0];
+  // Include the exact last frame, held poses beyond the end, and backwards scrubbing.
+  const times = [...Array.from({ length: 49 }, (_, i) => animation.duration * i / 48), animation.duration * 0.31, animation.duration + 1, 0];
   for (const skin of data.skins.length ? data.skins : [null]) {
     for (const time of times) {
       const skeleton = new Skeleton(data);
@@ -128,6 +135,6 @@ for (const animation of data.animations) {
     }
   }
   report.maxWorldError = Math.max(report.maxWorldError, maxError);
-  report.clips.push({ name: animation.name, samplesPerSkin: times.length, skins: data.skins.map(s=>s.name), maxWorldError: maxError });
+  report.clips.push({ name: animation.name, nativeEnd, runtimeEnd: animation.duration, samplesPerSkin: times.length, skins: data.skins.map(s=>s.name), maxWorldError: maxError });
 }
 console.log(JSON.stringify(report, null, 2));
