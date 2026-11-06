@@ -106,11 +106,7 @@ pub fn curve_progress(curve: Curve, progress: f32) -> f32 {
 pub fn local_pose(doc: &Document, animation: Option<usize>, time: f32) -> Vec<Transform> {
     let mut pose: Vec<_> = doc.bones.iter().map(|b| b.setup).collect();
     if let Some(a) = animation.and_then(|i| doc.animations.get(i)) {
-        let time = if time.is_finite() {
-            time.clamp(0.0, a.duration)
-        } else {
-            0.0
-        };
+        let time = if time.is_finite() { time.max(0.0) } else { 0.0 };
         for track in &a.tracks {
             let value = sample(track, time);
             let base = track.property.read(doc.bones[track.bone].setup);
