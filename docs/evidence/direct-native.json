@@ -1,0 +1,19 @@
+{
+  "captures": {
+    "setup": "editor-1793947124952244000.json",
+    "posed": "editor-1793947197656617000.json"
+  },
+  "initialBindMaxWorldError": 0.0,
+  "addZeroMaxWorldError": 0.0,
+  "scratchBindAddZeroNumericThirtySaveAndHistory": true,
+  "numericEscapeAndRealToolbarSaveCancelPreview": true,
+  "heldSliderEscapeAndSaveSuppressContinuedDragAndKeepHistory": true,
+  "committedSliderIsOneUndoAndRedo": true,
+  "animateDirectPreservesPendingPoseAndSaveExcludesIt": true,
+  "workingDocumentAndFileRestoredAtF32Precision": true,
+  "nativeSaveBackups": 5,
+  "originalClipboardRestored": true,
+  "nativeSource": "694576a",
+  "restoreComparison": "F32 document equivalence; initial raw working-copy bytes retained exactly in first backup",
+  "repoOriginalSourceFilesUnchanged": 19
+}

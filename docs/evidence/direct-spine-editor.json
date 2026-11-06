@@ -1,0 +1,121 @@
+{
+  "spineVersion": "4.3.26",
+  "fixtures": {
+    "scratch-direct": {
+      "sourceSha256": "14cf5a5652d094784a76168b93d99770d9494b11226c798bafa1b91bf7ea11bd",
+      "importExitCode": 0,
+      "nativeEditorProjectCreated": true,
+      "reexportExitCode": 0,
+      "editorReexportCreated": true,
+      "independentAdapterAccepted": true,
+      "sourceUnchanged": true
+    },
+    "scratch-moved-direct": {
+      "sourceSha256": "5c47b66d017a3cf61f4b095c8f950018a3f0ff2b2415f83752c83e061b206cfb",
+      "importExitCode": 0,
+      "nativeEditorProjectCreated": true,
+      "reexportExitCode": 0,
+      "editorReexportCreated": true,
+      "independentAdapterAccepted": true,
+      "sourceUnchanged": true
+    },
+    "scratch-order-8-7": {
+      "sourceSha256": "95984813a213b907ea4bdee7fb66835591340d3b131d8a584b0df97ed600b066",
+      "importExitCode": 0,
+      "nativeEditorProjectCreated": true,
+      "reexportExitCode": 0,
+      "editorReexportCreated": true,
+      "independentAdapterAccepted": true,
+      "sourceUnchanged": true
+    },
+    "scratch-order-7-8": {
+      "sourceSha256": "4c8374d1c4fd84fac626ca57fd78cdb895fec253c05cf2ab56c0b67e18cc4cc0",
+      "importExitCode": 0,
+      "nativeEditorProjectCreated": true,
+      "reexportExitCode": 0,
+      "editorReexportCreated": true,
+      "independentAdapterAccepted": true,
+      "sourceUnchanged": true
+    },
+    "weighted-bot-direct": {
+      "sourceSha256": "8df4f2eee691db97e9d5f8ad51fe31772f32b7492a1df667d531a19ddc76f795",
+      "importExitCode": 0,
+      "nativeEditorProjectCreated": true,
+      "reexportExitCode": 0,
+      "editorReexportCreated": true,
+      "independentAdapterAccepted": true,
+      "sourceUnchanged": true
+    },
+    "weighted-contract-direct": {
+      "sourceSha256": "1f1328d6397a4dcf6a32832a4f3932d5e60d43df12bfaf9b05940ebdf66cef12",
+      "importExitCode": 0,
+      "nativeEditorProjectCreated": true,
+      "reexportExitCode": 0,
+      "editorReexportCreated": true,
+      "independentAdapterAccepted": true,
+      "sourceUnchanged": true
+    },
+    "weighted-repeated-add": {
+      "sourceSha256": "054f332a588ce2958893f8776e22639b585f338dbc5692ac61e814a0e5a4ecfd",
+      "importExitCode": 1,
+      "nativeEditorProjectCreated": false,
+      "observedError": {
+        "message": "Index -2 out of bounds for length 16"
+      },
+      "sourceUnchanged": true
+    },
+    "known-vector-direct": {
+      "sourceSha256": "38bb6907fdd36dc711c53d9e9aa39352aaaf458944e3beb451ce09db46c1f893",
+      "importExitCode": 0,
+      "nativeEditorProjectCreated": true,
+      "reexportExitCode": 0,
+      "editorReexportCreated": true,
+      "independentAdapterAccepted": true,
+      "sourceUnchanged": true
+    }
+  },
+  "scope": "CLI import/re-export and independent adapter acceptance; no interactive UI or lossless original-data comparison claim",
+  "acceptedImports": 7,
+  "sampledInputs": 8,
+  "reexportCanonicalization": {
+    "scratch-direct": {
+      "maxLocalBindCoordinateChange": 0.004638671875,
+      "maxPositiveWeightChangeAtF32Precision": 0.0,
+      "zeroEntriesRemoved": 4
+    },
+    "scratch-moved-direct": {
+      "maxLocalBindCoordinateChange": 0.004638671875,
+      "maxPositiveWeightChangeAtF32Precision": 0.0,
+      "zeroEntriesRemoved": 4
+    },
+    "scratch-order-8-7": {
+      "maxLocalBindCoordinateChange": 1.1444091796875e-05,
+      "maxPositiveWeightChangeAtF32Precision": 0.0,
+      "zeroEntriesRemoved": 4
+    },
+    "scratch-order-7-8": {
+      "maxLocalBindCoordinateChange": 1.52587890625e-05,
+      "maxPositiveWeightChangeAtF32Precision": 0.0,
+      "zeroEntriesRemoved": 4
+    },
+    "weighted-bot-direct": {
+      "maxLocalBindCoordinateChange": 0.00476837158203125,
+      "maxPositiveWeightChangeAtF32Precision": 4.4405460357666016e-06,
+      "zeroEntriesRemoved": 1
+    },
+    "weighted-contract-direct": {
+      "maxLocalBindCoordinateChange": 0.00476837158203125,
+      "maxPositiveWeightChangeAtF32Precision": 2.9802322387695312e-08,
+      "zeroEntriesRemoved": 1
+    },
+    "known-vector-direct": {
+      "maxLocalBindCoordinateChange": 0.004638671875,
+      "maxPositiveWeightChangeAtF32Precision": 1.4901161193847656e-08,
+      "zeroEntriesRemoved": 4
+    }
+  },
+  "maxLocalBindCoordinateChange": 0.00476837158203125,
+  "maxPositiveWeightChangeAtF32Precision": 4.4405460357666016e-06,
+  "bothOrdinaryBindingOrdersAccepted": true,
+  "losslessOriginalDataRoundtripClaimed": false
+}

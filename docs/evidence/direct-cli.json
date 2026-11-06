@@ -1,0 +1,195 @@
+{
+  "status": "passed",
+  "nativeFormat": 4,
+  "tolerance": 0.001,
+  "coreSessionTests": {
+    "status": "passed",
+    "tests": 24,
+    "suites": {
+      "binding_tests::": 13,
+      "direct_weight_tests::": 11
+    }
+  },
+  "limitations": [
+    "Direct may deform geometry; scene checks compare edited data with its own adapter/packed roundtrip.",
+    "CLI creates new outputs; overwrite Save/backup and native pointer/keyboard behavior are not checked.",
+    "Explicit pose snapshots are not transient Session state; --cargo checks pending pose/history and fixed-baseline previews.",
+    "Our independent adapter is used; no external runtime or installed-editor acceptance is claimed.",
+    "Zero-recipient and sparse/repeated selection failures are bounded policies, not assertions about every Spine edge case.",
+    "No Update bindings, locks, multi-vertex Direct, brushes, Auto, Smooth or Prune acceptance is claimed."
+  ],
+  "cases": [
+    {
+      "case": "Unweighted \u2192 Bind A1 \u2192 Add B0 \u2192 Direct selected B.3/A.7",
+      "vertex": 1,
+      "boneA": 1,
+      "boneB": 2,
+      "native": "projects/scratch-direct-b-thirty.peachy",
+      "export": "exports/scratch-direct.json",
+      "bundle": "bundles/scratch-direct/peachy-export-1793945836180966000",
+      "imageCount": 10
+    },
+    {
+      "case": "Direct deformation is intentional; only selected vertex responds",
+      "maxSelectedCoordinateChange": 3.11468505859375,
+      "native": "projects/scratch-moved-after.peachy",
+      "export": "exports/scratch-moved-direct.json",
+      "bundle": "bundles/scratch-moved-direct/peachy-export-1793945836736845000",
+      "imageCount": 10
+    },
+    {
+      "case": "Ordinary scratch limb binding order",
+      "influenceOrder": [
+        8,
+        7
+      ],
+      "vertex": 1,
+      "native": "projects/scratch-order-8-7-direct.peachy",
+      "export": "exports/scratch-order-8-7.json",
+      "bundle": "bundles/scratch-order-8-7/peachy-export-1793945837554858000",
+      "imageCount": 10
+    },
+    {
+      "case": "Ordinary scratch limb binding order",
+      "influenceOrder": [
+        7,
+        8
+      ],
+      "vertex": 1,
+      "native": "projects/scratch-order-7-8-direct.peachy",
+      "export": "exports/scratch-order-7-8.json",
+      "bundle": "bundles/scratch-order-7-8/peachy-export-1793945838379611000",
+      "imageCount": 10
+    },
+    {
+      "case": "weighted-bot imported Direct (normalizes only explicit vertex)",
+      "vertex": 4,
+      "native": "projects/weighted-bot-direct.peachy",
+      "export": "exports/weighted-bot-direct.json",
+      "bundle": "bundles/weighted-bot-direct/peachy-export-1793945839415700000",
+      "imageCount": 10
+    },
+    {
+      "case": "weighted-contract imported Direct (normalizes only explicit vertex)",
+      "vertex": 2,
+      "native": "projects/weighted-contract-direct.peachy",
+      "export": "exports/weighted-contract-direct.json",
+      "bundle": "bundles/weighted-contract-direct/peachy-export-1793945840528728000",
+      "imageCount": 10
+    },
+    {
+      "case": "Add0 preserves repeated/zero/order data",
+      "native": "projects/weighted-repeated-added-zero.peachy",
+      "export": "exports/weighted-repeated-add.json",
+      "bundle": "bundles/weighted-repeated-add/peachy-export-1793945841530857000",
+      "imageCount": 10
+    },
+    {
+      "case": "Signed-zero and unselected repeated payload stays bitwise intact",
+      "native": "projects/signed-zero-direct.peachy"
+    },
+    {
+      "case": "Known proportional redistribution .2/.3/.5 \u2192 .6/.15/.25",
+      "native": "projects/known-vector-direct.peachy",
+      "export": "exports/known-vector-direct.json",
+      "bundle": "bundles/known-vector-direct/peachy-export-1793945842185838000",
+      "imageCount": 10
+    },
+    {
+      "case": "Direct requires no inverse; sole-positive 1 is a no-op",
+      "native": "projects/direct-singular-pose-valid.peachy"
+    }
+  ],
+  "failures": [
+    {
+      "case": "add-unweighted",
+      "expectedError": "requires a weighted mesh"
+    },
+    {
+      "case": "direct-unweighted",
+      "expectedError": "require a weighted mesh"
+    },
+    {
+      "case": "direct-repeated-selected",
+      "expectedError": "ambiguous for repeated bones"
+    },
+    {
+      "case": "direct-sparse-missing",
+      "expectedError": "no binding on this vertex"
+    },
+    {
+      "case": "add-existing-global-zero",
+      "expectedError": "already bound to this mesh"
+    },
+    {
+      "case": "add-existing-global",
+      "expectedError": "already bound to this mesh"
+    },
+    {
+      "case": "direct-zero-recipients",
+      "expectedError": "without another positive recipient"
+    },
+    {
+      "case": "add-singular-new-bone",
+      "expectedError": "singular bone transform"
+    },
+    {
+      "case": "add-coordinate-precision",
+      "expectedError": "coordinate precision"
+    },
+    {
+      "case": "direct-nonfinite-candidate",
+      "expectedError": "nonfinite world vertices"
+    },
+    {
+      "case": "direct-negative",
+      "expectedError": "finite and in"
+    },
+    {
+      "case": "direct-over-one",
+      "expectedError": "finite and in"
+    },
+    {
+      "case": "direct-invalid-pose",
+      "expectedError": "one finite local transform per bone"
+    },
+    {
+      "case": "direct-invalid-vertex",
+      "expectedError": "Unknown mesh vertex"
+    },
+    {
+      "case": "direct-invalid-bone",
+      "expectedError": "Unknown weight bone"
+    },
+    {
+      "case": "direct-batch-atomic",
+      "expectedError": "finite and in"
+    },
+    {
+      "case": "add-batch-atomic",
+      "expectedError": "already bound to this mesh"
+    },
+    {
+      "case": "invalid-hierarchy-batch",
+      "expectedError": "valid bone hierarchy"
+    },
+    {
+      "case": "existing-output",
+      "expectedError": "Cannot publish new file"
+    }
+  ],
+  "sourceAndBaselineBytesUnchanged": true,
+  "metrics": {
+    "sceneComparisons": 471,
+    "worldCoordinates": 42390,
+    "vertexCoordinates": 51774,
+    "maxWorldError": 0.0,
+    "maxVertexError": 3.0517578125e-05,
+    "maxUVError": 0.0
+  },
+  "processInvocations": 888,
+  "sourceFiles": 19,
+  "scriptSHA256": "e7c846afaf3325c7fd164065cb70498dd3e35630384133777970946368c562da",
+  "helperSHA256": "642a50c070f27ead82592cd8b4d17904878e4c44357eb99c8eabaf9b433a83fd",
+  "cliSHA256": "e8df2349252d54c4775abd9ed1dd9a195e0eeda34a9cce65159055a6a1d59306"
+}

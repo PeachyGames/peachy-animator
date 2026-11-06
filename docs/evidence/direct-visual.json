@@ -1,0 +1,12 @@
+{
+  "nativeSource": "694576a",
+  "imagesReviewed": [
+    "direct-editor.png",
+    "direct-posed.png"
+  ],
+  "loadedOriginalArtwork": true,
+  "independentWeightsIconAndBoneColorsVisible": true,
+  "thirtyAndFortyFivePercentControlsAndDataVerified": true,
+  "unkeyedPoseVisibleInAnimateCapture": true,
+  "scope": "Visual review of captures from the accepted full native run; no exact installed-Spine dock or pixel-equivalence claim"
+}

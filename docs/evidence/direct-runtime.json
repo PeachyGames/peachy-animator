@@ -1,0 +1,417 @@
+{
+  "status": "passed",
+  "startedUTC": "2026-11-06T06:22:27.595744+00:00",
+  "finishedUTC": "2026-11-06T06:22:34.775418+00:00",
+  "runtime": "Spine 4.3 external oracle",
+  "tolerance": 0.001,
+  "concurrency": 2,
+  "caseCount": 8,
+  "mainCLIMatchedAcceptedReportBeforeRun": true,
+  "allInputsAndMainCLIUnchanged": true,
+  "mainCLISHA256": "e8df2349252d54c4775abd9ed1dd9a195e0eeda34a9cce65159055a6a1d59306",
+  "cases": [
+    {
+      "id": "known-vector-direct",
+      "case": "Known proportional redistribution .2/.3/.5 \u2192 .6/.15/.25",
+      "nativeSHA256": "1172227d9120fe2abecb4caec836101ad2481108ec7af7216b21fea1503cb117",
+      "exitCode": 0,
+      "passed": true,
+      "metrics": {
+        "comparisons": 28080,
+        "maxWorldError": 3.187913491586869e-05,
+        "regionComparisons": 29120,
+        "maxRegionError": 7.62939453125e-05,
+        "meshComparisons": 5200,
+        "weightedMeshComparisons": 3120,
+        "maxMeshError": 3.0517578125e-05,
+        "uvComparisons": 10400,
+        "maxUVError": 0
+      },
+      "clips": [
+        {
+          "name": "contract",
+          "nativeEnd": 2,
+          "runtimeEnd": 2,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 3.187913491586869e-05
+        },
+        {
+          "name": "weight authoring setup",
+          "nativeEnd": 0,
+          "runtimeEnd": 0,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 1.9332543558903126e-05
+        }
+      ]
+    },
+    {
+      "id": "scratch-direct-b-thirty",
+      "case": "Unweighted \u2192 Bind A1 \u2192 Add B0 \u2192 Direct selected B.3/A.7",
+      "nativeSHA256": "a56d762f0e4a4afaeba85079f3e0d4ce92e2ddf41010689a8fe8b2fe3b02c957",
+      "exitCode": 0,
+      "passed": true,
+      "metrics": {
+        "comparisons": 28080,
+        "maxWorldError": 3.187913491586869e-05,
+        "regionComparisons": 29120,
+        "maxRegionError": 7.62939453125e-05,
+        "meshComparisons": 5200,
+        "weightedMeshComparisons": 3120,
+        "maxMeshError": 3.0517578125e-05,
+        "uvComparisons": 10400,
+        "maxUVError": 0
+      },
+      "clips": [
+        {
+          "name": "contract",
+          "nativeEnd": 2,
+          "runtimeEnd": 2,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 3.187913491586869e-05
+        },
+        {
+          "name": "weight authoring setup",
+          "nativeEnd": 0,
+          "runtimeEnd": 0,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 1.9332543558903126e-05
+        }
+      ]
+    },
+    {
+      "id": "scratch-moved-after",
+      "case": "Direct deformation is intentional; only selected vertex responds",
+      "nativeSHA256": "fb6a8a1d2f34f445467359994601f093de8b99414d4a4f3f729ac6f0d4795e4b",
+      "exitCode": 0,
+      "passed": true,
+      "metrics": {
+        "comparisons": 28080,
+        "maxWorldError": 3.187913491586869e-05,
+        "regionComparisons": 29120,
+        "maxRegionError": 6.866455078125e-05,
+        "meshComparisons": 5200,
+        "weightedMeshComparisons": 3120,
+        "maxMeshError": 3.0517578125e-05,
+        "uvComparisons": 10400,
+        "maxUVError": 0
+      },
+      "clips": [
+        {
+          "name": "contract",
+          "nativeEnd": 2,
+          "runtimeEnd": 2,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 3.187913491586869e-05
+        },
+        {
+          "name": "weight authoring setup",
+          "nativeEnd": 0,
+          "runtimeEnd": 0,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 1.9332543558903126e-05
+        }
+      ]
+    },
+    {
+      "id": "scratch-order-7-8-direct",
+      "case": "Ordinary scratch limb binding order",
+      "nativeSHA256": "a2755e2e4f058a8e078045b84903a2cce7af8e6680bfd3f6ec2cf201ebd39d39",
+      "exitCode": 0,
+      "passed": true,
+      "influenceOrder": [
+        7,
+        8
+      ],
+      "metrics": {
+        "comparisons": 28080,
+        "maxWorldError": 3.187913491586869e-05,
+        "regionComparisons": 29120,
+        "maxRegionError": 7.62939453125e-05,
+        "meshComparisons": 5200,
+        "weightedMeshComparisons": 3120,
+        "maxMeshError": 4.00543212890625e-05,
+        "uvComparisons": 10400,
+        "maxUVError": 0
+      },
+      "clips": [
+        {
+          "name": "contract",
+          "nativeEnd": 2,
+          "runtimeEnd": 2,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 3.187913491586869e-05
+        },
+        {
+          "name": "weight authoring setup",
+          "nativeEnd": 0,
+          "runtimeEnd": 0,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 1.9332543558903126e-05
+        }
+      ]
+    },
+    {
+      "id": "scratch-order-8-7-direct",
+      "case": "Ordinary scratch limb binding order",
+      "nativeSHA256": "6d983b9db89d178583e63959a4625da439b4f43722350dc6bc7f8d6853b27757",
+      "exitCode": 0,
+      "passed": true,
+      "influenceOrder": [
+        8,
+        7
+      ],
+      "metrics": {
+        "comparisons": 28080,
+        "maxWorldError": 3.187913491586869e-05,
+        "regionComparisons": 29120,
+        "maxRegionError": 7.62939453125e-05,
+        "meshComparisons": 5200,
+        "weightedMeshComparisons": 3120,
+        "maxMeshError": 6.103515625e-05,
+        "uvComparisons": 10400,
+        "maxUVError": 0
+      },
+      "clips": [
+        {
+          "name": "contract",
+          "nativeEnd": 2,
+          "runtimeEnd": 2,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 3.187913491586869e-05
+        },
+        {
+          "name": "weight authoring setup",
+          "nativeEnd": 0,
+          "runtimeEnd": 0,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 1.9332543558903126e-05
+        }
+      ]
+    },
+    {
+      "id": "weighted-bot-direct",
+      "case": "weighted-bot imported Direct (normalizes only explicit vertex)",
+      "nativeSHA256": "3f47120f70d1faff919c2e4f3164c678dd80ffd3a153d685f9e901ea6b433531",
+      "exitCode": 0,
+      "passed": true,
+      "metrics": {
+        "comparisons": 42120,
+        "maxWorldError": 2.7366272476569975e-05,
+        "regionComparisons": 43680,
+        "maxRegionError": 3.0517578125e-05,
+        "meshComparisons": 7800,
+        "weightedMeshComparisons": 4680,
+        "maxMeshError": 6.103515625e-05,
+        "uvComparisons": 15600,
+        "maxUVError": 0
+      },
+      "clips": [
+        {
+          "name": "idle",
+          "nativeEnd": 2,
+          "runtimeEnd": 2,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 2.610741984199194e-05
+        },
+        {
+          "name": "wave",
+          "nativeEnd": 2.4000000953674316,
+          "runtimeEnd": 2.4000000953674316,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 2.7366272476569975e-05
+        },
+        {
+          "name": "weight authoring setup",
+          "nativeEnd": 0,
+          "runtimeEnd": 0,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 2.1110102849775103e-05
+        }
+      ]
+    },
+    {
+      "id": "weighted-contract-direct",
+      "case": "weighted-contract imported Direct (normalizes only explicit vertex)",
+      "nativeSHA256": "19a58fae2a59ad8386ff3ac87e3c9d35ba431623e3ea69dd80a9899c7e8802fe",
+      "exitCode": 0,
+      "passed": true,
+      "metrics": {
+        "comparisons": 28080,
+        "maxWorldError": 5.064427244860781e-05,
+        "regionComparisons": 29120,
+        "maxRegionError": 5.340576171875e-05,
+        "meshComparisons": 5200,
+        "weightedMeshComparisons": 3120,
+        "maxMeshError": 6.866455078125e-05,
+        "uvComparisons": 10400,
+        "maxUVError": 0
+      },
+      "clips": [
+        {
+          "name": "weight authoring setup",
+          "nativeEnd": 0,
+          "runtimeEnd": 0,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 1.9332543558903126e-05
+        },
+        {
+          "name": "weighted contract",
+          "nativeEnd": 2,
+          "runtimeEnd": 2,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 5.064427244860781e-05
+        }
+      ]
+    },
+    {
+      "id": "weighted-repeated-added-zero",
+      "case": "Add0 preserves repeated/zero/order data",
+      "nativeSHA256": "5b9e04a435bd7a832ff649653228735eea33f4bb1ab9f3aef46a3a392134af3e",
+      "exitCode": 0,
+      "passed": true,
+      "metrics": {
+        "comparisons": 42120,
+        "maxWorldError": 2.7366272476569975e-05,
+        "regionComparisons": 43680,
+        "maxRegionError": 3.0517578125e-05,
+        "meshComparisons": 7800,
+        "weightedMeshComparisons": 4680,
+        "maxMeshError": 6.103515625e-05,
+        "uvComparisons": 15600,
+        "maxUVError": 0
+      },
+      "clips": [
+        {
+          "name": "idle",
+          "nativeEnd": 2,
+          "runtimeEnd": 2,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 2.610741984199194e-05
+        },
+        {
+          "name": "wave",
+          "nativeEnd": 2.4000000953674316,
+          "runtimeEnd": 2.4000000953674316,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 2.7366272476569975e-05
+        },
+        {
+          "name": "weight authoring setup",
+          "nativeEnd": 0,
+          "runtimeEnd": 0,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 2.1110102849775103e-05
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Headless original-fixture runtime interoperability only; no installed-editor or native UI acceptance.",
+    "Direct edits may deform geometry; each edited native project is compared with its own packed export.",
+    "No claim about Update, locks, brush weighting, constraints, deforms, private assets or full Spine parity.",
+    "The separately licensed runtime is used only via the existing harness public API; implementation was not inspected."
+  ],
+  "totals": {
+    "comparisons": 252720,
+    "regionComparisons": 262080,
+    "meshComparisons": 46800,
+    "weightedMeshComparisons": 28080,
+    "uvComparisons": 93600
+  },
+  "maximums": {
+    "maxWorldError": 5.064427244860781e-05,
+    "maxRegionError": 7.62939453125e-05,
+    "maxMeshError": 6.866455078125e-05,
+    "maxUVError": 0
+  }
+}
