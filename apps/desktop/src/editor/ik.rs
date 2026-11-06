@@ -412,7 +412,12 @@ mod tests {
         target
     }
     fn point(editor: &Editor, target: &str) -> Pos2 {
-        let [left, top, right, bottom] = editor.capture_targets[target];
+        let [left, top, right, bottom] = *editor.capture_targets.get(target).unwrap_or_else(|| {
+            panic!(
+                "Missing UI target {target}; available: {:?}",
+                editor.capture_targets.keys().collect::<Vec<_>>()
+            )
+        });
         pos2((left + right) / 2., (top + bottom) / 2.)
     }
     fn pointer(pos: Pos2, pressed: bool) -> egui::Event {
@@ -595,5 +600,256 @@ mod tests {
         );
         assert_eq!(editor.session.document(), &original);
         assert!(!editor.session.can_undo());
+    }
+
+    #[test]
+    fn rounded_invalid_or_cancelled_mix_text_preserves_bits_pending_and_redo() {
+        let mut editor = editor_fixture();
+        install_ik(&mut editor, false, 0.33333334);
+        editor
+            .session
+            .dispatch(Command::RenameAnimation {
+                animation: 0,
+                name: "redo sentinel".into(),
+            })
+            .unwrap();
+        editor.undo();
+        let original = editor.session.document().clone();
+        let ctx = editor_context();
+        workspace_frame(&mut editor, &ctx, vec![]);
+        click(&mut editor, &ctx, "ikMixValue");
+        workspace_frame(
+            &mut editor,
+            &ctx,
+            key(egui::Key::Tab, egui::Modifiers::NONE),
+        );
+        assert_eq!(editor.session.document(), &original);
+        assert!(editor.session.can_redo());
+        click(&mut editor, &ctx, "ikMixValue");
+        workspace_frame(&mut editor, &ctx, vec![egui::Event::Text("junk".into())]);
+        workspace_frame(
+            &mut editor,
+            &ctx,
+            key(egui::Key::Enter, egui::Modifiers::NONE),
+        );
+        assert_eq!(editor.session.document(), &original);
+        assert!(editor.session.can_redo());
+        click(&mut editor, &ctx, "ikMixValue");
+        workspace_frame(&mut editor, &ctx, vec![egui::Event::Text("75".into())]);
+        let mut stale = key(egui::Key::Escape, egui::Modifiers::NONE);
+        stale.extend(key(egui::Key::Enter, egui::Modifiers::NONE));
+        workspace_frame(&mut editor, &ctx, stale);
+        assert!(editor.ik_edit.is_none());
+        assert_eq!(editor.session.document(), &original);
+        assert!(editor.session.can_redo());
+        click(&mut editor, &ctx, "ikMixValue");
+        workspace_frame(&mut editor, &ctx, vec![egui::Event::Text("80".into())]);
+        let mut output = ctx.run_ui(
+            egui::RawInput {
+                screen_rect: Some(egui::Rect::from_min_size(Pos2::ZERO, vec2(1500., 960.))),
+                focused: false,
+                events: vec![egui::Event::WindowFocused(false)],
+                ..Default::default()
+            },
+            |ui| editor.workspace_ui(ui),
+        );
+        output.textures_delta.clear();
+        assert!(editor.ik_edit.is_none());
+        assert_eq!(editor.session.document(), &original);
+        assert!(editor.session.can_redo());
+    }
+
+    #[test]
+    fn held_mix_slider_escape_and_save_cannot_restart_the_cancelled_preview() {
+        let mut editor = editor_fixture();
+        install_ik(&mut editor, true, 0.);
+        let original = editor.session.document().clone();
+        let ctx = editor_context();
+        workspace_frame(&mut editor, &ctx, vec![]);
+        let folder = std::env::temp_dir().join(format!(
+            "peachy-ik-save-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir(&folder).unwrap();
+        editor.project_path = Some(folder.join("rig.peachy"));
+        editor.asset_root =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../examples/peach-bot");
+        for action in [egui::Key::Escape, egui::Key::S] {
+            let start = point(&editor, "ikMixSlider");
+            workspace_frame(
+                &mut editor,
+                &ctx,
+                vec![egui::Event::PointerMoved(start), pointer(start, true)],
+            );
+            assert!(editor.ik_edit.is_some());
+            assert_ne!(editor.session.document(), &original);
+            workspace_frame(
+                &mut editor,
+                &ctx,
+                key(
+                    action,
+                    if action == egui::Key::S {
+                        egui::Modifiers::COMMAND
+                    } else {
+                        egui::Modifiers::NONE
+                    },
+                ),
+            );
+            assert!(editor.ik_edit.is_none());
+            assert_eq!(editor.session.document(), &original);
+            let [_, top, right, bottom] = editor.capture_targets["ikMixSlider"];
+            let end = pos2(right - 2., (top + bottom) / 2.);
+            workspace_frame(&mut editor, &ctx, vec![egui::Event::PointerMoved(end)]);
+            workspace_frame(&mut editor, &ctx, vec![pointer(end, false)]);
+            assert_eq!(editor.session.document(), &original);
+            assert!(!editor.session.can_undo());
+        }
+        assert_eq!(files::load(&folder.join("rig.peachy")).unwrap(), original);
+        assert!(!editor.session.is_dirty());
+        std::fs::remove_dir_all(folder).unwrap();
+    }
+
+    #[test]
+    fn inspector_first_checked_error_never_substitutes_fk_or_changes_authored_state() {
+        let mut editor = editor_fixture();
+        install_ik(&mut editor, true, 1.);
+        let mut document = editor.session.document().clone();
+        document.bones[0].setup.scale_x = 2.;
+        editor.session = Session::new(document).unwrap();
+        editor.select(TreeItem::Bone(8));
+        let mut local = editor.session.local_pose(Some(0), editor.time)[2];
+        local.rotation += 17.;
+        editor
+            .session
+            .edit_pose(
+                2,
+                EditTarget::Animate {
+                    animation: 0,
+                    time: editor.time,
+                },
+                local,
+                &[Property::Rotation],
+                false,
+            )
+            .unwrap();
+        let original = editor.session.document().clone();
+        let pending = editor.session.pose_edits().clone();
+        let history = (editor.session.can_undo(), editor.session.can_redo());
+        let ctx = editor_context();
+        let mut output = ctx.run_ui(
+            egui::RawInput {
+                focused: true,
+                ..Default::default()
+            },
+            |ui| editor.main_tools(ui),
+        );
+        output.textures_delta.clear();
+        assert!(editor.evaluation_error.is_some());
+        assert!(!editor.capture_targets.contains_key("value:Rotation"));
+        assert!(editor.selected_pose().is_err());
+        assert_eq!(
+            editor.selected_transform().unwrap(),
+            original.bones[8].setup
+        );
+        assert_eq!(editor.session.document(), &original);
+        assert_eq!(editor.session.pose_edits(), &pending);
+        assert_eq!(
+            (editor.session.can_undo(), editor.session.can_redo()),
+            history
+        );
+    }
+
+    #[test]
+    fn applied_axes_tree_links_and_animated_targets_keep_authored_values_separate() {
+        let mut editor = editor_fixture();
+        let target = install_ik(&mut editor, true, 0.5);
+        let mut document = editor.session.document().clone();
+        document.animations[0].tracks.push(Track {
+            bone: target,
+            property: Property::X,
+            keys: vec![
+                Keyframe {
+                    time: 0.,
+                    value: 0.,
+                    curve: Curve::Linear,
+                },
+                Keyframe {
+                    time: 1.,
+                    value: 40.,
+                    curve: Curve::Linear,
+                },
+            ],
+        });
+        editor.session = Session::new(document).unwrap();
+        let setup = editor.session.evaluated_pose(EditTarget::Setup).unwrap();
+        assert_ne!(
+            setup.authored_locals()[8].rotation,
+            setup.applied_locals()[8].rotation
+        );
+        editor.select(TreeItem::Bone(8));
+        editor.set_tool(Tool::Scale);
+        let ctx = editor_context();
+        workspace_frame(&mut editor, &ctx, vec![]);
+        let origin = point(&editor, "gizmoOrigin");
+        let tip = point(&editor, "gizmo:X");
+        let world = setup.world()[8];
+        let norm = world.a.hypot(world.c);
+        assert!(((tip.x - origin.x) / 56. - world.a / norm).abs() < 1e-4);
+        assert!(((tip.y - origin.y) / 56. + world.c / norm).abs() < 1e-4);
+        let fk = peachy_engine::world_pose(editor.session.document(), setup.authored_locals());
+        assert!((fk[8].a - world.a).abs() + (fk[8].c - world.c).abs() > 0.1);
+        editor.begin_viewport_transform(world.point(20., 0.), Some(0));
+        let capsule = editor.transform_gesture_diagnostic();
+        assert_eq!(
+            capsule["initialPose"],
+            serde_json::to_value(setup.authored_locals()[8]).unwrap()
+        );
+        assert_eq!(
+            capsule["appliedInitialPose"],
+            serde_json::to_value(setup.applied_locals()[8]).unwrap()
+        );
+        editor.cancel_gesture();
+
+        editor.tree.query = "ik".into();
+        workspace_frame(&mut editor, &ctx, vec![]);
+        click(&mut editor, &ctx, &format!("ikAnnotation:{target}:0"));
+        assert_eq!(editor.selection, Some(TreeItem::Constraint(0)));
+        assert!(editor.selected_bone().is_none());
+        // Properties renders before Tree actions; settle the new selection's panel.
+        workspace_frame(&mut editor, &ctx, vec![]);
+        click(&mut editor, &ctx, "ikTarget");
+        assert_eq!(editor.selected_bone(), Some(target));
+        editor.set_setup_mode(false);
+        editor.set_time(0.25);
+        editor.set_tool(Tool::Move);
+        let original = editor.session.document().clone();
+        let before = editor
+            .session
+            .evaluated_pose(editor.weights_edit_target())
+            .unwrap();
+        assert_eq!(before.authored_locals()[target].x, 140.);
+        editor.nudge_transform([3., 0.], false);
+        let after = editor
+            .session
+            .evaluated_pose(editor.weights_edit_target())
+            .unwrap();
+        assert_eq!(after.authored_locals()[target].x, 143.);
+        let length = editor.session.document().bones[8].length;
+        assert_ne!(
+            before.world()[8].point(length, 0.),
+            after.world()[8].point(length, 0.)
+        );
+        assert_eq!(editor.session.document(), &original);
+        assert!(editor.session.pose_edits().has_bone(0, target));
+        editor.undo();
+        assert_eq!(
+            editor.session.local_pose(Some(0), editor.time),
+            before.authored_locals()
+        );
+        assert_eq!(editor.session.document(), &original);
     }
 }
