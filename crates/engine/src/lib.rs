@@ -16,7 +16,7 @@ mod timeline;
 mod tools;
 
 pub use authoring::{KeyState, PoseEdits, transform_group};
-pub use commands::{Command, EditTarget, apply_command, keyframe_at};
+pub use commands::{Command, EditTarget, apply_command, ik_keyframe_at, keyframe_at};
 pub use ik::{
     AuthoredPose, EvaluatedPose, checked_evaluate_pose, checked_pose_from_authored,
     checked_setup_pose_from_locals, sample_authored_pose,
@@ -34,7 +34,10 @@ pub use scene::{
     checked_setup_scene_from_locals, evaluate_scene,
 };
 pub use session::Session;
-pub use timeline::{ClipboardKey, KeyClipboard, TimelineKey, copy_keys};
+pub use timeline::{
+    AnimationKey, AnimationKeyClipboard, ClipboardKey, KeyClipboard, KeyOwner, TimelineKey,
+    copy_animation_keys, copy_keys,
+};
 pub use tools::{
     Axes, TransformGesture, TransformTool, drag_transform, drag_transform_in_frame,
     parse_transform_input, set_transform_value, transform_axes, transform_axes_from_world,
