@@ -1,5 +1,6 @@
 use peachy_document::*;
 use serde::Serialize;
+pub(crate) const OBSERVED_DEGREES_TO_RADIANS: f64 = f64::from_bits(0x3f91_df46_a6c0_950b);
 
 #[derive(Clone, Copy, Debug, Serialize)]
 pub struct Affine {
@@ -15,7 +16,6 @@ impl Affine {
     pub fn from_transform(t: Transform) -> Self {
         // Derived from original public unit-bone matrix observations, not runtime
         // constants or implementation. See ../SHEAR_PROVENANCE.md and shear tests.
-        const OBSERVED_DEGREES_TO_RADIANS: f64 = f64::from_bits(0x3f91_df46_a6c0_950b);
         let x = (f64::from(t.rotation) + f64::from(t.shear_x)) * OBSERVED_DEGREES_TO_RADIANS;
         // Preserve association: (r + 90) + hy differs from (r + hy) + 90 for huge values.
         let y = (f64::from(t.rotation) + 90.0 + f64::from(t.shear_y)) * OBSERVED_DEGREES_TO_RADIANS;

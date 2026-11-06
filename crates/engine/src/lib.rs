@@ -2,6 +2,7 @@
 mod authoring;
 mod commands;
 mod ik;
+mod ik_solver;
 mod mesh;
 mod mesh_binding;
 mod names;
