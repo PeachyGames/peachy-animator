@@ -6,6 +6,7 @@ mod ik;
 mod ik_solver;
 mod mesh;
 mod mesh_binding;
+mod mesh_soft_selection;
 mod names;
 mod picking;
 mod playback;
@@ -24,6 +25,7 @@ pub use ghosting::{
 pub use ik::{EvaluatedPose, checked_evaluate_pose, checked_pose_from_locals};
 pub use mesh::{mesh_world_vertices, region_to_mesh, region_vertices};
 pub use mesh_binding::MeshBindPose;
+pub use mesh_soft_selection::{MeshSoftSelection, MeshTranslation};
 pub use picking::{attachment_bounds, pick_attachment};
 pub use playback::{
     PlayDirection, PlaybackStep, adjacent_key_time, advance_playback, last_key_time,
@@ -51,6 +53,8 @@ mod direct_weight_tests;
 mod duration_tests;
 #[cfg(test)]
 mod ik_tests;
+#[cfg(test)]
+mod mesh_soft_selection_tests;
 #[cfg(test)]
 mod pose_preview_tests;
 #[cfg(test)]
