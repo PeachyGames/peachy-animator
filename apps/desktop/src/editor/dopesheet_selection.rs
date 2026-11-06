@@ -54,6 +54,17 @@ impl KeySelection {
     pub fn contains(&self, key: KeyId) -> bool {
         self.keys.contains(&key)
     }
+    pub fn keys(&self) -> &[KeyId] {
+        &self.keys
+    }
+    pub fn replace(&mut self, keys: Vec<KeyId>) {
+        self.keys.clear();
+        for key in keys {
+            if !self.keys.contains(&key) {
+                self.keys.push(key);
+            }
+        }
+    }
     pub fn clear(&mut self) {
         self.keys.clear();
     }
