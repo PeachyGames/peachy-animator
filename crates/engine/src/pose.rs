@@ -44,15 +44,33 @@ impl Affine {
             self.c * x + self.d * y + self.y,
         ]
     }
+    /// Invert a point with finite f64 intermediates, rejecting only a singular
+    /// linear transform or a result outside the finite f32 coordinate range.
     pub fn inverse_point(self, x: f32, y: f32) -> Option<[f32; 2]> {
-        let det = self.a * self.d - self.b * self.c;
-        if det.abs() < 1e-8 {
+        self.inverse_vector_f64(
+            f64::from(x) - f64::from(self.x),
+            f64::from(y) - f64::from(self.y),
+        )
+    }
+    /// Invert a direction without adding/subtracting the parent translation.
+    /// A large origin must not round a unit direction down to a zero vector.
+    pub fn inverse_vector(self, x: f32, y: f32) -> Option<[f32; 2]> {
+        self.inverse_vector_f64(f64::from(x), f64::from(y))
+    }
+    fn inverse_vector_f64(self, x: f64, y: f64) -> Option<[f32; 2]> {
+        let [a, b, c, d] = [self.a, self.b, self.c, self.d].map(f64::from);
+        if ![a, b, c, d, x, y].into_iter().all(f64::is_finite) {
             return None;
         }
-        Some([
-            (self.d * (x - self.x) - self.b * (y - self.y)) / det,
-            (-self.c * (x - self.x) + self.a * (y - self.y)) / det,
-        ])
+        let determinant = a * d - b * c;
+        if determinant == 0.0 {
+            return None;
+        }
+        let result = [
+            ((d * x - b * y) / determinant) as f32,
+            ((a * y - c * x) / determinant) as f32,
+        ];
+        result.into_iter().all(f32::is_finite).then_some(result)
     }
 }
 
