@@ -45,6 +45,14 @@ pub enum Command {
         name: String,
         duration: f32,
     },
+    RenameAnimation {
+        animation: usize,
+        name: String,
+    },
+    DuplicateAnimation {
+        animation: usize,
+        name: String,
+    },
     ConvertRegionToMesh {
         attachment: AttachmentRef,
     },
@@ -192,6 +200,21 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
             duration,
             tracks: vec![],
         }),
+        Command::RenameAnimation { animation, name } => {
+            doc.animations
+                .get_mut(animation)
+                .ok_or("Unknown animation")?
+                .name = name;
+        }
+        Command::DuplicateAnimation { animation, name } => {
+            let mut duplicate = doc
+                .animations
+                .get(animation)
+                .ok_or("Unknown animation")?
+                .clone();
+            duplicate.name = name;
+            doc.animations.push(duplicate);
+        }
         Command::SetKey {
             animation,
             bone,

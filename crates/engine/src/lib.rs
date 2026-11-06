@@ -25,4 +25,6 @@ pub use tools::{
 };
 
 #[cfg(test)]
+mod animation_tests;
+#[cfg(test)]
 mod tests;
