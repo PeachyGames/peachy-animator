@@ -40,6 +40,7 @@ fn mesh_target<'a>(
 /// Invert only the matrix required by the operation. A small nonzero determinant
 /// is valid; an absolute epsilon would reject ordinary small-scale bind poses.
 struct Inverse {
+    forward: Affine,
     a: f64,
     b: f64,
     c: f64,
@@ -62,6 +63,7 @@ impl Inverse {
             return Err("Cannot bind through a singular bone transform".into());
         }
         Ok(Self {
+            forward: matrix,
             a: d / det,
             b: -b / det,
             c: -c / det,
@@ -83,6 +85,16 @@ impl Inverse {
         ];
         if result.iter().any(|value| !value.is_finite()) {
             return Err("Binding positions exceed the finite coordinate range".into());
+        }
+        // Native positions can be finite while cancelling f32 matrix products
+        // overflow during rendering. Reject that result before changing bindings.
+        if self
+            .forward
+            .point(result[0], result[1])
+            .iter()
+            .any(|value| !value.is_finite())
+        {
+            return Err("Binding would produce nonfinite world vertices".into());
         }
         Ok(result)
     }

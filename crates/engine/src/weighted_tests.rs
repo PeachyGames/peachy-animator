@@ -32,7 +32,7 @@ fn triangle() -> Mesh {
     )
 }
 
-fn rig() -> Document {
+pub(super) fn rig() -> Document {
     let bone = |name: &str, parent, setup| Bone {
         name: name.into(),
         parent,
@@ -119,7 +119,7 @@ fn rig() -> Document {
     }
 }
 
-fn reference(slot: &str) -> AttachmentRef {
+pub(super) fn reference(slot: &str) -> AttachmentRef {
     AttachmentRef {
         skin: "default".into(),
         slot: slot.into(),
@@ -127,7 +127,7 @@ fn reference(slot: &str) -> AttachmentRef {
     }
 }
 
-fn assert_points(actual: &[[f32; 2]], expected: &[[f32; 2]]) {
+pub(super) fn assert_points(actual: &[[f32; 2]], expected: &[[f32; 2]]) {
     assert_eq!(actual.len(), expected.len());
     for (actual, expected) in actual.iter().zip(expected) {
         for axis in 0..2 {
