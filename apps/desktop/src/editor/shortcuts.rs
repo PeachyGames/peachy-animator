@@ -103,7 +103,7 @@ impl Editor {
                     position: [p[0] + delta[0], p[1] + delta[1]],
                 });
             }
-        } else if self.transform_editable() {
+        } else if self.transform_tool_editable(self.tool) {
             self.nudge_transform(delta, fine);
         }
     }
@@ -238,6 +238,9 @@ impl Editor {
         }
         if ctx.input(|i| i.key_pressed(egui::Key::V)) {
             self.set_tool(Tool::Move);
+        }
+        if ctx.input(|i| i.key_pressed(egui::Key::Z)) {
+            self.set_tool(Tool::Shear);
         }
         if ctx.input(|i| i.key_pressed(egui::Key::Space)) {
             self.deselect();

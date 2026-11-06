@@ -46,6 +46,10 @@ impl Editor {
         }
     }
     pub(super) fn edit_display_value(&mut self, property: Property, value: f32) {
+        if matches!(property, Property::ShearX | Property::ShearY) && self.selected_bone().is_none()
+        {
+            return;
+        }
         let Some((local, parent)) = self.selected_transform().zip(self.selected_parent()) else {
             return;
         };
@@ -107,5 +111,161 @@ impl Editor {
             }
             Tool::Mesh | Tool::Weights => {}
         }
+    }
+}
+
+#[cfg(test)]
+mod shear_tests {
+    use super::super::test_support::{editor_context, editor_fixture};
+    use super::*;
+
+    fn chord(key: egui::Key, modifiers: egui::Modifiers) -> Vec<egui::Event> {
+        [true, false]
+            .into_iter()
+            .map(|pressed| egui::Event::Key {
+                key,
+                physical_key: None,
+                pressed,
+                repeat: false,
+                modifiers,
+            })
+            .collect()
+    }
+    fn input(editor: &mut Editor, ctx: &egui::Context, events: Vec<egui::Event>, text: bool) {
+        let mut output = ctx.run_ui(
+            egui::RawInput {
+                focused: true,
+                events,
+                ..Default::default()
+            },
+            |ui| {
+                editor.shortcuts(ui.ctx());
+                if text {
+                    let mut value = String::new();
+                    ui.add(egui::TextEdit::singleline(&mut value))
+                        .request_focus();
+                } else {
+                    editor.main_tools(ui);
+                }
+            },
+        );
+        output.textures_delta.clear();
+    }
+    #[test]
+    fn shear_uses_local_values_and_paired_keys_without_redirecting_nonbone_selections() {
+        let mut editor = editor_fixture();
+        editor.set_tool(Tool::Shear);
+        editor.set_axes(Axes::World);
+        editor.edit_display_value(Property::ShearX, 23.5);
+        editor.edit_display_value(Property::ShearY, -17.25);
+        let local = editor.selected_transform().unwrap();
+        assert_eq!((local.shear_x, local.shear_y), (23.5, -17.25));
+        assert!(!editor.session.pose_edits().is_empty());
+        assert!(
+            editor.session.document().animations[0]
+                .tracks
+                .iter()
+                .all(|track| !matches!(track.property, Property::ShearX | Property::ShearY))
+        );
+        editor.key_transform(Tool::Shear.properties());
+        for property in [Property::ShearX, Property::ShearY] {
+            assert!(
+                editor.session.document().animations[0]
+                    .tracks
+                    .iter()
+                    .any(|track| track.bone == 8 && track.property == property)
+            );
+        }
+        editor.set_time(0.6);
+        editor.auto_key = true;
+        editor.edit_display_value(Property::ShearX, 35.);
+        for property in [Property::ShearX, Property::ShearY] {
+            assert!(
+                editor.session.document().animations[0]
+                    .tracks
+                    .iter()
+                    .find(|track| track.bone == 8 && track.property == property)
+                    .unwrap()
+                    .keys
+                    .iter()
+                    .any(|key| key.time == 0.6)
+            );
+        }
+        editor.set_setup_mode(true);
+        let region = editor
+            .session
+            .document()
+            .resolved_attachment(&editor.skin, 0)
+            .unwrap()
+            .0;
+        editor.select(TreeItem::Attachment(region));
+        let original = editor.session.document().clone();
+        editor.edit_display_value(Property::ShearX, 75.);
+        assert_eq!(editor.session.document(), &original);
+        assert!(!editor.transform_tool_editable(Tool::Shear));
+        editor.select(TreeItem::Slot(0));
+        editor.edit_display_value(Property::ShearY, 45.);
+        assert_eq!(editor.session.document(), &original);
+        assert_eq!(editor.selected_bone(), None);
+    }
+    #[test]
+    fn z_respects_modified_history_text_and_modals_and_is_a_real_last_tool() {
+        let mut editor = editor_fixture();
+        let ctx = editor_context();
+        let original = editor.session.document().clone();
+        editor
+            .session
+            .dispatch(Command::RenameAnimation {
+                animation: 0,
+                name: "history".into(),
+            })
+            .unwrap();
+        input(
+            &mut editor,
+            &ctx,
+            chord(egui::Key::Z, egui::Modifiers::COMMAND),
+            false,
+        );
+        assert_eq!(editor.session.document(), &original);
+        assert!(editor.tool == Tool::Rotate);
+        input(
+            &mut editor,
+            &ctx,
+            chord(
+                egui::Key::Z,
+                egui::Modifiers::COMMAND | egui::Modifiers::SHIFT,
+            ),
+            false,
+        );
+        assert_eq!(editor.session.document().animations[0].name, "history");
+        assert!(editor.tool == Tool::Rotate);
+        input(
+            &mut editor,
+            &ctx,
+            chord(egui::Key::Z, egui::Modifiers::NONE),
+            false,
+        );
+        assert!(editor.tool == Tool::Shear);
+        editor.toggle_transform_tool();
+        assert!(editor.tool == Tool::Rotate);
+        editor.toggle_transform_tool();
+        assert!(editor.tool == Tool::Shear);
+        editor.set_tool(Tool::Rotate);
+        input(&mut editor, &ctx, vec![], true);
+        input(
+            &mut editor,
+            &ctx,
+            chord(egui::Key::Z, egui::Modifiers::NONE),
+            true,
+        );
+        assert!(editor.tool == Tool::Rotate);
+        editor.error = Some("modal".into());
+        input(
+            &mut editor,
+            &ctx,
+            chord(egui::Key::Z, egui::Modifiers::NONE),
+            false,
+        );
+        assert!(editor.tool == Tool::Rotate);
     }
 }

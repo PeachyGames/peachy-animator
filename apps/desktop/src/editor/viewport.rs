@@ -342,7 +342,7 @@ impl Editor {
             })
         });
         let mut handle_axis = None;
-        if self.transform_editable()
+        if self.transform_tool_editable(self.tool)
             && matches!(self.tool, Tool::Move | Tool::Scale)
             && let Some(local) = self.selected_transform()
             && let Some(parent) = self
@@ -400,6 +400,7 @@ impl Editor {
                 }
             }
         }
+        let mut transform_error = None;
         let transform_edit = self.drag.as_ref().and_then(|drag| {
             let tool = self.tool.transform_tool()?;
             let mouse = response.interact_pointer_pos()?;
@@ -414,10 +415,18 @@ impl Editor {
                     end: world_point(mouse),
                     snap_rotation: ui.input(|i| i.modifiers.shift),
                 },
-            )
-            .ok()?;
-            Some((drag.item.clone(), transform))
+            );
+            match transform {
+                Ok(transform) => Some((drag.item.clone(), transform)),
+                Err(error) => {
+                    transform_error = Some(error);
+                    None
+                }
+            }
         });
+        if let Some(error) = transform_error {
+            self.status = error;
+        }
         painter.text(
             rect.left_bottom() + vec2(12., -14.),
             egui::Align2::LEFT_BOTTOM,
@@ -492,7 +501,7 @@ impl Editor {
                 {
                     self.select(item);
                 }
-                if self.transform_editable()
+                if self.transform_tool_editable(self.tool)
                     && let (Some(item), Some(initial), Some(pointer)) = (
                         self.selection.clone(),
                         self.selected_transform(),

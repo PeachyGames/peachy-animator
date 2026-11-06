@@ -4,6 +4,7 @@ mod dopesheet;
 mod dopesheet_selection;
 mod icons;
 mod key_drag;
+mod layout;
 mod mesh;
 mod panels;
 mod properties;
@@ -325,6 +326,9 @@ impl Editor {
             _ => false,
         }
     }
+    fn transform_tool_editable(&self, tool: Tool) -> bool {
+        self.transform_editable() && (tool != Tool::Shear || self.selected_bone().is_some())
+    }
     fn selected_transform(&self) -> Option<Transform> {
         let doc = self.session.document();
         match self.selection.as_ref()? {
@@ -358,6 +362,14 @@ impl Editor {
         properties: &[Property],
     ) {
         self.cancel_weight_edit();
+        if properties
+            .iter()
+            .any(|p| matches!(p, Property::ShearX | Property::ShearY))
+            && !matches!(item, TreeItem::Bone(_))
+        {
+            self.status = "Shear edits require a bone selection".into();
+            return;
+        }
         if self.setup_mode && properties.contains(&Property::Rotation) {
             local.rotation = local.rotation.rem_euclid(360.);
         }
@@ -738,9 +750,10 @@ impl eframe::App for Editor {
                 });
         }
         if !self.setup_mode && self.show_dopesheet {
+            let height = layout::timeline_panel_height(ui);
             egui::Panel::bottom("dopesheet")
-                .default_size(235.0)
-                .min_size(180.0)
+                .default_size(height)
+                .min_size(height)
                 .resizable(true)
                 .frame(egui::Frame::new().fill(PANEL).inner_margin(6))
                 .show(ui, |ui| self.timeline(ui));
@@ -752,8 +765,9 @@ impl eframe::App for Editor {
                     .inner_margin(0),
             )
             .show(ui, |ui| {
+                let height = layout::main_tools_height(ui);
                 egui::Panel::bottom("main-tools")
-                    .exact_size(106.0)
+                    .exact_size(height)
                     .frame(egui::Frame::new().fill(PANEL).inner_margin(7))
                     .show(ui, |ui| self.main_tools(ui));
                 self.canvas(ui);
@@ -807,7 +821,7 @@ impl eframe::App for Editor {
                     "animation":self.animation,"skin":self.skin,"time":self.time,"playing":self.playing,"playDirection":self.play_direction,"looping":self.looping,"zoom":self.zoom,
                     "axes":self.axes,"toolValues":self.selected_transform().zip(self.selected_parent()).map(|(local,parent)|peachy_engine::transform_values(local,parent,self.axes)),
                     "autoKey":self.auto_key,"unkeyedPose":self.session.pose_edits(),"selectedTransform":self.selected_transform(),"locals":self.session.local_pose(self.active_animation(),self.time),
-                    "keyStates":self.selected_bone().map(|bone| [Property::Rotation,Property::X,Property::ScaleX].map(|p| self.key_state(bone,&peachy_engine::transform_group(&[p])))),
+                    "keyStates":self.selected_bone().map(|bone| [Property::Rotation,Property::X,Property::ScaleX,Property::ShearX].map(|p| self.key_state(bone,&peachy_engine::transform_group(&[p])))),
                     "setupMode":self.setup_mode,"dirty":self.session.is_dirty(),"canUndo":self.session.can_undo(),"canRedo":self.session.can_redo(),"imageCount":self.textures.len(),
                     "selectedKeys":self.key_selection.diagnostic(),"dopesheetFocused":self.dopesheet_has_focus(&ctx),
                     "windowFocused":ctx.input(|input|input.focused),
