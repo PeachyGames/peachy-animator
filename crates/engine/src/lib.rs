@@ -30,6 +30,8 @@ pub use tools::{
 #[cfg(test)]
 mod animation_tests;
 #[cfg(test)]
+mod duration_tests;
+#[cfg(test)]
 mod tests;
 #[cfg(test)]
 mod timeline_tests;
