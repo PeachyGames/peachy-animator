@@ -45,19 +45,14 @@ pub fn checked_pose_from_locals(
             ));
         }
     }
-    let applied_locals = authored_locals.clone();
+    let mut applied_locals = authored_locals.clone();
     for constraint in &doc.constraints {
         let Constraint::Ik(ik) = constraint;
         ik.validate(&doc.bones)?;
-        if ik.setup.mix > 0.0 {
-            return Err(format!(
-                "IK {}: normal solver implementation is pending",
-                ik.name
-            ));
-        }
     }
-    let world = world_pose(doc, &applied_locals);
+    let mut world = world_pose(doc, &applied_locals);
     check_world(doc, &world)?;
+    crate::ik_solver::apply(doc, &mut applied_locals, &mut world)?;
     Ok(EvaluatedPose {
         authored_locals,
         applied_locals,
