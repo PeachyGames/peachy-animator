@@ -195,6 +195,26 @@ pub fn drag_transform(
     parent: Affine,
     gesture: TransformGesture,
 ) -> Result<Transform, String> {
+    drag_transform_in_frame(
+        local,
+        local,
+        parent,
+        parent.then(Affine::from_transform(local)),
+        gesture,
+    )
+}
+
+/// Convert a gesture in its frozen evaluated drawing frame into a delta on the
+/// separate authored transform. Constraints may resist that authored edit.
+/// This coherent frame rule is not a claim of every Spine constrained-tool
+/// convention; those interactions retain their independent observation gate.
+pub fn drag_transform_in_frame(
+    authored: Transform,
+    applied: Transform,
+    parent: Affine,
+    world: Affine,
+    gesture: TransformGesture,
+) -> Result<Transform, String> {
     let TransformGesture {
         tool,
         axes,
@@ -206,12 +226,23 @@ pub fn drag_transform(
     if axis.is_some_and(|a| a > 1) || !start.into_iter().chain(end).all(f32::is_finite) {
         return Err("Invalid transform gesture".into());
     }
-    let mut result = local;
+    if !finite_transform(authored)
+        || !finite_transform(applied)
+        || ![
+            parent.a, parent.b, parent.c, parent.d, parent.x, parent.y, world.a, world.b, world.c,
+            world.d, world.x, world.y,
+        ]
+        .into_iter()
+        .all(f32::is_finite)
+    {
+        return Err("Transform gesture needs a finite authored and evaluated frame".into());
+    }
+    let mut result = authored;
     match tool {
         TransformTool::Translate => {
             let mut delta = [end[0] - start[0], end[1] - start[1]];
             if let Some(axis) = axis {
-                let basis = transform_axes(local, parent, axes, tool)[axis];
+                let basis = transform_axes_from_world(applied, parent, world, axes, tool)[axis];
                 let distance = delta[0] * basis[0] + delta[1] * basis[1];
                 delta = [basis[0] * distance, basis[1] * distance];
             }
@@ -222,14 +253,8 @@ pub fn drag_transform(
             result.y += p[1];
         }
         TransformTool::Rotate => {
-            let a = parent
-                .inverse_point(start[0], start[1])
+            let [a, b] = pointer_directions(authored, applied, parent, world, start, end)
                 .ok_or("Cannot rotate through a zero-scale parent")?;
-            let b = parent
-                .inverse_point(end[0], end[1])
-                .ok_or("Cannot rotate through a zero-scale parent")?;
-            let a = [a[0] - local.x, a[1] - local.y];
-            let b = [b[0] - local.x, b[1] - local.y];
             if a[0].hypot(a[1]) > 1e-5 && b[0].hypot(b[1]) > 1e-5 {
                 result.rotation +=
                     signed_delta(a[1].atan2(a[0]).to_degrees(), b[1].atan2(b[0]).to_degrees());
@@ -240,14 +265,8 @@ pub fn drag_transform(
         }
         TransformTool::Shear => {
             let axis = axis.ok_or("Shear requires an explicit X or Y handle")?;
-            let a = parent
-                .inverse_point(start[0], start[1])
+            let [a, b] = pointer_directions(authored, applied, parent, world, start, end)
                 .ok_or("Cannot shear through a singular parent")?;
-            let b = parent
-                .inverse_point(end[0], end[1])
-                .ok_or("Cannot shear through a singular parent")?;
-            let a = [a[0] - local.x, a[1] - local.y];
-            let b = [b[0] - local.x, b[1] - local.y];
             if a[0].hypot(a[1]) <= 1e-5 || b[0].hypot(b[1]) <= 1e-5 {
                 return Err("Shear handle needs a nonzero pointer direction".into());
             }
@@ -259,14 +278,13 @@ pub fn drag_transform(
             }
         }
         TransformTool::Scale => {
-            let origin = parent.point(local.x, local.y);
+            let origin = [world.x, world.y];
             let a = [start[0] - origin[0], start[1] - origin[1]];
             let b = [end[0] - origin[0], end[1] - origin[1]];
             let dot = |v: [f32; 2], u: [f32; 2]| v[0] * u[0] + v[1] * u[1];
             let factor = if let Some(i) = axis {
                 // A dot projection mixes the other coordinate on an oblique
                 // basis. Solve actual bone coordinates before taking the ratio.
-                let world = parent.then(Affine::from_transform(local));
                 let a = scale_coordinate(world, a, i)
                     .ok_or("Cannot scale through an ambiguous or zero bone axis")?;
                 let b = scale_coordinate(world, b, i)
@@ -292,6 +310,35 @@ pub fn drag_transform(
         return Err("Transform result must be finite".into());
     }
     Ok(result)
+}
+
+fn pointer_directions(
+    authored: Transform,
+    applied: Transform,
+    parent: Affine,
+    world: Affine,
+    start: [f32; 2],
+    end: [f32; 2],
+) -> Option<[[f32; 2]; 2]> {
+    let fk = parent.then(Affine::from_transform(authored));
+    if authored == applied
+        && [world.a, world.b, world.c, world.d, world.x, world.y].map(f32::to_bits)
+            == [fk.a, fk.b, fk.c, fk.d, fk.x, fk.y].map(f32::to_bits)
+    {
+        // Retain the original FK operation order and ordinary numeric bits.
+        let a = parent.inverse_point(start[0], start[1])?;
+        let b = parent.inverse_point(end[0], end[1])?;
+        Some([
+            [a[0] - authored.x, a[1] - authored.y],
+            [b[0] - authored.x, b[1] - authored.y],
+        ])
+    } else {
+        // Actual applied pivot, with translation-free direction conversion.
+        Some([
+            parent.inverse_vector(start[0] - world.x, start[1] - world.y)?,
+            parent.inverse_vector(end[0] - world.x, end[1] - world.y)?,
+        ])
+    }
 }
 
 /// Spine numeric-entry operators are relative to the value when entry starts.
