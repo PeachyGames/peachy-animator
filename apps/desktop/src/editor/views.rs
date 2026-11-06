@@ -13,6 +13,7 @@ pub(super) enum DockView {
     Playback,
     Preview,
     Skins,
+    SlotColor,
     Weights,
 }
 
@@ -21,7 +22,7 @@ pub(super) enum DockView {
 mod tests;
 
 impl DockView {
-    const ALL: [Self; 10] = [
+    const ALL: [Self; 11] = [
         Self::Animations,
         Self::Ghosting,
         Self::Graph,
@@ -31,6 +32,7 @@ impl DockView {
         Self::Playback,
         Self::Preview,
         Self::Skins,
+        Self::SlotColor,
         Self::Weights,
     ];
     fn label(self) -> &'static str {
@@ -44,6 +46,7 @@ impl DockView {
             Self::Playback => "Playback",
             Self::Preview => "Preview",
             Self::Skins => "Skins",
+            Self::SlotColor => "Slot Color",
             Self::Weights => "Weights",
         }
     }
@@ -58,6 +61,7 @@ impl DockView {
             Self::Playback => Icon::Playback,
             Self::Preview => Icon::Preview,
             Self::Skins => Icon::Skins,
+            Self::SlotColor => Icon::SlotColor,
             Self::Weights => Icon::Weights,
         }
     }
@@ -105,16 +109,10 @@ impl ViewTabs {
 }
 
 /// The public guide's complete view inventory. Unsupported entries remain discoverable.
-const UNIMPLEMENTED: [(&str, &str); 2] = [
-    (
-        "Audio",
-        "Audio assets, waveform display and playback are not implemented.",
-    ),
-    (
-        "Slot Color",
-        "Slot color data and color timelines are not implemented.",
-    ),
-];
+const UNIMPLEMENTED: [(&str, &str); 1] = [(
+    "Audio",
+    "Audio assets, waveform display and playback are not implemented.",
+)];
 
 impl Editor {
     fn dock_view_open(&self, view: DockView) -> bool {
@@ -152,6 +150,14 @@ impl Editor {
             self.view_tabs.open.insert(view);
         }
         self.view_tabs.active = view;
+    }
+
+    pub(super) fn open_slot_color_view(&mut self) {
+        self.open_dock_view(DockView::SlotColor);
+    }
+
+    pub(super) fn slot_color_visible(&self) -> bool {
+        self.dock_view_open(DockView::SlotColor) && self.view_tabs.active == DockView::SlotColor
     }
 
     pub(super) fn open_graph_view(&mut self) {
@@ -197,7 +203,9 @@ impl Editor {
                 .on_disabled_hover_text("Available in Animate mode.");
             self.record_target(&format!("view{}", view.label()), response.rect);
             if response.clicked() {
-                if view == DockView::Graph {
+                if view == DockView::SlotColor {
+                    self.open_slot_color_view();
+                } else if view == DockView::Graph {
                     self.open_graph_view();
                 } else if view == DockView::Preview {
                     self.open_preview_view();
@@ -344,6 +352,7 @@ impl Editor {
                     DockView::Playback => self.playback_panel(ui),
                     DockView::Preview => self.preview_panel(ui),
                     DockView::Skins => self.skins_panel(ui),
+                    DockView::SlotColor => self.slot_color_panel(ui),
                     DockView::Weights => self.weights_panel(ui),
                     DockView::Outline => unreachable!(),
                 });
@@ -556,7 +565,7 @@ impl Editor {
                     mesh.vertices.push(egui::epaint::Vertex {
                         pos: scene_view::screen_point(origin, zoom, point),
                         uv: pos2(uv[0], uv[1]),
-                        color: Color32::WHITE,
+                        color: scene_view::attachment_tint(draw.color),
                     });
                 }
                 mesh.indices = draw.triangles.clone();

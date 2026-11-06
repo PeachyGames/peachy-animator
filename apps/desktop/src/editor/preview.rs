@@ -604,7 +604,7 @@ impl Editor {
                     mesh.vertices.push(egui::epaint::Vertex {
                         pos: self.preview.screen(rect, point),
                         uv: pos2(uv[0], uv[1]),
-                        color: Color32::WHITE,
+                        color: scene_view::attachment_tint(draw.color),
                     });
                 }
                 mesh.indices = draw.triangles.clone();

@@ -33,6 +33,7 @@ pub(super) enum Icon {
     Graph,
     MeshTools,
     Skins,
+    SlotColor,
     Metrics,
     Outline,
     Playback,
@@ -381,6 +382,21 @@ fn paint(ui: &Ui, rect: Rect, icon: Icon, response: &Response) {
                 painter.circle_stroke(p(x + 2., 4.), 2. * rect.width() / SIZE, stroke(color));
                 line(&[[x + 2., 6.], [x + 2., 11.], [x, 14.]], color);
                 line(&[[x + 2., 11.], [x + 4., 14.]], color);
+            }
+        }
+        Icon::SlotColor => {
+            box_at([2., 2.], [14., 14.], ink);
+            for (x, y, color) in [
+                (5., 5., Color32::from_rgb(220, 95, 90)),
+                (11., 5., Color32::from_rgb(90, 190, 145)),
+                (5., 11., Color32::from_rgb(90, 145, 220)),
+                (11., 11., warm),
+            ] {
+                painter.rect_filled(
+                    Rect::from_center_size(p(x, y), Vec2::splat(4. * rect.width() / SIZE)),
+                    0.,
+                    color,
+                );
             }
         }
         Icon::Skins => {

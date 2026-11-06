@@ -97,6 +97,7 @@ pub(super) fn editor_fixture() -> Editor {
         ghosting: Default::default(),
         preview: Default::default(),
         graph: Default::default(),
+        slot_color: Default::default(),
         drag: None,
         transform_blocked: false,
         transform_blocked_control: None,
@@ -180,4 +181,28 @@ pub(super) fn mesh_editor(weighted: bool) -> (Editor, AttachmentRef) {
     editor.fit = true;
     editor.reconcile_selection();
     (editor, key)
+}
+
+pub(super) fn mesh_colors(
+    shapes: &[egui::epaint::ClippedShape],
+    texture: egui::TextureId,
+) -> Vec<Color32> {
+    fn visit(shape: &egui::Shape, texture: egui::TextureId, colors: &mut Vec<Color32>) {
+        match shape {
+            egui::Shape::Mesh(mesh) if mesh.texture_id == texture => {
+                colors.extend(mesh.vertices.iter().map(|vertex| vertex.color))
+            }
+            egui::Shape::Vec(shapes) => {
+                for shape in shapes {
+                    visit(shape, texture, colors)
+                }
+            }
+            _ => {}
+        }
+    }
+    let mut colors = Vec::new();
+    for shape in shapes {
+        visit(&shape.shape, texture, &mut colors)
+    }
+    colors
 }

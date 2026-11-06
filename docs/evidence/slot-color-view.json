@@ -1,0 +1,126 @@
+{
+  "date": "2026-11-06",
+  "view": "Slot Color",
+  "nativeFormat": 7,
+  "futureIkAnimationFormat": 8,
+  "baseline": "976f8586688541b5a00b4e991aac74e0155378f5",
+  "sourceCommits": [
+    "2b657b5",
+    "42289d3",
+    "6a792cc",
+    "b5a2d1b"
+  ],
+  "startingWorktreeClean": true,
+  "backup": "../../../.local-backups/peachy-slot-color-20261106T190033Z-83a8ab/",
+  "inventory": {
+    "implemented": 14,
+    "total": 15,
+    "remaining": [
+      "Audio"
+    ]
+  },
+  "checks": {
+    "format": "passed",
+    "workspaceTests": 390,
+    "desktopTests": 165,
+    "engineTests": 153,
+    "chooserTests": 9,
+    "paintedMeshTests": 2,
+    "clippyAllTargetsWarningsDenied": "passed",
+    "workspaceBuild": "passed",
+    "architectureCrates": 7,
+    "hostedCI": "not run"
+  },
+  "behavior": [
+    "Only typed Slot or selected Attachment owner slot; Setup edits, Animate readonly",
+    "Native unmultipliedRGBA bytes, exact8hex Enter/Tab, Alpha0 hiddenRGB/noop/invalid/focus/redo preservation",
+    "Frozen Session picker context, oneUndo, cancellation before file/history/context/focus/hide actions and held-pointer block",
+    "Hue-only gray/white cache preserves intent without document/history mutation; actual end-frame focus ownership",
+    "Pending bone poses preserved through color edits/history",
+    "Actual painted mesh vertices verified in viewport/Outline/Preview; ghost Images multiplyRGBA, Solid ownRGB with slotAlpha",
+    "Strict native7 requiredcolor and legacy1\u20136presence guard/white migration; no dummy IK fields",
+    "Current white exports unchanged; setup6/8hex interchange, no animation/dark/two-color or nonnormal blending"
+  ],
+  "coreVerification": {
+    "baselineCommit": "1d886d77d015741291219f9bbeb51afcde5b7fd4",
+    "nativeFormat": 7,
+    "coreTests": 214,
+    "coreClippyWarningsDenied": true,
+    "formatAndDiffChecks": true,
+    "stagedSourcePatchSha256": "9ccb2ef23854ce107c1e889eb1edaa375e139e23553852258df045dc8c06724c",
+    "preservation": {
+      "whiteExportsByteIdentical": 9,
+      "exportHashes": {
+        "contract-cases.peachy": "199ae0a9a782a25456f7db440df41c8b0a363c81162ff1fd2120e4f6adca4cbc",
+        "ik-bot.peachy": "a063712b06a2813b0c47654f578f14f4b9317508ee8be457420ec756ec6380c5",
+        "mesh-bot.peachy": "304a4ba951f30b1fcf0ff224f00f798049a4d6b03fad37e3a3db673510d77130",
+        "mesh-contract.peachy": "276dc490072e45063dfbbbf76e04b87482f3d5efa8523313ac55de3d5c8061fb",
+        "peach-bot.peachy": "ea2f2867f0a0083380ac358a774435db948b376392aac8323c78e7c308bcbc02",
+        "shear-bot.peachy": "cb4932e57b860e133f0482b050d8df3df1984d3364845cf2de721e2b0df86d12",
+        "weighted-bot.peachy": "fbc8025d44ca5447ccc92a303027d2bbc3d3796d5e92a2423dd6ad0b9798bd25",
+        "weighted-contract.peachy": "1a2c90f26a6401a6200c863bd1f7cb81582cde6926b5d729c64c83e1584bd14c",
+        "weighted-repeated.peachy": "887840ea64a41b26fbe084a873123dc37aaedfc3d29ec41723c67888671db2e6"
+      },
+      "legacyFixtureFilesUnchanged": 35,
+      "nineCurrentExamplesChangedOnlyVersionAndWhiteColor": true
+    },
+    "runtimeOracle": {
+      "runtime": "@esotericsoftware/spine-core4.3.13",
+      "publicApi": "SkeletonJson.readSkeletonData;Skeleton.setupPose;Slot.appliedPose.color",
+      "originalCases": 1029,
+      "channelComparisons": 4116,
+      "maxNormalizedError": 0,
+      "allByteValuesPerChannel": true,
+      "sixRgbAndEightRgba": true,
+      "mixedCase": true,
+      "whiteExportOmitted": true,
+      "implementationSourceInspected": false
+    },
+    "mcpSchemaShapeUpdated": true,
+    "mcpTestsRunInLane": false,
+    "desktopBuiltInLane": false,
+    "targetIncremental": false,
+    "debugInfo": false,
+    "commit": "48e5bac928847f8195d398beee73d425d9d00763",
+    "probeBinarySha256": "1a10c260ffa3e5ea5dab2d5a5e1cb12abf14a4763cff200768ed08ee9b4430f0"
+  },
+  "nativeRender": {
+    "normalOnScreenWindow": true,
+    "loadedOriginalArtwork": true,
+    "slotColorRendered": true,
+    "native7ExactRGBA": [
+      255,
+      80,
+      120,
+      210
+    ],
+    "controlsWithinPanel": true,
+    "exactPidForegroundVerified": true,
+    "diagnosticStartupOnly": true,
+    "nativeInputAccepted": false,
+    "finalCapture": "editor-1793995872487663000.json",
+    "pid": 45435,
+    "capture": "../slot-color-view-editor.png",
+    "sourceDifference": "Temporary startup typed body-slot selection/open-view only. Fixture colors authored with actual CLI SetSlotColor commands; original repository art/data untouched."
+  },
+  "nativeInput": {
+    "accepted": false,
+    "reason": "Render-only native chooser/tinted-original-artwork capture; complete native click/typed workflow remains pending.",
+    "earlierEvidence": "timeline-view.json"
+  },
+  "sourceRestoredExactly": true,
+  "productionSourceSHA256": "214630d2e71ce8a69927578c52c9b16610cd27f34519d3b0d509bf579eee0d6b",
+  "productionBinarySHA256": "b078177e5530b61a769d12528f148ead4d5d1716a3af17132a57ce7437a8a6ee",
+  "diagnosticBinarySHA256": "1aa83ebf43a52924a0b276436e1ebe560ba1abcdfefede4624f1c9bbd706da0f",
+  "cleanup": {
+    "pid": 45435,
+    "taskOwnedEditorExited": true,
+    "temporaryAuthorizationExists": false,
+    "browserLaunched": false
+  },
+  "limitations": [
+    "Setup tint only; color timelines, dark/two-color tint and nonnormal blending unsupported",
+    "Native7 files require new binary; old source files unchanged until explicit Save with backup",
+    "Exact installed-editor rendering/input parity pending; no new private-rig acceptance audit"
+  ]
+}

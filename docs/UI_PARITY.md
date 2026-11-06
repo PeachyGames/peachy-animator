@@ -693,3 +693,27 @@ pose-render errors do not block correction of finite scalar keys. Tangents,
 retiming, key creation/clipboard, general mouse pan/zoom, multiple curves and exact
 installed-editor equivalence remain pending. The [evidence](evidence/graph-view.json)
 separates egui state checks and native rendering from native-input acceptance.
+
+
+## Setup Slot Color — November 6, 2026
+
+The public [Slot Color](https://en.esotericsoftware.com/spine-slot-color) and
+[Slots](https://en.esotericsoftware.com/spine-slots) guides describe an inline
+chooser for the selected slot or attachment's owning slot. The new view uses the
+existing right dock, with a compact original saturation/value area, Hue/Alpha
+strips, exact RGBA byte feedback and #RRGGBBAA text. Setup edits persist to native7;
+Animate is explicitly read-only. Other typed selections never fall back to a
+cached bone/slot. Scene tint reaches viewport, Outline and independent Preview;
+ghost Images multiply slot RGBA, while Solid uses slot alpha with its own RGB.
+
+Picker input freezes its context/Session baseline and settles after frame actions
+as one Undo. Enter/Tab applies hex; invalid/no-op/focus-only/cancelled text keeps
+raw RGBA/redo, including hidden RGB at alpha0. Hue-only gray/white choices retain
+an intentional hue without creating document history. Cancellation, stale blur,
+held-pointer blocking and end-frame Escape focus ownership follow the existing
+view lifecycle. Existing pending poses remain outside these setup edits.
+
+Nine chooser tests plus actual painted-mesh tint checks cover data/gesture/renderer
+behavior. Native mouse/typed acceptance and exact installed-editor layout remain
+separate gates. Color animation, dark/two-color tint, non-normal blending and free
+docking are not presented as working. See [evidence](evidence/slot-color-view.json).

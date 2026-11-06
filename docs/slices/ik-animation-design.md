@@ -1,8 +1,17 @@
 # IK animation: Phase B proposal
 
-Status: internally approved for staged implementation, November 6, 2026. Native6
-Phase A is the accepted baseline. This contract does not claim accepted native7,
+Status: internally approved for staged implementation, November 6, 2026. Native7
+setup slot colors retain the accepted Native6 Phase A IK solver baseline. This contract does not claim accepted native8,
 compiled sampling parity or interactive UI parity; those gates remain below.
+
+
+Version sequencing update (November 6, 2026): the requested Slot Color view ships
+required setup RGBA bytes in native7 first. This pending IK animation contract
+therefore advances to **native8**, with its data/solver/authoring/compatibility
+requirements and acceptance gates unchanged. Native7 adds no unused `ik_tracks`.
+Migration becomes literal7→8 after the existing strict1→…→6→7 steps, and the
+legacy IK-field-presence guard covers formats1–7. Existing slot colors must be
+preserved byte-for-byte. This renumbering does not mark Phase B implemented.
 
 ## Scope and evidence
 
@@ -51,7 +60,7 @@ Observed facts:
 - Source times can collapse after conversion to f32. Reject that collision rather
   than epsilon-merging or silently replacing a source key.
 
-## Native7 data and migration
+## Native8 data and migration
 
 Keep bone `Property`, `Track`, `Keyframe` and `Curve` unchanged. Add one required
 collection to each `Animation`:
@@ -87,7 +96,7 @@ pub enum IkCurve {
 Follow the existing derive conventions; all shown native fields are required.
 Bezier time controls are normalized to the segment, individually finite within
 0–1. Mix controls are absolute finite f32 values. Fixed arrays require exactly
-two values. Native7 `IkSetup.mix` and stored key Mix accept all finite f32 values.
+two values. Native8 `IkSetup.mix` and stored key Mix accept all finite f32 values.
 There is no normalization, range clamp, hidden enabled flag or softness field.
 
 Time handles need f64 storage even though key times remain f32. In original
@@ -109,16 +118,16 @@ and removal/movement of the last IK key use this same rule. Do not add padding,
 duration floors, hold keys or reserved-duration state.
 
 Migration must capture the original version. Reject any per-animation `ik_tracks`
-presence in formats 1–6, including empty/null, before inserting fields. Keep the
+presence in formats 1–7, including empty/null, before inserting fields. Keep the
 existing legacy root-constraint and shear smuggling guards. Preserve explicit
-1→2→3→4→5→6 steps; only literal 6→7 adds empty `ik_tracks` to valid animation
+1→2→3→4→5→6→7 steps; only literal 7→8 adds empty `ik_tracks` to valid animation
 objects. Null/malformed animations must error rather than become objects.
 
-Before relaxing Mix in the latest model, enforce native6's original typed-f32
+Before relaxing Mix in the latest model, enforce native6/native7's original typed-f32
 finite 0–1 setup-Mix contract on migrated data. Do not newly reject an old input
-whose source f64 rounded into the valid f32 interval under the native6 decoder.
+whose source f64 rounded into the valid f32 interval under the native6/native7 decoder.
 Latest strict validation still precedes existing v2 hold materialization. The nine
-current native6 fixtures change only format and required empty collections; all
+current native7 fixtures change only format and required empty collections; all
 existing setup constraints, artwork, keys and complete Spine export bytes stay
 unchanged. The formats lane has retained all nine export-byte baselines.
 
@@ -365,7 +374,7 @@ every intermediate numeric pose is representable.
 
 ## Acceptance before a parity claim
 
-- Strict native7/command/clipboard serde, legacy typed range and presence guards;
+- Strict native8/command/clipboard serde, legacy typed range and presence guards;
   all nine empty-IK migration/export byte goldens; no artist inputs changed.
 - Nondefault setup, omitted reset defaults, fractional first key, adjacent-close
   keys, exact bend boundaries, linear/stepped/Bezier holds and IK-only duration.

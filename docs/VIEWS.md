@@ -1,8 +1,8 @@
 # Views audit and implemented scope
 
-Implementation progress: **13 of 15 views implemented**. The latest completed
-view is **Graph**. The implemented views have working controls within the
-explicit scope below; two views still need implementation.
+Implementation progress: **14 of 15 views implemented**. The latest completed
+view is **Slot Color**. The implemented views have working controls within the
+explicit scope below; Audio is the remaining view to implement.
 
 The old selector contained only **Tree, Dopesheet and Weights** because those were
 the only implemented panels. It was not an installation, license or rendering
@@ -27,14 +27,14 @@ presenting empty panels as working tools.
 | Playback | New Animate panel with session-only Speed (1–200% and percentage presets), shared forward/backward transport and Loop, frame/key navigation and a read-only Timeline FPS. Works with Dopesheet closed. FPS retiming, Stepped and Interpolated overrides remain unimplemented. |
 | Preview | New independent keyed-pose animation/skin display, own forward/reverse clock, Loop, Time, Speed, Fit/Bones, pan and zoom. Works during Setup and excludes pending unkeyed edits. Single track; mixing and multiple tracks remain pending. |
 | Skins | New searchable named-skin list. Click activates, right-click selects Tree properties, Clear skin uses shared default attachments. Single active skin only. |
-| Slot Color | Unimplemented: slot-color model and timelines. |
+| Slot Color | New inline Setup HSV/Hue/Alpha chooser and exact #RRGGBBAA entry for a typed slot or attachment's owner. Persistent native7 RGBA tint reaches all image views. Animate is read-only; color timelines/dark tint remain pending. |
 | Timeline | New compact Animate ruler below the viewport. Shared cursor/transport/Loop, exact all-track key markers, decimal frame entry, snapped or Shift-subframe scrubbing, wheel/slider zoom, right-drag pan and Zoom Keys. Works with Dopesheet closed. |
 | Tree | Existing typed outline, filters, activation dots and contextual properties. The Slots filter shows draw order; Spine has no separate Slots view in this inventory. |
 | Weights | Existing bounded Bind/Remove all/Add binding/Direct workflow; still no brush, Update, locks or multi-vertex editing. |
 
-Two views remain unimplemented: **Audio and Slot Color**.
+One view remains unimplemented: **Audio**.
 
-Animations, Ghosting, Graph, Mesh Tools, Metrics, Outline, Playback, Preview, Skins and Weights use a resizable tabbed panel in the right rail.
+Animations, Ghosting, Graph, Mesh Tools, Metrics, Outline, Playback, Preview, Skins, Slot Color and Weights use a resizable tabbed panel in the right rail.
 With the Tree closed, they use that rail's full height. Opening an already open
 entry focuses its tab. Individual close buttons are present on these views, Tree
 and Dopesheet; they reopen from Views. F9 stores/restores all view visibility,
@@ -96,6 +96,27 @@ derived white mask; original image pixels and files are unchanged. A request ove
 layer, leaving the current pose usable. Current controls use reaches up to 60
 frames and steps down to 0.25 frames. Motion Vectors and Silhouette/Xray outlines
 remain pending; the implemented Images and Solid modes are functional rendering.
+
+Slot Color targets only a typed slot or an attachment's owning slot; a bone,
+constraint or skeleton selection never becomes an implicit target. Its inline
+saturation/value, Hue and Alpha controls edit Setup color, with exact byte feedback
+and #RRGGBBAA entry. Animate displays that setup color read-only. Slot tint is
+shared across skins, and reaches viewport, Outline and Preview. Ghost Images
+multiply slot RGBA; Solid keeps its chosen RGB with slot alpha.
+
+RGBA is stored as four unmultiplied bytes in native7, preserving hidden RGB at zero
+alpha. Current fields are required; legacy1–6 migrate to white without modifying
+source files. Save/export preserve bytes, and Spine setup interchange accepts
+strict6/8-digit hex. Color timelines, dark/two-color tint and other blend modes
+remain unsupported. The pending IK proposal advances explicitly to native8.
+
+A picker drag freezes its typed context and forms one Session Undo step. Hex
+applies on Enter/Tab; invalid/no-op/cancelled entry preserves document/redo and
+text owns its Undo. File/history/context/tool/mode/skin/hide/focus/modal actions
+cancel uncommitted input before continuing and block held re-entry. Pending bone
+poses stay unchanged. Hue-only changes on white/gray retain the chosen UI hue
+without rewriting RGBA or creating history. The picker never roundtrips native
+bytes through premultiplied Color32 simply to display them.
 
 Graph displays the selected bone's existing Rotation, X/Y, Scale X/Y or Shear X/Y
 track. Values are native Setup offsets (degrees/units) or scale multipliers, not
@@ -204,6 +225,7 @@ Behavior references are the public
 [UI](https://en.esotericsoftware.com/spine-ui),
 [Animations](https://en.esotericsoftware.com/spine-animations-view),
 [Skins](https://en.esotericsoftware.com/spine-skins-view),
+[Slot Color](https://en.esotericsoftware.com/spine-slot-color),
 [Metrics](https://en.esotericsoftware.com/spine-metrics),
 [Ghosting](https://en.esotericsoftware.com/spine-ghosting),
 [Graph](https://en.esotericsoftware.com/spine-graph),
@@ -240,3 +262,6 @@ are recorded in [Preview evidence](evidence/preview-view.json).
 
 Graph value-editing, exact-key/lifecycle checks and native rendering are recorded
 in [Graph evidence](evidence/graph-view.json).
+
+Slot Color model/interchange, exact-byte input, renderer and native checks are
+recorded in [Slot Color evidence](evidence/slot-color-view.json).

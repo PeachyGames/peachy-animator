@@ -481,3 +481,21 @@ selection and icons are independent code. It edits only existing key values,
 not times/tangents. Setup-offset/multiplier display is an explicit bounded scope,
 not a claim of every installed-editor Graph convention. No proprietary code or
 UI assets are inspected or copied.
+
+
+### Setup Slot Color — November 6, 2026
+
+The public [Slot Color](https://en.esotericsoftware.com/spine-slot-color),
+[Slots](https://en.esotericsoftware.com/spine-slots) and
+[JSON format](https://en.esotericsoftware.com/spine-json-format) guides establish
+selected-slot/attachment-owned color and setup RGB/RGBA hex. Original public-API
+stimuli confirm the6/8-digit defaults and every byte per channel against the
+separately installed4.3.13 runtime. The adapter deliberately rejects malformed
+hex/null rather than copying runtime permissiveness. No runtime source is read.
+
+Native7 schema/migration/commands, slot propagation, HSV chooser/gesture lifecycle,
+renderer tint and icons are independent code. General HSV mathematics uses public
+egui Hsva conversions. The compact custom drawing avoids global numeric-color
+style mutation or copied assets. Native bytes remain unmultiplied; premultiplication
+occurs only at rendering. The separate future IK contract is explicitly renumbered
+to native8 without changing its approved semantic requirements or gates.

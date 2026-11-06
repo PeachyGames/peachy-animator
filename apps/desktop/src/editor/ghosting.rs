@@ -216,7 +216,11 @@ impl Editor {
                     .map(|(&point, &uv)| egui::epaint::Vertex {
                         pos: scene_view::screen_point(pose.origin, zoom, point),
                         uv: pos2(uv[0], uv[1]),
-                        color: pose.color,
+                        color: scene_view::ghost_tint(
+                            pose.color,
+                            draw.color,
+                            self.ghosting.images == GhostImages::Solid,
+                        ),
                     })
                     .collect();
                 mesh.indices = draw.triangles.clone();
@@ -479,3 +483,67 @@ fn section_controls(
 #[cfg(test)]
 #[path = "ghosting_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+mod slot_tint_tests {
+    use super::super::test_support::{editor_context, editor_fixture, mesh_colors};
+    use super::*;
+
+    #[test]
+    fn images_multiply_slot_rgba_and_solid_keeps_ghost_rgb_with_slot_alpha() {
+        let ctx = editor_context();
+        let mut editor = editor_fixture();
+        let mut doc = editor.session.document().clone();
+        let slot = doc
+            .slots
+            .iter()
+            .position(|slot| slot.name == "body")
+            .unwrap();
+        doc.slots[slot].color = [128, 255, 0, 64];
+        editor.session = Session::new(doc).unwrap();
+        let texture = ctx.load_texture(
+            "ghost-slot-tint-proof",
+            egui::ColorImage::from_rgba_unmultiplied([1, 1], &[255; 4]),
+            egui::TextureOptions::default(),
+        );
+        let id = texture.id();
+        editor.textures.insert("torso".into(), texture.clone());
+        editor
+            .ghosting
+            .solid_textures
+            .insert("torso".into(), texture);
+        for (mode, color) in [
+            (GhostImages::Images, [60, 180, 0, 64]),
+            (GhostImages::Solid, [120, 180, 240, 64]),
+        ] {
+            editor.ghosting.images = mode;
+            let frame = GhostFrame {
+                poses: vec![GhostPose {
+                    scene: editor.scene_for_view().unwrap(),
+                    origin: pos2(300., 300.),
+                    color: Color32::from_rgb(120, 180, 240),
+                }],
+            };
+            let mut output = ctx.run_ui(
+                egui::RawInput {
+                    focused: true,
+                    ..Default::default()
+                },
+                |ui| editor.paint_ghosts(ui.painter(), &frame, 1.),
+            );
+            let colors = mesh_colors(&output.shapes, id);
+            output.textures_delta.clear();
+            assert_eq!(colors.len(), 4);
+            assert!(
+                colors
+                    .iter()
+                    .all(|&actual| actual == scene_view::attachment_tint(color))
+            );
+        }
+        assert_eq!(
+            editor.session.document().slots[slot].color,
+            [128, 255, 0, 64]
+        );
+        assert!(!editor.session.can_undo());
+    }
+}

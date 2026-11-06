@@ -18,13 +18,13 @@ Input-only obsolete integer `order` is validated and omitted, never used to sort
 | --- | --- | --- |
 | Bones | Normal inheritance; X/Y, rotation, scale X/Y, shear X/Y, length | Other inheritance modes, skin-required bones |
 | Attachments | Regions, unweighted meshes and weighted meshes with explicit UVs/topology and bone-local influences | Linked meshes, clipping, paths, sequences, other attachment types |
-| Slots | Setup attachment and normal blending in fixed draw order | Tint, dark tint, other blend modes |
+| Slots | Setup attachment, exact RGBA tint and normal blending in fixed draw order | Dark/two-color tint, other blend modes |
 | Skins | Region/mesh maps, explicit attachment names and default-skin fallback | Skin-required bones or constraints |
 | Animation | Bone rotation, translation, scale and shear; combined or scalar input timelines | Slot, attachment, draw-order, event or constraint timelines |
 | Curves | Linear, stepped, normalized monotone-time cubic handles | Nonfinite or unordered controls; overshooting curves between equal values |
 | Constraints | Static one-/two-bone normal IK, Mix [0,1], two-bone Positive, disjoint chains; animated targets | IK timelines, advanced/dependent/transformed chains; transform, path, physics and other constraints |
 | Images | Loose PNGs for editing; one untrimmed atlas page for desktop export | Packed-atlas import, rotated/trimmed atlas regions, multipage export |
-| Files | `.peachy` v6; in-memory v1–v5 migration; Spine JSON adapter | Native `.spine` projects and binary `.skel` |
+| Files | `.peachy` v7; in-memory v1–v6 migration; Spine JSON adapter | Native `.spine` projects and binary `.skel` |
 
 Our own project format is JSON and holds the editable rig, skin references and clips.
 It is distinct from a runtime export. The importer ignores documented editor-only
@@ -41,7 +41,7 @@ modifying them. All needed features beyond this slice, so no artist migration is
 
 ## Acceptance evidence
 
-The current IK checkpoint passes 288 integrated Rust tests and the required format,
+The IK checkpoint passes 288 integrated Rust tests and the required format,
 Clippy, build and architecture checks. Nine original packed fixtures agree with
 the separately installed runtime across all clips/skins within 0.001 world units;
 the rig actually edited in the native UI passes the same gate. Original IK Lab
@@ -343,3 +343,30 @@ Data interchange and interactive UI acceptance are distinct. Exact installed
 Shear handle/empty-space/Shift behavior and World/Parent numeric display remain
 comparison gates; see [desktop scope](slices/shear-ui.md). Successful CLI imports
 do not establish those behaviors or full Spine UI parity.
+
+
+## Setup Slot Color and native7 — November 6, 2026
+
+Every current slot requires `color:[r,g,b,a]`, exactly four integer bytes0–255 in
+straight/unmultiplied RGBA. White is `[255,255,255,255]`. Zero alpha preserves
+hidden RGB in native files, commands and Spine interchange. Legacy formats1–6
+reject any slot.color presence, even white/null, before the explicit6→7 migration
+adds white to valid slot objects. Missing/malformed current colors remain errors.
+Source files are unchanged on load; explicit Save writes7 with the normal backup.
+
+Spine setup slots accept strict six-digit RGB (opaque alpha) or eight-digit RGBA
+ASCII hex, either case. Omission means white; malformed/null values are refused.
+Nonwhite colors export as eight lowercase hex digits, including hidden RGB at
+zero alpha. White is omitted, so all9 previous original white JSON exports remain
+byte-identical. The external4.3.13 public API agrees on1,029 original cases and
+4,116 normalized channel comparisons with zero error. No runtime implementation
+is read/copied or redistributed.
+
+Tint reaches all native image views. Ghost Images multiply slot RGBA with the
+ghost color; Solid keeps its chosen RGB and applies slot alpha. Color affects
+image pixels, not geometry, picking/bounds or bone overlays. This is setup tint
+only: slot/attachment/color animation timelines, dark/two-color tint, additive
+and other blend modes remain refused. Native7 does not add placeholder IK tracks;
+the separately approved pending [IK animation contract](slices/ik-animation-design.md)
+now targets native8 with the same gates. No new private-rig acceptance audit is
+claimed. See [Slot Color evidence](evidence/slot-color-view.json).

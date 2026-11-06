@@ -5,6 +5,7 @@ impl Editor {
     pub(super) fn cancel_gesture(&mut self) {
         self.cancel_timeline_interaction();
         self.cancel_graph_edit();
+        self.cancel_slot_color_edit();
         self.cancel_ik_edit();
         self.ik_target = None;
         self.cancel_weight_edit();
@@ -204,7 +205,8 @@ impl Editor {
             self.capture = Some(self.capture_directory.join(format!("editor-{stamp}.png")));
             ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
         }
-        if self.ik_shortcuts(ctx)
+        if self.slot_color_shortcuts(ctx)
+            || self.ik_shortcuts(ctx)
             || self.transform_shortcuts(ctx)
             || self.weight_edit_shortcuts(ctx)
             || self.timeline_view_shortcuts(ctx)

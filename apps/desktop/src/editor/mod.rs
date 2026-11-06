@@ -19,6 +19,7 @@ mod scene_view;
 mod selection;
 mod selection_history;
 mod shortcuts;
+mod slot_color;
 mod style;
 #[cfg(test)]
 mod test_support;
@@ -122,6 +123,7 @@ pub(crate) struct Editor {
     ghosting: ghosting::GhostingState,
     preview: preview::PreviewView,
     graph: graph::GraphView,
+    slot_color: slot_color::SlotColorView,
     weights: weights::WeightsState,
     weight_edit: Option<weight_direct::WeightEdit>,
     weight_blocked: Option<egui::Id>,
@@ -246,6 +248,7 @@ impl Editor {
             ghosting: Default::default(),
             preview: Default::default(),
             graph: Default::default(),
+            slot_color: Default::default(),
             drag: None,
             transform_blocked: false,
             transform_blocked_control: None,
@@ -322,6 +325,7 @@ impl Editor {
     }
 
     fn dispatch(&mut self, command: Command) -> bool {
+        self.cancel_slot_color_edit();
         self.cancel_graph_edit();
         self.cancel_ik_edit();
         self.ik_target = None;
@@ -416,6 +420,7 @@ impl Editor {
         mut local: Transform,
         properties: &[Property],
     ) {
+        self.cancel_slot_color_edit();
         self.cancel_graph_edit();
         self.cancel_ik_edit();
         self.ik_target = None;
@@ -562,6 +567,10 @@ impl Editor {
     }
     fn undo(&mut self) {
         self.cancel_timeline_interaction();
+        if self.slot_color_edit_active() {
+            self.cancel_slot_color_edit();
+            return;
+        }
         if self.graph_edit_active() {
             self.cancel_graph_edit();
             return;
@@ -596,6 +605,10 @@ impl Editor {
     }
     fn redo(&mut self) {
         self.cancel_timeline_interaction();
+        if self.slot_color_edit_active() {
+            self.cancel_slot_color_edit();
+            return;
+        }
         if self.graph_edit_active() {
             self.cancel_graph_edit();
             return;
@@ -671,6 +684,7 @@ impl Editor {
                     self.ghosting.reset_document();
                     self.preview.reset_document();
                     self.graph.reset_document();
+                    self.slot_color.reset_document();
                     self.weight_blocked = None;
                     self.weight_controls = None;
                     self.ik_edit = None;
@@ -768,6 +782,7 @@ impl Editor {
         self.reconcile_selection();
         self.reconcile_timeline_input(&ctx);
         self.reconcile_graph_input(&ctx);
+        self.reconcile_slot_color_input(&ctx);
         self.shortcuts(&ctx);
         self.advance_preview(&ctx);
         self.observe_timeline_input(&ctx);
@@ -898,6 +913,7 @@ impl Editor {
         self.finish_idle_transactions(&ctx);
         self.observe_preview_focus(&ctx);
         self.observe_graph_focus(&ctx);
+        self.observe_slot_color_focus(&ctx);
         if let Some(error) = self.error.clone() {
             egui::Window::new("Project needs attention")
                 .collapsible(false)
@@ -962,6 +978,7 @@ impl Editor {
                 report["ghosting"] = self.ghosting_diagnostic();
                 report["preview"] = self.preview_diagnostic();
                 report["graph"] = self.graph_diagnostic();
+                report["slotColor"] = self.slot_color_diagnostic();
                 report["playbackSpeed"] = self.playback_speed.into();
                 report["animationEnd"] = self.animation_end().into();
                 report["weightedMeshCount"] = self.weighted_mesh_count().into();

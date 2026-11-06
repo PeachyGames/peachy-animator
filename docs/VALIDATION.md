@@ -1283,3 +1283,46 @@ Rollback: revert the Graph integration commit then `cb2afd0`, preserving unrelat
 later work. The owned editor is verified exited, temporary localhost GUI
 authorization/command directory are removed, no private key is written, and no
 browser is launched.
+
+
+## Setup Slot Color and native7 — November 6, 2026
+
+The integrated source passes formatting, **390 workspace Rust tests** (including
+**165 desktop** and **153 engine** tests), all-targets Clippy with warnings denied,
+the workspace build and seven-crate architecture guard. Hosted CI was not run.
+Nine chooser checks cover exact RGBA, hidden RGB at alpha0, real picker/hex input,
+Hue→SV intent on gray, one-step Undo/Redo, invalid/no-op/cancel/focus behavior,
+typed targets, read-only Animate, pending poses, file actions and held input.
+Two additional paint-mesh checks verify viewport/Outline/Preview tint and both
+ghost modes. The initial test incorrectly expected can_undo=false during a changed
+transaction; Session intentionally exposes Undo as cancellation. Its corrected
+regression verifies one committed step and a clean baseline after Undo.
+
+Native7 requires exact four-byte setup slot.color. Legacy1–6 reject field presence
+before white migration; current missing/malformed fields fail. All9 previous white
+Spine JSON exports are byte-identical; all35 legacy fixture files remain unchanged.
+An original public-API oracle checks1,029 cases/4,116 normalized channel values with
+zero error, including all byte values,6RGB/8RGBA and case handling. Runtime code is
+not inspected/copied or redistributed. Static IK behavior remains unchanged; the
+pending approved IK animation contract now explicitly targets native8 with the
+same gates, preserving slot colors and adding no unused IK fields to native7.
+
+The [native capture](slot-color-view-editor.png) shows exact#FF5078D2 body color,
+the inline chooser and original artwork with body/head/palm tint/alpha changes.
+The fixture is a task copy authored through real CLI SetSlotColor commands, never
+an artist input. The normal owned foreground window and clipped controls are
+verified. Temporary startup only selects the body slot/opens the view; final source
+is restored byte-for-byte and app rebuilt. This is rendering evidence; native
+click/typed-value acceptance remains **pending**. See [evidence](evidence/slot-color-view.json).
+
+The clean integration baseline is `976f858` (full hash retained). Source/status/
+diff,9 copied originals/export baselines, legacy hashes, probes, lane/UI source,
+all checks and native cleanup are under
+`../.local-backups/peachy-slot-color-20261106T190033Z-83a8ab/` and
+`../.local-backups/peachy-slot-color-ui-20261106T190400Z-54159a/`.
+Rollback: revert the integration commit, then `b5a2d1b`, `6a792cc`, `42289d3` and
+`2b657b5`, preserving unrelated work. To use an older binary, restore a pre-Save
+native6 backup; do not manually change a native7 version number or discard colors.
+Existing source files are unchanged until explicit Save, which retains a backup.
+The task-owned editor is verified exited, temporary GUI authorization/command
+files are removed, no private key is written, and no browser is launched.

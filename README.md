@@ -288,11 +288,11 @@ CLI outputs must be new files; it refuses to overwrite existing output. The CLI
 `export` command writes JSON only. Use the desktop exporter for a packed bundle.
 The CLI `bundle` command uses that same shared exporter.
 Native projects reference loose images in `images/` beside the project. Native
-format v6 requires an ordered constraints list, bone shear X/Y and tagged `slotLocal`/`weighted` mesh
+format v7 requires exact four-byte setup RGBA on every slot, an ordered constraints list, bone shear X/Y and tagged `slotLocal`/`weighted` mesh
 vertices. Animation duration follows its last key, including empty clips. The loader
-migrates v1–v5 projects in memory, preserving legacy holds/vertices, adding
-zero shear and empty constraints where needed. Loading leaves source bytes unchanged. Explicit Save
-writes v6 and backs up the previous file; older binaries cannot open v6. Bone
+migrates v1–v6 projects in memory, preserving legacy holds/vertices, adding
+zero shear, empty constraints and white slot colors where needed. Loading leaves source bytes unchanged. Explicit Save
+writes v7 and backs up the previous file; older binaries cannot open v7. Bone
 command payloads require all seven transform fields. `pose` accepts an optional
 skin name and emits authored locals, applied locals, world transforms and attachment geometry; unsupported or nonfinite evaluation fails
 explicitly before JSON output.

@@ -48,6 +48,25 @@ pub(super) fn grid_lines(min: f32, max: f32, origin: f32, step: f32) -> impl Ite
     })
 }
 
+/// Renderer colors are premultiplied only at the final drawing boundary.
+/// Native slot bytes stay straight RGBA, including hidden RGB at alpha zero.
+pub(super) fn attachment_tint([r, g, b, a]: [u8; 4]) -> Color32 {
+    Color32::from_rgba_unmultiplied(r, g, b, a)
+}
+
+pub(super) fn ghost_tint(ghost: Color32, slot: [u8; 4], solid: bool) -> Color32 {
+    let base = ghost.to_srgba_unmultiplied();
+    let multiply = |a: u8, b: u8| ((u16::from(a) * u16::from(b) + 127) / 255) as u8;
+    let rgb = [0, 1, 2].map(|axis| {
+        if solid {
+            base[axis]
+        } else {
+            multiply(base[axis], slot[axis])
+        }
+    });
+    attachment_tint([rgb[0], rgb[1], rgb[2], multiply(base[3], slot[3])])
+}
+
 impl Editor {
     pub(super) fn scene_for_view(&self) -> Result<Scene, String> {
         checked_scene_from_locals(
@@ -223,5 +242,64 @@ mod tests {
         assert_eq!(editor.session.is_dirty(), dirty);
         assert_eq!(editor.time, 0.5);
         assert_eq!(editor.selected_bone(), Some(8));
+    }
+}
+
+#[cfg(test)]
+mod slot_tint_tests {
+    use super::super::test_support::{editor_context, editor_fixture, mesh_colors};
+    use super::*;
+
+    #[test]
+    fn viewport_outline_and_preview_draw_the_owning_slot_rgba() {
+        for view in [
+            None,
+            Some(views::DockView::Outline),
+            Some(views::DockView::Preview),
+        ] {
+            let ctx = editor_context();
+            let mut editor = editor_fixture();
+            let mut doc = editor.session.document().clone();
+            let slot = doc
+                .slots
+                .iter()
+                .position(|slot| slot.name == "body")
+                .unwrap();
+            let color = [255, 64, 0, 128];
+            doc.slots[slot].color = color;
+            editor.session = Session::new(doc).unwrap();
+            editor.show_tree = false;
+            editor.show_dopesheet = false;
+            if let Some(view) = view {
+                editor.view_tabs.open.insert(view);
+            }
+            let texture = ctx.load_texture(
+                "slot-tint-proof",
+                egui::ColorImage::from_rgba_unmultiplied([1, 1], &[255; 4]),
+                egui::TextureOptions::default(),
+            );
+            let id = texture.id();
+            editor.textures.insert("torso".into(), texture);
+            let mut found = Vec::new();
+            for _ in 0..3 {
+                let mut output = ctx.run_ui(
+                    egui::RawInput {
+                        focused: true,
+                        screen_rect: Some(egui::Rect::from_min_size(Pos2::ZERO, vec2(1500., 960.))),
+                        ..Default::default()
+                    },
+                    |ui| editor.workspace_ui(ui),
+                );
+                found = mesh_colors(&output.shapes, id);
+                output.textures_delta.clear();
+            }
+            assert_eq!(found.len(), if view.is_some() { 8 } else { 4 }, "{view:?}");
+            assert!(
+                found.iter().all(|&value| value == attachment_tint(color)),
+                "{view:?}: {found:?}"
+            );
+            assert_eq!(editor.session.document().slots[slot].color, color);
+            assert!(!editor.session.can_undo());
+        }
     }
 }

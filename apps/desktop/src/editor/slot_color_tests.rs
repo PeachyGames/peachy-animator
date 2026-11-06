@@ -107,7 +107,8 @@ fn picker_drag_previews_exact_bytes_then_commits_once_and_undo_redo_restore_them
     let p = begin_picker(&mut editor, &ctx);
     let preview = bytes(&editor, 0);
     assert_ne!(preview, [201, 43, 77, 189]);
-    assert!(!editor.session.can_undo());
+    // Session exposes Undo during a changed transaction so the UI can cancel it.
+    assert!(editor.session.can_undo());
     let end = point(&editor, "slotColorSV", 0.3, 0.7);
     pointer(&mut editor, &ctx, end, false);
     assert!(!editor.slot_color_edit_active());
