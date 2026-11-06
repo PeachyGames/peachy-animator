@@ -11,7 +11,11 @@ pointer origin, modifier state and chart geometry. If the pressed key was not
 selected, the drag acts on that key alone. Otherwise it preserves the selected
 group. Duplication is captured at press, so releasing Cmd/Ctrl or Shift before the
 movement threshold does not change a copy into a move. Shift's snapping override
-uses its current state while moving.
+uses its current state while moving. Pointer button events supply press/release
+modifiers, so a later modifier release or capture key cannot change a click toggle.
+A pending click becomes a preview only after real horizontal motion crosses the
+framework click threshold; release alone never starts retiming or consumes a
+selection toggle.
 
 The pressed key's destination snaps to a full frame by default. The same offset
 is applied to the group, preserving relative timing, including fractional source
@@ -66,8 +70,9 @@ Native acceptance should cover:
 
 
 Local lane checks pass with the core prerequisite: formatting, warnings-denied
-Clippy, workspace build, six-crate architecture check and 72 Rust tests. The two
+Clippy, workspace build, six-crate architecture check and 73 Rust tests. The three
 new pure drag-model tests cover fixed mapping, fractional-key snapping/group clamp,
-source selection and cancellation metadata. The lane uses its own target directory;
+source selection, cancellation metadata, and modified-click release without
+retiming a fractional key or inheriting the frame's later modifier snapshot. The lane uses its own target directory;
 no Cargo dependency or native schema changed. Native interaction verification is
 an integration gate and is not established by these unit tests.
