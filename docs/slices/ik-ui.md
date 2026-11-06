@@ -7,6 +7,11 @@ history, and never act as an implicit bone selection. Bone annotations select th
 constraint; active constrained-bone origins have an outlined cue. These are
 independent drawings, not copied assets or a claim of exact 4.3 pixels.
 
+F2 and the shared header Rename icon use the existing name dialog and replace
+only the selected constraint's name through SetIkConstraint. Empty/duplicate
+names fail atomically; refs, order, settings and pending bone poses stay intact.
+Opening Rename cancels a target chooser or preview before capturing the name.
+
 In Setup, Mix is a percentage slider/numeric entry and Positive is available for
 two-bone constraints. Parent, Child and Target names select their actual bones.
 The Target pencil enters an existing-bone chooser; a concrete Tree/viewport bone

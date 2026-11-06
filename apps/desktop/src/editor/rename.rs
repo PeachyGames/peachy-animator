@@ -106,6 +106,7 @@ impl Editor {
             TreeItem::Bone(_) => "bone",
             TreeItem::Slot(_) => "slot",
             TreeItem::Animation(_) => "animation",
+            TreeItem::Constraint(_) => "IK constraint",
             _ => return,
         };
         if item.exists(self.session.document()) {
@@ -140,6 +141,13 @@ impl Editor {
                     TreeItem::Bone(bone) => Command::RenameBone { bone, name },
                     TreeItem::Slot(slot) => Command::RenameSlot { slot, name },
                     TreeItem::Animation(animation) => Command::RenameAnimation { animation, name },
+                    TreeItem::Constraint(constraint) => {
+                        let Some(mut value) = self.ik_constraint(constraint).cloned() else {
+                            return;
+                        };
+                        value.name = name;
+                        Command::SetIkConstraint { constraint, value }
+                    }
                     _ => return,
                 };
                 match self.session.dispatch(command) {
@@ -153,5 +161,186 @@ impl Editor {
             DialogAction::None => {}
         }
         self.rename = Some(state);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::test_support::{editor_context, editor_fixture, workspace_frame};
+    use super::*;
+
+    fn fixture() -> Editor {
+        let mut editor = editor_fixture();
+        let mut document = editor.session.document().clone();
+        document.constraints = vec![
+            Constraint::Ik(IkConstraint {
+                name: "arm IK".into(),
+                bones: vec![7, 8],
+                target: 0,
+                setup: IkSetup {
+                    mix: 0.,
+                    bend_positive: true,
+                },
+            }),
+            Constraint::Ik(IkConstraint {
+                name: "other IK".into(),
+                bones: vec![2],
+                target: 0,
+                setup: IkSetup {
+                    mix: 0.,
+                    bend_positive: false,
+                },
+            }),
+        ];
+        editor.session = Session::new(document).unwrap();
+        editor.select(TreeItem::Constraint(0));
+        editor
+    }
+    fn key(key: egui::Key) -> Vec<egui::Event> {
+        [true, false]
+            .into_iter()
+            .map(|pressed| egui::Event::Key {
+                key,
+                physical_key: None,
+                pressed,
+                repeat: false,
+                modifiers: egui::Modifiers::NONE,
+            })
+            .collect()
+    }
+    fn click(editor: &mut Editor, ctx: &egui::Context, target: &str) {
+        let [left, top, right, bottom] = editor.capture_targets[target];
+        let pos = pos2((left + right) / 2., (top + bottom) / 2.);
+        for pressed in [true, false] {
+            workspace_frame(
+                editor,
+                ctx,
+                vec![
+                    egui::Event::PointerMoved(pos),
+                    egui::Event::PointerButton {
+                        pos,
+                        button: egui::PointerButton::Primary,
+                        pressed,
+                        modifiers: egui::Modifiers::NONE,
+                    },
+                ],
+            );
+        }
+    }
+    #[test]
+    fn constraint_rename_reuses_header_dialog_and_preserves_data_pending_and_typed_history() {
+        let mut editor = fixture();
+        editor.setup_mode = true;
+        let mut local = editor.session.local_pose(Some(0), editor.time)[2];
+        local.rotation += 17.;
+        editor
+            .session
+            .edit_pose(
+                2,
+                EditTarget::Animate {
+                    animation: 0,
+                    time: editor.time,
+                },
+                local,
+                &[Property::Rotation],
+                false,
+            )
+            .unwrap();
+        let pending = editor.session.pose_edits().clone();
+        let original = editor.session.document().clone();
+        let time = editor.time;
+        let ctx = editor_context();
+        workspace_frame(&mut editor, &ctx, vec![]);
+        click(&mut editor, &ctx, "ikMixValue");
+        workspace_frame(&mut editor, &ctx, vec![egui::Event::Text("50".into())]);
+        assert!(editor.ik_edit.is_some());
+        assert_ne!(editor.session.document(), &original);
+        click(&mut editor, &ctx, "ikRename");
+        assert!(editor.ik_edit.is_none());
+        assert!(editor.rename.is_some());
+        assert_eq!(editor.session.document(), &original);
+        workspace_frame(
+            &mut editor,
+            &ctx,
+            vec![egui::Event::Text("edited IK".into())],
+        );
+        workspace_frame(&mut editor, &ctx, key(egui::Key::Enter));
+        assert!(editor.rename.is_none());
+        let mut renamed = original.clone();
+        let Constraint::Ik(ik) = &mut renamed.constraints[0];
+        ik.name = "edited IK".into();
+        assert_eq!(editor.session.document(), &renamed);
+        assert_eq!(editor.selection, Some(TreeItem::Constraint(0)));
+        assert_eq!(editor.session.pose_edits(), &pending);
+        assert_eq!(editor.time, time);
+        editor.undo();
+        assert_eq!(editor.session.document(), &original);
+        assert_eq!(editor.session.pose_edits(), &pending);
+        assert_eq!(editor.selection, Some(TreeItem::Constraint(0)));
+        editor.redo();
+        assert_eq!(editor.session.document(), &renamed);
+        assert_eq!(editor.session.pose_edits(), &pending);
+        workspace_frame(&mut editor, &ctx, vec![]);
+        click(&mut editor, &ctx, "ikTargetChoose");
+        assert!(editor.ik_target.is_some());
+        workspace_frame(&mut editor, &ctx, key(egui::Key::F2));
+        assert!(editor.ik_target.is_none());
+        assert!(editor.rename.is_some());
+        assert_eq!(editor.rename.as_ref().unwrap().dialog.name, "edited IK");
+        workspace_frame(&mut editor, &ctx, key(egui::Key::Escape));
+        assert!(editor.rename.is_none());
+        assert_eq!(editor.session.document(), &renamed);
+    }
+    #[test]
+    fn constraint_rename_duplicate_and_empty_failures_preserve_redo_and_a_corrected_name_is_one_step()
+     {
+        let mut editor = fixture();
+        let original = editor.session.document().clone();
+        editor
+            .session
+            .dispatch(Command::RenameAnimation {
+                animation: 0,
+                name: "redo sentinel".into(),
+            })
+            .unwrap();
+        editor.undo();
+        let ctx = editor_context();
+        workspace_frame(&mut editor, &ctx, vec![]);
+        workspace_frame(&mut editor, &ctx, key(egui::Key::F2));
+        workspace_frame(
+            &mut editor,
+            &ctx,
+            vec![egui::Event::Text("other IK".into())],
+        );
+        workspace_frame(&mut editor, &ctx, key(egui::Key::Enter));
+        assert!(editor.rename.as_ref().unwrap().dialog.error.is_some());
+        assert_eq!(editor.session.document(), &original);
+        assert!(editor.session.can_redo());
+        workspace_frame(&mut editor, &ctx, vec![]);
+        workspace_frame(&mut editor, &ctx, key(egui::Key::Backspace));
+        workspace_frame(&mut editor, &ctx, key(egui::Key::Enter));
+        assert_eq!(editor.rename.as_ref().unwrap().dialog.name, "");
+        assert!(editor.rename.as_ref().unwrap().dialog.error.is_some());
+        assert_eq!(editor.session.document(), &original);
+        assert!(editor.session.can_redo());
+        workspace_frame(&mut editor, &ctx, vec![]);
+        workspace_frame(
+            &mut editor,
+            &ctx,
+            vec![egui::Event::Text("corrected IK".into())],
+        );
+        workspace_frame(&mut editor, &ctx, key(egui::Key::Enter));
+        assert!(editor.rename.is_none());
+        let mut renamed = original.clone();
+        let Constraint::Ik(ik) = &mut renamed.constraints[0];
+        ik.name = "corrected IK".into();
+        assert_eq!(editor.session.document(), &renamed);
+        assert_eq!(editor.selection, Some(TreeItem::Constraint(0)));
+        editor.undo();
+        assert_eq!(editor.session.document(), &original);
+        assert!(!editor.session.can_undo());
+        editor.redo();
+        assert_eq!(editor.session.document(), &renamed);
+        assert_eq!(editor.selection, Some(TreeItem::Constraint(0)));
     }
 }
