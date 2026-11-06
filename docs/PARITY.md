@@ -8,9 +8,9 @@ comparison. The native `.peachy` format is our own editable model.
 | Spine capability | Current implementation | Evidence or remaining gate |
 | --- | --- | --- |
 | Workspace, controls and conventions | Layout/shortcut alignment plus typed Tree, contextual selection, filters, activation dots and picking | See [UI parity](UI_PARITY.md); multi-selection, remaining tools and docking remain before weight-painting UI |
-| Transform tools and axes | Rotate/Translate/Scale, Local/Parent/World display and entry, axis handles, numeric operators and active-tool nudges | Reflected/nonuniform parent cases; remaining tools, compensation and exact visual alignment pending |
+| Transform tools and axes | Rotate/Translate/Scale plus bounded bone Shear controls/handles; numeric operators, active-tool nudges and fixed-baseline previews | Shear currently displays local values; exact installed World/Parent display, empty-space/Shift/handle behavior and visual alignment remain gates |
 | Selection navigation | Page Up/Down history and Cmd/Ctrl+number storage / number recall for typed single-item groups | Session state only; multi-selection and persisted group preferences pending |
-| Bone hierarchy and transforms | Normal inheritance, translation, rotation, scale | Sampled world matrices; still needs shear and other inheritance modes |
+| Bone hierarchy and transforms | Normal inheritance, translation, rotation, scale and shear | Independent affine math and original shear interchange cases; other inheritance modes remain pending |
 | Region attachments and skins | Image transforms, named skins, default fallback, fixed slot draw order | Native editor round trip and external runtime |
 | Unweighted mesh attachments | Import/export explicit UVs, topology, hull, setup vertices | Three original meshes round-trip through editor with identical data; runtime world vertices and atlas UVs agree |
 | Region → mesh | Four corners preserve the textured geometry and slot position | Engine checks under animation, reflection and nonuniform scale; native conversion check |

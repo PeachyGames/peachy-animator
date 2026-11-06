@@ -1,0 +1,299 @@
+{
+  "scope": "Compiled original bone-only synthetic JSON vs separately licensed public runtime API, plus installed-editor reexports; no interactive UI acceptance",
+  "sourceHead": "5473701901dc1f3462db91db2af823d395a51bbb",
+  "cliSha256": "227d4022b200a4771ea7e4faa9e382fbf76f94ccb10321f85b62236924dbe612",
+  "runtimeVersion": "4.3.13",
+  "jsonTarget": "4.3.26",
+  "tolerance": 0.001,
+  "syntheticCases": {
+    "setup-both-zero-scale": {
+      "comparisons": 312,
+      "maxWorldError": 0,
+      "sourceSha256": "8764e32c506f28b89ab9918e8d3b3e00f45cb11905d804cc8525758f799af50b",
+      "sourceUnchanged": true
+    },
+    "setup-fullturn-signs": {
+      "comparisons": 624,
+      "maxWorldError": 4.085189053704141e-08,
+      "sourceSha256": "57a8e132bed4ff0af642ca67ef18e08b0909d2d50b9c3370cef8aabe88cdfaca",
+      "sourceUnchanged": true
+    },
+    "setup-huge-1e20": {
+      "comparisons": 312,
+      "maxWorldError": 8.631516501544922e-09,
+      "sourceSha256": "439672506660c8c2fe695a022b7e81e9194f1764c0c4d7ecaf149abd6c92ca85",
+      "sourceUnchanged": true
+    },
+    "setup-huge-f32-max": {
+      "comparisons": 312,
+      "maxWorldError": 1.450934239421997e-08,
+      "sourceSha256": "b4879b7edec2a484e63e918753032853766c3bacbfcd5b360abf792871a91895",
+      "sourceUnchanged": true
+    },
+    "setup-huge-native-f32-1e20": {
+      "comparisons": 312,
+      "maxWorldError": 8.631516501544922e-09,
+      "sourceSha256": "439672506660c8c2fe695a022b7e81e9194f1764c0c4d7ecaf149abd6c92ca85",
+      "sourceUnchanged": true
+    },
+    "setup-native-large-1e6": {
+      "comparisons": 312,
+      "maxWorldError": 2.961191658545914e-08,
+      "sourceSha256": "6da677326094a97796c53516a059ce8535942089159ba09be0bada50bb16f40a",
+      "sourceUnchanged": true
+    },
+    "setup-native-moderate-10000": {
+      "comparisons": 312,
+      "maxWorldError": 2.7383429967997586e-08,
+      "sourceSha256": "0c236ffb3017786b042b17989e7f024e2dfd546caf55d4d5b7281e824f457a46",
+      "sourceUnchanged": true
+    },
+    "setup-near-parallel": {
+      "comparisons": 312,
+      "maxWorldError": 5.995204332975845e-15,
+      "sourceSha256": "4f44fc7504acb9cb6456cf8ef3d83858406cd77d5856ffbcd65098cbffbb1df3",
+      "sourceUnchanged": true
+    },
+    "setup-normal-parent": {
+      "comparisons": 936,
+      "maxWorldError": 1.5435299474120256e-06,
+      "sourceSha256": "f7ea3a82d8935d2b15f76e6af1dd04f27d046c33e5a9788a9aa549b0eba84230",
+      "sourceUnchanged": true
+    },
+    "setup-parallel": {
+      "comparisons": 312,
+      "maxWorldError": 2.832769475542897e-16,
+      "sourceSha256": "4c9ba3f9819af0d5593292294052580525ed39bbfa85018b81edb16d60cfbb78",
+      "sourceUnchanged": true
+    },
+    "setup-reflected-nonuniform": {
+      "comparisons": 936,
+      "maxWorldError": 2.943825229806407e-06,
+      "sourceSha256": "95d4905694a7bd73ed631ef94801416385d1e8f6dbe7c3af1ae6c6d459f9f349",
+      "sourceUnchanged": true
+    },
+    "setup-shear-equal": {
+      "comparisons": 312,
+      "maxWorldError": 8.934197381904596e-09,
+      "sourceSha256": "1f02af08062bc6260d0f4daf1305f87e7c89b391eb5477d36d3b734d3c6732e0",
+      "sourceUnchanged": true
+    },
+    "setup-shear-signs": {
+      "comparisons": 312,
+      "maxWorldError": 2.712344615574125e-08,
+      "sourceSha256": "96d12dcdc37e3fdb83cb7361ef9f508c4e901ba56138fd6ab1389d846f62cbf6",
+      "sourceUnchanged": true
+    },
+    "setup-shear-x": {
+      "comparisons": 312,
+      "maxWorldError": 2.7411723557690948e-08,
+      "sourceSha256": "d9008eecf6934eb8751a16c618a5aa158fc904dfbf98da03a866b817e9b25bb1",
+      "sourceUnchanged": true
+    },
+    "setup-shear-y": {
+      "comparisons": 312,
+      "maxWorldError": 1.7604822710737267e-08,
+      "sourceSha256": "7585dd98511771dbb21d288aa6208392294ccc687a6474c31f6d172cbe133241",
+      "sourceUnchanged": true
+    },
+    "setup-small-scale": {
+      "comparisons": 624,
+      "maxWorldError": 2.7987204210239643e-27,
+      "sourceSha256": "dab77f30ac5654cead0788acf309bfd43cd725ad0d8a0eed7d642dd49980ed11",
+      "sourceUnchanged": true
+    },
+    "setup-zero-legacy": {
+      "comparisons": 624,
+      "maxWorldError": 3.4798078463182947e-07,
+      "sourceSha256": "05fea9c9ac282005e7f02e068ade00b6679380164d6d0223d1da5260dd804e14",
+      "sourceUnchanged": true
+    },
+    "setup-zero-shear-10000": {
+      "comparisons": 312,
+      "maxWorldError": 1.1234084329458938e-08,
+      "sourceSha256": "c68bcc4e27de9211402fe9b2d90128695da9122311f1234a716366b5db747cde",
+      "sourceUnchanged": true
+    },
+    "setup-zero-shear-huge-f32-max": {
+      "comparisons": 312,
+      "maxWorldError": 2.8098855242575382e-08,
+      "sourceSha256": "d29acfa9e31d59ef6be2b474df7411945c7007c1a568c8d977d3c950b2624f59",
+      "sourceUnchanged": true
+    },
+    "setup-zero-shear-huge-native-1e20": {
+      "comparisons": 312,
+      "maxWorldError": 2.3120784842234343e-08,
+      "sourceSha256": "edb2ed11a22cc0acaa974795ca05e7bfabb3ecaf3f199ee907c89d24594e19c3",
+      "sourceUnchanged": true
+    },
+    "setup-zero-x-scale": {
+      "comparisons": 312,
+      "maxWorldError": 2.6872937541888575e-08,
+      "sourceSha256": "670bea8c2e5f23fe1244dab06f0828d58be9afc6e9af2674bb3c2218d12d833e",
+      "sourceUnchanged": true
+    },
+    "timeline-paired-bezier-eight": {
+      "comparisons": 312,
+      "maxWorldError": 7.099138032984342e-08,
+      "sourceSha256": "5b73ae3d0cccc788ddbffb6142d037e7d4d63acbf640208ffe0c554950e389f2",
+      "sourceUnchanged": true
+    },
+    "timeline-paired-fullturn": {
+      "comparisons": 312,
+      "maxWorldError": 2.962318731425384e-07,
+      "sourceSha256": "fb63eabcb7d6bea38c7a428994e6174ff0c98ac7fba7244cc319f77ace799603",
+      "sourceUnchanged": true
+    },
+    "timeline-paired-linear": {
+      "comparisons": 312,
+      "maxWorldError": 6.622903248043599e-08,
+      "sourceSha256": "85038c0c2440085377f9b5de7784b6b79d708d1ec5c313912fc11de2b1e2d6b4",
+      "sourceUnchanged": true
+    },
+    "timeline-paired-omitted-y": {
+      "comparisons": 312,
+      "maxWorldError": 6.622903248043599e-08,
+      "sourceSha256": "c2ee71928ab9aa292f44a1ebbc0adcf11aca9a492ba454467c58bb1e0f1eca4b",
+      "sourceUnchanged": true
+    },
+    "timeline-paired-stepped": {
+      "comparisons": 312,
+      "maxWorldError": 5.4252158099288295e-08,
+      "sourceSha256": "32ed4fdef23acb598764e768b26983be102f614a45aa672bbb5cee80e223b03e",
+      "sourceUnchanged": true
+    },
+    "timeline-scalar-bezier-four": {
+      "comparisons": 312,
+      "maxWorldError": 7.099138032984342e-08,
+      "sourceSha256": "82ef4b9784aceac3571971bdf9957a31780f9e4489a60e7235bd15e7f73bb5a1",
+      "sourceUnchanged": true
+    },
+    "timeline-scalar-fullturn": {
+      "comparisons": 312,
+      "maxWorldError": 2.962318731425384e-07,
+      "sourceSha256": "8aea03b5f09758b2edadb19ed5313dbfdf90b0f70236e49f80cfb20588c2136e",
+      "sourceUnchanged": true
+    },
+    "timeline-scalar-linear": {
+      "comparisons": 312,
+      "maxWorldError": 6.622903248043599e-08,
+      "sourceSha256": "badca48daee0a7dc37b3b1e529653a329d0000732446d63904364079bea37bde",
+      "sourceUnchanged": true
+    },
+    "timeline-scalar-stepped": {
+      "comparisons": 312,
+      "maxWorldError": 5.4252158099288295e-08,
+      "sourceSha256": "1dfef4f6f8c61313a3fbe0892286647244b406351136a8715e3758f024154f50",
+      "sourceUnchanged": true
+    }
+  },
+  "syntheticComparisons": 11544,
+  "syntheticMaxWorldError": 2.943825229806407e-06,
+  "editorReexports": {
+    "setup-shear-x": {
+      "independentAdapterAccepted": true,
+      "sourceUnchanged": true,
+      "runtimeComparisons": 312,
+      "maxWorldError": 2.7411723557690948e-08
+    },
+    "setup-shear-y": {
+      "independentAdapterAccepted": true,
+      "sourceUnchanged": true,
+      "runtimeComparisons": 312,
+      "maxWorldError": 1.7604822710737267e-08
+    },
+    "setup-shear-equal": {
+      "independentAdapterAccepted": true,
+      "sourceUnchanged": true,
+      "runtimeComparisons": 312,
+      "maxWorldError": 8.934197381904596e-09
+    },
+    "setup-shear-signs": {
+      "independentAdapterAccepted": true,
+      "sourceUnchanged": true,
+      "runtimeComparisons": 312,
+      "maxWorldError": 2.712344615574125e-08
+    },
+    "setup-normal-parent": {
+      "independentAdapterAccepted": true,
+      "sourceUnchanged": true,
+      "runtimeComparisons": 936,
+      "maxWorldError": 1.4734296964746818e-06
+    },
+    "setup-reflected-nonuniform": {
+      "independentAdapterAccepted": true,
+      "sourceUnchanged": true,
+      "runtimeComparisons": 936,
+      "maxWorldError": 3.954557712404494e-06
+    },
+    "setup-fullturn-signs": {
+      "independentAdapterAccepted": true,
+      "sourceUnchanged": true,
+      "runtimeComparisons": 624,
+      "maxWorldError": 4.085189053704141e-08
+    },
+    "timeline-paired-linear": {
+      "independentAdapterAccepted": true,
+      "sourceUnchanged": true,
+      "runtimeComparisons": 312,
+      "maxWorldError": 1.0759351987132959e-07
+    },
+    "timeline-scalar-linear": {
+      "independentAdapterAccepted": true,
+      "sourceUnchanged": true,
+      "runtimeComparisons": 312,
+      "maxWorldError": 1.0759351987132959e-07
+    },
+    "timeline-paired-stepped": {
+      "independentAdapterAccepted": true,
+      "sourceUnchanged": true,
+      "runtimeComparisons": 312,
+      "maxWorldError": 9.710999826495481e-08
+    },
+    "timeline-scalar-stepped": {
+      "independentAdapterAccepted": true,
+      "sourceUnchanged": true,
+      "runtimeComparisons": 312,
+      "maxWorldError": 9.710999826495481e-08
+    },
+    "timeline-paired-bezier-eight": {
+      "independentAdapterAccepted": true,
+      "sourceUnchanged": true,
+      "runtimeComparisons": 312,
+      "maxWorldError": 1.0955631202236304e-07
+    },
+    "timeline-scalar-bezier-four": {
+      "independentAdapterAccepted": true,
+      "sourceUnchanged": true,
+      "runtimeComparisons": 312,
+      "maxWorldError": 1.0955631202236304e-07
+    },
+    "timeline-paired-fullturn": {
+      "independentAdapterAccepted": true,
+      "sourceUnchanged": true,
+      "runtimeComparisons": 312,
+      "maxWorldError": 2.982199137219199e-07
+    },
+    "timeline-scalar-fullturn": {
+      "independentAdapterAccepted": true,
+      "sourceUnchanged": true,
+      "runtimeComparisons": 312,
+      "maxWorldError": 2.982199137219199e-07
+    },
+    "timeline-paired-omitted-y": {
+      "independentAdapterAccepted": true,
+      "sourceUnchanged": true,
+      "runtimeComparisons": 312,
+      "maxWorldError": 1.0759351987132959e-07
+    },
+    "ShearReference": {
+      "independentAdapterAccepted": true,
+      "sourceUnchanged": true
+    }
+  },
+  "editorRuntimeComparisons": 6552,
+  "editorRuntimeMaxWorldError": 3.954557712404494e-06,
+  "artworkFixtureNotIncluded": true,
+  "runtimeImplementationInspected": false,
+  "coordinatorFinalBuildVerified": true
+}

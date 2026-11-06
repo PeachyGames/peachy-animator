@@ -322,3 +322,38 @@ written controls and artwork, not extracted proprietary assets. See
 [native acceptance](evidence/direct-native.json) and
 [visual review](evidence/direct-visual.json). These observations of our editor
 remain separate from interactive Spine comparison and exact docking/pixel parity.
+
+
+## Independent bone shear — November 6, 2026 UTC
+
+The [shear design](slices/shear-design.md) and
+[engine observation record](../crates/engine/SHEAR_PROVENANCE.md) separate public
+contracts, independently measured data and unobserved UI behavior. Sources are the
+official Bones/Tools/Keys/JSON/4.3 API guides, staff guidance linked by the design,
+and public-API execution of original synthetic JSON in the separately installed
+Spine runtime 4.3.13. No editor/runtime implementation or constants were inspected.
+
+Angular basis math uses general affine composition. A coefficient was independently
+calibrated from four unit-root outputs, selected before held-out tests, and checked
+against observed finite matrices. Failed ordinary-Pi/modulo/f32-sum candidates are
+retained locally. This establishes bounded numerical behavior, not an assertion
+about proprietary implementation. Native v5, migration, region/bone separation,
+wide finite arithmetic and guarded scene evaluation are independently authored.
+
+The installed editor 4.3.26 imported and re-exported all 17 original shear cases,
+including an original Peach Bot reference project; the subsequent Shear Lab gate
+adds an eighteenth accepted input. Inputs remained unchanged.
+This was a public command-line data check; no interactive Spine UI or screenshots
+were obtained. Screen Capture preflight was false inside the verified fresh GUI
+login, with no permission prompt or settings changes. Exact Shear display,
+empty-space/Shift behavior and handle cues remain comparison gates. Our current
+local-value policy and independently drawn handles are explicitly bounded.
+
+
+The final independently authored desktop slice is native-verified with original
+Shear Lab input. Its reviewed captures contain our artwork and independent vector
+controls. Fixed-baseline input, focus routing and checked scene/grid arithmetic
+reuse our existing Session and shell boundaries. The native-edited saved document
+also passes the separately licensed runtime oracle. No editor/runtime implementation,
+source map, constant or proprietary UI asset was inspected, copied or redistributed.
+The [UI scope](slices/shear-ui.md) retains the unobserved reference gates.

@@ -3,10 +3,11 @@
 A native 2D skeletal animation editor from Team Peachy, with an independent Rust
 core and Spine-compatible exports. The current slices include Spine-style naming,
 Dopesheet selection/retiming/clipboard actions, key-derived animation duration, and
-weighted mesh import, bone-driven preview, binding and single-vertex Direct weights.
+weighted mesh import, bone-driven preview, binding, single-vertex Direct weights,
+and bone shear data/authoring controls. Shear interaction comparison is still in progress.
 This is still a bounded subset of Spine.
 
-![Weighted Peach Bot in the editor](docs/weighted-editor.png)
+![Original Shear Lab in the native editor](docs/shear-posed.png)
 
 ## Try it
 
@@ -34,7 +35,18 @@ For the weighted mesh demo:
 cargo run -p peachy-animator -- examples/peach-bot/weighted-bot.peachy
 ```
 
-Select its hand.R mesh attachment, then **Vertices**, to inspect the selected
+The original Shear Lab adds reflected/nonuniform parents, nonzero setup shear and
+linear, stepped and Bezier shear clips across region and mesh artwork:
+
+```sh
+cargo run -p peachy-animator -- examples/peach-bot/shear-bot.peachy
+```
+
+Select a bone and press **Z** for Shear. Both numeric axes and explicit handles are
+available; exact installed-Spine empty-space/Shift behavior and World/Parent display
+remain comparison gates. See [the current UI scope](docs/slices/shear-ui.md).
+
+For either mesh fixture, select its hand.R attachment and **Vertices** to inspect the selected
 vertex's bone influences. Weighted inspection works in Setup and Animate, including
 an unkeyed pose. It stops playback and preserves the current pose and mode. Bone
 transforms and animation move the weighted artwork. Press **G** for the Weights
@@ -227,12 +239,14 @@ CLI outputs must be new files; it refuses to overwrite existing output. The CLI
 `export` command writes JSON only. Use the desktop exporter for a packed bundle.
 The CLI `bundle` command uses that same shared exporter.
 Native projects reference loose images in `images/` beside the project. Native
-format v4 tags mesh vertices as `slotLocal` positions or `weighted` bone influences;
-animation duration still follows its last key, including empty clips. The loader
-migrates v1/v2/v3 projects in memory, preserving v2's previous exported hold keys and
-wrapping legacy mesh positions. Loading leaves source bytes unchanged. Explicit
-Save writes v4 and backs up the previous file; older binaries cannot open v4.
-`pose` accepts an optional skin name and also emits evaluated attachment geometry.
+format v5 requires bone shear X/Y and retains tagged `slotLocal`/`weighted` mesh
+vertices. Animation duration follows its last key, including empty clips. The loader
+migrates v1/v2/v3/v4 projects in memory, preserving legacy holds/vertices and adding
+zero shear to legacy bones. Loading leaves source bytes unchanged. Explicit Save
+writes v5 and backs up the previous file; older binaries cannot open v5. Bone
+command payloads require all seven transform fields. `pose` accepts an optional
+skin name and emits evaluated attachment geometry; nonfinite evaluation fails
+explicitly before JSON output.
 
 ## Architecture and verification
 

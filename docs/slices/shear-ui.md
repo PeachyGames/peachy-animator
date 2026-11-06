@@ -1,10 +1,10 @@
 # Shear desktop integration
 
-Status: in progress. Paired bone controls, Z routing, seven scalar timeline rows and
-shared numeric/viewport transform previews are implemented. Installed-reference,
-native and interoperability acceptance remain work. In particular, unsupported
-empty-space mapping remains a comparison gate. This does not claim complete Shear
-interaction parity or a complete vertical slice.
+Status: bounded authoring/data slice implemented and native-verified on November 6,
+2026. Paired controls, Z routing, seven rows and shared fixed-baseline previews pass
+native, runtime and installed-editor data checks. Full Shear interaction parity
+remains in progress: empty-space mapping, Shift, exact handle cues and World/Parent
+display still need installed-reference observation. See [validation](../VALIDATION.md#bone-shear-native-v5-and-shared-transform-input--november-6-2026-utc).
 
 The strict seven-field bone transform and five-field region transform are supplied
 by the core. Region values are promoted for ordinary transform display and checked
@@ -83,3 +83,23 @@ finite arithmetic is retained, with wider fallback for representable intermediat
 overflow. Decorative grid lines use a count derived from viewport width/height
 and a wider phase calculation. This avoids a nonadvancing float-addition loop for
 large finite camera offsets without changing world geometry or authoring state.
+
+
+## Native acceptance
+
+The final source `775c7e3` passes 242 tests and the full root checks. A task-owned
+native run verifies 23.5/-17.25 Setup input with Enter/Tab, two-step Undo/Redo, both
+axis handles as one history step, held-pointer Escape/Save suppression, numeric
+Escape/toolbar/owned-field Save, pending Animate shear, paired keying and Auto Key.
+Transform text updates on commit; numeric Escape/Save abandons uncommitted text.
+The test does not claim model updates while typing before Enter/Tab.
+
+Global file/history actions work over a non-text button focused by Tab, while text
+undo and popup/modal priority remain. Both native behavior and actual-context
+regressions cover this distinction. The restored working file matches the original
+at f32 precision; seven backups are verified, including exact initial raw bytes.
+The original clipboard is restored and the task-owned editor is closed.
+
+[Setup](../shear-editor.png) and [Animate](../shear-posed.png) show original artwork,
+local-policy Shear values and the fully visible seven-row chart/footer. This is
+visual review of our editor, not an installed-Spine pixel comparison.

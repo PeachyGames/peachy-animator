@@ -1,0 +1,23 @@
+{
+  "sourceHead": "775c7e31a99ec99e6dfed3f77661e5cccb7546b1",
+  "scope": "Reviewed captures of our task-owned native editor and original Peach Bot artwork; no installed-Spine pixel comparison",
+  "captures": {
+    "setup": {
+      "path": "shear-editor.png",
+      "sha256": "4b47907cf1b5ccb559b1745558eff74e1fac3b9d83c6cdf5275e5fcd37b62599",
+      "reviewed": true
+    },
+    "posed": {
+      "path": "shear-posed.png",
+      "sha256": "ee74f41932c31430c4978082f98bf8b75ecbe9cdd6f1ddc01b3bac682695e1ba",
+      "reviewed": true
+    }
+  },
+  "observations": [
+    "All ten original textures loaded; complete artwork and independent red X/green Y Shear cues are visible.",
+    "Setup shows exact 23.5/-17.25 Shear values and saved state.",
+    "Animate shows 50/-11 Shear keys, Auto Key, pending orange 13-degree rotation and seven visible Dopesheet rows/footer."
+  ],
+  "exactSpineVisualOrInteractionParity": false,
+  "privateArtwork": false
+}

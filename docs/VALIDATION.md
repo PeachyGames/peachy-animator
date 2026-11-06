@@ -862,3 +862,66 @@ and architecture checks. The Direct native run and captures above remain scoped 
 `694576a`; these mechanical context and engine-preview changes are not presented as
 another native run. Shear model, migration, controls and their acceptance remain
 the next work.
+
+
+## Bone shear, native v5 and shared transform input — November 6, 2026 UTC
+
+Final implementation source `775c7e3` passes **242 Rust tests** (81 desktop,
+115 engine, 5 CLI, 19 I/O and 22 Spine adapter), formatting, warnings-denied
+workspace/all-target Clippy, workspace build and the architecture guard. Checks
+ran on the combined root source with its own Cargo target. Hosted CI and other
+platforms have not been run.
+
+Native v5 requires finite bone shear X/Y, keeps five-field region transforms and
+strictly migrates v1–v4 without modifying load inputs. All seven original
+zero-shear full export goldens remain byte-identical. Curve regressions preserve
+finite ±2e38 spans and reject truly unrepresentable controls/evaluations before
+JSON output; normal f32 results and the ten-segment policy remain. Checked scenes
+guard drawing/picking/diagnostics. A bounded grid iteration fixes non-advancing
+large-coordinate loops.
+
+| Independent gate | Verified result |
+| --- | --- |
+| Compiled synthetic runtime | 30 original cases, 11,544 world values; max error 0.000002944 |
+| Installed Spine 4.3.26 | 18 original imports/reexports pass, including Shear Lab; independent adapter accepts outputs |
+| Editor-reexported synthetic runtime | 16 cases, 6,552 world values; max error 0.000003955 |
+| Eight packed original fixtures | 224,640 bone values, 239,200 region coordinates, 33,800 mesh coordinates including 15,600 weighted, 67,600 UV values |
+| Packed maximum errors | World 0.000048119; region/mesh 0.000061036; UV 0, at unchanged 0.001 tolerance |
+| Original Shear Lab | All five clips and three skins; 13,000 mesh coordinates including 7,800 weighted |
+| Native-edited packed document | All five clips: 70,200 bone values, 13,000 mesh coordinates including 7,800 weighted; max mesh error 0.000061036 |
+| Bind/Remove-all CLI regression | 271 scene comparisons / 29,726 vertex coordinates; max vertex difference 0.000015259 |
+| Direct CLI regression | 471 scene comparisons / 51,774 vertex coordinates; max vertex difference 0.000007630 |
+| Artist audit | 11 inputs unchanged, zero new inspection issues and zero shear/weighted refusals; 0/11 fully supported |
+
+The final compiled CLI remained unchanged across the native checks. Runtime
+package **4.3.13** and installed editor/JSON target **4.3.26** are recorded
+separately. Their patch numbers are not comparable release counters.
+
+Native OS input verifies exact 23.5/-17.25 Setup values via Enter/Tab, both axis
+handles, one-gesture history, held-pointer Escape/Save suppression, numeric
+Escape/toolbar/owned-field Save, pending Animate shear, paired keying, Auto Key and
+Save exclusion of a pending 13-degree rotation. Text entry updates on commit; no
+live typed-model-preview claim is made. Global history also works after Tab
+focuses an axes button, while actual-context tests preserve text/modal priority.
+Seven Save backups are audited: the first matches exact initial bytes and all
+match captured documents at f32 precision. The working document/file is restored
+at f32 precision and the original clipboard restored. All 62 recorded task-owned
+native/Spine command PIDs have exited; temporary authorization/command directories
+are removed and no private key was written. Node jobs were separately waited/reaped.
+
+Reports: [synthetic runtime](evidence/shear-runtime-synthetic.json),
+[packed runtime](evidence/shear-runtime-packed.json),
+[editor interchange](evidence/shear-spine-editor.json),
+[native input](evidence/shear-native.json),
+[native-edited runtime](evidence/shear-native-edited-runtime.json),
+[Bind regression](evidence/shear-bind-regression.json),
+[Direct regression](evidence/shear-direct-regression.json),
+[artist summary](evidence/shear-artist-summary.json), and
+[visual review](evidence/shear-visual.json). Only original artwork/data is committed.
+
+This accepts the bounded data/authoring implementation. Exact Shear UI comparison,
+empty-space/Shift behavior, World/Parent display, broader inheritance, constraints
+and full production-rig compatibility remain open. Screen Capture was denied in
+the fresh GUI context; installed-editor CLI checks do not establish those UI
+behaviors. All sampled artist rigs still require physics; many also need IK,
+transform/path constraints and unsupported animation types.

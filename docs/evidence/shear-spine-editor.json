@@ -1,0 +1,197 @@
+{
+  "spineVersion": "4.3.26",
+  "scope": "Original JSON import and re-export via public editor CLI; no interactive UI claim",
+  "fixtures": {
+    "setup-shear-x": {
+      "sourceSha256": "d9008eecf6934eb8751a16c618a5aa158fc904dfbf98da03a866b817e9b25bb1",
+      "importExitCode": 0,
+      "projectCreated": true,
+      "reexportExitCode": 0,
+      "editorReexportCreated": true,
+      "exportSha256": "7bf1ffdaa8265dbfa022d50069fdfc4ba69205de62a6a23dc7942103b0407520",
+      "exportVersion": "4.3.26",
+      "sourceUnchanged": true
+    },
+    "setup-shear-y": {
+      "sourceSha256": "7585dd98511771dbb21d288aa6208392294ccc687a6474c31f6d172cbe133241",
+      "importExitCode": 0,
+      "projectCreated": true,
+      "reexportExitCode": 0,
+      "editorReexportCreated": true,
+      "exportSha256": "c6e3681985d54cb572792ec23a68891a202cfd7ad316d6bc1bfbb1a238cb4602",
+      "exportVersion": "4.3.26",
+      "sourceUnchanged": true
+    },
+    "setup-shear-equal": {
+      "sourceSha256": "1f02af08062bc6260d0f4daf1305f87e7c89b391eb5477d36d3b734d3c6732e0",
+      "importExitCode": 0,
+      "projectCreated": true,
+      "reexportExitCode": 0,
+      "editorReexportCreated": true,
+      "exportSha256": "b03813fd3af8b741f7631073b9c50fee5b0d8c6a88bc2c0720963b81fff8fae8",
+      "exportVersion": "4.3.26",
+      "sourceUnchanged": true
+    },
+    "setup-shear-signs": {
+      "sourceSha256": "96d12dcdc37e3fdb83cb7361ef9f508c4e901ba56138fd6ab1389d846f62cbf6",
+      "importExitCode": 0,
+      "projectCreated": true,
+      "reexportExitCode": 0,
+      "editorReexportCreated": true,
+      "exportSha256": "d1aefe202b0d4e293ef54876427f4ce82c2a68d389a2f1f6c8084e38469f0fb3",
+      "exportVersion": "4.3.26",
+      "sourceUnchanged": true
+    },
+    "setup-normal-parent": {
+      "sourceSha256": "f7ea3a82d8935d2b15f76e6af1dd04f27d046c33e5a9788a9aa549b0eba84230",
+      "importExitCode": 0,
+      "projectCreated": true,
+      "reexportExitCode": 0,
+      "editorReexportCreated": true,
+      "exportSha256": "725bdf2060ff0324ab3f26f421571accde7424ca7f545e7f4c37024d11824db3",
+      "exportVersion": "4.3.26",
+      "sourceUnchanged": true
+    },
+    "setup-reflected-nonuniform": {
+      "sourceSha256": "95d4905694a7bd73ed631ef94801416385d1e8f6dbe7c3af1ae6c6d459f9f349",
+      "importExitCode": 0,
+      "projectCreated": true,
+      "reexportExitCode": 0,
+      "editorReexportCreated": true,
+      "exportSha256": "91a5d7090ab2a8e4a9aee4200272cad3c08e3d83ec14d50a155b615a705dc8be",
+      "exportVersion": "4.3.26",
+      "sourceUnchanged": true
+    },
+    "setup-fullturn-signs": {
+      "sourceSha256": "57a8e132bed4ff0af642ca67ef18e08b0909d2d50b9c3370cef8aabe88cdfaca",
+      "importExitCode": 0,
+      "projectCreated": true,
+      "reexportExitCode": 0,
+      "editorReexportCreated": true,
+      "exportSha256": "d0a2ac0b14f52915c54fc7c75c930fc1de1ea8a5f3aff4814098324d6d6fc909",
+      "exportVersion": "4.3.26",
+      "sourceUnchanged": true
+    },
+    "timeline-paired-linear": {
+      "sourceSha256": "85038c0c2440085377f9b5de7784b6b79d708d1ec5c313912fc11de2b1e2d6b4",
+      "importExitCode": 0,
+      "projectCreated": true,
+      "reexportExitCode": 0,
+      "editorReexportCreated": true,
+      "exportSha256": "5b973875b0c0869a7165df0c9040280b5ca040158084a93f43faaf75b40514d3",
+      "exportVersion": "4.3.26",
+      "sourceUnchanged": true
+    },
+    "timeline-scalar-linear": {
+      "sourceSha256": "badca48daee0a7dc37b3b1e529653a329d0000732446d63904364079bea37bde",
+      "importExitCode": 0,
+      "projectCreated": true,
+      "reexportExitCode": 0,
+      "editorReexportCreated": true,
+      "exportSha256": "b725bfe52ef1f75db9b9ea1d47a1c3e9c033c495fe7246a650c96576215110fc",
+      "exportVersion": "4.3.26",
+      "sourceUnchanged": true
+    },
+    "timeline-paired-stepped": {
+      "sourceSha256": "32ed4fdef23acb598764e768b26983be102f614a45aa672bbb5cee80e223b03e",
+      "importExitCode": 0,
+      "projectCreated": true,
+      "reexportExitCode": 0,
+      "editorReexportCreated": true,
+      "exportSha256": "071f529eedee3b101f9a5201e05bd0527b35092c055499e94d158d75840de484",
+      "exportVersion": "4.3.26",
+      "sourceUnchanged": true
+    },
+    "timeline-scalar-stepped": {
+      "sourceSha256": "1dfef4f6f8c61313a3fbe0892286647244b406351136a8715e3758f024154f50",
+      "importExitCode": 0,
+      "projectCreated": true,
+      "reexportExitCode": 0,
+      "editorReexportCreated": true,
+      "exportSha256": "4e34d00eca6ea71234cce33bfa12b21d543e2396b613a871e0196d1fef4e7d21",
+      "exportVersion": "4.3.26",
+      "sourceUnchanged": true
+    },
+    "timeline-paired-bezier-eight": {
+      "sourceSha256": "5b73ae3d0cccc788ddbffb6142d037e7d4d63acbf640208ffe0c554950e389f2",
+      "importExitCode": 0,
+      "projectCreated": true,
+      "reexportExitCode": 0,
+      "editorReexportCreated": true,
+      "exportSha256": "710f0005d19ea1e2ea9dddef79842f02802aea2d741715f5a7f571d0230ce4e0",
+      "exportVersion": "4.3.26",
+      "sourceUnchanged": true
+    },
+    "timeline-scalar-bezier-four": {
+      "sourceSha256": "82ef4b9784aceac3571971bdf9957a31780f9e4489a60e7235bd15e7f73bb5a1",
+      "importExitCode": 0,
+      "projectCreated": true,
+      "reexportExitCode": 0,
+      "editorReexportCreated": true,
+      "exportSha256": "0f6c45bc20694291adc86e76f1ce232c6f2ccd498d7e9418f72e392db55c1b99",
+      "exportVersion": "4.3.26",
+      "sourceUnchanged": true
+    },
+    "timeline-paired-fullturn": {
+      "sourceSha256": "fb63eabcb7d6bea38c7a428994e6174ff0c98ac7fba7244cc319f77ace799603",
+      "importExitCode": 0,
+      "projectCreated": true,
+      "reexportExitCode": 0,
+      "editorReexportCreated": true,
+      "exportSha256": "e5ad20facccfa9445020bf29d26c7c46225f12fb5334b83da85f8e162e8b564e",
+      "exportVersion": "4.3.26",
+      "sourceUnchanged": true
+    },
+    "timeline-scalar-fullturn": {
+      "sourceSha256": "8aea03b5f09758b2edadb19ed5313dbfdf90b0f70236e49f80cfb20588c2136e",
+      "importExitCode": 0,
+      "projectCreated": true,
+      "reexportExitCode": 0,
+      "editorReexportCreated": true,
+      "exportSha256": "a7eb4c08c296f8af10d99bc9613d1fc8971e27a1d00f9fb1a0b41fe9a809dac7",
+      "exportVersion": "4.3.26",
+      "sourceUnchanged": true
+    },
+    "timeline-paired-omitted-y": {
+      "sourceSha256": "c2ee71928ab9aa292f44a1ebbc0adcf11aca9a492ba454467c58bb1e0f1eca4b",
+      "importExitCode": 0,
+      "projectCreated": true,
+      "reexportExitCode": 0,
+      "editorReexportCreated": true,
+      "exportSha256": "0af3c1ce88626e423b1346715749c81aefd043da8f7987b0654f8575decdbd6c",
+      "exportVersion": "4.3.26",
+      "sourceUnchanged": true
+    },
+    "ShearReference": {
+      "sourceSha256": "8a292dcb502736df96199a10843eddec9e2e6bf14fcd6fff3d8331c48394e3d6",
+      "importExitCode": 0,
+      "projectCreated": true,
+      "reexportExitCode": 0,
+      "editorReexportCreated": true,
+      "exportSha256": "21d6aa125e6cdc60db6daf9ab314e4ef61ea2a1b0071134f0450a3f8ebc9663b",
+      "exportVersion": "4.3.26",
+      "sourceUnchanged": true
+    },
+    "shear-lab": {
+      "spineVersion": "4.3.26",
+      "scope": "Original Shear Lab import and reexport via editor CLI; no interactive UI claim",
+      "importExitCode": 0,
+      "projectCreated": true,
+      "sourceSha256": "cb4932e57b860e133f0482b050d8df3df1984d3364845cf2de721e2b0df86d12",
+      "reexportExitCode": 0,
+      "reexportCreated": true,
+      "independentAdapterAccepted": true,
+      "exportSha256": "d9f19521ec6c6f721d42f03925add5befb51e86dc44c28bc6486f2d5b4c02634",
+      "sourceUnchanged": true
+    }
+  },
+  "acceptedImports": 18,
+  "acceptedReexports": 18,
+  "sampledInputs": 18,
+  "freshGuiScreenCapturePermission": false,
+  "interactiveUiObserved": false,
+  "temporaryAuthorizationRemoved": true,
+  "taskProcessesWaited": true,
+  "privateArt": false,
+  "independentAdapterAcceptanceIncludesShearLab": true
+}

@@ -353,3 +353,29 @@ Save cancels then saves. No new history stack or preview math lives in the UI.
 See the [approved command contract](slices/weight-direct-design.md). Multi-vertex/
 multi-bone Direct, brushes, locks, individual removal, sparse repair and Update
 remain separate model, interaction and acceptance work.
+
+
+## Bone shear, native v5 and checked evaluation
+
+`Transform` is the seven-field bone/pose value. `RegionTransform` preserves the
+five-field attachment boundary; promotion inserts zero shear and checked demotion
+rejects it. Shear X/Y are scalar setup-relative angular properties with paired
+interactive keying. Affine evaluation uses independently observed angular basis
+math, preserving authored angles rather than decomposing matrices. Engine tool
+math owns checked inverse directions, World rotation and oblique Scale coordinates.
+
+The adapter owns absolute/normalized curve conversion and target range errors.
+The engine keeps the ten-segment curve policy and widens overflowing interpolation
+intermediates. `checked_scene_from_locals` and `checked_evaluate_scene` return an
+error before shells serialize, draw or pick nonfinite data; the existing unguarded
+functions remain available for validated core callsites. Shells use the checked
+boundary. Bounds centers likewise widen only
+when the ordinary intermediate overflows. All these functions remain pure.
+
+Desktop numeric and viewport transforms share a frozen gesture capsule. It retains
+typed selection, initial pose/parent, tool/axes, mode/clip/time, Auto Key and edited
+properties. Bone previews use `Session::preview_edit_pose`; region previews use a
+checked command. Direct and transform input cancel each other before capture.
+Pointer-up and frame settlement produce one history step; context/history/file
+actions cancel and suppress stale blur/held-pointer input. File operations remain
+in the shell. Toolbar and seven-channel chart sizes derive from shared style.

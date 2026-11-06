@@ -1,0 +1,512 @@
+{
+  "status": "passed",
+  "sourceCommit": "22366a61748fa1097b7f2036f06a8bc2a31c878c",
+  "cliSHA256": "afd31018bf1a606689387107ada348245067c0c0f36cf9f6cf3f5b3e43fb5a55",
+  "sourceHarnessSHA256": "374951d0f27f9e3403411e88caa134d9e898238e1ffc52f2b721929c1bd06424",
+  "pinnedHarnessSHA256": "628be19d0ab08934a1c84fbcac8835f60daec4fa27e98457f089ce04fdf01340",
+  "sourceCleanAtStart": true,
+  "nativeFormat": 5,
+  "runtime": "Separately licensed Spine 4.3 public API oracle",
+  "tolerance": 0.001,
+  "concurrency": 2,
+  "startedUTC": "2026-11-06T08:42:34.819464+00:00",
+  "finishedUTC": "2026-11-06T08:42:42.241171+00:00",
+  "cases": [
+    {
+      "id": "contract-cases",
+      "exitCode": 0,
+      "passed": true,
+      "nativeSHA256": "381d6c372bd68364333d126b46f6065146de4e2de0616f58da7ba7ad596faf25",
+      "exportSHA256": "199ae0a9a782a25456f7db440df41c8b0a363c81162ff1fd2120e4f6adca4cbc",
+      "atlasSHA256": "70a5185652d8bdcc68cb16586c09449fea6bd5500719072b93fcd31fc9fdf307",
+      "pngSHA256": "67710ce50c9b484d293ec4f6850e5ea68f03428ef307c55de704da91326e1a33",
+      "reportSHA256": "76243343ecc088294be45bea318c1b9b3fbb70e63ddb23782a9409c2858601e3",
+      "metrics": {
+        "comparisons": 14040,
+        "regionComparisons": 16640,
+        "meshComparisons": 0,
+        "weightedMeshComparisons": 0,
+        "uvComparisons": 0,
+        "maxWorldError": 4.8118722475010145e-05,
+        "maxRegionError": 6.103515625e-05,
+        "maxMeshError": 0,
+        "maxUVError": 0
+      },
+      "clips": [
+        {
+          "name": "contract",
+          "nativeEnd": 2,
+          "runtimeEnd": 2,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 4.8118722475010145e-05
+        }
+      ]
+    },
+    {
+      "id": "mesh-bot",
+      "exitCode": 0,
+      "passed": true,
+      "nativeSHA256": "2188f16b407d620b30fbbee1b8c0028570db12f7fd0e03cc09cd29d24f279a09",
+      "exportSHA256": "304a4ba951f30b1fcf0ff224f00f798049a4d6b03fad37e3a3db673510d77130",
+      "atlasSHA256": "70a5185652d8bdcc68cb16586c09449fea6bd5500719072b93fcd31fc9fdf307",
+      "pngSHA256": "67710ce50c9b484d293ec4f6850e5ea68f03428ef307c55de704da91326e1a33",
+      "reportSHA256": "3c807c488e004c215315c0eb11d9a705b912dd75a6688f14a68d2e4fea0fa5a6",
+      "metrics": {
+        "comparisons": 28080,
+        "regionComparisons": 29120,
+        "meshComparisons": 5200,
+        "weightedMeshComparisons": 0,
+        "uvComparisons": 10400,
+        "maxWorldError": 2.6437081885433145e-05,
+        "maxRegionError": 3.0517578125e-05,
+        "maxMeshError": 3.0517578125e-05,
+        "maxUVError": 0
+      },
+      "clips": [
+        {
+          "name": "idle",
+          "nativeEnd": 2,
+          "runtimeEnd": 2,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 1.933524876562842e-05
+        },
+        {
+          "name": "wave",
+          "nativeEnd": 2.4000000953674316,
+          "runtimeEnd": 2.4000000953674316,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 2.6437081885433145e-05
+        }
+      ]
+    },
+    {
+      "id": "mesh-contract",
+      "exitCode": 0,
+      "passed": true,
+      "nativeSHA256": "9e0ce749e12163830511f4ffd9cc919a4decc3026e9dfbb58e1c3b2482733424",
+      "exportSHA256": "276dc490072e45063dfbbbf76e04b87482f3d5efa8523313ac55de3d5c8061fb",
+      "atlasSHA256": "70a5185652d8bdcc68cb16586c09449fea6bd5500719072b93fcd31fc9fdf307",
+      "pngSHA256": "67710ce50c9b484d293ec4f6850e5ea68f03428ef307c55de704da91326e1a33",
+      "reportSHA256": "24891bdcc7ccbb08b9290755627c2d67e3ca118c137d51a6b946b047e40be80c",
+      "metrics": {
+        "comparisons": 14040,
+        "regionComparisons": 14560,
+        "meshComparisons": 2600,
+        "weightedMeshComparisons": 0,
+        "uvComparisons": 5200,
+        "maxWorldError": 3.618953178374795e-05,
+        "maxRegionError": 5.340576171875e-05,
+        "maxMeshError": 6.103515625e-05,
+        "maxUVError": 0
+      },
+      "clips": [
+        {
+          "name": "contract",
+          "nativeEnd": 2,
+          "runtimeEnd": 2,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 3.618953178374795e-05
+        }
+      ]
+    },
+    {
+      "id": "peach-bot",
+      "exitCode": 0,
+      "passed": true,
+      "nativeSHA256": "5e1e843ecee06d72a3aa5512540caf9cd736193019aa44e92ffdcffbc1f08ea9",
+      "exportSHA256": "ea2f2867f0a0083380ac358a774435db948b376392aac8323c78e7c308bcbc02",
+      "atlasSHA256": "70a5185652d8bdcc68cb16586c09449fea6bd5500719072b93fcd31fc9fdf307",
+      "pngSHA256": "67710ce50c9b484d293ec4f6850e5ea68f03428ef307c55de704da91326e1a33",
+      "reportSHA256": "7907a8e24d9472b22655306e4beeb29c75534a19a6086be0cec5997b83c2c454",
+      "metrics": {
+        "comparisons": 28080,
+        "regionComparisons": 33280,
+        "meshComparisons": 0,
+        "weightedMeshComparisons": 0,
+        "uvComparisons": 0,
+        "maxWorldError": 2.6437081885433145e-05,
+        "maxRegionError": 3.0517578125e-05,
+        "maxMeshError": 0,
+        "maxUVError": 0
+      },
+      "clips": [
+        {
+          "name": "idle",
+          "nativeEnd": 2,
+          "runtimeEnd": 2,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 1.933524876562842e-05
+        },
+        {
+          "name": "wave",
+          "nativeEnd": 2.4000000953674316,
+          "runtimeEnd": 2.4000000953674316,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 2.6437081885433145e-05
+        }
+      ]
+    },
+    {
+      "id": "shear-bot",
+      "exitCode": 0,
+      "passed": true,
+      "nativeSHA256": "9404f1c36ed15cf7cc9eb408a3ece67d66a2726e321cbdc532f1c6a3d42f8f5a",
+      "exportSHA256": "cb4932e57b860e133f0482b050d8df3df1984d3364845cf2de721e2b0df86d12",
+      "atlasSHA256": "70a5185652d8bdcc68cb16586c09449fea6bd5500719072b93fcd31fc9fdf307",
+      "pngSHA256": "67710ce50c9b484d293ec4f6850e5ea68f03428ef307c55de704da91326e1a33",
+      "reportSHA256": "3901299733328192936daa511b6c1343592c6ffb30a1c450ba8e4ddd1c79004c",
+      "metrics": {
+        "comparisons": 70200,
+        "regionComparisons": 72800,
+        "meshComparisons": 13000,
+        "weightedMeshComparisons": 7800,
+        "uvComparisons": 26000,
+        "maxWorldError": 2.9520374908997837e-05,
+        "maxRegionError": 4.57763671875e-05,
+        "maxMeshError": 3.814697265625e-05,
+        "maxUVError": 0
+      },
+      "clips": [
+        {
+          "name": "idle",
+          "nativeEnd": 2,
+          "runtimeEnd": 2,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 2.7415539079811424e-05
+        },
+        {
+          "name": "shear bezier",
+          "nativeEnd": 2,
+          "runtimeEnd": 2,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 2.2627960618137877e-05
+        },
+        {
+          "name": "shear linear",
+          "nativeEnd": 2,
+          "runtimeEnd": 2,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 2.9520374908997837e-05
+        },
+        {
+          "name": "shear stepped",
+          "nativeEnd": 2,
+          "runtimeEnd": 2,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 2.2627960618137877e-05
+        },
+        {
+          "name": "wave",
+          "nativeEnd": 2.4000000953674316,
+          "runtimeEnd": 2.4000000953674316,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 2.877000849821343e-05
+        }
+      ]
+    },
+    {
+      "id": "weighted-bot",
+      "exitCode": 0,
+      "passed": true,
+      "nativeSHA256": "933a8274f94351346cd9d11a0f6d69d6259bea1737a5d7c94cf1d1a8bd636214",
+      "exportSHA256": "fbc8025d44ca5447ccc92a303027d2bbc3d3796d5e92a2423dd6ad0b9798bd25",
+      "atlasSHA256": "70a5185652d8bdcc68cb16586c09449fea6bd5500719072b93fcd31fc9fdf307",
+      "pngSHA256": "67710ce50c9b484d293ec4f6850e5ea68f03428ef307c55de704da91326e1a33",
+      "reportSHA256": "3f15f702dc1b1f0ce0b51c382a2b5c3c6dc7436480c852057ae4054b85278695",
+      "metrics": {
+        "comparisons": 28080,
+        "regionComparisons": 29120,
+        "meshComparisons": 5200,
+        "weightedMeshComparisons": 3120,
+        "uvComparisons": 10400,
+        "maxWorldError": 2.6437081885433145e-05,
+        "maxRegionError": 3.0517578125e-05,
+        "maxMeshError": 3.0517578125e-05,
+        "maxUVError": 0
+      },
+      "clips": [
+        {
+          "name": "idle",
+          "nativeEnd": 2,
+          "runtimeEnd": 2,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 1.933524876562842e-05
+        },
+        {
+          "name": "wave",
+          "nativeEnd": 2.4000000953674316,
+          "runtimeEnd": 2.4000000953674316,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 2.6437081885433145e-05
+        }
+      ]
+    },
+    {
+      "id": "weighted-contract",
+      "exitCode": 0,
+      "passed": true,
+      "nativeSHA256": "221b55d0ca240500e04c68f745a086d87421d6ccfb1b3691ee8df41d616f929f",
+      "exportSHA256": "1a2c90f26a6401a6200c863bd1f7cb81582cde6926b5d729c64c83e1584bd14c",
+      "atlasSHA256": "70a5185652d8bdcc68cb16586c09449fea6bd5500719072b93fcd31fc9fdf307",
+      "pngSHA256": "67710ce50c9b484d293ec4f6850e5ea68f03428ef307c55de704da91326e1a33",
+      "reportSHA256": "1158570691556cebe9cf66cd887b1b61bfefa9548fdc3f5623d5ff685ccaa214",
+      "metrics": {
+        "comparisons": 14040,
+        "regionComparisons": 14560,
+        "meshComparisons": 2600,
+        "weightedMeshComparisons": 1560,
+        "uvComparisons": 5200,
+        "maxWorldError": 3.0390292579340894e-05,
+        "maxRegionError": 4.57763671875e-05,
+        "maxMeshError": 6.103515625e-05,
+        "maxUVError": 0
+      },
+      "clips": [
+        {
+          "name": "weighted contract",
+          "nativeEnd": 2,
+          "runtimeEnd": 2,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 3.0390292579340894e-05
+        }
+      ]
+    },
+    {
+      "id": "weighted-repeated",
+      "exitCode": 0,
+      "passed": true,
+      "nativeSHA256": "9f1df7d07e30860094d68620b7ec769fa7bb09633b30a1e8677e1bc79a0aa56e",
+      "exportSHA256": "887840ea64a41b26fbe084a873123dc37aaedfc3d29ec41723c67888671db2e6",
+      "atlasSHA256": "70a5185652d8bdcc68cb16586c09449fea6bd5500719072b93fcd31fc9fdf307",
+      "pngSHA256": "67710ce50c9b484d293ec4f6850e5ea68f03428ef307c55de704da91326e1a33",
+      "reportSHA256": "3f15f702dc1b1f0ce0b51c382a2b5c3c6dc7436480c852057ae4054b85278695",
+      "metrics": {
+        "comparisons": 28080,
+        "regionComparisons": 29120,
+        "meshComparisons": 5200,
+        "weightedMeshComparisons": 3120,
+        "uvComparisons": 10400,
+        "maxWorldError": 2.6437081885433145e-05,
+        "maxRegionError": 3.0517578125e-05,
+        "maxMeshError": 3.0517578125e-05,
+        "maxUVError": 0
+      },
+      "clips": [
+        {
+          "name": "idle",
+          "nativeEnd": 2,
+          "runtimeEnd": 2,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 1.933524876562842e-05
+        },
+        {
+          "name": "wave",
+          "nativeEnd": 2.4000000953674316,
+          "runtimeEnd": 2.4000000953674316,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 2.6437081885433145e-05
+        }
+      ]
+    }
+  ],
+  "caseCount": 8,
+  "allCLIInputBundleAndHarnessHashesUnchanged": true,
+  "allOriginal20SourceFilesUnchanged": true,
+  "limits": [
+    "Headless original-fixture runtime acceptance only; no GUI or installed-editor acceptance.",
+    "Oracle implementation, function bodies, source maps and internals were not inspected.",
+    "Only the CLI executable constant differs from our existing harness; tolerance, samples, end/tail/backward checks, regions, meshes and UV logic are unchanged.",
+    "The new Shear fixture includes all five clips; the source hash identifies the isolated CLI with its safety fixes. The newer desktop UI remains a separate integration gate."
+  ],
+  "totals": {
+    "comparisons": 224640,
+    "regionComparisons": 239200,
+    "meshComparisons": 33800,
+    "weightedMeshComparisons": 15600,
+    "uvComparisons": 67600
+  },
+  "maximums": {
+    "maxWorldError": 4.8118722475010145e-05,
+    "maxRegionError": 6.103515625e-05,
+    "maxMeshError": 6.103515625e-05,
+    "maxUVError": 0
+  },
+  "runtimePackageMetadata": {
+    "name": "@esotericsoftware/spine-core",
+    "version": "4.3.13"
+  },
+  "synchronousPoseQueries": 2496,
+  "sourceCleanAfter": true,
+  "runtimePackageVersion": "4.3.13",
+  "jsonTarget": "4.3.26",
+  "scope": "Packed original fixtures, matching document/engine/adapter/CLI source in coordinator; no native UI comparison claim",
+  "coordinatorComponentSourceMatches": true,
+  "nativeOrInteractiveSpineUiAcceptance": false,
+  "coordinatorFinalArtCheck": {
+    "sourceHead": "5473701901dc1f3462db91db2af823d395a51bbb",
+    "cliSha256": "227d4022b200a4771ea7e4faa9e382fbf76f94ccb10321f85b62236924dbe612",
+    "originalSourceUnchanged": true,
+    "runtime": {
+      "regionComparisons": 72800,
+      "maxRegionError": 4.57763671875e-05,
+      "meshComparisons": 13000,
+      "weightedMeshComparisons": 7800,
+      "maxMeshError": 3.814697265625e-05,
+      "uvComparisons": 26000,
+      "maxUVError": 0,
+      "runtime": "Spine 4.3 external oracle",
+      "bones": 15,
+      "slots": 14,
+      "skins": [
+        "default",
+        "mint",
+        "peach"
+      ],
+      "clips": [
+        {
+          "name": "idle",
+          "nativeEnd": 2,
+          "runtimeEnd": 2,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 2.7415539079811424e-05
+        },
+        {
+          "name": "shear bezier",
+          "nativeEnd": 2,
+          "runtimeEnd": 2,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 2.2627960618137877e-05
+        },
+        {
+          "name": "shear linear",
+          "nativeEnd": 2,
+          "runtimeEnd": 2,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 2.9520374908997837e-05
+        },
+        {
+          "name": "shear stepped",
+          "nativeEnd": 2,
+          "runtimeEnd": 2,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 2.2627960618137877e-05
+        },
+        {
+          "name": "wave",
+          "nativeEnd": 2.4000000953674316,
+          "runtimeEnd": 2.4000000953674316,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 2.877000849821343e-05
+        }
+      ],
+      "tolerance": 0.001,
+      "maxWorldError": 2.9520374908997837e-05,
+      "comparisons": 70200
+    }
+  }
+}

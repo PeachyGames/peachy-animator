@@ -30,11 +30,15 @@ Run `python3 scripts/check-architecture.py` too. Its allowlist checks real Cargo
 
 `apply_command(&Document, Command)` is the pure editing boundary. `Session` wraps it with in-memory history; pointer gestures use begin/commit/cancel transactions. Native documents and commands reject unknown fields. Export-target restrictions belong to the adapter, not native document validation. Reconcile transient editor selections after history/document changes. Introduce stable entity IDs before deletion/reparenting.
 
-Native format v4 uses tagged `Attachment::Region` / `Attachment::Mesh` and derives
-animation ends from keys. `MeshVertices` distinguishes slot-bone-local positions
-from per-vertex lists of bone-local `BoneInfluence` values. The I/O decoder chains
-v1 region tags, v2 duration capture and v3 mesh-array wrapping into strict v4
-validation before materializing prior exported holds. Validate influence references
+Native format v5 retains tagged `Attachment::Region` / `Attachment::Mesh` and key-derived
+animation ends. Bone/pose `Transform` requires seven finite fields, including
+`shear_x`/`shear_y`; `RegionTransform` retains five fields and rejects shear.
+`MeshVertices` distinguishes slot-bone-local positions from per-vertex lists of
+bone-local `BoneInfluence` values. The I/O decoder chains v1 region tags, v2
+duration capture, v3 mesh-array wrapping and v4 zero-shear insertion into strict
+v5 validation before materializing prior exported holds. Legacy formats reject
+new shear fields/tracks even when zero/empty; current commands require the new
+bone payload rather than hiding missing fields with serde defaults. Validate influence references
 in every skin, including zero-weight entries and inactive attachments. Preserve
 influence order, repeated bones, zero entries and positive nonunit totals;
 imports/exports must not silently normalize, merge, sort or prune them.

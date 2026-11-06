@@ -1,0 +1,90 @@
+{
+  "sourceHead": "775c7e31a99ec99e6dfed3f77661e5cccb7546b1",
+  "cliSha256": "227d4022b200a4771ea7e4faa9e382fbf76f94ccb10321f85b62236924dbe612",
+  "scope": "Packed document captured from actual native setup/key/AutoKey authoring; unkeyed rotation excluded, all five clips and three skins compared",
+  "runtimePackageVersion": "4.3.13",
+  "exportMetadata": "4.3.26",
+  "runtime": {
+    "regionComparisons": 72800,
+    "maxRegionError": 4.57763671875e-05,
+    "meshComparisons": 13000,
+    "weightedMeshComparisons": 7800,
+    "maxMeshError": 6.103515625e-05,
+    "uvComparisons": 26000,
+    "maxUVError": 0,
+    "runtime": "Spine 4.3 external oracle",
+    "bones": 15,
+    "slots": 14,
+    "skins": [
+      "default",
+      "mint",
+      "peach"
+    ],
+    "clips": [
+      {
+        "name": "idle",
+        "nativeEnd": 2,
+        "runtimeEnd": 2,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default",
+          "mint",
+          "peach"
+        ],
+        "maxWorldError": 3.31474431618517e-05
+      },
+      {
+        "name": "shear bezier",
+        "nativeEnd": 2,
+        "runtimeEnd": 2,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default",
+          "mint",
+          "peach"
+        ],
+        "maxWorldError": 1.7873143804081337e-05
+      },
+      {
+        "name": "shear linear",
+        "nativeEnd": 2,
+        "runtimeEnd": 2,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default",
+          "mint",
+          "peach"
+        ],
+        "maxWorldError": 4.782675057413144e-05
+      },
+      {
+        "name": "shear stepped",
+        "nativeEnd": 2,
+        "runtimeEnd": 2,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default",
+          "mint",
+          "peach"
+        ],
+        "maxWorldError": 2.1980067970162054e-05
+      },
+      {
+        "name": "wave",
+        "nativeEnd": 2.4000000953674316,
+        "runtimeEnd": 2.4000000953674316,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default",
+          "mint",
+          "peach"
+        ],
+        "maxWorldError": 3.007871407589846e-05
+      }
+    ],
+    "tolerance": 0.001,
+    "maxWorldError": 4.782675057413144e-05,
+    "comparisons": 70200
+  },
+  "pendingPoseExcluded": true
+}

@@ -1,0 +1,29 @@
+{
+  "captures": {
+    "setup": "editor-1793956346749245000.json",
+    "posed": "editor-1793956444351455000.json"
+  },
+  "scope": "Real OS input in task-owned original Peachy fixture; no installed-Spine interactive comparison claim",
+  "typedSetupEnterTabTwoStepHistoryAndV5Save": true,
+  "bothNativeHandlesSingleAxisAndOneUndoRedo": true,
+  "heldHandleEscapeAndSaveSuppressContinuedDrag": true,
+  "numericEscapeToolbarSaveAndOwnedFieldSaveAbandonUncommittedText": true,
+  "explicitLocalDisplayPolicyDoesNotRewriteAuthoredValues": true,
+  "animatePendingShearHistoryAndSaveExclusion": true,
+  "pairedKeyControlAndPendingRotationPreserved": true,
+  "autoKeyPairOneUndoRedoAndSave": true,
+  "workingDocumentAndSavedFileRestoredAtF32Precision": true,
+  "saveBackups": 7,
+  "complete": true,
+  "originalClipboardRestored": true,
+  "sourceHead": "775c7e31a99ec99e6dfed3f77661e5cccb7546b1",
+  "nativeSha256": "f9eb4259a1744c0e98ea1d802fc44bf1dd5e36b3e35c7a990a2ba7078cd14726",
+  "cliSha256": "227d4022b200a4771ea7e4faa9e382fbf76f94ccb10321f85b62236924dbe612",
+  "rootTests": 242,
+  "firstSaveBackupExactInitialBytes": true,
+  "allSaveBackupsMatchCapturedDocumentAtF32Precision": true,
+  "binariesUnchangedDuringNativeCheck": true,
+  "spineInteractiveUiCompared": false,
+  "numericTextPolicy": "Transform text updates on commit; Escape/Save abandon uncommitted text. Viewport previews update the model.",
+  "nativeSessionClosed": true
+}

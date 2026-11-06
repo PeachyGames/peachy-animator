@@ -435,3 +435,33 @@ original artwork, independent Weights icon/bone colors and actual 30%/45% data a
 controls. [Setup capture](direct-editor.png) and [posed capture](direct-posed.png)
 show our editor only. This is neither a separate second full native run nor exact
 installed-Spine docking, pixel-equivalence or full interaction-parity acceptance.
+
+
+## Bone Shear and shared transform input — November 6, 2026 UTC
+
+The fourth transform row provides bone-only **Shear [Z]**, local-policy X/Y entry
+and paired keying. Its independent red X/green Y handles follow evaluated bone
+axes. Toolbar and Dopesheet dimensions derive from the shared real editor style;
+all seven rows and the footer are visible in the reviewed native Animate capture.
+Region/slot selection cannot redirect Shear through a cached bone or Weights target.
+
+Numeric and viewport gestures freeze the typed selection, authored locals/parent,
+tool/axes, mode/clip/time and Auto Key. They share Session's fixed transaction
+baseline and one history stack. Context/history/file actions cancel first; stale
+blur and held-pointer input stay suppressed. Numeric text commits on Enter/Tab;
+Escape or Save abandons uncommitted text. Tab-focused non-text buttons retain
+global Undo/Redo/file shortcuts without stealing text undo or widget arrow input.
+
+The final native run verifies typed Setup values, both handles, Undo/Redo, real Save
+clicks and keys, held-pointer cancellation, pending Animate values, paired keying,
+Auto Key and persistence. See [native evidence](evidence/shear-native.json),
+[Setup capture](shear-editor.png), [posed capture](shear-posed.png), and
+[visual review](evidence/shear-visual.json). The native-edited document also passes
+packed runtime comparisons with pending rotation excluded from the export.
+
+Exact installed-Spine handle shapes/signs/Shift behavior, empty-space mapping,
+World/Parent Shear display and Local translation under explicit shear remain
+comparison gates. The installed-editor checks are CLI data round trips. Fresh GUI
+Screen Capture preflight was false; no proprietary UI screenshot or interactive
+Shear comparison was obtained. Local labeling is a bounded policy rather than a
+claim of observed exact display behavior.

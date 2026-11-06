@@ -6,15 +6,15 @@ Compatibility applies to the subset below, not every 4.3 project or future patch
 
 | Area | Supported | Import refuses |
 | --- | --- | --- |
-| Bones | Normal inheritance; X/Y, rotation, scale X/Y, length | Shear, other inheritance modes, skin-required bones |
+| Bones | Normal inheritance; X/Y, rotation, scale X/Y, shear X/Y, length | Other inheritance modes, skin-required bones |
 | Attachments | Regions, unweighted meshes and weighted meshes with explicit UVs/topology and bone-local influences | Linked meshes, clipping, paths, sequences, other attachment types |
 | Slots | Setup attachment and normal blending in fixed draw order | Tint, dark tint, other blend modes |
 | Skins | Region/mesh maps, explicit attachment names and default-skin fallback | Skin-required bones or constraints |
-| Animation | Bone rotation, translation and scale; combined or scalar input timelines | Slot, attachment, draw-order, event or constraint timelines |
+| Animation | Bone rotation, translation, scale and shear; combined or scalar input timelines | Slot, attachment, draw-order, event or constraint timelines |
 | Curves | Linear, stepped, normalized monotone-time cubic handles | Nonfinite or unordered controls; overshooting curves between equal values |
 | Constraints | None | IK, transform, path, physics and other constraints |
 | Images | Loose PNGs for editing; one untrimmed atlas page for desktop export | Packed-atlas import, rotated/trimmed atlas regions, multipage export |
-| Files | `.peachy` v4; in-memory v1/v2/v3 migration; Spine JSON adapter | Native `.spine` projects and binary `.skel` |
+| Files | `.peachy` v5; in-memory v1/v2/v3/v4 migration; Spine JSON adapter | Native `.spine` projects and binary `.skel` |
 
 Our own project format is JSON and holds the editable rig, skin references and clips.
 It is distinct from a runtime export. The importer ignores documented editor-only
@@ -73,8 +73,8 @@ meshes, sequences and all attachment/deform timelines remain blocked. Weighted
 mesh import and read-only inspection are described in the current slice below.
 
 The unweighted slice introduced native v2 attachment tags; v3 subsequently removed
-stored duration in favor of actual hold keys. The current v4 representation adds
-tagged mesh vertices and migrates v1/v2/v3 in memory. Explicit Save writes v4 and
+stored duration in favor of actual hold keys. The v4 representation added tagged mesh vertices. The current v5 representation
+adds required bone shear fields and migrates v1/v2/v3/v4 in memory. Explicit Save writes v5 and
 preserves a verified backup. Unknown native fields/future versions are refused.
 
 The external harness now checks all three fixture skins. Across mesh demo and reflected,
@@ -114,7 +114,7 @@ existing 5,100 mesh and 27,540 bone values across all three skins and two clips.
 Auto Key off changes a transient engine pose; explicit keying converts it into the
 same supported transform timelines. Default authoring keys translation/scale axes
 as pairs; imported scalar tracks and the low-level command API remain supported.
-That authoring slice retained native v2; the current native format is v4 and the
+That authoring slice retained native v2; the current native format is v5 and the
 Spine target remains 4.3.x JSON. Unkeyed poses are not
 serialized or exported. Save is not a substitute for pressing K to preserve a pose.
 The UI distinguishes unkeyed edits from document dirty state and warns on discard.
@@ -296,3 +296,32 @@ pixel equivalence.
 
 Additional weight authoring does not add constraints, linked/deform timelines, binary `.skel`
 or native `.spine` support, and does not advance the **0/11** production-import result.
+
+
+## Bone shear and native v5 — November 6, 2026 UTC
+
+Bone setup shear uses `shearX`/`shearY` in Spine JSON. Animation accepts paired
+`shear` with `x`/`y`, or lowercase scalar `shearx`/`sheary` with `value`; values
+are setup-relative degrees. Paired/scalar collisions are refused even when a
+conflicting track is empty. Scalar Bezier keys require four absolute controls;
+paired keys require eight. Export uses scalar tracks and omits zero setup shear,
+so all seven retained zero-shear export goldens remain unchanged.
+
+Native v5 requires both finite bone shear fields. Region attachments retain their
+five-field transform and reject shear fields. Read-only migration adds zero only
+to actual v1–v4 bone transforms after refusing new fields/tracks in those legacy
+schemas. Explicit Save writes v5 with the existing verified-backup behavior.
+Older binaries cannot open v5. Serialized bone commands also require all seven
+fields; they are not project-migration envelopes.
+
+Finite curve spans and controls use wider intermediates only when needed, while
+preserving ordinary f32 results and the observed ten-segment interpolation policy.
+Controls genuinely outside the finite native range fail explicitly before export.
+Checked scene evaluation rejects nonfinite local/world transforms, geometry, UVs
+or rendering bounds before the CLI serializes a pose or the desktop draws/picks it.
+No clamping or replacement geometry is used. This remains a bounded f32 model.
+
+Data interchange and interactive UI acceptance are distinct. Exact installed
+Shear handle/empty-space/Shift behavior and World/Parent numeric display remain
+comparison gates; see [desktop scope](slices/shear-ui.md). Successful CLI imports
+do not establish those behaviors or full Spine UI parity.

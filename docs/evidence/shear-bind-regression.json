@@ -1,0 +1,15 @@
+{
+  "scope": "Native5 CLI regression on final unchanged CLI; core Session semantics separately covered by full242 tests",
+  "sourceHead": "775c7e31a99ec99e6dfed3f77661e5cccb7546b1",
+  "cliSha256": "227d4022b200a4771ea7e4faa9e382fbf76f94ccb10321f85b62236924dbe612",
+  "status": "passed",
+  "sourcesUnchanged": true,
+  "metrics": {
+    "sceneComparisons": 271,
+    "worldCoordinates": 24390,
+    "vertexCoordinates": 29726,
+    "maxWorldError": 0.0,
+    "maxVertexError": 1.52587890625e-05,
+    "maxUVError": 0.0
+  }
+}
