@@ -30,6 +30,7 @@ impl Editor {
         });
         let (rect, response) = ui.allocate_exact_size(ui.available_size(), Sense::click_and_drag());
         self.record_target("viewport", rect);
+        self.prepare_viewport_transform_press(ui, rect);
         let painter = ui.painter_at(rect);
         painter.rect_filled(rect, 0., Color32::from_gray(43));
         let doc = self.session.document();
@@ -343,7 +344,7 @@ impl Editor {
         });
         let mut handle_axis = None;
         if self.transform_tool_editable(self.tool)
-            && matches!(self.tool, Tool::Move | Tool::Scale)
+            && matches!(self.tool, Tool::Move | Tool::Scale | Tool::Shear)
             && let Some(local) = self.selected_transform()
             && let Some(parent) = self
                 .selection
@@ -351,13 +352,23 @@ impl Editor {
                 .and_then(|item| super::tools::item_parent(item, doc, &scene.world))
         {
             let pivot = screen(parent.point(local.x, local.y));
+            self.record_target(
+                "gizmoOrigin",
+                egui::Rect::from_center_size(pivot, vec2(6., 6.)),
+            );
             let basis = peachy_engine::transform_axes(
                 local,
                 parent,
                 self.axes,
                 self.tool.transform_tool().unwrap(),
             );
+            let mut nearest_handle = f32::INFINITY;
             for (axis, direction) in basis.into_iter().enumerate() {
+                if !direction.into_iter().all(f32::is_finite)
+                    || direction[0].hypot(direction[1]) == 0.
+                {
+                    continue;
+                }
                 let color = if axis == 0 {
                     Color32::from_rgb(225, 92, 85)
                 } else {
@@ -368,6 +379,12 @@ impl Editor {
                 painter.line_segment([pivot + unit * 15., tip], Stroke::new(2., color));
                 if self.tool == Tool::Scale {
                     painter.rect_filled(egui::Rect::from_center_size(tip, vec2(8., 8.)), 0., color);
+                } else if self.tool == Tool::Shear {
+                    painter.circle_stroke(tip, 4.5, Stroke::new(2., color));
+                    painter.line_segment(
+                        [tip - vec2(3., 3.), tip + vec2(3., 3.)],
+                        Stroke::new(1., color),
+                    );
                 } else {
                     let normal = vec2(-unit.y, unit.x);
                     painter.add(egui::Shape::convex_polygon(
@@ -391,41 +408,17 @@ impl Editor {
                     format!("gizmo:{}", if axis == 0 { "X" } else { "Y" }),
                     [tip.x - 4., tip.y - 4., tip.x + 4., tip.y + 4.],
                 );
-                if ui
+                if let Some(mouse) = ui
                     .input(|i| i.pointer.press_origin())
                     .or(response.interact_pointer_pos())
-                    .is_some_and(|mouse| distance_to_segment(mouse, pivot + unit * 20., tip) < 7.)
                 {
-                    handle_axis = Some(axis);
+                    let distance = distance_to_segment(mouse, pivot + unit * 20., tip);
+                    if distance < 7. && distance < nearest_handle {
+                        handle_axis = Some(axis);
+                        nearest_handle = distance;
+                    }
                 }
             }
-        }
-        let mut transform_error = None;
-        let transform_edit = self.drag.as_ref().and_then(|drag| {
-            let tool = self.tool.transform_tool()?;
-            let mouse = response.interact_pointer_pos()?;
-            let transform = peachy_engine::drag_transform(
-                drag.initial,
-                drag.parent,
-                peachy_engine::TransformGesture {
-                    tool,
-                    axes: self.axes,
-                    axis: drag.axis,
-                    start: world_point(drag.pointer),
-                    end: world_point(mouse),
-                    snap_rotation: ui.input(|i| i.modifiers.shift),
-                },
-            );
-            match transform {
-                Ok(transform) => Some((drag.item.clone(), transform)),
-                Err(error) => {
-                    transform_error = Some(error);
-                    None
-                }
-            }
-        });
-        if let Some(error) = transform_error {
-            self.status = error;
         }
         painter.text(
             rect.left_bottom() + vec2(12., -14.),
@@ -434,6 +427,8 @@ impl Editor {
                 &self.status
             } else if self.tool == Tool::Weights {
                 "Weights · select a vertex to inspect bindings · G"
+            } else if self.tool == Tool::Shear {
+                "Shear · drag X or Y handle · Z · Escape cancels"
             } else if self.tool == Tool::Mesh && self.selected_mesh_is_weighted() {
                 "Weighted vertices · select to inspect bone influences"
             } else if self.tool == Tool::Mesh {
@@ -495,34 +490,18 @@ impl Editor {
                     self.deselect();
                 }
             }
-            if response.drag_started_by(egui::PointerButton::Primary) {
+            if response.drag_started_by(egui::PointerButton::Primary) && !self.transform_blocked {
                 if handle_axis.is_none()
                     && let Some(item) = picked
                 {
                     self.select(item);
                 }
-                if self.transform_tool_editable(self.tool)
-                    && let (Some(item), Some(initial), Some(pointer)) = (
-                        self.selection.clone(),
-                        self.selected_transform(),
-                        ui.input(|i| i.pointer.press_origin())
-                            .or(response.interact_pointer_pos()),
-                    )
+                if let Some(pointer) = ui
+                    .input(|i| i.pointer.press_origin())
+                    .or(response.interact_pointer_pos())
                 {
-                    self.playing = false;
-                    self.drag = Some(TransformDrag {
-                        item,
-                        initial,
-                        parent: super::tools::item_parent(
-                            self.selection.as_ref().unwrap(),
-                            self.session.document(),
-                            &scene.world,
-                        )
-                        .unwrap(),
-                        axis: handle_axis,
-                        pointer,
-                    });
-                    self.session.begin_transaction();
+                    self.transform_blocked = false;
+                    self.begin_viewport_transform(world_point(pointer), handle_axis);
                 }
             }
         }
@@ -530,15 +509,28 @@ impl Editor {
             if let Some(command) = mesh_edit {
                 self.dispatch(command);
             }
-            if let Some((item, transform)) = transform_edit {
-                let properties = self.tool.properties();
-                self.edit_item_transform(item, transform, properties);
+            if self.viewport_transform_active()
+                && let Some(pointer) = response.interact_pointer_pos()
+            {
+                self.update_viewport_transform(
+                    world_point(pointer),
+                    ui.input(|i| i.modifiers.shift),
+                );
             }
         }
-        if response.drag_stopped() && (self.drag.is_some() || self.mesh_drag.is_some()) {
-            self.session.commit_transaction();
-            self.drag = None;
-            self.mesh_drag = None;
+        if response.drag_stopped() {
+            if self.viewport_transform_active()
+                && let Some(pointer) = response.interact_pointer_pos()
+            {
+                self.update_viewport_transform(
+                    world_point(pointer),
+                    ui.input(|i| i.modifiers.shift),
+                );
+            }
+            self.finish_viewport_transform();
+            if self.mesh_drag.take().is_some() {
+                self.session.commit_transaction();
+            }
         }
     }
 }

@@ -196,6 +196,9 @@ impl Editor {
                 if !self.setup_mode {
                     let auto_key = ui.checkbox(&mut self.auto_key, "Auto Key");
                     self.record_target("autoKey", auto_key.rect);
+                    if auto_key.changed() {
+                        self.cancel_gesture();
+                    }
                     auto_key.on_hover_text("Set keys automatically when a transform changes.");
                     let key = ui.add_enabled(
                         !self.session.pose_edits().is_empty(),
@@ -260,54 +263,27 @@ impl Editor {
                 ui.add_sized([112.0, 22.0], egui::Label::new(label));
             }
             ui.add_enabled_ui(editable, |ui| {
-                if tool == Some(Tool::Shear) { ui.label(RichText::new("Local").small().color(MUTED)).on_hover_text("Local shear values; World/Parent display comparison is pending."); }
+                if tool == Some(Tool::Shear) { ui.label(RichText::new("Local").small().color(MUTED)).on_hover_text("Shear angles are edited in local coordinates."); }
                 for &property in properties {
-                    let mut value = property.read(if property.is_scale() || matches!(property, Property::ShearX | Property::ShearY) {local}else{shown});
+                    let current = property.read(if property.is_scale() || matches!(property, Property::ShearX | Property::ShearY) {local}else{shown});
                     if property != Property::Rotation {
-                        ui.label(if matches!(property, Property::X | Property::ScaleX | Property::ShearX) {
-                            "X"
-                        } else {
-                            "Y"
-                        });
+                        ui.label(if matches!(property, Property::X | Property::ScaleX | Property::ShearX) {"X"} else {"Y"});
                     }
-                    let id=ui.next_auto_id();
-                    // egui may parse on two focus-loss frames. Keep relative entry idempotent.
-                    let entry_id=id.with("entry-base");
-                    let focused=ui.memory(|m|m.has_focus(id));
-                    let base=ui.data_mut(|data| {
-                        let (previous,was_focused,committed)=data.get_temp::<(f32,bool,Option<f32>)>(entry_id).unwrap_or((value,false,None));
-                        let new_entry=focused && !was_focused;
-                        let base=if new_entry {value}else{previous};
-                        if focused || data.get_temp::<(f32,bool,Option<f32>)>(entry_id).is_some() {data.insert_temp(entry_id,(base,focused,if new_entry {None}else{committed}));}
-                        base
-                    });
-                    let local_scale_edit=ui.memory(|m|m.has_focus(id)) || ui.ctx().is_being_dragged(id);
-                    let world_scale=property.is_scale() && self.axes==Axes::World && !local_scale_edit;
-                    let display=property.read(shown);
-                    let response = ui.add(
-                        egui::DragValue::new(&mut value)
-                            .speed(if property.is_scale() { 0.01 } else { 0.25 })
-                            .max_decimals(2)
-                            .update_while_editing(false)
-                            .custom_parser(move |text| peachy_engine::parse_transform_input(text,base).map(f64::from))
-                            .custom_formatter(move |v,_| format!("{:.2}",if world_scale{f64::from(display)}else{v})),
-                    );
-                    self.record_target(&format!("value:{property:?}"), response.rect);
-                    if matches!(property, Property::ShearX | Property::ShearY) { response.clone().on_hover_text("Local shear angle. World/Parent shear display comparison is pending."); }
-                    if response.clicked() || response.gained_focus() { self.cancel_weight_edit(); self.playing=false; }
-                    if property.is_scale() && self.axes==Axes::World { response.clone().on_hover_text("World scale is shown; entry and dragging edit Local scale."); }
-                    if response.drag_started() {
-                        self.cancel_weight_edit();
-                        ui.data_mut(|data|data.insert_temp(entry_id,(base,focused,None::<f32>)));
-                        self.session.begin_transaction();
-                    }
-                    if response.changed() && ui.data(|data|data.get_temp::<(f32,bool,Option<f32>)>(entry_id).and_then(|entry|entry.2))!=Some(value) {
-                        self.edit_display_value(property,value);
-                        ui.data_mut(|data|data.insert_temp(entry_id,(base,focused,Some(value))));
-                    }
-                    if response.drag_stopped() {
-                        self.session.commit_transaction();
-                    }
+                    let id = ui.next_auto_id();
+                    self.prepare_transform_numeric(ui, id);
+                    let (mut value, base) = self.transform_numeric_values(id, current);
+                    let focused = ui.memory(|memory|memory.has_focus(id));
+                    let world_scale = property.is_scale() && self.axes==Axes::World && !focused && !ui.ctx().is_being_dragged(id);
+                    let display = property.read(shown);
+                    let response = ui.add(egui::DragValue::new(&mut value)
+                        .speed(if property.is_scale() {0.01} else {0.25})
+                        .max_decimals(2).update_while_editing(false)
+                        .custom_parser(move |text|peachy_engine::parse_transform_input(text,base).map(f64::from))
+                        .custom_formatter(move |value,_|if focused {value.to_string()}else{format!("{:.2}",if world_scale {f64::from(display)}else{value})}));
+                    self.record_target(&format!("value:{property:?}"),response.rect);
+                    if matches!(property,Property::ShearX|Property::ShearY) {response.clone().on_hover_text("Shear angles are edited in local coordinates.");}
+                    if property.is_scale() && self.axes==Axes::World {response.clone().on_hover_text("World scale is shown; entry and dragging edit Local scale.");}
+                    self.transform_numeric_response(&response,property,value);
                 }
                 if !self.setup_mode {
                     let state = self.selected_bone().map_or(KeyState::Absent, |b| self.key_state(b, properties));

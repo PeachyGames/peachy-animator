@@ -5,9 +5,9 @@ impl Editor {
     pub(super) fn cancel_gesture(&mut self) {
         self.cancel_weight_edit();
         self.cancel_dopesheet_drag();
-        let transform_drag = self.drag.take().is_some();
+        self.cancel_transform_edit();
         let mesh_drag = self.mesh_drag.take().is_some();
-        if transform_drag || mesh_drag {
+        if mesh_drag {
             self.session.cancel_transaction();
         }
     }
@@ -121,7 +121,10 @@ impl Editor {
             self.capture = Some(self.capture_directory.join(format!("editor-{stamp}.png")));
             ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
         }
-        if self.weight_edit_shortcuts(ctx) || self.weights_shortcuts(ctx) {
+        if self.transform_shortcuts(ctx)
+            || self.weight_edit_shortcuts(ctx)
+            || self.weights_shortcuts(ctx)
+        {
             return;
         }
         if self.error.is_some()

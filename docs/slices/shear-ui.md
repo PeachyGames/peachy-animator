@@ -1,9 +1,10 @@
 # Shear desktop integration
 
-Status: in progress. Paired bone controls, Z routing and seven scalar timeline rows
-are implemented. The shared frozen transform gesture lifecycle and native reference
-comparison remain acceptance work. This checkpoint does not claim Shear interaction
-parity or a complete vertical slice.
+Status: in progress. Paired bone controls, Z routing, seven scalar timeline rows and
+shared numeric/viewport transform previews are implemented. Installed-reference,
+native and interoperability acceptance remain work. In particular, unsupported
+empty-space mapping remains a comparison gate. This does not claim complete Shear
+interaction parity or a complete vertical slice.
 
 The strict seven-field bone transform and five-field region transform are supplied
 by the core. Region values are promoted for ordinary transform display and checked
@@ -36,3 +37,33 @@ comparison gates. The core rejects unsupported axisNone instead of choosing X.
 Tool-math errors are visible; no UI inverse or world-shear decomposition is added.
 Reference research lives outside Git and used official guides/staff/tutorial text,
 without proprietary implementation or copied UI assets.
+
+
+## Frozen transform gestures
+
+Numeric entry and viewport tools share one transform capsule: exact typed item,
+initial local pose, parent matrix, actual mode/clip/time, tool, axes, Auto Key and
+properties. Bone previews use Session::preview_edit_pose from its fixed transaction
+baseline, preserving unrelated pending properties and overwritten keys. Setup
+region previews use checked RegionTransform conversion and command previews.
+The shell performs no inverse or transform decomposition.
+
+Both Shear handles use the core's evaluated directions and single-axis gesture
+math. The independent red X and green Y cues are selectable, and degenerate zero
+directions do not draw fake handles. Unsupported empty-space input reports the
+core error without choosing an axis or silently dropping a failed result.
+
+Numeric Enter/Tab and pointer release settle after all frame actions, as one Undo
+entry. Escape, history, context/tool/axes/Auto Key changes, Save/Open/Export,
+application focus loss and menus/modals cancel before further actions. Canceled
+held pointers and stale numeric responses cannot restart the edit. The Direct
+weight and transform owners cancel each other before capturing a new baseline.
+Keyboard text undo retains priority; owned numeric Save cancels before writing.
+Focused numeric text retains precision; passive rounding or invalid text alone
+does not create a pose/history change.
+
+F12 reports transformGesture (frozen item, initialPose, parent, tool, axes,
+mode/clip/time/Auto Key, properties, input and error) separately from current
+values. Targets include shearTool, value:ShearX/Y, key:ShearX,
+timelineRow:ShearX/Y, gizmo:X/Y, gizmoOrigin, mainToolsClip and dopesheetClip.
+The diagnostic shearDisplayPolicy explicitly records the bounded local policy.
