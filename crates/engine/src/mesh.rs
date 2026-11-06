@@ -7,7 +7,7 @@ pub const REGION_TRIANGLES: [u32; 6] = [0, 1, 2, 0, 2, 3];
 
 pub fn region_vertices(region: &Region) -> [[f32; 2]; 4] {
     let (w, h) = (region.width * 0.5, region.height * 0.5);
-    let matrix = Affine::from_transform(region.transform);
+    let matrix = Affine::from_transform(region.transform.into());
     [[-w, -h], [w, -h], [w, h], [-w, h]].map(|p| matrix.point(p[0], p[1]))
 }
 

@@ -136,6 +136,8 @@ fn small_nonzero_bind_scales_are_invertible_and_unrelated_zero_scales_do_not_rej
             rotation: 37.,
             scale_x: scale,
             scale_y: -2. * scale,
+            shear_x: 0.0,
+            shear_y: 0.0,
         };
         original.bones[3].setup.scale_x = 0.;
         original.bones[3].setup.scale_y = 0.;
@@ -385,7 +387,7 @@ fn finite_inverse_precision_loss_cannot_shorten_a_ten_unit_edge_during_bind_or_u
             }
         };
         let local_pose = setup_pose(&original);
-        assert_eq!(vertices(&original, local_pose.locals.clone()), points);
+        assert_points(&vertices(&original, local_pose.locals.clone()), &points);
         // The inverse's finite x coordinate rounds to -99_999_992, which
         // reconstructs world x=8 instead of the original x=10.
         assert_eq!((10f64 - f64::from(1e8f32)) as f32 + 1e8f32, 8.);
@@ -673,7 +675,7 @@ fn exact_attachment_identity_and_strict_serialization_preserve_other_skins_and_r
                 path: "original-region".into(),
                 width: 10.,
                 height: 20.,
-                transform: Transform::default(),
+                transform: RegionTransform::default(),
             }),
         );
     let region = AttachmentRef {
@@ -728,7 +730,7 @@ fn exact_attachment_identity_and_strict_serialization_preserve_other_skins_and_r
         }
     }
     let native = serde_json::to_value(&bound).unwrap();
-    assert_eq!(native["format"], 4);
+    assert_eq!(native["format"], FORMAT_VERSION);
     assert!(
         native["skins"]["default"]["weighted"]["shape"]
             .get("pose")
