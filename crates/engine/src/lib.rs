@@ -31,3 +31,5 @@ pub use tools::{
 mod animation_tests;
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod timeline_tests;
