@@ -1,5 +1,5 @@
 //! Deterministic bounded transport. The shell supplies elapsed time; no clock lives here.
-use peachy_document::{Document, same_key_time};
+use peachy_document::Document;
 use serde::Serialize;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize)]
@@ -77,14 +77,19 @@ pub fn adjacent_key_time(
     if !time.is_finite() {
         return None;
     }
-    let times = doc
-        .animations
-        .get(animation)?
+    let clip = doc.animations.get(animation)?;
+    let times = clip
         .tracks
         .iter()
         .flat_map(|t| t.keys.iter())
         .map(|k| k.time)
-        .filter(|t| !same_key_time(*t, time));
+        .chain(
+            clip.ik_tracks
+                .iter()
+                .flat_map(|t| t.keys.iter())
+                .map(|key| key.time),
+        )
+        .filter(|t| *t != time);
     match direction {
         PlayDirection::Forward => times.filter(|t| *t > time).min_by(f32::total_cmp),
         PlayDirection::Backward => times.filter(|t| *t < time).max_by(f32::total_cmp),

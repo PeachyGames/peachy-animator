@@ -595,3 +595,467 @@ fn setup_command_target_rejects_unknown_fields_instead_of_silently_discarding_th
         serde_json::json!({"mode":"setup"})
     );
 }
+
+fn pending_value(session: &Session, time: f32) -> IkPose {
+    session
+        .authored_pose(EditTarget::Animate { animation: 0, time })
+        .unwrap()
+        .ik_poses()[0]
+}
+fn pose_bytes(session: &Session) -> Vec<u8> {
+    serde_json::to_vec(session.pose_edits()).unwrap()
+}
+
+#[test]
+fn ik_pending_is_per_property_and_fixed_base_preview_restores_bone_pose_history_and_redo() {
+    let mut session = Session::new(rig()).unwrap();
+    let target = EditTarget::Animate {
+        animation: 0,
+        time: 0.5,
+    };
+    session
+        .edit_pose(
+            2,
+            target,
+            Transform {
+                x: 2.,
+                y: 10.,
+                ..Transform::default()
+            },
+            &[Property::X],
+            false,
+        )
+        .unwrap();
+    session
+        .edit_ik_pose(
+            0,
+            target,
+            &[IkPoseEdit::BendPositive { value: false }],
+            false,
+        )
+        .unwrap();
+    session
+        .dispatch(Command::RenameAnimation {
+            animation: 0,
+            name: "temporary".into(),
+        })
+        .unwrap();
+    session.undo();
+    let document = session.document().clone();
+    let pending = pose_bytes(&session);
+    session.begin_transaction();
+    session
+        .preview_edit_ik_pose(0, target, &[IkPoseEdit::Mix { value: 0.3 }], false)
+        .unwrap();
+    assert_eq!(
+        pending_value(&session, 0.5),
+        IkPose {
+            mix: f64::from(0.3_f32),
+            bend_positive: false
+        }
+    );
+    assert_eq!(
+        session.authored_pose(target).unwrap().bone_locals()[2].x,
+        2.
+    );
+    let last_valid = pose_bytes(&session);
+    assert!(
+        session
+            .preview_edit_ik_pose(0, target, &[IkPoseEdit::Mix { value: f32::NAN }], false)
+            .is_err()
+    );
+    assert_eq!(pose_bytes(&session), last_valid);
+    assert_eq!(session.document(), &document);
+    session
+        .preview_edit_ik_pose(
+            0,
+            target,
+            &[IkPoseEdit::BendPositive { value: true }],
+            false,
+        )
+        .unwrap();
+    assert_eq!(pending_value(&session, 0.5).mix, 0.5);
+    session.cancel_transaction();
+    assert_eq!(pose_bytes(&session), pending);
+    assert!(session.can_redo());
+    assert!(!session.is_dirty());
+    session.begin_transaction();
+    session
+        .preview_edit_ik_pose(0, target, &[IkPoseEdit::Mix { value: 0.3 }], false)
+        .unwrap();
+    session.commit_transaction();
+    let edited = pose_bytes(&session);
+    session.undo();
+    assert_eq!(pose_bytes(&session), pending);
+    session.redo();
+    assert_eq!(pose_bytes(&session), edited);
+    // Editing only Mix does not freeze the unedited sampled bend at another time.
+    session
+        .edit_ik_pose(
+            0,
+            target,
+            &[IkPoseEdit::BendPositive { value: true }],
+            false,
+        )
+        .unwrap();
+    assert!(!pending_value(&session, 1.).bend_positive);
+    let solved = session.evaluated_pose(target).unwrap();
+    let bind = session.mesh_bind_pose(target).unwrap();
+    for (captured, world) in world_pose(session.document(), &bind.locals)
+        .iter()
+        .zip(solved.world())
+    {
+        assert_eq!(
+            [
+                captured.a, captured.b, captured.c, captured.d, captured.x, captured.y
+            ],
+            [world.a, world.b, world.c, world.d, world.x, world.y]
+        );
+    }
+}
+
+#[test]
+fn autokey_snapshots_both_ik_fields_and_live_preview_keying_is_one_undo() {
+    let mut document = rig();
+    document.animations[0].ik_tracks[0].keys.insert(
+        1,
+        frame(
+            0.5,
+            0.5,
+            true,
+            IkCurve::Bezier {
+                time: [0.8, 0.2],
+                mix: [0.9, 0.7],
+            },
+        ),
+    );
+    let curve = document.animations[0].ik_tracks[0].keys[1].curve;
+    let mut session = Session::new(document).unwrap();
+    let target = EditTarget::Animate {
+        animation: 0,
+        time: 0.5,
+    };
+    session
+        .edit_pose(
+            2,
+            target,
+            Transform {
+                x: 2.,
+                y: 10.,
+                ..Transform::default()
+            },
+            &[Property::X],
+            false,
+        )
+        .unwrap();
+    session
+        .edit_ik_pose(
+            0,
+            target,
+            &[
+                IkPoseEdit::Mix { value: 0.3 },
+                IkPoseEdit::BendPositive { value: false },
+            ],
+            false,
+        )
+        .unwrap();
+    let base = session.document().clone();
+    let pending = pose_bytes(&session);
+    session.begin_transaction();
+    session
+        .preview_edit_ik_pose(0, target, &[IkPoseEdit::Mix { value: 0.7 }], true)
+        .unwrap();
+    assert!(!session.pose_edits().has_ik(0, 0));
+    assert!(session.pose_edits().has_bone(0, 2));
+    let key = session.document().animations[0].ik_tracks[0].keys[1];
+    assert_eq!(key.mix, 0.7);
+    assert!(!key.bend_positive);
+    assert_eq!(key.curve, curve);
+    session.cancel_transaction();
+    assert_eq!(session.document(), &base);
+    assert_eq!(pose_bytes(&session), pending);
+    session.begin_transaction();
+    session
+        .preview_edit_ik_pose(0, target, &[IkPoseEdit::Mix { value: 0.7 }], false)
+        .unwrap();
+    session.key_ik_pose(0, 0.5, 0).unwrap();
+    session.commit_transaction();
+    let keyed = session.document().clone();
+    assert_eq!(keyed.animations[0].ik_tracks[0].keys[1].mix, 0.7);
+    assert_eq!(
+        session
+            .pose_edits()
+            .ik_key_state(session.document(), 0, 0.5, 0)
+            .unwrap(),
+        KeyState::Keyed
+    );
+    session.undo();
+    assert_eq!(session.document(), &base);
+    assert_eq!(pose_bytes(&session), pending);
+    session.redo();
+    assert_eq!(session.document(), &keyed);
+}
+
+#[test]
+fn finite_sample_key_conversion_rejects_a_visible_tip_jump_and_global_key_failure_is_atomic() {
+    let mut document = rig();
+    document.bones[1].length = 10000.;
+    document.bones[2].setup.x = 10.;
+    document.bones.push(Bone {
+        name: "unrelated".into(),
+        parent: Some(0),
+        length: 1.,
+        setup: Transform::default(),
+    });
+    let next = f32::from_bits(2_f32.to_bits() + 1);
+    document.animations[0].ik_tracks[0].keys = vec![
+        frame(0., 2., true, IkCurve::Linear),
+        frame(1., next, true, IkCurve::Linear),
+    ];
+    let mut session = Session::new(document).unwrap();
+    let target = EditTarget::Animate {
+        animation: 0,
+        time: 0.5,
+    };
+    session
+        .edit_pose(
+            3,
+            target,
+            Transform {
+                x: 5.,
+                ..Transform::default()
+            },
+            &[Property::X],
+            false,
+        )
+        .unwrap();
+    session
+        .edit_ik_pose(
+            0,
+            target,
+            &[IkPoseEdit::BendPositive { value: false }],
+            false,
+        )
+        .unwrap();
+    let before = session.evaluated_pose(target).unwrap();
+    assert_eq!(pending_value(&session, 0.5).mix, 2.0000001192092896);
+    // Both rounded Mix endpoints can yield individually valid frames; the
+    // conversion itself still changes the long bone's visible endpoint.
+    let mut rounded = session.authored_pose(target).unwrap();
+    rounded.ik[0].mix = 2.;
+    let after = checked_pose_from_authored(session.document(), &rounded).unwrap();
+    let old_tip = before.world()[1].point(10000., 0.);
+    let new_tip = after.world()[1].point(10000., 0.);
+    assert!((old_tip[0] - new_tip[0]).abs() > 0.001);
+    session
+        .dispatch(Command::RenameAnimation {
+            animation: 0,
+            name: "redo".into(),
+        })
+        .unwrap();
+    session.undo();
+    let document = session.document().clone();
+    let pending = pose_bytes(&session);
+    assert!(
+        session
+            .key_edited(0, 0.5, None)
+            .unwrap_err()
+            .contains("precision")
+    );
+    assert_eq!(session.document(), &document);
+    assert_eq!(pose_bytes(&session), pending);
+    assert!(session.can_redo());
+    assert!(!session.is_dirty());
+    assert!(session.key_ik_pose(0, 0.5, 0).is_err());
+    assert_eq!(session.document(), &document);
+    assert_eq!(pose_bytes(&session), pending);
+    assert!(session.can_redo());
+}
+
+#[test]
+fn fractional_key_that_changes_the_actual_cursor_pose_fails_without_losing_a_valid_preview() {
+    let mut session = Session::new(rig()).unwrap();
+    let target = EditTarget::Animate {
+        animation: 0,
+        time: 0.257,
+    };
+    session
+        .edit_ik_pose(
+            0,
+            target,
+            &[IkPoseEdit::BendPositive { value: false }],
+            false,
+        )
+        .unwrap();
+    let base = session.document().clone();
+    let pending = pose_bytes(&session);
+    session.begin_transaction();
+    session
+        .preview_edit_ik_pose(0, target, &[IkPoseEdit::Mix { value: 0.4 }], false)
+        .unwrap();
+    let last = pose_bytes(&session);
+    assert!(session.key_ik_pose(0, 0.257, 0).is_err());
+    assert_eq!(pose_bytes(&session), last);
+    assert_eq!(session.document(), &base);
+    session.cancel_transaction();
+    assert_eq!(pose_bytes(&session), pending);
+}
+
+#[test]
+fn global_key_success_clears_both_pending_kinds_atomically_while_selected_bone_key_stays_local() {
+    let mut session = Session::new(rig()).unwrap();
+    let target = EditTarget::Animate {
+        animation: 0,
+        time: 0.5,
+    };
+    session
+        .edit_pose(
+            2,
+            target,
+            Transform {
+                x: 2.,
+                y: 10.,
+                ..Transform::default()
+            },
+            &[Property::X],
+            false,
+        )
+        .unwrap();
+    session
+        .edit_ik_pose(0, target, &[IkPoseEdit::Mix { value: 0.7 }], false)
+        .unwrap();
+    let base = session.document().clone();
+    let pending = pose_bytes(&session);
+    session.key_edited(0, 0.5, Some(2)).unwrap();
+    assert!(session.pose_edits().has_ik(0, 0));
+    assert!(!session.pose_edits().has_bone(0, 2));
+    session.undo();
+    assert_eq!(session.document(), &base);
+    assert_eq!(pose_bytes(&session), pending);
+    session.key_edited(0, 0.5, None).unwrap();
+    assert!(session.pose_edits().is_empty());
+    assert!(!session.document().animations[0].tracks.is_empty());
+    assert_eq!(
+        session.document().animations[0].ik_tracks[0].keys[1].mix,
+        0.7
+    );
+    session.undo();
+    assert_eq!(session.document(), &base);
+    assert_eq!(pose_bytes(&session), pending);
+}
+
+#[test]
+fn invalid_ik_edits_noops_discard_and_setup_changes_preserve_pending_and_redo_contracts() {
+    let mut session = Session::new(rig()).unwrap();
+    let target = EditTarget::Animate {
+        animation: 0,
+        time: 0.5,
+    };
+    session
+        .edit_ik_pose(0, target, &[IkPoseEdit::Mix { value: 0.4 }], false)
+        .unwrap();
+    session
+        .edit_pose(
+            2,
+            target,
+            Transform {
+                x: 2.,
+                y: 10.,
+                ..Transform::default()
+            },
+            &[Property::X],
+            false,
+        )
+        .unwrap();
+    session
+        .dispatch(Command::RenameAnimation {
+            animation: 0,
+            name: "redo".into(),
+        })
+        .unwrap();
+    session.undo();
+    let base = session.document().clone();
+    let pending = pose_bytes(&session);
+    for edits in [
+        vec![IkPoseEdit::Mix {
+            value: f32::INFINITY,
+        }],
+        vec![
+            IkPoseEdit::Mix { value: 0.3 },
+            IkPoseEdit::Mix { value: 0.4 },
+        ],
+    ] {
+        assert!(session.edit_ik_pose(0, target, &edits, false).is_err());
+        assert_eq!(session.document(), &base);
+        assert_eq!(pose_bytes(&session), pending);
+        assert!(session.can_redo());
+    }
+    assert!(session.preview_edit_ik_pose(0, target, &[], false).is_err());
+    session.edit_ik_pose(0, target, &[], true).unwrap();
+    assert_eq!(pose_bytes(&session), pending);
+    assert!(session.can_redo());
+    session
+        .edit_ik_pose(
+            0,
+            EditTarget::Setup,
+            &[IkPoseEdit::Mix { value: -0.5 }],
+            false,
+        )
+        .unwrap();
+    assert_eq!(pose_bytes(&session), pending);
+    session.undo();
+    assert_eq!(session.document(), &base);
+    assert_eq!(pose_bytes(&session), pending);
+    session.discard_pose(false);
+    assert!(session.pose_edits().is_empty());
+    session.undo();
+    assert!(session.pose_edits().is_empty());
+}
+
+#[test]
+fn key_navigation_and_duration_union_bone_and_ik_keys_without_skipping_close_identities() {
+    let mut document = rig();
+    let close = f32::from_bits(0.25_f32.to_bits() + 1);
+    document.animations[0].ik_tracks[0].keys = vec![
+        frame(0.25, 0.5, true, IkCurve::Linear),
+        frame(close, 0.7, false, IkCurve::Linear),
+    ];
+    document.animations[0].tracks.push(Track {
+        bone: 2,
+        property: Property::X,
+        keys: vec![Keyframe {
+            time: 0.5,
+            value: 1.,
+            curve: Curve::Linear,
+        }],
+    });
+    assert_eq!(
+        adjacent_key_time(&document, 0, 0., PlayDirection::Forward),
+        Some(0.25)
+    );
+    assert_eq!(
+        adjacent_key_time(&document, 0, 0.25, PlayDirection::Forward),
+        Some(close)
+    );
+    assert_eq!(
+        adjacent_key_time(&document, 0, 0.5, PlayDirection::Backward),
+        Some(close)
+    );
+    assert_eq!(last_key_time(&document, 0), 0.5);
+    document.animations[0].tracks.clear();
+    assert_eq!(last_key_time(&document, 0), close);
+    document.animations[0].ik_tracks[0].keys = vec![frame(0., -0.5, false, IkCurve::Linear)];
+    assert_eq!(last_key_time(&document, 0), 0.);
+    assert!(
+        !advance_playback(
+            0.,
+            1.,
+            last_key_time(&document, 0),
+            true,
+            PlayDirection::Forward
+        )
+        .playing
+    );
+    document.animations[0].ik_tracks[0].keys.clear();
+    assert_eq!(last_key_time(&document, 0), 0.);
+}

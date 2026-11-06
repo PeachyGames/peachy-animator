@@ -5,7 +5,7 @@ use peachy_document::{Constraint, Document, IkConstraint, Transform};
 
 /// Applied f32 frames and bone endpoints must retain their solved f64 reference
 /// within this absolute bound. There is no relative or large-coordinate exception.
-const IK_WORLD_COORDINATE_TOLERANCE: f64 = 0.001;
+pub(crate) const IK_WORLD_COORDINATE_TOLERANCE: f64 = 0.001;
 
 pub(crate) fn apply(
     doc: &Document,
