@@ -43,7 +43,7 @@ attachment properties. Interpolation labels are Linear, Stepped and Bezier.
 - Extend the typed Tree with multi/range selection, creation and remaining rename
   workflows and drag/drop parenting/draw order. Introduce stable IDs before deletion
   or reparenting. Exact glyphs, spacing and every Tree preference remain to align.
-- Complete main tool organization with Shear/Pose/Create/Weights and compensation.
+- Complete main tool organization with Shear/Pose/Create, full Weights editing and compensation.
   Rotate/Translate/Scale and the axis selectors now cover the supported transform subset.
 - Add movable tabs, docking, saved workspace state and the Graph view. Tree and
   Dopesheet currently provide resizers/visibility controls only.
@@ -332,3 +332,53 @@ Bind/Unbind, Direct/brush editing, normalized weight changes, locks, Update bind
 pies/overlay, weighted vertex transforms and full Weights-view layout remain pending.
 Their shortcuts, selection state and Setup/Animate conventions need dedicated
 acceptance. Runtime coordinate agreement does not establish that UI parity.
+
+## Initial Bind and Weights view — November 6, 2026 UTC
+
+This extends the inspection-only slice above. G selects a genuine Weights tool and
+opens a named resizable Weights view; the Views menu and heading share its independent
+vector icon. F9 hide/restore includes the view. G after hiding restores the saved
+workspace and opens Weights. The right-column placement is provisional: public
+control references do not establish the installed editor's exact default dock, and
+movable tabs/arbitrary docking remain pending.
+
+The view names the explicit mesh and binding bone. Bind supports mesh-first or
+bone-first interaction with one selected target. No edit occurs on mode entry.
+A concrete target click dispatches initial binding and ends the attempt; success
+or failure never automatically retries. Space/Escape or Bind again exits without
+rolling back completed work. Remove all is explicitly complete removal, rather
+than implying that only the highlighted bone will be removed.
+
+Mesh, vertex and bone inspection context survives normal transform-tool changes,
+mode/animation changes and posing while the active appearance remains valid.
+Normal bone edits still use the typed Tree selection. Binding mode itself cancels
+on mode/animation changes, Undo/Redo, selection-history navigation, project open and view
+hide/restore. Scrubbing can retain mode and captures the live pose on target click;
+that policy is not claimed as observed Spine behavior. Inactive appearance or
+slot-placeholder changes clear the context instead of redirecting a later edit.
+
+G, Space/Escape and ordinary shortcuts respect text, menu and modal priority.
+Weights focus admits C/V/X and Save/Undo. Genuine Weights participates in the last
+two tools; temporary Mesh inspection preserves its independent return tracking.
+The read-only bone list uses independent color cues shared by the viewport.
+Weights percentages do not mutate or normalize imported influence entries.
+
+The completed native run verifies G/C/right-click, retained vertex selection,
+F9-to-G reopening, Setup Remove-all/Bind with zero observed current-shape error,
+explicit weight-1 data, two verified Save backups plus Undo/Redo, pending Animate
+locals/time with Remove-all, and Escape exit. It restores the working document/file
+semantically at f32 precision and restores the original system clipboard; the raw
+initial copy remains retained separately. See [native acceptance](evidence/binding-native.json)
+and [the Weights view](binding-editor.png). Screenshot framing is not a claim of
+pixel parity or exact Spine docking.
+
+The functional run used `ca457f5`. The final explanatory-hint-only correction at
+`a891007` passed the same 162 Rust tests and format/lint/build/architecture checks,
+plus a separate focused native visual check,
+with its document/file unchanged. The screenshot shows that final build. See
+[final visual acceptance](evidence/binding-visual.json); it is separate from the
+full functional run rather than a second full-run claim.
+
+Direct/brush editing, additional bindings, Auto, Update, locks, weight clipboard,
+multiple vertex/bone selection, pies/overlay and weighted vertex/topology editing
+remain pending. No fake active controls advertise those features.

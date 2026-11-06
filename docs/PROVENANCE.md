@@ -235,3 +235,34 @@ artwork. They do not claim Spine's Weights view, Bind or painting UI. Repository
 captures show Peachy Animator only; proprietary reference images, native projects,
 failed probes and detailed artist reports remain local. The committed artist audit
 contains aggregate counters without identifying paths or artwork.
+
+## Initial binding and Weights controls — November 6, 2026 UTC
+
+The public [Weights guide](https://esotericsoftware.com/spine-weights),
+[Tools guide](https://esotericsoftware.com/spine-tools),
+[Views guide](https://esotericsoftware.com/spine-views), and
+[mesh binding tutorial](https://esotericsoftware.com/blog/Mesh-binding-tutorial)
+describe mesh-first/bones-first binding, G, retained tool selection, Remove-all and
+binding at an Animate pose. The initial single-bone case has the trivial weight of
+1 per vertex; it is not an implementation of Spine's Auto algorithm.
+
+Our independent engine evaluates the current mesh with the shared world-vertex
+pipeline and inverts the explicitly required target/slot bone to obtain new local
+bind positions. Controlled finite-precision regressions prompted the explicit
+0.001 forward residual rejection. No proprietary binding, editor, parser or runtime
+implementation was inspected or copied. Original fixtures and permitted black-box
+input/output comparisons supply the evidence; production artwork remains untouched.
+
+The Weights icon is independently drawn. Public control-image references are linked
+in [the slice contract](slices/weight-authoring.md); no proprietary UI artwork is
+shipped. There is no successfully captured installed-editor default Weights dock.
+The right-side pane is provisional, and the retained-Bind-after-scrub policy is an
+explicit current policy rather than an observed Spine-parity claim.
+
+The separately supplied runtime checks each edited result against its own export.
+Two original results also pass installed Spine 4.3.26 CLI import/re-export followed
+by independent adapter acceptance. Those checks establish neither a lossless
+original-data round trip nor the installed editor's interactive Weights behavior.
+Our separate native acceptance uses only original Peach Bot artwork. Earlier
+weighted-slice reports, including the 140-test checkpoint and the editor-coordinate
+quantization finding, retain their original scope.

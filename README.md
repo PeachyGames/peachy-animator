@@ -3,7 +3,7 @@
 A native 2D skeletal animation editor from Team Peachy, with an independent Rust
 core and Spine-compatible exports. The current slices include Spine-style naming,
 Dopesheet selection/retiming/clipboard actions, key-derived animation duration, and
-weighted mesh import, bone-driven preview and read-only influence inspection.
+weighted mesh import, bone-driven preview, initial one-bone binding and influence inspection.
 This is still a bounded subset of Spine.
 
 ![Weighted Peach Bot in the editor](docs/weighted-editor.png)
@@ -69,7 +69,8 @@ to a four-corner mesh; existing mesh triangles can be split at their centers.
 Setup vertex movement deforms the image while UVs stay fixed; each canvas
 drag is one undo step, and Escape cancels the current drag.
 This corresponds to Spine's setup vertex transforms. UV editing, freeform hull
-creation, binding/weight editing and animated deform keys are not implemented yet.
+creation, adding bindings to weighted meshes, Direct weight editing and animated
+deform keys are not implemented yet.
 Weighted vertex dragging, nudging, local-coordinate fields and subdivision are
 blocked; selecting them never converts or normalizes their data.
 
@@ -108,6 +109,29 @@ right-drag pans, and right-click switches the last two tools. **F9** hides/resto
 capture folder. The app currently runs from its source checkout; an installer and
 bundled-resource packaging are later work.
 
+## Bind a mesh
+
+Select an active unweighted mesh attachment, press **G** to open the Weights tool
+and view, then click **Bind** and click one bone in the Tree or viewport. You can
+also select one bone first, click Bind, then click an active unweighted mesh.
+The first binding gives every vertex one influence at 100%. Entering Bind mode
+alone makes no document edit; Space/Escape exits without rolling back completed work.
+
+For a weighted mesh, **Remove all** removes every bound bone while preserving its
+current shape. These operations capture the current Setup or Animate pose, pause
+playback, and preserve the frame and unkeyed bone edits. Save stores the resulting
+mesh data; key the bone pose separately if it must survive save/reopen or playback.
+The Weights mesh/vertex selection survives switching to bone transform tools and
+back with G. Normal bone edits still target the normal Tree selection.
+
+Only initial one-bone Bind and Remove-all are implemented. Adding bones to an
+already weighted mesh, Direct/brush weight adjustment, Auto and Update are pending.
+The resizable Weights pane uses the existing right column; exact Spine dock
+placement is provisional. See [the slice contract](docs/slices/weight-authoring.md)
+and [binding acceptance](docs/VALIDATION.md#initial-bind-and-remove-all--november-6-2026-utc).
+
+![Initial one-bone binding in the Weights view](docs/binding-editor.png)
+
 ## Tree workflow
 
 Select an item's **name** to inspect it. Use a skin or animation's **visibility dot**
@@ -135,6 +159,8 @@ supported controls can edit it. Inactive skin attachments remain inspectable.
   region conversion and triangle subdivision.
 - Weighted meshes with typed bone-local influences, shared posed geometry for
   rendering/picking/bounds, read-only inspection and preserved import/export data.
+- A G Weights tool/view, initial one-bone Bind and Remove all at the current pose,
+  preserving shape, pending bone pose and time through shared engine commands.
 - Deterministic timeline playback, scrubbing, frame stepping and looping.
 - Scalar keys with linear, stepped and editable Bezier interpolation.
 - Auto Key, unkeyed multi-bone posing, Key Edited (K), colored key indicators,
@@ -147,7 +173,8 @@ supported controls can edit it. Inactive skin attachments remain inspectable.
   creates a fresh directory with JSON, an atlas and its PNG page.
 - A headless CLI that uses the same document, command and pose engine.
 
-Binding, weight editing, linked meshes, IK, physics, path/transform constraints,
+Additional binding bones, Direct/brush weight editing, Update bindings, linked meshes,
+IK, physics, path/transform constraints,
 clipping, slot animation,
 events, image sequences, packed-atlas import, native `.spine` files and animation
 mixing are not implemented. Unsupported imports are blocked with a feature report;

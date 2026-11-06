@@ -630,3 +630,74 @@ Weight authoring, linked/deform meshes, constraints, full Weights UI, actual
 production-character/game-engine acceptance, other platforms and hosted CI remain
 pending. These finite samples establish bounded data/evaluation and native inspection
 behavior, not full Spine compatibility or pixel equivalence.
+
+## Initial Bind and Remove-all — November 6, 2026 UTC
+
+This checkpoint extends the weighted import/evaluation/inspection slice above; its
+recorded **140-test** result remains unchanged. The combined binding slice passes
+**162 Rust tests**: desktop **52**, CLI **4**, engine **76**, I/O **15**, adapter
+**15**. Formatting, warnings-denied workspace Clippy, workspace build and the
+six-crate architecture guard pass. The engine total includes **13 binding tests**.
+
+Initial Bind creates one weight-1 influence per vertex. Remove-all preserves the
+current captured shape through slot-local positions. Checks cover reflected and
+nonuniform transforms, pending posed locals/time, exact history restoration,
+required inverse selection, invalid/no-op pose validation, singular transforms,
+finite-coordinate precision loss and command/batch atomicity. Residuals greater
+than **0.001** reject; the tolerance was not widened and no normalization was added.
+
+[CLI acceptance](evidence/binding-cli.json) passes **271 scene comparisons** and
+**29,726 vertex coordinates**, with maximum vertex error **0.000030517578125**
+and zero UV error. Its nine expected rejections include singular Bind/Unbind,
+already-weighted initial Bind, invalid pose/no-op/bone-batch cases, two finite
+precision-loss cases and output overwrite refusal. **19 source files, plus retained
+baselines, remain byte-for-byte unchanged.** CLI files are new outputs; desktop Save/backup
+and transient Session behavior are separate checks.
+
+Three original edited results are compared with the separately supplied Spine 4.3
+runtime across 52 samples per clip/skin, including zero ends and held poses:
+
+| Result | Bone values | Region coordinates | Mesh coordinates | Weighted coordinates | UV values | Maximum mesh error |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Setup-bound | 28,080 | 29,120 | 5,200 | 3,120 | 10,400 | 0.000030517578125 |
+| Posed-bound | 28,080 | 29,120 | 5,200 | 3,120 | 10,400 | 0.000030517578125 |
+| Removed bindings | 28,080 | 29,120 | 5,200 | 0 | 10,400 | 0.000057220458984375 |
+| Total | **84,240** | **87,360** | **15,600** | **6,240** | **31,200** | **0.000057220458984375** |
+
+The world-coordinate tolerance remains **0.001**, and UV error is zero. Each result
+is compared against its own edited export, not against a former binding's behavior
+at every animation pose. See [Setup](evidence/binding-setup-runtime.json),
+[posed](evidence/binding-posed-runtime.json), and
+[removed](evidence/binding-removed-runtime.json).
+
+Installed Spine Editor **4.3.26** imports/re-exports the Setup-bound and
+removed-contract inputs; our adapter accepts both outputs and both source hashes
+remain unchanged. This is CLI interchange acceptance, not lossless original-data
+comparison, interactive Weights observation or native `.spine` support in our app.
+See [editor interchange](evidence/binding-spine-editor.json).
+
+The separate full native run passes G/C/right-click and vertex retention, F9-to-G
+reopening, Setup Remove-all/Bind with zero observed shape error, typed weight-1
+influences, two verified Save backups and Undo/Redo. Animate Remove-all preserves
+pending locals and time with zero observed shape error; Escape exits Bind untouched.
+The first backup matches the initial working-copy bytes exactly; the second matches
+the bound document at f32 precision.
+The original system clipboard is restored. The working document/file is restored
+semantically at f32 precision through canonical Save; this is not a claim that its
+final raw bytes equal the initial raw copy. That initial copy is retained exactly,
+and the 19 repository input/baseline files remain unchanged. The owned process is
+closed and its temporary authorization removed. See [native acceptance](evidence/binding-native.json)
+and [Weights capture](binding-editor.png).
+
+The full functional native run used `ca457f5`. Final build `a891007` only corrects
+an explanatory properties hint; all 162 Rust tests and format/lint/build/architecture
+checks pass again, and a separate
+[focused visual run](evidence/binding-visual.json) verifies fully loaded original
+artwork, the G tool/view, independent icon and bone colors, a 100% row, and the
+corrected hint without changing its document/file. The screenshot is from this
+final build. This focused check is not counted as a second full functional run.
+
+Exact installed-editor docking, Direct/brush editing, additional bindings, Auto,
+Update, broader production-character/game-engine acceptance, other platforms and
+hosted CI remain pending. The new authoring commands do not change the prior
+**0/11** fully supported production-character result or remove constraint blockers.

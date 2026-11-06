@@ -45,7 +45,13 @@ diagnostics. Mesh commands address an explicit skin/slot/placeholder; resolve de
 fallback before building a command. Existing unweighted vertex indices remain stable
 under centroid subdivision. Weighted meshes currently expose read-only influence
 inspection; the shell and engine reject slot-local vertex edits and subdivision on
-them. Binding/weight editing requires explicit commands and separate acceptance.
+them. Initial one-bone Bind and Remove-all use `Session::bind_mesh_to_bone` and
+`Session::unbind_mesh` with an explicit Setup/Animate target. The engine captures
+posed locals, inverts only the required target/slot bone and rejects nonfinite,
+singular or greater-than-0.001 forward world-coordinate residuals atomically.
+Do not silently normalize weights, key or discard pending poses, or rebuild inverse-bind
+geometry in the UI. Direct/brush editing, additional bindings and Update remain
+separate commands and acceptance gates.
 Add stable vertex identity before removal/reindexing or cross-topology animation
 references, and remap all influences before any future bone reordering/deletion.
 
@@ -65,6 +71,15 @@ never implement key conversion, pending-pose rules or a second undo stack in the
 Both numeric controls and viewport geometry must use Session's posed locals.
 Timeline movement/playback clears pending edits; context switches clear stale pose
 history. Save/export must never silently serialize or key a transient pose.
+
+Weights retains an explicit mesh/vertex/bone context across transform-tool changes;
+it must never become an implicit target for a normal bone edit. Reconcile active
+skin/default fallback, the slot's active placeholder and stale references before
+Bind/Remove-all. Transient Bind mode ends on concrete success/failure, mode or
+animation changes, Undo/Redo, selection-history navigation and view hide/restore. A retained
+mode after time scrubbing captures the live pose only on the concrete target click.
+Opening another document resets the context. Keep genuine Weights tool history
+separate from temporary Mesh inspection's return-tool tracking.
 
 ## Iconography
 

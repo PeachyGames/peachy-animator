@@ -204,3 +204,31 @@ new inspection issues and all **11** source inputs unchanged. **0/11** are fully
 supported: all 11 still report constraints, with other unsupported features varying
 by character. No production-character migration is claimed. See
 [redacted inventory](evidence/weighted-artist-summary.json).
+
+## Initial Bind and Remove-all — November 6, 2026 UTC
+
+This extends the weighted import/inspection baseline above. Native format remains
+v4 and export remains the bounded Spine 4.3 JSON subset. The new commands initially
+bind an unweighted mesh to one bone at weight 1 per vertex, or remove all bindings
+into slot-local positions. Both preserve the current captured world shape within
+0.001 and leave UVs/topology, bone transforms, keys and pending bone pose unchanged.
+No normalization or merge/prune of imported influence data is introduced.
+
+Session APIs accept Setup or Animate, including unkeyed posed locals. Only required
+inverse transforms are used. Singular, nonfinite and finite-but-imprecise results
+with a forward world-coordinate residual above 0.001 fail atomically. Shape
+preservation is at that pose; changing bindings intentionally changes how other
+bone poses drive the mesh. Saving bindings does not save an unkeyed bone pose.
+
+The desktop exposes G, a Weights view, initial Bind and Remove all. It requires an
+active appearance and the slot's active placeholder, resolving default fallback to
+an explicit attachment reference. CLI commands can address explicit references in
+other skins. Weighted vertex edits/subdivision, additional bindings, Direct/brush
+changes, Auto, normalization, locks and Update are not implemented.
+
+Command/native checks and three external runtime cases pass against each edited
+result's own export at the unchanged tolerance. Installed Spine 4.3.26 imports and
+re-exports two original results and our adapter accepts that output. This is neither
+a lossless original-data round trip nor Weights UI/layout acceptance. The separate
+native run verifies our implemented controls and current-pose behavior; the right
+column dock remains provisional. See [binding validation](VALIDATION.md#initial-bind-and-remove-all--november-6-2026-utc).
