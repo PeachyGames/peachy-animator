@@ -53,6 +53,8 @@ pub(super) fn rig() -> Document {
                     rotation: 90.,
                     scale_x: 2.,
                     scale_y: -3.,
+                    shear_x: 0.0,
+                    shear_y: 0.0,
                 },
             ),
             bone(
@@ -64,6 +66,8 @@ pub(super) fn rig() -> Document {
                     rotation: 90.,
                     scale_x: 0.5,
                     scale_y: 2.,
+                    shear_x: 0.0,
+                    shear_y: 0.0,
                 },
             ),
             bone(
@@ -313,7 +317,7 @@ fn region_and_slot_local_mesh_paths_apply_the_slot_transform_once_and_keep_draw_
         path: "original-region".into(),
         width: 2.,
         height: 2.,
-        transform: Transform {
+        transform: RegionTransform {
             x: 16.,
             y: 24.,
             ..Default::default()

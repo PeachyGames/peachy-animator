@@ -2,7 +2,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
-pub const FORMAT_VERSION: u32 = 4;
+pub const FORMAT_VERSION: u32 = 5;
 pub const KEY_TIME_EPSILON: f32 = 0.00001;
 pub fn same_key_time(a: f32, b: f32) -> bool {
     (a - b).abs() < KEY_TIME_EPSILON
@@ -37,6 +37,8 @@ pub struct Transform {
     pub rotation: f32,
     pub scale_x: f32,
     pub scale_y: f32,
+    pub shear_x: f32,
+    pub shear_y: f32,
 }
 
 impl Default for Transform {
@@ -47,8 +49,67 @@ impl Default for Transform {
             rotation: 0.0,
             scale_x: 1.0,
             scale_y: 1.0,
+            shear_x: 0.0,
+            shear_y: 0.0,
         }
     }
+}
+
+/// A region's own transform has no shear in the supported interchange format.
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RegionTransform {
+    pub x: f32,
+    pub y: f32,
+    pub rotation: f32,
+    pub scale_x: f32,
+    pub scale_y: f32,
+}
+
+impl Default for RegionTransform {
+    fn default() -> Self {
+        Self {
+            x: 0.0,
+            y: 0.0,
+            rotation: 0.0,
+            scale_x: 1.0,
+            scale_y: 1.0,
+        }
+    }
+}
+
+impl From<RegionTransform> for Transform {
+    fn from(region: RegionTransform) -> Self {
+        Self {
+            x: region.x,
+            y: region.y,
+            rotation: region.rotation,
+            scale_x: region.scale_x,
+            scale_y: region.scale_y,
+            shear_x: 0.0,
+            shear_y: 0.0,
+        }
+    }
+}
+
+impl TryFrom<Transform> for RegionTransform {
+    type Error = String;
+    fn try_from(transform: Transform) -> Result<Self, Self::Error> {
+        if transform.shear_x != 0.0 || transform.shear_y != 0.0 {
+            return Err("Region transforms do not support shear".into());
+        }
+        Ok(Self {
+            x: transform.x,
+            y: transform.y,
+            rotation: transform.rotation,
+            scale_x: transform.scale_x,
+            scale_y: transform.scale_y,
+        })
+    }
+}
+
+pub fn finite_region_transform(transform: RegionTransform) -> bool {
+    finite_transform(transform.into())
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -92,7 +153,7 @@ impl Attachment {
                     || !r.height.is_finite()
                     || r.width <= 0.0
                     || r.height <= 0.0
-                    || !finite_transform(r.transform)
+                    || !finite_region_transform(r.transform)
                 {
                     return Err("Invalid region dimensions or transform".into());
                 }
@@ -265,7 +326,7 @@ pub struct Region {
     pub path: String,
     pub width: f32,
     pub height: f32,
-    pub transform: Transform,
+    pub transform: RegionTransform,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -302,10 +363,20 @@ pub enum Property {
     Rotation,
     ScaleX,
     ScaleY,
+    ShearX,
+    ShearY,
 }
 
 impl Property {
-    pub const ALL: [Self; 5] = [Self::X, Self::Y, Self::Rotation, Self::ScaleX, Self::ScaleY];
+    pub const ALL: [Self; 7] = [
+        Self::X,
+        Self::Y,
+        Self::Rotation,
+        Self::ScaleX,
+        Self::ScaleY,
+        Self::ShearX,
+        Self::ShearY,
+    ];
     pub fn is_scale(self) -> bool {
         matches!(self, Self::ScaleX | Self::ScaleY)
     }
@@ -323,6 +394,8 @@ impl Property {
             Self::Rotation => t.rotation,
             Self::ScaleX => t.scale_x,
             Self::ScaleY => t.scale_y,
+            Self::ShearX => t.shear_x,
+            Self::ShearY => t.shear_y,
         }
     }
     pub fn write(self, t: &mut Transform, v: f32) {
@@ -332,6 +405,8 @@ impl Property {
             Self::Rotation => t.rotation = v,
             Self::ScaleX => t.scale_x = v,
             Self::ScaleY => t.scale_y = v,
+            Self::ShearX => t.shear_x = v,
+            Self::ShearY => t.shear_y = v,
         }
     }
 }
@@ -340,7 +415,7 @@ impl Property {
 #[serde(deny_unknown_fields)]
 pub struct Keyframe {
     pub time: f32,
-    /// Translation/rotation are offsets from setup; scales multiply setup.
+    /// Translation/rotation/shear are offsets from setup; scales multiply setup.
     pub value: f32,
     pub curve: Curve,
 }
@@ -501,7 +576,9 @@ pub fn safe_asset_path(path: &str) -> bool {
 }
 
 pub fn finite_transform(t: Transform) -> bool {
-    [t.x, t.y, t.rotation, t.scale_x, t.scale_y]
-        .iter()
-        .all(|v| v.is_finite())
+    [
+        t.x, t.y, t.rotation, t.scale_x, t.scale_y, t.shear_x, t.shear_y,
+    ]
+    .iter()
+    .all(|v| v.is_finite())
 }

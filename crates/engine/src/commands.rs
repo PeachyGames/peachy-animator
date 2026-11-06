@@ -29,7 +29,7 @@ pub enum Command {
     },
     SetRegionTransform {
         attachment: AttachmentRef,
-        transform: Transform,
+        transform: RegionTransform,
     },
     SetSlotAttachment {
         slot: usize,

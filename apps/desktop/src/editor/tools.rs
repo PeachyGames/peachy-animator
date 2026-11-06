@@ -8,6 +8,7 @@ impl Tool {
             Self::Rotate => Some(TransformTool::Rotate),
             Self::Move => Some(TransformTool::Translate),
             Self::Scale => Some(TransformTool::Scale),
+            Self::Shear => Some(TransformTool::Shear),
             Self::Mesh | Self::Weights => None,
         }
     }
@@ -16,6 +17,7 @@ impl Tool {
             Self::Rotate => &[Property::Rotation],
             Self::Move => &[Property::X, Property::Y],
             Self::Scale => &[Property::ScaleX, Property::ScaleY],
+            Self::Shear => &[Property::ShearX, Property::ShearY],
             Self::Mesh | Self::Weights => &[],
         }
     }
@@ -90,6 +92,17 @@ impl Editor {
                 self.edit_display_value(
                     property,
                     property.read(local) + (delta[0] + delta[1]) * amount * 0.01,
+                );
+            }
+            Tool::Shear => {
+                let property = if delta[0] != 0. {
+                    Property::ShearX
+                } else {
+                    Property::ShearY
+                };
+                self.edit_display_value(
+                    property,
+                    property.read(local) + (delta[0] + delta[1]) * amount,
                 );
             }
             Tool::Mesh | Tool::Weights => {}

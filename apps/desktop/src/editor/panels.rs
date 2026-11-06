@@ -249,7 +249,7 @@ impl Editor {
                     [112.0, 22.0],
                     egui::Button::selectable(self.tool == tool, label),
                 );
-                let target = match tool { Tool::Rotate=>"rotateTool",Tool::Move=>"translateTool",Tool::Scale=>"scaleTool",Tool::Mesh=>"meshTool",Tool::Weights=>"weightsTool" };
+                let target = match tool { Tool::Rotate=>"rotateTool",Tool::Move=>"translateTool",Tool::Scale=>"scaleTool",Tool::Shear=>"shearTool",Tool::Mesh=>"meshTool",Tool::Weights=>"weightsTool" };
                 self.capture_targets.insert(
                     target.into(),
                     [
