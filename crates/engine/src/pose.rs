@@ -74,6 +74,18 @@ impl Affine {
     }
 }
 
+/// Preserve ordinary f32 interpolation exactly; widen only when an
+/// intermediate overflow would hide a representable result. The final cast
+/// intentionally remains nonfinite if the true result cannot fit in f32.
+fn interpolate(left: f32, right: f32, progress: f32) -> f32 {
+    let value = left + (right - left) * progress;
+    if value.is_finite() {
+        value
+    } else {
+        (f64::from(left) + (f64::from(right) - f64::from(left)) * f64::from(progress)) as f32
+    }
+}
+
 pub fn sample(track: &Track, time: f32) -> f32 {
     if track.keys.is_empty() || time < track.keys[0].time {
         return track.property.neutral();
@@ -83,7 +95,7 @@ pub fn sample(track: &Track, time: f32) -> f32 {
         if time < right.time {
             let progress = (time - left.time) / (right.time - left.time);
             let t = curve_progress(left.curve, progress);
-            return left.value + (right.value - left.value) * t;
+            return interpolate(left.value, right.value, t);
         }
     }
     track
@@ -116,7 +128,7 @@ pub fn curve_progress(curve: Curve, progress: f32) -> f32 {
                     } else {
                         0.0
                     };
-                    return previous_y + fraction * (y - previous_y);
+                    return interpolate(previous_y, y, fraction);
                 }
                 previous_x = x;
                 previous_y = y;
