@@ -8,6 +8,7 @@ mod key_drag;
 mod layout;
 mod mesh;
 mod panels;
+mod playback;
 mod properties;
 mod rename;
 mod scene_view;
@@ -90,6 +91,7 @@ pub(crate) struct Editor {
     setup_mode: bool,
     playing: bool,
     play_direction: PlayDirection,
+    playback_speed: f32,
     looping: bool,
     auto_key: bool,
     time: f32,
@@ -198,6 +200,7 @@ impl Editor {
             setup_mode: true,
             playing: false,
             play_direction: PlayDirection::Forward,
+            playback_speed: 1.,
             looping: true,
             auto_key: true,
             time: 0.0,
@@ -704,15 +707,7 @@ impl Editor {
         self.observe_timeline_input(&ctx);
         self.reconcile_selection();
         if self.playing {
-            let step = peachy_engine::advance_playback(
-                self.time,
-                ctx.input(|i| i.stable_dt).min(0.1),
-                self.animation_end(),
-                self.looping,
-                self.play_direction,
-            );
-            self.time = step.time;
-            self.playing = step.playing;
+            self.advance_playback(ctx.input(|i| i.stable_dt));
             ctx.request_repaint();
         }
         egui::Panel::top("toolbar")
@@ -881,6 +876,7 @@ impl Editor {
                     "targets":self.capture_targets,"meshHandles":self.mesh_handles,"innerSize":[ctx.content_rect().width(),ctx.content_rect().height()]
                 });
                 report["views"] = self.views_diagnostic();
+                report["playbackSpeed"] = self.playback_speed.into();
                 report["animationEnd"] = self.animation_end().into();
                 report["weightedMeshCount"] = self.weighted_mesh_count().into();
                 report["weightsContext"] = self.weights_diagnostic();

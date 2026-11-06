@@ -20,7 +20,7 @@ presenting empty panels as working tools.
 | Mesh Tools | Separate view unimplemented. Existing attachment Vertices/subdivision controls cover only the documented mesh subset. |
 | Metrics | New counts for bones, constraints, slots, all attachments, visible attachments, visible vertices and triangles. Animate additionally shows native scalar-track and key counts. |
 | Outline | New clean secondary display of the current evaluated pose, including pending unkeyed edits and static IK. Fit, right/middle drag pan, wheel zoom, and click to center the main viewport. |
-| Playback | Separate view unimplemented. Existing transport is in Dopesheet. |
+| Playback | New Animate panel with session-only Speed (1–200% and percentage presets), shared forward/backward transport and Loop, frame/key navigation and a read-only Timeline FPS. Works with Dopesheet closed. FPS retiming, Stepped and Interpolated overrides remain unimplemented. |
 | Preview | Unimplemented: independent playback, tracks and animation mixing. Outline deliberately follows the current pose. |
 | Skins | New searchable named-skin list. Click activates, right-click selects Tree properties, Clear skin uses shared default attachments. Single active skin only. |
 | Slot Color | Unimplemented: slot-color model and timelines. |
@@ -28,7 +28,7 @@ presenting empty panels as working tools.
 | Tree | Existing typed outline, filters, activation dots and contextual properties. The Slots filter shows draw order; Spine has no separate Slots view in this inventory. |
 | Weights | Existing bounded Bind/Remove all/Add binding/Direct workflow; still no brush, Update, locks or multi-vertex editing. |
 
-The four new views and Weights use a resizable tabbed panel in the right rail.
+Animations, Metrics, Outline, Playback, Skins and Weights use a resizable tabbed panel in the right rail.
 With the Tree closed, they use that rail's full height. Opening an already open
 entry focuses its tab. Individual close buttons are present on these views, Tree
 and Dopesheet; they reopen from Views. F9 stores/restores all view visibility,
@@ -37,8 +37,8 @@ and restores Tree plus the Animate Dopesheet. View changes stay outside document
 history. Opening another document retains workspace tabs while clearing searches
 and fitting Outline to the new document.
 
-Animations and Dopesheet are unavailable in Setup; an open Animations tab is
-retained and returns in Animate. All unsupported views remain discoverable in both
+Animations, Playback and Dopesheet are unavailable in Setup; open Animations and
+Playback tabs are retained and return in Animate. All unsupported views remain discoverable in both
 modes. This is a local, explicit availability policy. The live public guide says
 Spine's lists differ by mode, but does not enumerate the complete per-mode menu.
 An exact installed 4.3 menu comparison remains a gate. Preview in Spine can be
@@ -51,13 +51,26 @@ ordered pinned composition or folders. Metrics does not estimate clipping, area,
 draw calls or runtime vertex-transform cost. Outline has no ghosting or orange
 main-viewport indicator. These are bounded panels, not full view parity.
 
+Playback speed changes elapsed playback time in either direction through the same
+engine transport used by Dopesheet and A/D. It does not rescale keys, change project
+FPS, alter frame/key navigation or create document history. Speed and Loop are
+shared across animations and retained through tab/mode changes, F9 and Open; a
+new editor session starts at 100%. Mode changes and Open still stop playback. Starting playback and
+seeking retain the existing unkeyed-pose discard policy. Speed changes alone
+preserve the pending pose. Timeline FPS is displayed without an editable control:
+changing FPS correctly needs a separate atomic, frame-preserving retiming command.
+Stepped and Interpolated preview overrides are not presented as working settings.
+The 1–200% range and preset choices are bounded local policy, not measured
+installed-Spine limits.
+
 Behavior references are the public
 [Views](https://en.esotericsoftware.com/spine-views),
 [UI](https://en.esotericsoftware.com/spine-ui),
 [Animations](https://en.esotericsoftware.com/spine-animations-view),
 [Skins](https://en.esotericsoftware.com/spine-skins-view),
 [Metrics](https://en.esotericsoftware.com/spine-metrics),
-[Outline](https://en.esotericsoftware.com/spine-outline) and
+[Outline](https://en.esotericsoftware.com/spine-outline),
+[Playback](https://en.esotericsoftware.com/spine-playback) and
 [Preview](https://en.esotericsoftware.com/spine-preview) guides. Their live content
 is not proof of exact installed Spine 4.3 visuals or behavior. Implementation and
 icons are independent original Rust code; no proprietary code or UI assets were
@@ -66,6 +79,7 @@ inspected or copied.
 Desktop Rust interaction checks cover the full inventory, disabled Setup/unsupported
 entries, animation/skin activation versus typed selection, document/history
 preservation, close/reopen, F9 and Weights restoration, Outline centering with an
-unkeyed pose, mode switches and minimum-window close-control visibility. Native
-mouse/keyboard acceptance and capture evidence are recorded separately by the
-coordinating task; these egui event checks alone do not claim native visual parity.
+unkeyed pose, mode switches and minimum-window close-control visibility. Playback adds typed percentage-entry, shared transport, speed and minimum-panel
+visibility checks. Its [render and native-input evidence](evidence/playback.json)
+separates diagnostic rendering from the incomplete native mouse/keyboard attempts;
+these egui event checks alone do not claim native visual parity.

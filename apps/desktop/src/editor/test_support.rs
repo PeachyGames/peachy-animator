@@ -66,6 +66,7 @@ pub(super) fn editor_fixture() -> Editor {
         setup_mode: false,
         playing: false,
         play_direction: PlayDirection::Forward,
+        playback_speed: 1.,
         looping: true,
         auto_key: false,
         time: 0.42,

@@ -1028,3 +1028,38 @@ interaction acceptance. Each owned editor is closed and temporary local-login
 authorization is removed. Native interaction, exact installed-editor mode lists and
 pixel/docking parity remain pending. See [the evidence summary](evidence/mcp-views.json),
 [MCP scope](MCP.md) and [Views scope](VIEWS.md).
+
+
+## Playback view — November 6, 2026
+
+The slice adds a bounded Animate Playback panel over the existing engine
+transport. The final source passes formatting, all **303 workspace Rust tests**
+(including **106 desktop tests**), Clippy across all targets with warnings denied,
+the workspace build and the seven-crate architecture guard. Hosted CI was not run. Desktop regression checks cover percentage entry committed by actual
+egui text/Enter events, the D shortcut and directional transport, forward/reverse
+speed, both nonlooping
+boundaries, reverse wrapping, zero-length clips, a stalled-frame cap before speed
+scaling, frame/key navigation independent of speed, and unchanged document/history
+and pending poses when speed alone changes. Menu availability, close/reopen, F9,
+mode retention and minimum-window control visibility use the actual workspace UI.
+The render review caught a clipped final navigation row; compacting the transport
+row fixed it, and the layout assertion guards the default panel height.
+
+A native render check uses only the original Peach Bot, an actual normal on-screen
+window and the native screenshot path. Its isolated diagnostic binary opens
+Playback initially so the panel can be reviewed without OS input. That temporary
+startup code is removed from the final source and application. This verifies
+rendering only: three full native input attempts did not complete, due missed
+mouse delivery/window resizing and exact-PID foreground loss. No native typed-speed
+or full mouse/keyboard acceptance is claimed. The [capture](playback-editor.png)
+and [machine-readable evidence](evidence/playback.json) retain that distinction.
+Exact installed Spine comparison, FPS retiming and Stepped/Interpolated overrides
+remain pending. Neither export timing nor the native document format changes.
+
+The starting commit is `1eb5a60750338a7fd5e478ddbe2c895fd0bec5b3` with a clean
+working tree. Readable baseline, check logs, native attempts and cleanup records
+are retained outside Git at
+`../.local-backups/peachy-playback-20261106T154658Z-01c317/`.
+Rollback: revert the Playback feature commit; consult the retained starting status
+and diff before applying changes so unrelated later work is preserved. Task-owned
+native processes are closed and temporary local-login authorization is removed.

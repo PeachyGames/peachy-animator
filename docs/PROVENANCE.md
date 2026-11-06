@@ -400,3 +400,16 @@ applied pose snapshot without solving twice. Public runtime controls justify acc
 neutral `skin:false` while skin-required constraints remain unsupported. Empty
 constraint lists preserve all eight earlier export goldens. See the approved
 [contract](slices/ik-design.md), [UI scope](slices/ik-ui.md) and final validation.
+
+
+## Independent Playback view — November 6, 2026
+
+The official public [Playback guide](https://en.esotericsoftware.com/spine-playback)
+informed the Timeline FPS/Speed ordering, percentage presets and temporary,
+project-wide preview-speed semantics. It also identifies the still-missing FPS
+retiming, Stepped and Interpolated features. The live page is not an installed
+4.3 comparison. Our 1–200% bounds, chosen presets and added shared transport are
+bounded local policy. The UI, play/slider icon and speed adaptation are original
+Rust code over our existing engine transport; no proprietary implementation,
+reference images or UI assets were copied into the application. Native project
+format and exported animation timing are unchanged.

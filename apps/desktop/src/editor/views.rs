@@ -7,6 +7,7 @@ pub(super) enum DockView {
     Animations,
     Metrics,
     Outline,
+    Playback,
     Skins,
     Weights,
 }
@@ -16,10 +17,11 @@ pub(super) enum DockView {
 mod tests;
 
 impl DockView {
-    const ALL: [Self; 5] = [
+    const ALL: [Self; 6] = [
         Self::Animations,
         Self::Metrics,
         Self::Outline,
+        Self::Playback,
         Self::Skins,
         Self::Weights,
     ];
@@ -28,6 +30,7 @@ impl DockView {
             Self::Animations => "Animations",
             Self::Metrics => "Metrics",
             Self::Outline => "Outline",
+            Self::Playback => "Playback",
             Self::Skins => "Skins",
             Self::Weights => "Weights",
         }
@@ -37,9 +40,14 @@ impl DockView {
             Self::Animations => Icon::Animations,
             Self::Metrics => Icon::Metrics,
             Self::Outline => Icon::Outline,
+            Self::Playback => Icon::Playback,
             Self::Skins => Icon::Skins,
             Self::Weights => Icon::Weights,
         }
+    }
+
+    fn available_in_setup(self) -> bool {
+        !matches!(self, Self::Animations | Self::Playback)
     }
 }
 
@@ -78,7 +86,7 @@ impl ViewTabs {
 }
 
 /// The public guide's complete view inventory. Unsupported entries remain discoverable.
-const UNIMPLEMENTED: [(&str, &str); 8] = [
+const UNIMPLEMENTED: [(&str, &str); 7] = [
     (
         "Audio",
         "Audio assets, waveform display and playback are not implemented.",
@@ -94,10 +102,6 @@ const UNIMPLEMENTED: [(&str, &str); 8] = [
     (
         "Mesh Tools",
         "A separate Mesh Tools view is not implemented. Select an attachment and use Vertices for the current mesh subset.",
-    ),
-    (
-        "Playback",
-        "A separate Playback view is not implemented. Transport controls are in Dopesheet.",
     ),
     (
         "Preview",
@@ -126,7 +130,7 @@ impl Editor {
         DockView::ALL
             .into_iter()
             .filter(|&view| {
-                self.dock_view_open(view) && (view != DockView::Animations || !self.setup_mode)
+                self.dock_view_open(view) && (!self.setup_mode || view.available_in_setup())
             })
             .collect()
     }
@@ -162,7 +166,7 @@ impl Editor {
 
     pub(super) fn views_menu(&mut self, ui: &mut egui::Ui) {
         for view in DockView::ALL {
-            let enabled = view != DockView::Animations || !self.setup_mode;
+            let enabled = !self.setup_mode || view.available_in_setup();
             let response = ui
                 .add_enabled_ui(enabled, |ui| {
                     icons::tool_button(ui, view.icon(), view.label(), self.dock_view_open(view))
@@ -289,6 +293,7 @@ impl Editor {
                 .show(ui, |ui| match view {
                     DockView::Animations => self.animations_panel(ui),
                     DockView::Metrics => self.metrics_panel(ui),
+                    DockView::Playback => self.playback_panel(ui),
                     DockView::Skins => self.skins_panel(ui),
                     DockView::Weights => self.weights_panel(ui),
                     DockView::Outline => unreachable!(),

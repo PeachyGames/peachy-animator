@@ -399,8 +399,25 @@ impl Editor {
     }
 }
 
-fn transport_button(ui: &mut egui::Ui, direction: PlayDirection, active: bool) -> egui::Response {
+pub(super) fn transport_button(
+    ui: &mut egui::Ui,
+    direction: PlayDirection,
+    active: bool,
+) -> egui::Response {
     let response = ui.add_sized([25., 22.], egui::Button::selectable(active, ""));
+    response.widget_info(|| {
+        egui::WidgetInfo::labeled(
+            egui::WidgetType::Button,
+            ui.is_enabled(),
+            if active {
+                "Stop playback"
+            } else if direction == PlayDirection::Forward {
+                "Play forward"
+            } else {
+                "Play backward"
+            },
+        )
+    });
     let center = response.rect.center();
     let color = if active { ACCENT } else { Color32::LIGHT_GRAY };
     if active {

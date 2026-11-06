@@ -517,3 +517,29 @@ pending-pose preservation on Outline clicks and close controls at the minimum
 window size. General tab docking, saved layouts, minimized icons, exact installed
 4.3 per-mode lists and native visual equivalence remain comparison gates. Public
 guides are live/unversioned; they do not establish exact installed pixel parity.
+
+
+## Playback view — November 6, 2026
+
+Animate's **Views → Playback** opens a real optional panel in the existing right
+rail. Its independently drawn play/slider icon is shared by the menu, tab and
+heading. Closing Dopesheet leaves the panel usable. Close/reopen, mode switches,
+F9, Open and workspace restoration follow the other optional views.
+
+The public [Playback guide](https://en.esotericsoftware.com/spine-playback)
+places Timeline FPS before Speed and describes percentage shortcuts and a
+session-only speed multiplier. Our panel follows that ordering, showing the
+project's actual FPS read-only, a 1–200% slider and numeric percentage entry,
+and 25/50/75/100/200% presets. Its additional transport shares direction, Loop,
+frame/key navigation and cursor with Dopesheet and the existing shortcuts. The
+multiplier changes elapsed playback time only; it is neither saved nor exported.
+Changing speed preserves unkeyed poses and document history. Starting playback
+or seeking continues to use Session's existing pending-pose policy.
+
+FPS retiming, Stepped and Interpolated overrides remain explicit gaps. No
+unsupported checkbox is presented as functional. The range, presets and right-rail
+placement are local bounded choices. Exact installed 4.3 visual, range and
+interaction comparison remains pending; the live public guide does not establish
+pixel parity. Rust input checks cover actual typed percentage entry, independent
+transport, workspace lifecycle and preserved document/pending-pose state. Native
+acceptance and its limits are recorded in `evidence/playback.json`.

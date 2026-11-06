@@ -25,6 +25,7 @@ pub(super) enum Icon {
     Skins,
     Metrics,
     Outline,
+    Playback,
     Weights,
     IkConstraint,
     ChooseBone,
@@ -386,6 +387,15 @@ fn paint(ui: &Ui, rect: Rect, icon: Icon, response: &Response) {
                 ],
                 green,
             );
+        }
+        Icon::Playback => {
+            painter.add(Shape::convex_polygon(
+                vec![p(2., 2.), p(10., 6.), p(2., 10.)],
+                green,
+                Stroke::NONE,
+            ));
+            line(&[[2., 13.], [14., 13.]], ink);
+            box_at([9., 11.], [12., 15.], warm);
         }
         Icon::Dopesheet => {
             line(&[[2., 3.], [14., 3.], [14., 14.], [2., 14.], [2., 3.]], ink);

@@ -88,10 +88,13 @@ properties right, transform controls below the viewport, and Dopesheet below tho
 in Animate mode. UI parity is an ongoing acceptance requirement; see the
 [UI parity contract](docs/UI_PARITY.md) for remaining differences.
 
-**Views** also opens Animations (in Animate), Skins, Metrics and Outline. These
+**Views** also opens Animations and Playback (in Animate), Skins, Metrics and Outline. These
 share a resizable tabbed panel in the right rail. Outline displays the current
 pose without editing handles; Animations and Skins switch the active preview
-without changing the saved document. The menu lists the remaining Spine views
+without changing the saved document. Playback adds a shared preview-speed slider,
+percentage presets and transport that works with Dopesheet closed. Its Timeline
+FPS display is read-only; FPS retiming and interpolation overrides are pending.
+The menu lists the remaining Spine views
 with an explanation of each missing feature. See [the complete inventory](docs/VIEWS.md).
 
 For an unweighted mesh in Setup, expand the hand.R bone and slot, select its

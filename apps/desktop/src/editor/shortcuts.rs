@@ -89,7 +89,7 @@ impl Editor {
         self.selection_history.record(&self.selection, &None);
         self.selection = None;
     }
-    fn step_frames(&mut self, delta: f32) {
+    pub(super) fn step_frames(&mut self, delta: f32) {
         self.playing = false;
         self.set_time(self.snapped_time() + delta / self.session.document().fps as f32);
     }

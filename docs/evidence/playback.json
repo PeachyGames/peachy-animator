@@ -1,0 +1,74 @@
+{
+  "date": "2026-11-06",
+  "baselineCommit": "1eb5a60750338a7fd5e478ddbe2c895fd0bec5b3",
+  "localBackup": "../.local-backups/peachy-playback-20261106T154658Z-01c317/",
+  "implementedView": "Playback",
+  "availableIn": "Animate",
+  "checks": {
+    "workspaceRustTests": 303,
+    "desktopTests": 106,
+    "format": true,
+    "clippyWarningsDenied": true,
+    "workspaceBuild": true,
+    "architectureCrates": 7,
+    "hostedCiRun": false
+  },
+  "behavior": {
+    "previewSpeedPercentRange": [
+      1,
+      200
+    ],
+    "presetsPercent": [
+      25,
+      50,
+      75,
+      100,
+      200
+    ],
+    "typedPercentageEguiEvents": 37,
+    "sharedDirectionalTransport": true,
+    "loopAndStopBoundaries": true,
+    "emptyClips": true,
+    "dopesheetCanClose": true,
+    "frameAndKeyNavigationUnaffectedBySpeed": true,
+    "documentHistoryAndPendingPosePreservedOnSpeedChange": true,
+    "modeCloseReopenF9": true,
+    "minimumWorkspaceControlsVisible": true
+  },
+  "nativeRender": {
+    "normalOnScreenWindow": true,
+    "loadedOriginalArtwork": true,
+    "playbackPanelRendered": true,
+    "diagnosticStartupOnly": true,
+    "nativeInputAcceptance": false,
+    "sourceDifference": "temporary environment-gated initial workspace selection only; removed from final source and binary",
+    "pid": 44356,
+    "binarySha256": "b7eb3e09fa7eefaa0eb954da85bbd4f9e05f0f3eb91e4fbfd34891c15ff10b19",
+    "capture": "../playback-editor.png",
+    "bottomNavigationWithinClip": true,
+    "finalSourceAndBinaryExcludeStartupDiagnostic": true
+  },
+  "nativeInput": {
+    "accepted": false,
+    "attempts": 3,
+    "limitations": [
+      "First attempt reached the enabled Playback menu entry but mouse activation was not delivered.",
+      "A title-bar activation resized the window and invalidated coordinates on the second attempt.",
+      "The third attempt stopped at exact-PID foreground ownership guards."
+    ],
+    "noNativeTypedValueClaim": true
+  },
+  "cleanup": {
+    "allFiveOwnedEditorsExited": true,
+    "allTemporaryAuthorizationRemoved": true,
+    "allTemporaryCommandDirectoriesRemoved": true,
+    "privateKeyWritten": false,
+    "browserLaunched": false
+  },
+  "finalDesktopBinarySha256": "575c69274f5b30acb4981167b37a64fa238c9f7cd9c457e5919ba9054ab60bf8",
+  "limits": [
+    "Timeline FPS read-only; no FPS retiming command",
+    "No Stepped or Interpolated preview override",
+    "No exact installed-Spine range, placement or interaction parity claim"
+  ]
+}
