@@ -23,8 +23,9 @@ pub(crate) fn apply(
     for (index, ik) in active.iter().enumerate() {
         validate_domain(doc, locals, ik)?;
         for other in &active[..index] {
-            let overlaps = (0..doc.bones.len())
-                .any(|bone| within(doc, bone, ik.bones[0]) && within(doc, bone, other.bones[0]));
+            // Subtrees intersect exactly when one root is inside the other.
+            let overlaps = within(doc, ik.bones[0], other.bones[0])
+                || within(doc, other.bones[0], ik.bones[0]);
             if overlaps
                 || within(doc, ik.target, other.bones[0])
                 || within(doc, other.target, ik.bones[0])
