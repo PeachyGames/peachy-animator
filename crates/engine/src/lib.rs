@@ -21,7 +21,10 @@ pub use playback::{
     PlayDirection, PlaybackStep, adjacent_key_time, advance_playback, last_key_time,
 };
 pub use pose::{Affine, curve_progress, evaluate, local_pose, sample, world_pose};
-pub use scene::{AttachmentDraw, Bounds, Scene, evaluate_scene, scene_from_locals};
+pub use scene::{
+    AttachmentDraw, Bounds, Scene, checked_evaluate_scene, checked_scene_from_locals,
+    evaluate_scene, scene_from_locals,
+};
 pub use session::Session;
 pub use timeline::{ClipboardKey, KeyClipboard, TimelineKey, copy_keys};
 pub use tools::{
@@ -39,6 +42,8 @@ mod direct_weight_tests;
 mod duration_tests;
 #[cfg(test)]
 mod pose_preview_tests;
+#[cfg(test)]
+mod scene_checks_tests;
 #[cfg(test)]
 mod shear_tests;
 #[cfg(test)]

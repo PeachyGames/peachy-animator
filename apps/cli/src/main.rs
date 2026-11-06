@@ -1,4 +1,4 @@
-use peachy_engine::{Command, apply_command, evaluate_scene};
+use peachy_engine::{Command, apply_command, checked_evaluate_scene};
 use serde_json::{Value, json};
 use std::{env, fs, path::Path, process};
 
@@ -83,7 +83,7 @@ fn run() -> Result<(), String> {
             if !doc.skins.is_empty() && !doc.skins.contains_key(skin) {
                 return Err("Unknown skin".into());
             }
-            let scene = evaluate_scene(&doc, Some(animation), time, skin, None);
+            let scene = checked_evaluate_scene(&doc, Some(animation), time, skin, None)?;
             println!("{}",serde_json::to_string_pretty(&json!({"time":time,"bones":doc.bones.iter().zip(scene.world).map(|(b,p)|json!({"name":b.name,"world":p})).collect::<Vec<_>>(),"attachments":scene.attachments})).unwrap());
         }
         "apply" => {
