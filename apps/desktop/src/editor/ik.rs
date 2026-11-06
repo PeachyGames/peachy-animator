@@ -852,4 +852,198 @@ mod tests {
         );
         assert_eq!(editor.session.document(), &original);
     }
+
+    #[test]
+    fn tool_letters_work_after_target_links_but_text_modals_and_widget_navigation_keep_priority() {
+        let mut editor = editor_fixture();
+        let target = install_ik(&mut editor, true, 0.);
+        let original = editor.session.document().clone();
+        let ctx = editor_context();
+        for (letter, tool) in [
+            (egui::Key::V, Tool::Move),
+            (egui::Key::C, Tool::Rotate),
+            (egui::Key::X, Tool::Scale),
+            (egui::Key::Z, Tool::Shear),
+            (egui::Key::G, Tool::Weights),
+        ] {
+            editor.select(TreeItem::Constraint(0));
+            workspace_frame(&mut editor, &ctx, vec![]);
+            click(&mut editor, &ctx, "ikTarget");
+            assert_eq!(editor.selected_bone(), Some(target));
+            assert!(!ctx.text_edit_focused());
+            workspace_frame(&mut editor, &ctx, key(letter, egui::Modifiers::NONE));
+            assert!(editor.tool == tool);
+            assert_eq!(editor.selected_bone(), Some(target));
+            assert_eq!(editor.session.document(), &original);
+        }
+        editor.set_tool(Tool::Scale);
+        workspace_frame(&mut editor, &ctx, vec![]);
+        click(&mut editor, &ctx, "value:ShearY");
+        workspace_frame(
+            &mut editor,
+            &ctx,
+            key(egui::Key::Tab, egui::Modifiers::NONE),
+        );
+        // Mouse clicks need not retain keyboard focus. Natural Tab traversal
+        // into Local reproduces the non-text owner from native verification.
+        assert!(ctx.egui_wants_keyboard_input());
+        assert!(!ctx.text_edit_focused());
+        let focus = ctx.memory(|memory| memory.focused()).unwrap();
+        assert!(
+            ctx.read_response(focus)
+                .unwrap()
+                .rect
+                .contains(point(&editor, "axes:Local"))
+        );
+        workspace_frame(&mut editor, &ctx, key(egui::Key::C, egui::Modifiers::NONE));
+        assert!(editor.tool == Tool::Rotate);
+        for letter in [egui::Key::ArrowRight, egui::Key::Space, egui::Key::Enter] {
+            workspace_frame(&mut editor, &ctx, key(letter, egui::Modifiers::NONE));
+            assert_eq!(editor.selection, Some(TreeItem::Bone(target)));
+            assert_eq!(editor.session.document(), &original);
+            assert!(editor.session.pose_edits().is_empty());
+        }
+        let after_widget_activation = editor.tool;
+        workspace_frame(&mut editor, &ctx, key(egui::Key::V, egui::Modifiers::SHIFT));
+        assert!(editor.tool == after_widget_activation);
+        editor.set_tool(Tool::Rotate);
+        editor
+            .session
+            .dispatch(Command::RenameAnimation {
+                animation: 0,
+                name: "history sentinel".into(),
+            })
+            .unwrap();
+        workspace_frame(
+            &mut editor,
+            &ctx,
+            key(egui::Key::Z, egui::Modifiers::COMMAND),
+        );
+        assert!(editor.tool == Tool::Rotate);
+        assert_eq!(editor.session.document(), &original);
+        let popup = egui::Id::new("ik-tool-priority-popup");
+        egui::Popup::open_id(&ctx, popup);
+        workspace_frame(&mut editor, &ctx, key(egui::Key::Z, egui::Modifiers::NONE));
+        assert!(editor.tool == Tool::Rotate);
+        egui::Popup::close_id(&ctx, popup);
+        let mut ordered = key(egui::Key::G, egui::Modifiers::NONE);
+        ordered.extend(key(egui::Key::C, egui::Modifiers::NONE));
+        workspace_frame(&mut editor, &ctx, ordered);
+        assert!(editor.tool == Tool::Rotate);
+        assert!(editor.last_tool == Tool::Weights);
+        workspace_frame(
+            &mut editor,
+            &ctx,
+            vec![egui::Event::Key {
+                key: egui::Key::C,
+                physical_key: None,
+                pressed: true,
+                repeat: true,
+                modifiers: egui::Modifiers::NONE,
+            }],
+        );
+        assert!(editor.last_tool == Tool::Weights);
+        editor.select(TreeItem::Constraint(0));
+        workspace_frame(&mut editor, &ctx, vec![]);
+        click(&mut editor, &ctx, "ikTargetChoose");
+        assert!(editor.ik_target.is_some());
+        workspace_frame(&mut editor, &ctx, key(egui::Key::V, egui::Modifiers::NONE));
+        assert!(editor.ik_target.is_none());
+        assert!(editor.tool == Tool::Move);
+        assert_eq!(editor.session.document(), &original);
+        editor.set_tool(Tool::Rotate);
+        workspace_frame(&mut editor, &ctx, vec![]);
+        click(&mut editor, &ctx, "ikMixValue");
+        assert!(ctx.text_edit_focused());
+        let mut letters = Vec::new();
+        for letter in [
+            egui::Key::C,
+            egui::Key::V,
+            egui::Key::X,
+            egui::Key::Z,
+            egui::Key::G,
+        ] {
+            letters.extend(key(letter, egui::Modifiers::NONE));
+        }
+        letters.push(egui::Event::Text("cvxzg".into()));
+        workspace_frame(&mut editor, &ctx, letters);
+        assert!(editor.tool == Tool::Rotate);
+        assert_eq!(editor.session.document(), &original);
+        assert!(editor.ik_edit.is_some());
+    }
+
+    #[test]
+    fn tool_switching_cancels_held_mix_direct_and_transform_previews_without_restart() {
+        let mut editor = editor_fixture();
+        install_ik(&mut editor, true, 0.);
+        let original = editor.session.document().clone();
+        let ctx = editor_context();
+        workspace_frame(&mut editor, &ctx, vec![]);
+        let start = point(&editor, "ikMixSlider");
+        workspace_frame(
+            &mut editor,
+            &ctx,
+            vec![egui::Event::PointerMoved(start), pointer(start, true)],
+        );
+        assert!(editor.ik_edit.is_some());
+        workspace_frame(&mut editor, &ctx, key(egui::Key::C, egui::Modifiers::NONE));
+        assert!(editor.ik_edit.is_none());
+        assert_eq!(editor.session.document(), &original);
+        let end = start + vec2(45., 0.);
+        workspace_frame(&mut editor, &ctx, vec![egui::Event::PointerMoved(end)]);
+        workspace_frame(&mut editor, &ctx, vec![pointer(end, false)]);
+        assert_eq!(editor.session.document(), &original);
+        assert!(!editor.session.can_undo());
+
+        let (mut editor, attachment) = mesh_editor(true);
+        install_ik(&mut editor, false, 0.);
+        editor.weights.select_mesh(attachment);
+        editor.weights.vertex = Some(0);
+        editor.weights.bone = Some(0);
+        editor.set_tool(Tool::Weights);
+        let original = editor.session.document().clone();
+        let ctx = editor_context();
+        workspace_frame(&mut editor, &ctx, vec![]);
+        let start = point(&editor, "weightsWeightSlider");
+        workspace_frame(
+            &mut editor,
+            &ctx,
+            vec![egui::Event::PointerMoved(start), pointer(start, true)],
+        );
+        assert!(editor.weight_edit.is_some());
+        workspace_frame(&mut editor, &ctx, key(egui::Key::V, egui::Modifiers::NONE));
+        assert!(editor.tool == Tool::Move);
+        assert!(editor.weight_edit.is_none());
+        let end = start + vec2(40., 0.);
+        workspace_frame(&mut editor, &ctx, vec![egui::Event::PointerMoved(end)]);
+        workspace_frame(&mut editor, &ctx, vec![pointer(end, false)]);
+        assert_eq!(editor.session.document(), &original);
+        assert!(!editor.session.can_undo());
+
+        let mut editor = editor_fixture();
+        editor.set_setup_mode(true);
+        editor.set_tool(Tool::Move);
+        let original = editor.session.document().clone();
+        let ctx = editor_context();
+        workspace_frame(&mut editor, &ctx, vec![]);
+        let start = point(&editor, "gizmo:X");
+        workspace_frame(
+            &mut editor,
+            &ctx,
+            vec![egui::Event::PointerMoved(start), pointer(start, true)],
+        );
+        let moved = start + vec2(30., 0.);
+        workspace_frame(&mut editor, &ctx, vec![egui::Event::PointerMoved(moved)]);
+        assert!(editor.drag.is_some());
+        assert_ne!(editor.session.document(), &original);
+        workspace_frame(&mut editor, &ctx, key(egui::Key::X, egui::Modifiers::NONE));
+        assert!(editor.tool == Tool::Scale);
+        assert!(editor.drag.is_none());
+        let end = moved + vec2(30., 0.);
+        workspace_frame(&mut editor, &ctx, vec![egui::Event::PointerMoved(end)]);
+        workspace_frame(&mut editor, &ctx, vec![pointer(end, false)]);
+        assert_eq!(editor.session.document(), &original);
+        assert!(editor.session.pose_edits().is_empty());
+        assert!(!editor.session.can_undo());
+    }
 }

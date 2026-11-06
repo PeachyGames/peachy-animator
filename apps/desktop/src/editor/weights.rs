@@ -229,12 +229,6 @@ impl Editor {
         {
             return false;
         }
-        if ctx.input_mut(|input| input.consume_key(egui::Modifiers::NONE, egui::Key::G)) {
-            self.cancel_gesture();
-            self.open_weights_view();
-            self.set_tool(Tool::Weights);
-            ctx.memory_mut(|memory| memory.request_focus(Self::weights_id()));
-        }
         let priority = self.weights.bind.is_some()
             || (self.tool == Tool::Weights
                 && !self.dopesheet_has_focus(ctx)
