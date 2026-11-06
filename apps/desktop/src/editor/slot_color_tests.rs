@@ -134,6 +134,29 @@ fn picker_drag_previews_exact_bytes_then_commits_once_and_undo_redo_restore_them
 }
 
 #[test]
+fn hue_selection_on_gray_is_cached_without_rewriting_rgba_or_creating_history() {
+    let (mut editor, ctx) = fixture([255; 4]);
+    let hue = point(&editor, "slotColorHue", 0.6, 0.5);
+    for pressed in [true, false] {
+        pointer(&mut editor, &ctx, hue, pressed);
+    }
+    settle(&mut editor, &ctx);
+    assert_eq!(bytes(&editor, 0), [255; 4]);
+    assert!(!editor.session.can_undo());
+    assert!((editor.slot_color.hsv.h - 0.6).abs() < 0.001);
+    let sv = point(&editor, "slotColorSV", 0.8, 0.2);
+    for pressed in [true, false] {
+        pointer(&mut editor, &ctx, sv, pressed);
+    }
+    let color = bytes(&editor, 0);
+    assert!(color[2] > color[0]);
+    assert!(color[1] > color[0]);
+    editor.undo();
+    assert_eq!(bytes(&editor, 0), [255; 4]);
+    assert!(!editor.session.can_undo());
+}
+
+#[test]
 fn hex_enter_and_tab_apply_real_rgba_with_hidden_rgb_at_zero_alpha() {
     for commit in [egui::Key::Enter, egui::Key::Tab] {
         let (mut editor, ctx) = fixture([255; 4]);

@@ -201,7 +201,9 @@ impl Editor {
             let edit = self.slot_color.edit.take().unwrap();
             self.session.commit_transaction();
             ctx.memory_mut(|memory| memory.surrender_focus(edit.control));
-            self.slot_color.context = None;
+            // Hue remains useful on gray even though it has no representation
+            // in RGBA bytes. Keep our cache across our own no-op commits.
+            self.slot_color.hex = hex(self.slot_color.color);
             self.slot_color.epoch = self.slot_color.epoch.wrapping_add(1);
         }
     }
@@ -392,8 +394,9 @@ impl Editor {
                     self.slot_color.edit.as_mut().unwrap().commit_requested = false;
                     match parse_hex(&self.slot_color.hex) {
                         Some(color) => {
+                            let changed = color != self.slot_color.color;
                             self.preview_slot_color(color);
-                            self.slot_color.hsv = Hsva::from_srgba_unmultiplied(color);
+                            if changed {self.slot_color.hsv = Hsva::from_srgba_unmultiplied(color);}
                             if let Some(edit) = self.slot_color.edit.as_mut() {edit.finish_pending = true;}
                         }
                         None => {
