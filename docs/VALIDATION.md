@@ -840,3 +840,25 @@ Exact Weights docking, pixel and full interaction parity, brushes, locks,
 multi-selection, Update, other platforms, hosted CI and broader production/game-
 engine acceptance remain pending. No production inputs are changed or newly
 claimed supported: **0/11** remain fully supported, all 11 still require constraints.
+
+## Shared context and pose-preview preparation — November 6, 2026 UTC
+
+Native startup and every headless interaction fixture now use the same editor
+context configuration. The extracted theme, font, spacing and keyboard-zoom
+settings are unchanged; the existing interaction assertions needed no adjustment.
+This makes future toolbar and timeline geometry checks use the native metrics.
+
+`Session::preview_edit_pose` evaluates from a transaction's original document and
+pending pose through the same pure transition as ordinary `edit_pose`. Six new
+regressions verify Setup and Animate, Auto Key on/off, multiple pending bones,
+fractional time and existing key snapping, overwritten/nearby curve restoration,
+late failure, saved state, redo, cancellation and one-step commit. It requires an
+active transaction and publishes only a successful candidate. Native v4 is unchanged;
+this API does not itself add Shear controls or change the existing pose policy.
+
+The integrated preparation passes **190 tests**: desktop **63**, CLI **4**, engine
+**93**, I/O **15**, adapter **15**, plus formatting, warnings-denied Clippy, build
+and architecture checks. The Direct native run and captures above remain scoped to
+`694576a`; these mechanical context and engine-preview changes are not presented as
+another native run. Shear model, migration, controls and their acceptance remain
+the next work.
