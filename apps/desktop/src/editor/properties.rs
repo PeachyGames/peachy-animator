@@ -15,8 +15,12 @@ impl Editor {
             if matches!(self.selection, Some(TreeItem::Constraint(_))) {
                 self.record_target("ikHeader", heading.rect);
             }
-            if let Some(item @ (TreeItem::Bone(_) | TreeItem::Slot(_) | TreeItem::Animation(_))) =
-                self.selection.clone()
+            if let Some(
+                item @ (TreeItem::Bone(_)
+                | TreeItem::Slot(_)
+                | TreeItem::Animation(_)
+                | TreeItem::Constraint(_)),
+            ) = self.selection.clone()
             {
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if let TreeItem::Animation(animation) = item {
@@ -37,6 +41,9 @@ impl Editor {
                     self.record_target("rename", rename.rect);
                     if matches!(item, TreeItem::Animation(_)) {
                         self.record_target("animationRename", rename.rect);
+                    }
+                    if matches!(item, TreeItem::Constraint(_)) {
+                        self.record_target("ikRename", rename.rect);
                     }
                     if rename.clicked() {
                         self.begin_rename(item);
