@@ -2,6 +2,7 @@
 mod authoring;
 mod commands;
 mod mesh;
+mod mesh_binding;
 mod names;
 mod picking;
 mod playback;
@@ -14,6 +15,7 @@ mod tools;
 pub use authoring::{KeyState, PoseEdits, transform_group};
 pub use commands::{Command, EditTarget, apply_command, keyframe_at};
 pub use mesh::{mesh_world_vertices, region_to_mesh, region_vertices};
+pub use mesh_binding::MeshBindPose;
 pub use picking::{attachment_bounds, pick_attachment};
 pub use playback::{
     PlayDirection, PlaybackStep, adjacent_key_time, advance_playback, last_key_time,
