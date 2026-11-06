@@ -159,3 +159,12 @@ and direction, and applies the returned playhead/playing state. The engine reads
 clock and mutates no document. Transport buttons and hotkeys share the same shell
 transition; manual key navigation goes through `set_time`, preserving transient pose
 discard and Undo recovery. Playback state is not serialized into runtime exports.
+
+## Interface icons
+
+`editor/icons.rs` owns independent vector drawings and the small reusable controls
+that place them. egui button atoms reserve their layout rectangles, preserving full
+button hit areas, focus and disabled behavior. File/history buttons have explicit
+accessible names and shortcut tooltips; view visibility rows expose checkbox state.
+The same view icon is used in its menu and heading. This is presentation-only code:
+no document, history, file-service, adapter or engine dependency changes are involved.

@@ -278,3 +278,45 @@ private artwork, game code, format schema or export adapter changed in this slic
 The geometry/export evidence from the transform slice remains applicable; this slice
 changes transient transport state and uses the same deterministic pose evaluator.
 Bounded nonlooping playback and current navigation scope remain explicit UI parity gaps.
+
+## Interface iconography slice — November 5, 2026
+
+All **46 existing Rust tests** pass. Formatting, warnings-denied Clippy, workspace
+build and the six-crate architecture check pass locally. No domain model, engine,
+format adapter, dependency or artist asset changed. No redundant icon-coordinate
+unit tests were added for this presentation change.
+
+Native verification on an original Peach Bot working copy confirms:
+
+- Disabled Undo/Redo remain inert; enabled icons invoke the correct history actions.
+- Toolbar Save and file-menu Save write the expected native document, preserve two
+  verified backups, and restore the original project at the end.
+- Views icons accompany every implemented entry. Setup availability, Tree/Dopesheet
+  visibility, default workspace restore, and hide/restore continue to work.
+- Native checkboxes retain view selection/keyboard semantics. Tree and Dopesheet
+  headings reuse their menu icons. The same folder/disk drawings appear in the
+  toolbar and file menu.
+- A separate final visual review confirms the named disabled Undo tooltip, file
+  menu, Views menu and dropdown cue on the final build. Only original artwork and
+  our UI appear in committed captures.
+
+An early custom visibility-row prototype failed native checks and was replaced by
+an icon beside the existing native checkbox. Temporary traces and the prototype
+state logic were removed. Review tooling waits for the initial rendered capture
+before taking control coordinates; early startup/focus/calibration failures remain
+in local evidence. All clicks require the owned foreground PID, normal window and
+calibrated pointer coordinates.
+
+Evidence:
+[icons-native.json](evidence/icons-native.json),
+[icons-visual.json](evidence/icons-visual.json),
+[Views menu](icons-views-menu.png),
+[file menu](icons-file-menu.png),
+[disabled tooltip](icons-tooltip.png), and
+[editor](icons-editor.png).
+
+Public Spine titlebar/Views images informed the conventional visual cues; reference
+images stay outside Git and no proprietary image/font is bundled. The new vectors
+use a 16-point grid and egui's scaling. Exact pixel matching, other display scales,
+other platforms and screen-reader operation were not verified. Accessible names and
+native checkbox roles are attached in code. Hosted CI was not run.

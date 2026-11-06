@@ -1,4 +1,5 @@
 mod animation;
+mod icons;
 mod mesh;
 mod panels;
 mod properties;
@@ -678,12 +679,12 @@ impl eframe::App for Editor {
                     "document":self.session.document(),"selection":self.selection.as_ref().map(TreeItem::diagnostic),
                     "selectedBone":self.selected_bone(),"hasSelection":self.selection.is_some(),
                     "tool":match self.tool {Tool::Rotate=>"rotate",Tool::Move=>"translate",Tool::Scale=>"scale",Tool::Mesh=>"vertices"},
-                    "treeVisible":self.show_tree,"dopesheetVisible":!self.setup_mode && self.show_dopesheet,
+                    "treeVisible":self.show_tree,"dopesheetVisible":!self.setup_mode && self.show_dopesheet,"showDopesheet":self.show_dopesheet,
                     "animation":self.animation,"skin":self.skin,"time":self.time,"playing":self.playing,"playDirection":self.play_direction,"looping":self.looping,"zoom":self.zoom,
                     "axes":self.axes,"toolValues":self.selected_transform().zip(self.selected_parent()).map(|(local,parent)|peachy_engine::transform_values(local,parent,self.axes)),
                     "autoKey":self.auto_key,"unkeyedPose":self.session.pose_edits(),"selectedTransform":self.selected_transform(),"locals":self.session.local_pose(self.active_animation(),self.time),
                     "keyStates":self.selected_bone().map(|bone| [Property::Rotation,Property::X,Property::ScaleX].map(|p| self.key_state(bone,&peachy_engine::transform_group(&[p])))),
-                    "setupMode":self.setup_mode,"dirty":self.session.is_dirty(),"imageCount":self.textures.len(),
+                    "setupMode":self.setup_mode,"dirty":self.session.is_dirty(),"canUndo":self.session.can_undo(),"canRedo":self.session.can_redo(),"imageCount":self.textures.len(),
                     "selectedAttachment":self.selected_attachment(),"selectedVertex":self.mesh_vertex,"hiddenSlots":self.hidden_slots,
                     "pointer":ctx.input(|i|i.pointer.hover_pos().map(|p|[p.x,p.y])),
                     "targets":self.capture_targets,"meshHandles":self.mesh_handles,"innerSize":[ctx.content_rect().width(),ctx.content_rect().height()]

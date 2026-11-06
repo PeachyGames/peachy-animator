@@ -177,3 +177,14 @@ Playback remains bounded to the native clip duration when Loop is off. Spine can
 outside the keyed range; that behavior, loop ranges, playback preferences, selected/
 filtered timeline navigation policies and multiple active skeletons remain pending.
 Current key navigation searches all supported bone tracks of the active animation.
+
+## Interface icon cues
+
+The titlebar uses independently drawn folder, disk, backward-history and forward-
+history icons, with named shortcut tooltips and disabled states. File-menu entries
+reuse those icons; Export uses an outward arrow. Views has a divided-window icon
+and dropdown corner cue. Every implemented Views menu entry has an icon; Tree and
+Dopesheet reuse theirs in their headings. View visibility retains its checked state,
+and Hide/Restore views changes both its symbol and label. See
+[the iconography contract](ICONOGRAPHY.md) for the shared vocabulary and remaining
+coverage. No proprietary UI image or font is bundled.

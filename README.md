@@ -26,6 +26,10 @@ For the mesh demo, open **Mesh Lab.command**, or run:
 cargo run -p peachy-animator -- examples/peach-bot/mesh-bot.peachy
 ```
 
+File/history shortcuts use compact icons with named shortcut tooltips. The Views
+menu and view headings share the same visual cues; see the
+[iconography contract](docs/ICONOGRAPHY.md).
+
 The workspace follows Spine’s default arrangement: viewport left, Tree and item
 properties right, transform controls below the viewport, and Dopesheet below those
 in Animate mode. UI parity is an ongoing acceptance requirement; see the
@@ -39,7 +43,7 @@ drag is one undo step, and Escape cancels the current drag.
 This corresponds to Spine's setup vertex transforms. UV editing, freeform hull
 creation, weights and animated deform keys are not implemented yet.
 
-![Animation transport, transform tools and selection workflow](docs/transport-editor.png)
+![Editor iconography and Views menu](docs/icons-views-menu.png)
 
 1. Switch to **Animate** at the viewport's upper left; press **D** to play forward/stop, **A** backward/stop.
 2. Select a bone or region attachment in the viewport or Tree; **C** rotates, **V**

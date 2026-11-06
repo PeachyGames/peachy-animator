@@ -1,38 +1,77 @@
+use super::icons::Icon;
 use super::*;
 
 impl Editor {
     pub(super) fn toolbar(&mut self, ui: &mut egui::Ui) {
+        let command = if cfg!(target_os = "macos") {
+            "Cmd"
+        } else {
+            "Ctrl"
+        };
         ui.horizontal(|ui| {
-            ui.menu_button(RichText::new("Peachy").strong().color(ACCENT), |ui| {
-                if ui.button("Open Project…    Cmd/Ctrl+O").clicked() {
+            let menu = ui.menu_button(RichText::new("Peachy").strong().color(ACCENT), |ui| {
+                let open = icons::button(
+                    ui,
+                    Icon::Open,
+                    "Open Project…",
+                    Some(&format!("{command}+O")),
+                );
+                self.record_target("fileOpen", open.rect);
+                if open.clicked() {
                     ui.close();
                     self.open_project(ui.ctx());
                 }
-                if ui.button("Save    Cmd/Ctrl+S").clicked() {
+                let save = icons::button(ui, Icon::Save, "Save", Some(&format!("{command}+S")));
+                self.record_target("fileSave", save.rect);
+                if save.clicked() {
                     ui.close();
                     self.save_project();
                 }
-                if ui.button("Export…    Cmd/Ctrl+E").clicked() {
+                let export =
+                    icons::button(ui, Icon::Export, "Export…", Some(&format!("{command}+E")));
+                self.record_target("fileExport", export.rect);
+                if export.clicked() {
                     ui.close();
                     self.export();
                 }
             });
-            if ui.small_button("Open").clicked() {
+            self.record_target("fileMenu", menu.response.rect);
+            let open = icons::toolbar_button(
+                ui,
+                Icon::Open,
+                "Open Project",
+                &format!("{command}+O"),
+                true,
+            );
+            self.record_target("toolbarOpen", open.rect);
+            if open.clicked() {
                 self.open_project(ui.ctx());
             }
-            if ui.small_button("Save").clicked() {
+            let save = icons::toolbar_button(ui, Icon::Save, "Save", &format!("{command}+S"), true);
+            self.record_target("toolbarSave", save.rect);
+            if save.clicked() {
                 self.save_project();
             }
-            if ui
-                .add_enabled(self.session.can_undo(), egui::Button::new("Undo").small())
-                .clicked()
-            {
+            let undo = icons::toolbar_button(
+                ui,
+                Icon::Undo,
+                "Undo",
+                &format!("{command}+Z"),
+                self.session.can_undo(),
+            );
+            self.record_target("toolbarUndo", undo.rect);
+            if undo.clicked() {
                 self.undo();
             }
-            if ui
-                .add_enabled(self.session.can_redo(), egui::Button::new("Redo").small())
-                .clicked()
-            {
+            let redo = icons::toolbar_button(
+                ui,
+                Icon::Redo,
+                "Redo",
+                &format!("{command}+Shift+Z"),
+                self.session.can_redo(),
+            );
+            self.record_target("toolbarRedo", redo.rect);
+            if redo.clicked() {
                 self.redo();
             }
             ui.separator();
@@ -45,23 +84,52 @@ impl Editor {
                 .color(MUTED),
             );
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                ui.menu_button("Views", |ui| {
-                    ui.checkbox(&mut self.show_tree, "Tree");
+                let views = icons::menu_button(ui, Icon::Views, "Views", |ui| {
+                    let tree = icons::toggle(ui, Icon::Tree, "Tree", &mut self.show_tree);
+                    self.record_target("viewTree", tree.rect);
                     ui.add_enabled_ui(!self.setup_mode, |ui| {
-                        ui.checkbox(&mut self.show_dopesheet, "Dopesheet");
+                        let dopesheet = icons::toggle(
+                            ui,
+                            Icon::Dopesheet,
+                            "Dopesheet",
+                            &mut self.show_dopesheet,
+                        );
+                        self.record_target("viewDopesheet", dopesheet.rect);
                     });
-                    if ui.button("Restore default workspace").clicked() {
+                    ui.separator();
+                    let restore = icons::button(
+                        ui,
+                        Icon::RestoreWorkspace,
+                        "Restore default workspace",
+                        None,
+                    );
+                    self.record_target("viewRestore", restore.rect);
+                    if restore.clicked() {
                         self.show_tree = true;
                         self.show_dopesheet = true;
                         self.hidden_views = None;
                         ui.close();
                     }
                 });
-                if ui
-                    .small_button("Hide views")
-                    .on_hover_text("Minimize/restore views · F9")
-                    .clicked()
-                {
+                self.record_target("viewsMenu", views.rect);
+                let hidden = self.hidden_views.is_some();
+                let toggle = icons::button(
+                    ui,
+                    if hidden {
+                        Icon::RestoreViews
+                    } else {
+                        Icon::MinimizeViews
+                    },
+                    if hidden {
+                        "Restore views"
+                    } else {
+                        "Hide views"
+                    },
+                    None,
+                )
+                .on_hover_text("Minimize/restore views · F9");
+                self.record_target("hideViews", toggle.rect);
+                if toggle.clicked() {
                     self.toggle_views();
                 }
             });
@@ -332,7 +400,7 @@ impl Editor {
     pub(super) fn timeline(&mut self, ui: &mut egui::Ui) {
         self.record_target("dopesheet", ui.max_rect());
         ui.horizontal(|ui| {
-            ui.label(RichText::new("Dopesheet").small().color(MUTED));
+            icons::heading(ui, Icon::Dopesheet, "Dopesheet");
             for (direction, name) in [
                 (PlayDirection::Backward, "playBackward"),
                 (PlayDirection::Forward, "playForward"),

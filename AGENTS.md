@@ -48,3 +48,13 @@ never implement key conversion, pending-pose rules or a second undo stack in the
 Both numeric controls and viewport geometry must use Session's posed locals.
 Timeline movement/playback clears pending edits; context switches clear stale pose
 history. Save/export must never silently serialize or key a transient pose.
+
+## Iconography
+
+Use recognizable visual cues alongside the established Spine controls: folder for
+Open, disk for Save, directional history arrows, window/pane icons for Views, and
+an icon for each implemented view entry. Use the shared independent vector drawings
+in `editor/icons.rs`; do not substitute Unicode/emoji or copy proprietary UI assets.
+Reuse a view's icon in its menu and heading. Compact icon buttons need accessible
+names, shortcut tooltips and visible enabled/disabled/hover states. Keep text labels
+in menus. Preserve command and visibility behavior when replacing a text control.

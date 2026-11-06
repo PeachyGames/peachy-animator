@@ -138,3 +138,12 @@ Q/E conventions. Stepping is independently implemented signed elapsed time and
 Euclidean wrapping; nearest-key queries use our document timelines. No official
 transport code was read. The bounded nonlooping behavior and navigation scope are
 recorded explicitly in UI_PARITY.md rather than claimed as full playback parity.
+
+## Interface iconography
+
+The public UI and Views guide images were inspected for titlebar and menu cues:
+open folder, disk, directional history arrows, windows, hierarchy and keyed timelines.
+`editor/icons.rs` draws these conventional meanings independently with geometric
+primitives. No reference pixels, proprietary icons or fonts are copied or loaded.
+Public reference images remain only in the local task evidence directory. Repository
+screenshots use our application and original Peach Bot artwork.

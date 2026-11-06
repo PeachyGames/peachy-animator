@@ -14,7 +14,7 @@ impl Editor {
         self.record_target("tree", ui.max_rect());
         let mut actions = vec![];
         ui.horizontal(|ui| {
-            ui.label(RichText::new("Tree").strong());
+            super::icons::heading(ui, super::icons::Icon::Tree, "Tree");
             ui.menu_button(
                 RichText::new("Filter").color(if self.tree.filters == Filters::default() {
                     MUTED

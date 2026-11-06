@@ -1,0 +1,23 @@
+{
+  "disabledUndoRedoInert": true,
+  "undoRedoIconsInvokeHistory": true,
+  "toolbarSaveVerified": true,
+  "fileMenuSaveVerified": true,
+  "viewsSetupAvailabilityPreserved": true,
+  "viewsRowsTogglePanels": true,
+  "restoreDefaultWorkspace": true,
+  "hideRestoreViews": true,
+  "sameViewIconsInHeadings": true,
+  "nativeSaveBackups": 2,
+  "documentRestored": true,
+  "captures": {
+    "toolbar": "editor-1793924237418318000.json",
+    "openTooltip": "editor-1793924240359245000.json",
+    "viewsSetup": "editor-1793924242720319000.json",
+    "viewsHidden": "editor-1793924255881971000.json",
+    "redoEnabled": "editor-1793924263870658000.json",
+    "fileMenu": "editor-1793924274368749000.json",
+    "viewsAnimate": "editor-1793924283134086000.json",
+    "editor": "editor-1793924297057476000.json"
+  }
+}
