@@ -2,6 +2,7 @@
 mod authoring;
 mod commands;
 mod mesh;
+mod names;
 mod picking;
 mod playback;
 mod pose;
