@@ -1,5 +1,5 @@
-use crate::{Command, EditTarget, PoseEdits, apply_command, transform_group};
-use peachy_document::{Document, Property, Transform};
+use crate::{Command, EditTarget, MeshBindPose, PoseEdits, apply_command, transform_group};
+use peachy_document::{AttachmentRef, Document, Property, Transform};
 
 #[derive(Clone, PartialEq)]
 struct WorkingState {
@@ -68,6 +68,49 @@ impl Session {
             pose: self.state.pose.clone(),
         });
         Ok(())
+    }
+    fn mesh_bind_pose(&self, target: EditTarget) -> Result<MeshBindPose, String> {
+        let locals = match target {
+            EditTarget::Setup => self
+                .document()
+                .bones
+                .iter()
+                .map(|bone| bone.setup)
+                .collect(),
+            EditTarget::Animate { animation, time } => {
+                if self.document().animations.get(animation).is_none() {
+                    return Err("Unknown animation".into());
+                }
+                if !time.is_finite() || time < 0.0 {
+                    return Err("Bind time must be finite and nonnegative".into());
+                }
+                self.local_pose(Some(animation), time)
+            }
+        };
+        Ok(MeshBindPose { locals })
+    }
+    /// Bind at the explicit setup or posed animation state without keying or discarding it.
+    pub fn bind_mesh_to_bone(
+        &mut self,
+        attachment: AttachmentRef,
+        bone: usize,
+        target: EditTarget,
+    ) -> Result<(), String> {
+        let pose = self.mesh_bind_pose(target)?;
+        self.dispatch(Command::BindMeshToBone {
+            attachment,
+            bone,
+            pose,
+        })
+    }
+    /// Remove every influence, retaining current geometry in the slot bone's local space.
+    pub fn unbind_mesh(
+        &mut self,
+        attachment: AttachmentRef,
+        target: EditTarget,
+    ) -> Result<(), String> {
+        let pose = self.mesh_bind_pose(target)?;
+        self.dispatch(Command::UnbindMesh { attachment, pose })
     }
     /// Pose with Auto Key on or off through the same validation/undo boundary.
     pub fn edit_pose(

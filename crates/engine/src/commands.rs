@@ -1,4 +1,4 @@
-use crate::{KeyClipboard, TimelineKey};
+use crate::{KeyClipboard, MeshBindPose, TimelineKey};
 use peachy_document::*;
 use serde::{Deserialize, Serialize};
 
@@ -85,6 +85,15 @@ pub enum Command {
     SplitMeshTriangle {
         attachment: AttachmentRef,
         triangle: usize,
+    },
+    BindMeshToBone {
+        attachment: AttachmentRef,
+        bone: usize,
+        pose: MeshBindPose,
+    },
+    UnbindMesh {
+        attachment: AttachmentRef,
+        pose: MeshBindPose,
     },
     Batch {
         commands: Vec<Command>,
@@ -224,6 +233,16 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
                 return Err("Unknown mesh attachment".into());
             };
             crate::mesh::split_triangle(mesh, triangle)?;
+        }
+        Command::BindMeshToBone {
+            attachment,
+            bone,
+            pose,
+        } => {
+            crate::mesh_binding::bind_mesh_to_bone(doc, &attachment, bone, &pose)?;
+        }
+        Command::UnbindMesh { attachment, pose } => {
+            crate::mesh_binding::unbind_mesh(doc, &attachment, &pose)?;
         }
         Command::AddBone { bone } => doc.bones.push(bone),
         Command::AddAnimation { name, duration } => {
