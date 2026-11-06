@@ -2,21 +2,21 @@ use crate::weighted_tests::{assert_points, reference, rig};
 use crate::*;
 use peachy_document::*;
 
-fn mesh(doc: &Document) -> &Mesh {
+pub(super) fn mesh(doc: &Document) -> &Mesh {
     let Attachment::Mesh(mesh) = doc.attachment(&reference("weighted")).unwrap() else {
         unreachable!()
     };
     mesh
 }
 
-fn mesh_mut(doc: &mut Document) -> &mut Mesh {
+pub(super) fn mesh_mut(doc: &mut Document) -> &mut Mesh {
     let Attachment::Mesh(mesh) = doc.attachment_mut(&reference("weighted")).unwrap() else {
         unreachable!()
     };
     mesh
 }
 
-fn slot_local_rig() -> Document {
+pub(super) fn slot_local_rig() -> Document {
     let mut doc = rig();
     mesh_mut(&mut doc).vertices = MeshVertices::SlotLocal {
         positions: vec![[0., 0.], [2., 0.], [0., 2.]],
@@ -24,7 +24,7 @@ fn slot_local_rig() -> Document {
     doc
 }
 
-fn setup_pose(doc: &Document) -> MeshBindPose {
+pub(super) fn setup_pose(doc: &Document) -> MeshBindPose {
     MeshBindPose {
         locals: doc.bones.iter().map(|bone| bone.setup).collect(),
     }
@@ -57,7 +57,7 @@ fn assert_metadata(before: &Document, after: &Document) {
     assert_eq!(after, &expected);
 }
 
-fn pending_with_redo(doc: Document) -> Session {
+pub(super) fn pending_with_redo(doc: Document) -> Session {
     let mut session = Session::new(doc).unwrap();
     let mut pose = session.local_pose(Some(0), 0.137)[1];
     pose.x += 13.;
