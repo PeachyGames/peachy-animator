@@ -187,7 +187,7 @@ pub fn checked_pose_from_authored(
     doc: &Document, authored: &AuthoredPose,
 ) -> Result<EvaluatedPose, String>;
 pub fn checked_scene_from_authored(
-    doc: &Document, skin: Option<usize>, authored: &AuthoredPose,
+    doc: &Document, skin: &str, authored: &AuthoredPose,
 ) -> Result<Scene, String>;
 
 Session::authored_pose(EditTarget) -> Result<AuthoredPose, String>;
@@ -199,6 +199,8 @@ and IK pending values into that same capsule before solving. Validate vector
 lengths, settings and finite intermediates centrally. `EvaluatedPose` retains its
 authored/applied/world accessors and exposes the authored IK values actually used.
 Scene/CLI diagnostics add `ikPoses` alongside `locals` and `appliedLocals`.
+Skin selection retains the existing named-skin/default-fallback semantics, and
+transient visibility remains in its existing shell filtering boundary.
 
 Remove or explicitly rename the ambiguous locals-only checked helpers so Animate
 callers cannot compile while silently restoring setup IK. An explicit
