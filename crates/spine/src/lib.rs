@@ -390,6 +390,7 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
             animations.push(Animation {
                 name: name.clone(),
                 tracks,
+                ik_tracks: vec![],
             });
         }
     }
@@ -414,6 +415,17 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
 
 pub fn export_json(doc: &Document) -> Result<Value, String> {
     constraints::validate_source(doc)?;
+    if doc
+        .animations
+        .iter()
+        .any(|animation| !animation.ik_tracks.is_empty())
+        || doc
+            .constraints
+            .iter()
+            .any(|Constraint::Ik(ik)| !(0.0..=1.0).contains(&ik.setup.mix))
+    {
+        return Err("Animated IK export implementation pending".into());
+    }
     validate_export_names(doc)?;
     let bones: Vec<_> = doc
         .bones

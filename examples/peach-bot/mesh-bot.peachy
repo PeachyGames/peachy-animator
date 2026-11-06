@@ -1,5 +1,5 @@
 {
-  "format": 6,
+  "format": 7,
   "constraints": [],
   "name": "Peach Bot Mesh Lab",
   "fps": 30,
@@ -923,7 +923,8 @@
             }
           ]
         }
-      ]
+      ],
+      "ik_tracks": []
     },
     {
       "name": "idle",
@@ -991,7 +992,8 @@
             }
           ]
         }
-      ]
+      ],
+      "ik_tracks": []
     }
   ]
 }

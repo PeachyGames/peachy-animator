@@ -1,5 +1,5 @@
 {
-  "format": 6,
+  "format": 7,
   "name": "Peach Bot IK Lab",
   "fps": 30,
   "bones": [
@@ -988,7 +988,8 @@
             }
           ]
         }
-      ]
+      ],
+      "ik_tracks": []
     },
     {
       "name": "ik negative",
@@ -1087,7 +1088,8 @@
             }
           ]
         }
-      ]
+      ],
+      "ik_tracks": []
     },
     {
       "name": "ik reach",
@@ -1260,7 +1262,8 @@
             }
           ]
         }
-      ]
+      ],
+      "ik_tracks": []
     },
     {
       "name": "wave",
@@ -1450,7 +1453,8 @@
             }
           ]
         }
-      ]
+      ],
+      "ik_tracks": []
     },
     {
       "name": "idle",
@@ -1518,7 +1522,8 @@
             }
           ]
         }
-      ]
+      ],
+      "ik_tracks": []
     }
   ]
 }
