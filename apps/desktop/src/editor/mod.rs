@@ -385,7 +385,7 @@ impl Editor {
             return;
         }
         if self.setup_mode && properties.contains(&Property::Rotation) {
-            local.rotation = local.rotation.rem_euclid(360.);
+            local.rotation = self.setup_rotation_value(Some(&item), local.rotation);
         }
         self.playing = false;
         match item {

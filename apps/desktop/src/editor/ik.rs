@@ -435,6 +435,60 @@ mod tests {
         editor.select(TreeItem::Constraint(0));
         target
     }
+    fn one_bone_editor(rotation: f32, setup: bool) -> Editor {
+        let mut editor = editor_fixture();
+        let mut document = editor.session.document().clone();
+        document.bones = vec![
+            Bone {
+                name: "root".into(),
+                parent: None,
+                length: 0.,
+                setup: Transform::default(),
+            },
+            Bone {
+                name: "arm".into(),
+                parent: Some(0),
+                length: 10.,
+                setup: Transform {
+                    rotation,
+                    ..Default::default()
+                },
+            },
+            Bone {
+                name: "target".into(),
+                parent: Some(0),
+                length: 0.,
+                setup: Transform {
+                    y: 10.,
+                    ..Default::default()
+                },
+            },
+        ];
+        document.slots.clear();
+        document.skins = BTreeMap::from([("default".into(), BTreeMap::new())]);
+        document.animations = vec![Animation {
+            name: "pose".into(),
+            tracks: vec![],
+        }];
+        document.constraints = vec![Constraint::Ik(IkConstraint {
+            name: "arm IK".into(),
+            bones: vec![1],
+            target: 2,
+            setup: IkSetup {
+                mix: 0.5,
+                bend_positive: true,
+            },
+        })];
+        editor.session = Session::new(document).unwrap();
+        editor.skin = "default".into();
+        editor.tree = TreeState::for_document(editor.session.document(), &editor.skin);
+        editor.selection = Some(TreeItem::Bone(1));
+        editor.setup_mode = setup;
+        editor.auto_key = false;
+        editor.time = 0.;
+        editor.set_axes(Axes::Local);
+        editor
+    }
     fn point(editor: &Editor, target: &str) -> Pos2 {
         let [left, top, right, bottom] = *editor.capture_targets.get(target).unwrap_or_else(|| {
             panic!(
@@ -1085,55 +1139,128 @@ mod tests {
     }
 
     #[test]
-    fn actual_partial_ik_local_move_handle_uses_its_displayed_frame_and_one_pending_undo() {
-        let mut editor = editor_fixture();
-        let mut document = editor.session.document().clone();
-        document.bones = vec![
-            Bone {
-                name: "root".into(),
-                parent: None,
-                length: 0.,
-                setup: Transform::default(),
-            },
-            Bone {
-                name: "arm".into(),
-                parent: Some(0),
-                length: 10.,
-                setup: Transform::default(),
-            },
-            Bone {
-                name: "target".into(),
-                parent: Some(0),
-                length: 0.,
-                setup: Transform {
-                    y: 10.,
+    fn setup_ik_rotation_relative_entry_and_viewport_preserve_semantic_raw_turns() {
+        fn has_text(shape: &egui::Shape, text: &str) -> bool {
+            match shape {
+                egui::Shape::Text(shape) => shape.galley.text() == text,
+                egui::Shape::Vec(shapes) => shapes.iter().any(|shape| has_text(shape, text)),
+                _ => false,
+            }
+        }
+        fn displays(editor: &mut Editor, ctx: &egui::Context, text: &str) -> bool {
+            let mut output = ctx.run_ui(
+                egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(Pos2::ZERO, vec2(1500., 960.))),
+                    focused: true,
                     ..Default::default()
                 },
-            },
-        ];
-        document.slots.clear();
-        document.skins = BTreeMap::from([("default".into(), BTreeMap::new())]);
-        document.animations = vec![Animation {
-            name: "pose".into(),
-            tracks: vec![],
-        }];
-        document.constraints = vec![Constraint::Ik(IkConstraint {
-            name: "arm IK".into(),
-            bones: vec![1],
-            target: 2,
-            setup: IkSetup {
-                mix: 0.5,
-                bend_positive: true,
-            },
-        })];
-        editor.session = Session::new(document).unwrap();
-        editor.skin = "default".into();
-        editor.tree = TreeState::for_document(editor.session.document(), &editor.skin);
-        editor.selection = Some(TreeItem::Bone(1));
-        editor.setup_mode = false;
-        editor.auto_key = false;
-        editor.time = 0.;
-        editor.set_axes(Axes::Local);
+                |ui| editor.workspace_ui(ui),
+            );
+            let found = output
+                .shapes
+                .iter()
+                .any(|shape| has_text(&shape.shape, text));
+            output.textures_delta.clear();
+            found
+        }
+        let mut editor = one_bone_editor(720., true);
+        editor.set_tool(Tool::Rotate);
+        let original = editor.session.document().clone();
+        let ctx = editor_context();
+        let initial_display = displays(&mut editor, &ctx, "720.00");
+        let initial = editor.session.evaluated_pose(EditTarget::Setup).unwrap();
+        assert!((initial.applied_locals()[1].rotation - 585.).abs() < 1e-3);
+        click(&mut editor, &ctx, "value:Rotation");
+        workspace_frame(&mut editor, &ctx, vec![egui::Event::Text("+10".into())]);
+        workspace_frame(
+            &mut editor,
+            &ctx,
+            key(egui::Key::Enter, egui::Modifiers::NONE),
+        );
+        assert_eq!(editor.session.document().bones[1].setup.rotation, 730.);
+        assert!(
+            initial_display,
+            "The Setup field must display the authored rotation of 720 degrees"
+        );
+        assert!(displays(&mut editor, &ctx, "730.00"));
+        let numeric = editor.session.evaluated_pose(EditTarget::Setup).unwrap();
+        assert!((numeric.applied_locals()[1].rotation - 590.).abs() < 1e-3);
+        workspace_frame(
+            &mut editor,
+            &ctx,
+            key(egui::Key::Z, egui::Modifiers::COMMAND),
+        );
+        assert_eq!(editor.session.document(), &original);
+        assert!(!editor.session.can_undo());
+
+        workspace_frame(&mut editor, &ctx, vec![]);
+        let [left, top, right, bottom] = editor.capture_targets["viewport"];
+        let origin = pos2((left + right) / 2., (top + bottom) / 2.) + editor.pan;
+        let world = initial.world()[1];
+        let start_world = world.point(30., 0.);
+        let end_world = [-start_world[1], start_world[0]];
+        let start = scene_view::screen_point(origin, editor.zoom, start_world);
+        let end = scene_view::screen_point(origin, editor.zoom, end_world);
+        workspace_frame(
+            &mut editor,
+            &ctx,
+            vec![egui::Event::PointerMoved(start), pointer(start, true)],
+        );
+        workspace_frame(&mut editor, &ctx, vec![egui::Event::PointerMoved(end)]);
+        assert!(editor.drag.is_some());
+        workspace_frame(&mut editor, &ctx, vec![pointer(end, false)]);
+        assert!((editor.session.document().bones[1].setup.rotation - 810.).abs() < 1e-3);
+        assert!(displays(&mut editor, &ctx, "810.00"));
+        let rotated = editor.session.evaluated_pose(EditTarget::Setup).unwrap();
+        assert!((rotated.applied_locals()[1].rotation - 630.).abs() < 1e-3);
+        assert!(editor.session.pose_edits().is_empty());
+        assert!(editor.session.document().animations[0].tracks.is_empty());
+        workspace_frame(
+            &mut editor,
+            &ctx,
+            key(egui::Key::Z, egui::Modifiers::COMMAND),
+        );
+        assert_eq!(editor.session.document(), &original);
+        workspace_frame(
+            &mut editor,
+            &ctx,
+            key(
+                egui::Key::Z,
+                egui::Modifiers::COMMAND | egui::Modifiers::SHIFT,
+            ),
+        );
+        assert!((editor.session.document().bones[1].setup.rotation - 810.).abs() < 1e-3);
+
+        // Arrow nudging reaches the ordinary edit_display_value mutation path,
+        // while numeric and viewport edits above use fixed-base previews.
+        workspace_frame(
+            &mut editor,
+            &ctx,
+            key(egui::Key::ArrowRight, egui::Modifiers::NONE),
+        );
+        assert!((editor.session.document().bones[1].setup.rotation - 811.).abs() < 1e-3);
+        workspace_frame(
+            &mut editor,
+            &ctx,
+            key(egui::Key::Z, egui::Modifiers::COMMAND),
+        );
+        assert!((editor.session.document().bones[1].setup.rotation - 810.).abs() < 1e-3);
+
+        let mut fk = one_bone_editor(720., true);
+        let mut document = fk.session.document().clone();
+        document.constraints.clear();
+        fk.session = Session::new(document).unwrap();
+        let ctx = editor_context();
+        assert!(displays(&mut fk, &ctx, "0.00"));
+        click(&mut fk, &ctx, "value:Rotation");
+        workspace_frame(&mut fk, &ctx, vec![egui::Event::Text("+10".into())]);
+        workspace_frame(&mut fk, &ctx, key(egui::Key::Enter, egui::Modifiers::NONE));
+        assert_eq!(fk.session.document().bones[1].setup.rotation, 10.);
+    }
+
+    #[test]
+    fn actual_partial_ik_local_move_handle_uses_its_displayed_frame_and_one_pending_undo() {
+        let mut editor = one_bone_editor(0., false);
         editor.set_tool(Tool::Move);
         let original = editor.session.document().clone();
         let ctx = editor_context();
