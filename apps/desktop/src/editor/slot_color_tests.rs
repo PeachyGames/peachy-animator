@@ -144,6 +144,8 @@ fn hue_selection_on_gray_is_cached_without_rewriting_rgba_or_creating_history() 
     assert_eq!(bytes(&editor, 0), [255; 4]);
     assert!(!editor.session.can_undo());
     assert!((editor.slot_color.hsv.h - 0.6).abs() < 0.001);
+    key(&mut editor, &ctx, egui::Key::Escape, egui::Modifiers::NONE);
+    assert_eq!(editor.selection, Some(TreeItem::Slot(0)));
     let sv = point(&editor, "slotColorSV", 0.8, 0.2);
     for pressed in [true, false] {
         pointer(&mut editor, &ctx, sv, pressed);
