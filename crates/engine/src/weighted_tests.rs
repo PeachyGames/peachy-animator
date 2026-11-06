@@ -40,6 +40,7 @@ pub(super) fn rig() -> Document {
         setup,
     };
     Document {
+        constraints: vec![],
         format: FORMAT_VERSION,
         name: "Original weighted rig".into(),
         fps: 30,
@@ -212,14 +213,14 @@ fn influence_blends_keep_six_bones_repeated_entries_zeros_order_and_rounded_nonu
 fn single_influence_uses_the_named_bone_through_parent_rotation_reflection_and_nonuniform_scale() {
     let doc = rig();
     doc.validate().unwrap();
-    let scene = evaluate_scene(&doc, Some(0), 0., "default", None);
+    let scene = evaluate_scene(&doc, Some(0), 0., "default", None).unwrap();
     assert_points(
         &scene.attachments[0].vertices,
         &[[7., 30.], [10., 30.], [7., 22.]],
     );
     // The slot lives at (160, 220); applying it to these already weighted vertices is wrong.
     assert_points(&[scene.world[2].point(0., 0.)], &[[160., 220.]]);
-    let turned = evaluate_scene(&doc, Some(0), 1., "default", None);
+    let turned = evaluate_scene(&doc, Some(0), 1., "default", None).unwrap();
     assert_points(
         &turned.attachments[0].vertices,
         &[[7., 30.], [7., 28.], [-5., 30.]],
@@ -233,7 +234,7 @@ fn single_influence_uses_the_named_bone_through_parent_rotation_reflection_and_n
         scale_y: 0.,
         ..doc.bones[1].setup
     };
-    let collapsed = evaluate_scene(&doc, None, 0., "default", Some((1, zero_driver)));
+    let collapsed = evaluate_scene(&doc, None, 0., "default", Some((1, zero_driver))).unwrap();
     assert_points(&collapsed.attachments[0].vertices, &[[7., 30.]; 3]);
     assert!(pick_attachment(&collapsed.attachments, [7., 30.]).is_none());
     let zero_parent = Transform {
@@ -241,7 +242,7 @@ fn single_influence_uses_the_named_bone_through_parent_rotation_reflection_and_n
         scale_y: 0.,
         ..doc.bones[0].setup
     };
-    let collapsed = evaluate_scene(&doc, None, 0., "default", Some((0, zero_parent)));
+    let collapsed = evaluate_scene(&doc, None, 0., "default", Some((0, zero_parent))).unwrap();
     assert_points(&collapsed.attachments[0].vertices, &[[10., 20.]; 3]);
 }
 
@@ -267,7 +268,8 @@ fn scene_uses_transient_posed_locals_and_the_same_weighted_geometry_for_bounds_a
         session.document(),
         "default",
         session.local_pose(Some(0), 0.),
-    );
+    )
+    .unwrap();
     assert_points(
         &scene.attachments[0].vertices,
         &[[7., 50.], [10., 50.], [7., 42.]],
@@ -287,7 +289,8 @@ fn scene_uses_transient_posed_locals_and_the_same_weighted_geometry_for_bounds_a
         session.document(),
         "default",
         session.local_pose(Some(0), 0.),
-    );
+    )
+    .unwrap();
     assert_points(
         &restored.attachments[0].vertices,
         &[[7., 30.], [10., 30.], [7., 22.]],
@@ -297,7 +300,8 @@ fn scene_uses_transient_posed_locals_and_the_same_weighted_geometry_for_bounds_a
         session.document(),
         "default",
         session.local_pose(Some(0), 0.),
-    );
+    )
+    .unwrap();
     assert_points(
         &restored.attachments[0].vertices,
         &scene.attachments[0].vertices,
@@ -328,7 +332,7 @@ fn region_and_slot_local_mesh_paths_apply_the_slot_transform_once_and_keep_draw_
         BTreeMap::from([("shape".into(), Attachment::Region(region.clone()))]),
     );
     doc.validate().unwrap();
-    let scene = evaluate_scene(&doc, Some(0), 0., "default", None);
+    let scene = evaluate_scene(&doc, Some(0), 0., "default", None).unwrap();
     assert_points(
         &scene.attachments[0].vertices,
         &[[7., 30.], [10., 30.], [7., 22.]],
@@ -352,7 +356,7 @@ fn region_and_slot_local_mesh_paths_apply_the_slot_transform_once_and_keep_draw_
         },
     )
     .unwrap();
-    let scene_mesh = evaluate_scene(&converted, Some(0), 0., "default", None);
+    let scene_mesh = evaluate_scene(&converted, Some(0), 0., "default", None).unwrap();
     assert_eq!(
         scene.attachments[0].vertices,
         scene_mesh.attachments[0].vertices
@@ -573,8 +577,8 @@ fn renaming_bone_and_slot_preserves_weighted_geometry_and_all_skin_payloads_and_
             renamed.skins[skin]["renamed slot"]
         );
         for time in [0., 0.5, 1.] {
-            let old = evaluate_scene(&before, Some(0), time, skin, None);
-            let new = evaluate_scene(&renamed, Some(0), time, skin, None);
+            let old = evaluate_scene(&before, Some(0), time, skin, None).unwrap();
+            let new = evaluate_scene(&renamed, Some(0), time, skin, None).unwrap();
             assert_eq!(old.attachments[0].vertices, new.attachments[0].vertices);
             assert_eq!(old.attachments[0].uvs, new.attachments[0].uvs);
             assert_eq!(old.attachments[0].triangles, new.attachments[0].triangles);

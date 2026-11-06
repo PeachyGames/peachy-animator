@@ -3,6 +3,7 @@ use peachy_document::*;
 
 fn fixture() -> Document {
     Document {
+        constraints: vec![],
         format: FORMAT_VERSION,
         name: "Original pose preview fixture".into(),
         fps: 30,

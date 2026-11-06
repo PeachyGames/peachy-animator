@@ -12,7 +12,8 @@ use std::collections::BTreeSet;
 /// absolute amount. This command policy has no relative or large-pose exception.
 const BIND_WORLD_COORDINATE_TOLERANCE: f64 = 0.001;
 
-/// A reproducible local-pose snapshot, including any unkeyed Session pose edits.
+/// An applied-local FK snapshot, including any unkeyed Session pose edits.
+/// These locals are reconstructed directly; constraints are never solved again.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct MeshBindPose {

@@ -1,8 +1,10 @@
 //! Editable animation data. This crate knows nothing about files, windows or GPUs.
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
+mod ik;
+pub use ik::{Constraint, IkConstraint, IkSetup};
 
-pub const FORMAT_VERSION: u32 = 5;
+pub const FORMAT_VERSION: u32 = 6;
 pub const KEY_TIME_EPSILON: f32 = 0.00001;
 pub fn same_key_time(a: f32, b: f32) -> bool {
     (a - b).abs() < KEY_TIME_EPSILON
@@ -15,6 +17,7 @@ pub struct Document {
     pub name: String,
     pub fps: u32,
     pub bones: Vec<Bone>,
+    pub constraints: Vec<Constraint>,
     pub slots: Vec<Slot>,
     pub skins: BTreeMap<String, Skin>,
     pub animations: Vec<Animation>,
@@ -452,6 +455,14 @@ impl Document {
             if !b.length.is_finite() || b.length < 0.0 || !finite_transform(b.setup) {
                 return Err(format!("Invalid transform for {}", b.name));
             }
+        }
+        names.clear();
+        for constraint in &self.constraints {
+            let Constraint::Ik(ik) = constraint;
+            if !names.insert(&ik.name) {
+                return Err("Constraint names must be unique".into());
+            }
+            ik.validate(&self.bones)?;
         }
         names.clear();
         for s in &self.slots {

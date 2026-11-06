@@ -411,6 +411,7 @@ mod tests {
                 .session
                 .local_pose(editor.active_animation(), editor.time),
         )
+        .unwrap()
         .attachments
         .into_iter()
         .find(|draw| draw.attachment == *key)

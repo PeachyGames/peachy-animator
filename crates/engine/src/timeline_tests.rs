@@ -16,6 +16,7 @@ fn reference(property: Property, time: f32) -> TimelineKey {
 }
 fn fixture() -> Document {
     Document {
+        constraints: vec![],
         format: FORMAT_VERSION,
         name: "Timeline fixture".into(),
         fps: 30,

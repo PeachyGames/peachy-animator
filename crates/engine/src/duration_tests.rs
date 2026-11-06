@@ -3,6 +3,7 @@ use peachy_document::*;
 
 fn document() -> Document {
     Document {
+        constraints: vec![],
         format: FORMAT_VERSION,
         name: "Key-derived duration".into(),
         fps: 30,
