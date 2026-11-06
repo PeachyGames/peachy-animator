@@ -64,6 +64,17 @@ fn curve(frame: &Value, next: Option<&Value>, time: f32) -> Result<IkCurve, Stri
                 .collect::<Result<_, _>>()?;
             let next = next.ok_or("IK Bezier on last key is unsupported without a next segment")?;
             let end = number(next, "time", 0.0)?;
+            let source_time = frame.get("time").and_then(Value::as_f64).unwrap_or(0.0);
+            let source_end = next.get("time").and_then(Value::as_f64).unwrap_or(0.0);
+            for index in [0, 2, 4, 6] {
+                // finite() above has already established numeric coordinates.
+                let raw = handles[index].as_f64().ok_or("Invalid IK time control")?;
+                if raw < source_time || raw > source_end {
+                    return Err(
+                        "IK Bezier time controls must lie within the source key segment".into(),
+                    );
+                }
+            }
             let normalized_time = [time_ratio(time, end, h[0])?, time_ratio(time, end, h[2])?];
             // Even a neutral, unstored second channel gets full time validation.
             time_ratio(time, end, h[4])?;

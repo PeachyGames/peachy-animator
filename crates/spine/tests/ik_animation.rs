@@ -162,6 +162,9 @@ fn all_eight_controls_and_unsupported_softness_are_validated_before_eliding_neut
     assert!(import_json(&valid, "Neutral softness").is_ok());
     for (index, value) in [
         (0, json!(-0.1)),
+        (0, json!(-1e-50)),
+        (4, json!(-1e-50)),
+        (6, json!(1.00000000001)),
         (2, json!(1.1)),
         (4, json!(-0.1)),
         (6, json!(1.1)),
