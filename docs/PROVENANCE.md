@@ -50,6 +50,24 @@ Spine and its runtimes retain their separate licenses. External oracle execution
 optional, requires the user's own rights to use that software and does not make it
 part of this application's MIT-licensed implementation.
 
+## MCP and Views work — November 6, 2026
+
+The agent interface uses the independently maintained official
+[Rust MCP SDK](https://github.com/modelcontextprotocol/rust-sdk) and the public
+[MCP tools specification](https://modelcontextprotocol.io/specification/2025-11-25/server/tools).
+Its protocol and schema dependencies remain confined to `apps/mcp`.
+
+PhotoCraft's local README and automation manifests were inspected to confirm its
+headless-engine and optional desktop-bridge architecture. Peachy Animator's MCP
+tools are written independently around its existing Session and shared I/O, rather
+than copying PhotoCraft's application implementation.
+
+The Views audit uses the public [Spine Views guide](https://en.esotericsoftware.com/spine-views),
+[user interface guide](https://en.esotericsoftware.com/spine-ui) and named view pages.
+It separates documented panel names and behavior from exact installed-editor mode
+lists and docking behavior, which require further interactive comparison. New
+panels and vector icons are independently implemented. See [the view inventory](VIEWS.md).
+
 The installed Spine Editor 4.3.26 was also run through its documented import/export
 CLI on the original fixture only. Two initial imports revealed default-attachment
 and named-skin placeholder collisions. The final fixture puts shared parts in default

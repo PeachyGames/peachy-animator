@@ -2,12 +2,12 @@
 
 The reference model is PhotoCraft's engine-first architecture. This project keeps
 its document, commands, deterministic evaluation and format facts separate from
-platform effects, with six crates sized around implemented responsibilities.
+platform effects, with seven crates sized around implemented responsibilities.
 
 ```text
-Desktop / CLI -> engine -> document
-Desktop / CLI -> io -> spine -> document
-CLI -> spine (capability inspection)
+Desktop / CLI / MCP -> engine -> document
+Desktop / CLI / MCP -> io -> spine -> document
+CLI / MCP -> spine (capability inspection)
 ```
 
 `peachy-document` contains plain serializable data and general invariants. Bones are
@@ -91,11 +91,31 @@ check alone cannot establish their absence. See [the quality review](CODE_QUALIT
    commands; retain imported values until an accepted edit changes them.
 2. Introduce stable entity IDs before deletion/reparenting and animation merging.
 3. Extend the shared I/O shell for formats/destinations; keep dialogs in the frontend.
-4. Add schemas and MCP around the existing serializable commands when needed.
+4. Extend MCP's discoverable schemas around the existing serializable commands;
+   keep transport, filesystem confinement and client state in the MCP shell.
 5. Measure snapshot memory with real mesh/keyframe workloads before adding structural sharing.
 
 The app is native-only today. Core crates have no OS/UI dependencies, but WebAssembly
 compilation, a web frontend and additional platform builds have not been verified.
+
+## Headless MCP client
+
+`apps/mcp` is a separate stdio client of the same document, Session, checked scene
+evaluator and shared file services. The official Rust MCP SDK owns protocol
+negotiation, tool discovery and transport. Tool schemas and file access policy stay
+in that shell; the core has no MCP or schema-library dependency.
+
+Each process owns one independent editing session and an explicit filesystem root.
+Revision checks prevent edits based on an outdated observation. Commands are
+dispatched as one atomic batch with the engine's existing undo/redo history; loading
+another project must explicitly account for unsaved changes. New-output save/export
+operations preserve source projects, and referenced image files must also remain
+inside the configured root. See [the interface and its limits](MCP.md).
+
+This headless process does not control an already-open desktop window. A future
+desktop bridge needs explicit session ownership and conflict rules. Evaluated
+geometry is available without a window; image previews and GUI screenshot tools
+remain separate work.
 
 ## User interface contract
 

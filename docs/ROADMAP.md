@@ -47,9 +47,11 @@ Spine runtime. Subsequent work should grow that working loop.
    extended playback, ghosting and timeline/curve editor refinement. Group
    inspector keyboard edits into one undo transaction. Pointer drags in the inspector
    and canvas already group their updates.
-6. **Agent interfaces.** Publish a discoverable command registry and schemas, then
-   MCP/JSON-RPC around the same dispatcher. `SetPose` already centralizes setup-to-key
-   conversion for every client. Add batch screenshot and render commands.
+6. **Agent interfaces.** The standalone [MCP server](MCP.md) exposes discoverable
+   tools and command schemas around the same Session and checked scene evaluator,
+   with revision checks and confined file access. `SetPose` centralizes setup-to-key
+   conversion for every client. Next add visual headless previews, batch rendering
+   and a deliberately designed live desktop bridge.
 7. **Distribution.** Package a macOS application with bundled demo resources; verify
    Windows/Linux and WASM builds. Add additional Spine export targets deliberately,
    each with a recorded compatibility matrix.

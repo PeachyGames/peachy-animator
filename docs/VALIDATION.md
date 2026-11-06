@@ -1003,3 +1003,28 @@ checkpoint `52a8446`. Remote and local commit hashes match; hosted CI was not
 dispatched. See `evidence/repository-publication.json`. The approved
 [next IK animation contract](slices/ik-animation-design.md) is design authorization,
 not an implemented native7 or animation-parity claim.
+
+## MCP and Views inventory — November 6, 2026
+
+The combined source passes formatting, all **298 workspace Rust tests** (including
+101 desktop tests, one MCP command-schema test and three real subprocess SDK-client
+tests), Clippy across all targets with warnings denied, the workspace build and
+the seven-crate architecture guard. Hosted CI was not run.
+
+An independent JSON-RPC client also negotiates MCP 2025-11-25 with the built stdio
+server and exercises all nine tools: inspection, guarded Open, a two-command edit,
+atomic failure, stale revision refusal, dirty-Open refusal, Undo/Redo, pose geometry,
+new-directory Save with images, and JSON plus packed export. Its evaluated pose
+matches the CLI. Source bytes remain unchanged and the test server exits. Saved
+JSON is compared at native f32 precision rather than requiring identical decimal
+spelling between structured MCP values and direct file serialization.
+
+The Views tests cover all 15 menu entries and the four new bounded panels, mode
+availability, activation versus Tree selection, close/reopen, F9, pending-pose
+preservation and workspace retention on Open. A normal task-owned native window
+renders the original Peach Bot artwork. Three OS-input attempts stop at foreground
+ownership guards before completing the new view workflow; they are not native
+interaction acceptance. Each owned editor is closed and temporary local-login
+authorization is removed. Native interaction, exact installed-editor mode lists and
+pixel/docking parity remain pending. See [the evidence summary](evidence/mcp-views.json),
+[MCP scope](MCP.md) and [Views scope](VIEWS.md).

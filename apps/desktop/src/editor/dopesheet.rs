@@ -96,6 +96,13 @@ impl Editor {
                 .color(ACCENT),
             );
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                let close =
+                    icons::toolbar_button(ui, Icon::Delete, "Close Dopesheet view", "", true);
+                self.record_target("closeView:Dopesheet", close.rect);
+                if close.clicked() {
+                    self.cancel_gesture();
+                    self.show_dopesheet = false;
+                }
                 ui.label(
                     RichText::new("A / D: play · W / S: keys · R / F: frames")
                         .small()

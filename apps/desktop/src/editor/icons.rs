@@ -21,6 +21,10 @@ pub(super) enum Icon {
     Views,
     Tree,
     Dopesheet,
+    Animations,
+    Skins,
+    Metrics,
+    Outline,
     Weights,
     IkConstraint,
     ChooseBone,
@@ -88,17 +92,6 @@ pub(super) fn button(ui: &mut Ui, icon: Icon, label: &str, shortcut: Option<&str
 
 pub(super) fn tool_button(ui: &mut Ui, icon: Icon, label: &str, selected: bool) -> Response {
     show(ui, icon, Some(label), None, selected)
-}
-
-/// Keep view visibility on the established native checkbox; its label stays accessible.
-pub(super) fn toggle(ui: &mut Ui, icon: Icon, label: &str, checked: &mut bool) -> Response {
-    ui.horizontal(|ui| {
-        let (rect, _) = ui.allocate_exact_size(Vec2::splat(SIZE), egui::Sense::hover());
-        let response = ui.checkbox(checked, label);
-        paint(ui, rect, icon, &response);
-        response
-    })
-    .inner
 }
 
 pub(super) fn menu_button<R>(
@@ -341,6 +334,58 @@ fn paint(ui: &Ui, rect: Rect, icon: Icon, response: &Response) {
             box_at([1.5, 1.5], [5.5, 5.5], warm);
             box_at([8., 5.5], [12., 9.5], warm);
             box_at([8., 10.5], [12., 14.5], warm);
+        }
+        Icon::Animations => {
+            box_at([2., 2.], [14., 14.], ink);
+            for x in [4., 8., 12.] {
+                line(&[[x, 2.], [x, 4.]], blue);
+                line(&[[x, 12.], [x, 14.]], blue);
+            }
+            painter.add(Shape::convex_polygon(
+                vec![p(6., 5.), p(11., 8.), p(6., 11.)],
+                green,
+                Stroke::NONE,
+            ));
+        }
+        Icon::Skins => {
+            line(
+                &[
+                    [2., 5.],
+                    [5., 2.],
+                    [6., 4.],
+                    [10., 4.],
+                    [11., 2.],
+                    [14., 5.],
+                    [12., 8.],
+                    [11., 7.],
+                    [11., 14.],
+                    [5., 14.],
+                    [5., 7.],
+                    [4., 8.],
+                    [2., 5.],
+                ],
+                warm,
+            );
+        }
+        Icon::Metrics => {
+            line(&[[2., 2.], [2., 14.], [15., 14.]], ink);
+            for (x, y, color) in [(4., 8., green), (8., 4., warm), (12., 6., blue)] {
+                box_at([x, y], [x + 2., 13.], color);
+            }
+        }
+        Icon::Outline => {
+            box_at([1., 2.], [15., 14.], ink);
+            line(
+                &[
+                    [4., 11.],
+                    [6., 6.],
+                    [9., 4.],
+                    [12., 8.],
+                    [11., 11.],
+                    [4., 11.],
+                ],
+                green,
+            );
         }
         Icon::Dopesheet => {
             line(&[[2., 3.], [14., 3.], [14., 14.], [2., 14.], [2., 3.]], ink);

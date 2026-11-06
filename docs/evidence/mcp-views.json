@@ -1,0 +1,74 @@
+{
+  "date": "2026-11-06",
+  "baselineCommit": "1049031cdd4258d1a49ef3f7873b03449ed838cd",
+  "checks": {
+    "format": true,
+    "workspaceTests": 298,
+    "desktopTests": 101,
+    "mcpSchemaTests": 1,
+    "mcpSubprocessSdkTests": 3,
+    "clippyWarningsDenied": true,
+    "workspaceBuild": true,
+    "architectureCrates": 7,
+    "diffCheck": true
+  },
+  "independentStdioWorkflow": {
+    "numericComparison": "native f32 precision; JSON text spelling may differ",
+    "tools": [
+      "apply_commands",
+      "evaluate_pose",
+      "export_project",
+      "get_command_schema",
+      "get_document",
+      "history",
+      "inspect_file",
+      "open_project",
+      "save_project"
+    ],
+    "complete": true,
+    "protocolNegotiated": "2025-11-25",
+    "twoCommandBatchOneUndoRedo": true,
+    "staleRevisionAndFailedBatchPreserveState": true,
+    "dirtyOpenRefused": true,
+    "freshSaveCopiesAssetsAndMatchesDocument": true,
+    "existingOutputsRefused": true,
+    "jsonAndPackedExport": true,
+    "poseEqualsCli": true,
+    "sourceUnchanged": true,
+    "serverExited": true
+  },
+  "views": {
+    "documentedInventory": 15,
+    "implemented": 7,
+    "new": [
+      "Animations",
+      "Skins",
+      "Metrics",
+      "Outline"
+    ],
+    "unsupported": [
+      "Audio",
+      "Ghosting",
+      "Graph",
+      "Mesh Tools",
+      "Playback",
+      "Preview",
+      "Slot Color",
+      "Timeline"
+    ],
+    "nativeInputAcceptance": "pending: exact-PID foreground guards stopped three task-owned attempts; no successful view interaction workflow claimed",
+    "loadedNativeWindowCaptured": true,
+    "privateArtworkUsed": false,
+    "pixelParityClaimed": false
+  },
+  "limits": [
+    "MCP owns an independent headless session, no live GUI bridge",
+    "Pose tool returns geometry, no raster preview",
+    "Spine mode lists, docking and remaining view functionality are incomplete"
+  ],
+  "binaries": {
+    "peachy-animator": "288459356df54952133a4b505ae6ed0936ed79470fa5356985b9c7691ad050a4",
+    "peachy-cli": "4adfd6e96a130aeeaf19618fb4b993f2cfe405c125508e0b51af6e56d8bf2409",
+    "peachy-mcp": "886f5e807079f1c9e2d44f2414dc5318eaa9faf4368a561e4575c26535229edb"
+  }
+}

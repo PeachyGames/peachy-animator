@@ -61,10 +61,8 @@ impl WeightsState {
 
 impl Editor {
     pub(super) fn open_weights_view(&mut self) {
-        if let Some(views) = self.hidden_views.take() {
-            self.show_tree = views.tree;
-            self.show_dopesheet = views.dopesheet;
-        }
+        self.restore_hidden_views();
+        self.focus_weights_tab();
         self.show_weights = true;
     }
     pub(super) fn weights_id() -> egui::Id {
@@ -274,7 +272,19 @@ impl Editor {
         focus.widget_info(|| {
             egui::WidgetInfo::labeled(egui::WidgetType::Other, true, "Weights view")
         });
-        icons::heading(ui, icons::Icon::Weights, "Weights");
+        ui.horizontal(|ui| {
+            icons::heading(ui, icons::Icon::Weights, "Weights");
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                let close =
+                    icons::toolbar_button(ui, icons::Icon::Delete, "Close Weights view", "", true);
+                self.record_target("closeView:Weights", close.rect);
+                if close.clicked() {
+                    self.cancel_gesture();
+                    self.weights.bind = None;
+                    self.show_weights = false;
+                }
+            });
+        });
         self.reconcile_weights();
         let mesh_label = if matches!(self.weights.bind, Some(BindMode::Bone(_))) {
             "Mesh: click a mesh".into()

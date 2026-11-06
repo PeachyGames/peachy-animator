@@ -88,6 +88,12 @@ properties right, transform controls below the viewport, and Dopesheet below tho
 in Animate mode. UI parity is an ongoing acceptance requirement; see the
 [UI parity contract](docs/UI_PARITY.md) for remaining differences.
 
+**Views** also opens Animations (in Animate), Skins, Metrics and Outline. These
+share a resizable tabbed panel in the right rail. Outline displays the current
+pose without editing handles; Animations and Skins switch the active preview
+without changing the saved document. The menu lists the remaining Spine views
+with an explanation of each missing feature. See [the complete inventory](docs/VIEWS.md).
+
 For an unweighted mesh in Setup, expand the hand.R bone and slot, select its
 mesh attachment, then choose **Vertices** in the attachment properties and drag a numbered vertex. The **Mesh** checkbox converts a region
 to a four-corner mesh; existing mesh triangles can be split at their centers.
@@ -263,6 +269,19 @@ skin name and emits authored locals, applied locals, world transforms and attach
 explicitly before JSON output.
 
 ## Architecture and verification
+
+Agents can work without opening a window through the standalone MCP server:
+
+```sh
+cargo build -p peachy-mcp --locked
+./target/debug/peachy-mcp --root /absolute/path/to/animation-workspace
+```
+
+It communicates over stdio and exposes project inspection, validated command
+batches, undo/redo, pose evaluation and new-output saves/exports through the same
+engine as the desktop. Each server owns an independent session; it does not
+control an existing editor window. See [MCP setup, tools and limits](docs/MCP.md)
+for client configuration and a complete workflow.
 
 The design follows PhotoCraft's engine-first, command-driven architecture:
 serializable documents, an independent animation engine, format adapters, and thin

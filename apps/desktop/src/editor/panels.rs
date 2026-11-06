@@ -85,46 +85,7 @@ impl Editor {
             );
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 let views = icons::menu_button(ui, Icon::Views, "Views", |ui| {
-                    let tree = icons::toggle(ui, Icon::Tree, "Tree", &mut self.show_tree);
-                    self.record_target("viewTree", tree.rect);
-                    ui.add_enabled_ui(!self.setup_mode, |ui| {
-                        let dopesheet = icons::toggle(
-                            ui,
-                            Icon::Dopesheet,
-                            "Dopesheet",
-                            &mut self.show_dopesheet,
-                        );
-                        self.record_target("viewDopesheet", dopesheet.rect);
-                    });
-                    ui.separator();
-                    let weights =
-                        icons::toggle(ui, Icon::Weights, "Weights", &mut self.show_weights);
-                    self.record_target("viewWeights", weights.rect);
-                    if weights.changed() {
-                        self.cancel_weight_edit();
-                        if self.show_weights {
-                            self.open_weights_view();
-                        } else {
-                            self.weights.bind = None;
-                        }
-                    }
-                    ui.separator();
-                    let restore = icons::button(
-                        ui,
-                        Icon::RestoreWorkspace,
-                        "Restore default workspace",
-                        None,
-                    );
-                    self.record_target("viewRestore", restore.rect);
-                    if restore.clicked() {
-                        self.cancel_weight_edit();
-                        self.show_tree = true;
-                        self.show_dopesheet = true;
-                        self.show_weights = false;
-                        self.weights.bind = None;
-                        self.hidden_views = None;
-                        ui.close();
-                    }
+                    self.views_menu(ui);
                 });
                 self.record_target("viewsMenu", views.rect);
                 let hidden = self.hidden_views.is_some();

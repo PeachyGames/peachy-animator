@@ -90,6 +90,7 @@ pub(super) fn editor_fixture() -> Editor {
         ik_blocked: None,
         ik_target: None,
         hidden_views: None,
+        view_tabs: Default::default(),
         drag: None,
         transform_blocked: false,
         transform_blocked_control: None,

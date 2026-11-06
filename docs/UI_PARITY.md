@@ -19,7 +19,7 @@ The baseline is the documented default workspace; user layouts/hotkeys can diffe
 | Reference convention | Current alignment |
 | --- | --- |
 | Menu and file/history shortcuts at top left | Compact Peachy menu, Open/Save/Undo/Redo; export in menu and Cmd/Ctrl+E |
-| Views selector at top right | Tree/Dopesheet visibility, workspace restore, F9 hide/restore |
+| Views selector at top right | Full 15-view public-guide inventory, seven bounded working views, explicit disabled gaps, close/reopen, workspace restore and F9 |
 | Viewport left, Tree right | Right-side Tree; item properties below it; resizable panes |
 | Setup/Animate at viewport's upper left | Mode switch there; Dopesheet appears in Animate |
 | Main transform tools below viewport | Rotate/Translate selectors; numeric rotation, translation and scale |
@@ -490,3 +490,30 @@ interaction/visual comparison, partial-Mix World/Parent behavior, constraint
 creation, animated settings and advanced controls remain gates. No fake creation
 wizard or active unsupported option is shown. See `evidence/ik-visual.json` and the
 [UI contract](slices/ik-ui.md).
+
+## Views inventory and auxiliary panels — November 6, 2026 UTC
+
+The selector previously listed only the three implemented views. The new
+[Views audit](VIEWS.md) accounts for all 15 public-guide views and explains the
+remaining eight disabled entries. Animations, Skins, Metrics and Outline now have
+real panels using the existing document, Session and checked evaluated scene.
+The right rail retains Tree and its contextual properties, with a resizable tabbed
+auxiliary area. Menu entries open/focus views; close controls and F9 allow individual
+and global dismissal. Weights shares these tabs without changing its command or
+transaction boundaries. All view changes remain presentation state.
+
+Animations click activates, right-click inspects its Tree item and double-click
+uses Rename. Skins click activates one named skin, right-click inspects and Clear
+skin restores default attachments. These panels intentionally omit unsupported
+creation/folders and skin composition. Metrics uses actual stored/visible geometry
+counts, plus explicitly named native scalar-track/key counts in Animate. Outline
+renders the current pose without bone or selection overlays; pan/zoom are separate
+from the main viewport and clicking centers that viewport. It is distinct from
+Spine's independent Preview and does not implement playback mixing.
+
+Rust egui interaction checks verify menu coverage and gates, typed selection versus
+activation, unchanged document/history, close/reopen, F9/Weights restoration,
+pending-pose preservation on Outline clicks and close controls at the minimum
+window size. General tab docking, saved layouts, minimized icons, exact installed
+4.3 per-mode lists and native visual equivalence remain comparison gates. Public
+guides are live/unversioned; they do not establish exact installed pixel parity.

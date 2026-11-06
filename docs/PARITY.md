@@ -8,6 +8,7 @@ comparison. The native `.peachy` format is our own editable model.
 | Spine capability | Current implementation | Evidence or remaining gate |
 | --- | --- | --- |
 | Workspace, controls and conventions | Layout/shortcut alignment plus typed Tree, contextual selection, filters, activation dots and picking | See [UI parity](UI_PARITY.md); multi-selection, remaining tools and docking remain before weight-painting UI |
+| Views discovery and auxiliary panels | Full 15-view public-guide inventory; four new bounded Animations/Skins/Metrics/Outline panels, alongside Tree/Dopesheet/Weights | Eight unsupported views are explicitly disabled. Exact 4.3 mode lists, Graph, independent Preview/mixing and general docking remain gates. See [Views audit](VIEWS.md) |
 | Transform tools and axes | Rotate/Translate/Scale plus bounded bone Shear controls/handles; numeric operators, active-tool nudges and fixed-baseline previews | Shear currently displays local values; exact installed World/Parent display, empty-space/Shift/handle behavior and visual alignment remain gates |
 | Selection navigation | Page Up/Down history and Cmd/Ctrl+number storage / number recall for typed single-item groups | Session state only; multi-selection and persisted group preferences pending |
 | Bone hierarchy and transforms | Normal inheritance, translation, rotation, scale and shear | Independent affine math and original shear interchange cases; other inheritance modes remain pending |

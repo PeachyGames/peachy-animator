@@ -46,6 +46,13 @@ impl Editor {
             if ui.small_button("−").on_hover_text("Collapse all").clicked() {
                 actions.push(Action::All(true));
             }
+            let close = icons::toolbar_button(ui, icons::Icon::Delete, "Close Tree view", "", true);
+            self.record_target("closeView:Tree", close.rect);
+            if close.clicked() {
+                self.cancel_gesture();
+                self.weights.bind = None;
+                self.show_tree = false;
+            }
         });
         ui.horizontal(|ui| {
             for (label, filters) in [

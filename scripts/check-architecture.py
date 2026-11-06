@@ -14,6 +14,7 @@ RULES = {
     "peachy-spine": {"peachy-document", "serde", "serde_json"},
     "peachy-io": {"peachy-document", "peachy-spine", "serde_json", "image"},
     "peachy-cli": {"peachy-document", "peachy-engine", "peachy-spine", "peachy-io", "serde_json"},
+    "peachy-mcp": {"peachy-document", "peachy-engine", "peachy-spine", "peachy-io", "serde", "serde_json", "rmcp", "schemars", "tokio"},
     "peachy-animator": {"peachy-document", "peachy-engine", "peachy-io", "serde_json", "eframe", "image", "rfd", "objc2", "objc2-app-kit", "objc2-foundation"},
 }
 

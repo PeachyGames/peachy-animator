@@ -69,15 +69,18 @@ impl Editor {
             self.show_tree = views.tree;
             self.show_dopesheet = views.dopesheet;
             self.show_weights = views.weights;
+            self.view_tabs.open = views.dock;
         } else {
             self.hidden_views = Some(ViewVisibility {
                 tree: self.show_tree,
                 dopesheet: self.show_dopesheet,
                 weights: self.show_weights,
+                dock: self.view_tabs.open.clone(),
             });
             self.show_tree = false;
             self.show_dopesheet = false;
             self.show_weights = false;
+            self.view_tabs.open.clear();
         }
     }
 

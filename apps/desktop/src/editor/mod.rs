@@ -26,6 +26,7 @@ mod tree_model;
 use selection::{Folder, TreeItem};
 use tree_model::TreeState;
 mod viewport;
+mod views;
 mod weight_direct;
 mod weights;
 use eframe::egui::{self, Color32, FontId, Pos2, RichText, Sense, Stroke, Vec2, pos2, vec2};
@@ -60,6 +61,7 @@ struct ViewVisibility {
     tree: bool,
     dopesheet: bool,
     weights: bool,
+    dock: BTreeSet<views::DockView>,
 }
 
 struct MeshDrag {
@@ -104,6 +106,7 @@ pub(crate) struct Editor {
     show_dopesheet: bool,
     show_weights: bool,
     hidden_views: Option<ViewVisibility>,
+    view_tabs: views::ViewTabs,
     weights: weights::WeightsState,
     weight_edit: Option<weight_direct::WeightEdit>,
     weight_blocked: Option<egui::Id>,
@@ -219,6 +222,7 @@ impl Editor {
             ik_blocked: None,
             ik_target: None,
             hidden_views: None,
+            view_tabs: Default::default(),
             drag: None,
             transform_blocked: false,
             transform_blocked_control: None,
@@ -602,6 +606,7 @@ impl Editor {
                     self.timeline_clipboard = None;
                     self.timeline_input = Default::default();
                     self.weights = Default::default();
+                    self.view_tabs.reset_document();
                     self.weight_blocked = None;
                     self.weight_controls = None;
                     self.ik_edit = None;
@@ -753,7 +758,7 @@ impl Editor {
                     );
                 });
             });
-        if self.show_tree || self.show_weights {
+        if self.show_tree || self.has_dock_views() {
             egui::Panel::right("tree")
                 .default_size(310.0)
                 .min_size(260.0)
@@ -773,18 +778,13 @@ impl Editor {
                                     .show(ui, |ui| self.inspector(ui));
                             });
                     }
-                    if self.show_tree && self.show_weights {
-                        egui::Panel::bottom("weights-view-panel")
-                            .default_size(240.0)
-                            .min_size(150.0)
+                    if self.show_tree && self.has_dock_views() {
+                        egui::Panel::bottom("auxiliary-view-panel")
+                            .default_size(260.0)
+                            .min_size(160.0)
                             .resizable(true)
                             .frame(egui::Frame::new().fill(PANEL).inner_margin(6))
-                            .show(ui, |ui| {
-                                egui::ScrollArea::vertical()
-                                    .id_salt("weights-scroll")
-                                    .auto_shrink([false, false])
-                                    .show(ui, |ui| self.weights_panel(ui));
-                            });
+                            .show(ui, |ui| self.auxiliary_dock(ui));
                     }
                     egui::CentralPanel::default()
                         .frame(egui::Frame::new().fill(PANEL).inner_margin(3))
@@ -792,10 +792,7 @@ impl Editor {
                             if self.show_tree {
                                 self.hierarchy(ui);
                             } else {
-                                egui::ScrollArea::vertical()
-                                    .id_salt("weights-scroll")
-                                    .auto_shrink([false, false])
-                                    .show(ui, |ui| self.weights_panel(ui));
+                                self.auxiliary_dock(ui);
                             }
                         });
                 });
@@ -883,6 +880,7 @@ impl Editor {
                     "pointer":ctx.input(|i|i.pointer.hover_pos().map(|p|[p.x,p.y])),
                     "targets":self.capture_targets,"meshHandles":self.mesh_handles,"innerSize":[ctx.content_rect().width(),ctx.content_rect().height()]
                 });
+                report["views"] = self.views_diagnostic();
                 report["animationEnd"] = self.animation_end().into();
                 report["weightedMeshCount"] = self.weighted_mesh_count().into();
                 report["weightsContext"] = self.weights_diagnostic();
