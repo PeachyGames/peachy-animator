@@ -6,6 +6,11 @@ use peachy_document::{
 };
 use serde::{Deserialize, Serialize};
 
+/// Bind/Remove-all are shape-preserving commands. Reject a recovered f32 local
+/// position if rendering it would move either world coordinate by more than this
+/// absolute amount. This command policy has no relative or large-pose exception.
+const BIND_WORLD_COORDINATE_TOLERANCE: f64 = 0.001;
+
 /// A reproducible local-pose snapshot, including any unkeyed Session pose edits.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -88,13 +93,14 @@ impl Inverse {
         }
         // Native positions can be finite while cancelling f32 matrix products
         // overflow during rendering. Reject that result before changing bindings.
-        if self
-            .forward
-            .point(result[0], result[1])
-            .iter()
-            .any(|value| !value.is_finite())
-        {
+        let recovered = self.forward.point(result[0], result[1]);
+        if recovered.iter().any(|value| !value.is_finite()) {
             return Err("Binding would produce nonfinite world vertices".into());
+        }
+        if recovered.into_iter().zip(point).any(|(actual, original)| {
+            (f64::from(actual) - f64::from(original)).abs() > BIND_WORLD_COORDINATE_TOLERANCE
+        }) {
+            return Err("Pose exceeds coordinate precision: binding would move vertices beyond the 0.001 world-coordinate tolerance".into());
         }
         Ok(result)
     }
