@@ -121,6 +121,7 @@ fn wide_fallback_handles_finite_span_product_overflow_and_preserves_genuine_fina
 fn extreme_shear_sampling_and_pose_preview_preserve_original_keys_curves_and_history() {
     let curve = Curve::Bezier([0.25, 0., 0.75, 1.]);
     let document = Document {
+        constraints: vec![],
         format: FORMAT_VERSION,
         name: "Original wide shear interval".into(),
         fps: 30,

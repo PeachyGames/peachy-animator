@@ -1,10 +1,10 @@
 //! Evaluated geometry shared by rendering, fit-to-view and future headless export.
 use crate::{
-    Affine, local_pose,
+    Affine, checked_pose_from_locals, local_pose,
     mesh::{REGION_TRIANGLES, REGION_UVS, region_vertices},
-    mesh_world_vertices, world_pose,
+    mesh_world_vertices,
 };
-use peachy_document::{Attachment, AttachmentRef, Document, Transform, finite_transform};
+use peachy_document::{Attachment, AttachmentRef, Document, Transform};
 use serde::Serialize;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -43,6 +43,7 @@ pub struct AttachmentDraw {
 }
 pub struct Scene {
     pub locals: Vec<Transform>,
+    pub applied_locals: Vec<Transform>,
     pub world: Vec<Affine>,
     pub attachments: Vec<AttachmentDraw>,
     pub bounds: Option<Bounds>,
@@ -56,14 +57,8 @@ pub fn evaluate_scene(
     time: f32,
     skin: &str,
     preview: Option<(usize, Transform)>,
-) -> Scene {
-    let mut locals = local_pose(doc, animation, time);
-    if let Some((bone, transform)) = preview
-        && let Some(local) = locals.get_mut(bone)
-    {
-        *local = transform;
-    }
-    scene_from_locals(doc, skin, locals)
+) -> Result<Scene, String> {
+    checked_evaluate_scene(doc, animation, time, skin, preview)
 }
 
 /// Checked evaluation for shells that serialize, draw or pick a scene.
@@ -76,6 +71,12 @@ pub fn checked_evaluate_scene(
     skin: &str,
     preview: Option<(usize, Transform)>,
 ) -> Result<Scene, String> {
+    if !time.is_finite() || time < 0.0 {
+        return Err("Pose time must be finite and nonnegative".into());
+    }
+    if animation.is_some_and(|index| index >= doc.animations.len()) {
+        return Err("Unknown animation".into());
+    }
     let mut locals = local_pose(doc, animation, time);
     if let Some((bone, transform)) = preview {
         *locals.get_mut(bone).ok_or("Unknown preview bone")? = transform;
@@ -91,29 +92,8 @@ pub fn checked_scene_from_locals(
     skin: &str,
     locals: Vec<Transform>,
 ) -> Result<Scene, String> {
-    if locals.len() != doc.bones.len() {
-        return Err("Evaluation needs one local transform per bone".into());
-    }
-    for (bone, local) in doc.bones.iter().zip(&locals) {
-        if !finite_transform(*local) {
-            return Err(format!(
-                "Bone {}: evaluated local transform is nonfinite or outside the f32 range",
-                bone.name
-            ));
-        }
-    }
-    let scene = scene_from_locals(doc, skin, locals);
-    for (bone, world) in doc.bones.iter().zip(&scene.world) {
-        if ![world.a, world.b, world.c, world.d, world.x, world.y]
-            .into_iter()
-            .all(f32::is_finite)
-        {
-            return Err(format!(
-                "Bone {}: evaluated world transform is nonfinite or outside the f32 range",
-                bone.name
-            ));
-        }
-    }
+    let pose = checked_pose_from_locals(doc, locals)?;
+    let scene = scene_from_evaluated(doc, skin, pose);
     for draw in &scene.attachments {
         if !draw
             .vertices
@@ -153,9 +133,20 @@ pub fn checked_scene_from_locals(
 }
 
 /// Evaluate an already posed rig, including transient multi-bone authoring edits.
-pub fn scene_from_locals(doc: &Document, skin: &str, locals: Vec<Transform>) -> Scene {
-    assert_eq!(locals.len(), doc.bones.len());
-    let world = world_pose(doc, &locals);
+pub fn scene_from_locals(
+    doc: &Document,
+    skin: &str,
+    locals: Vec<Transform>,
+) -> Result<Scene, String> {
+    checked_scene_from_locals(doc, skin, locals)
+}
+
+fn scene_from_evaluated(doc: &Document, skin: &str, pose: crate::EvaluatedPose) -> Scene {
+    let crate::EvaluatedPose {
+        authored_locals: locals,
+        applied_locals,
+        world,
+    } = pose;
     let mut attachments = vec![];
     for (slot_index, slot) in doc.slots.iter().enumerate() {
         let Some((key, attachment)) = doc.resolved_attachment(skin, slot_index) else {
@@ -191,6 +182,7 @@ pub fn scene_from_locals(doc: &Document, skin: &str, locals: Vec<Transform>) -> 
     let bounds = crate::attachment_bounds(&attachments);
     Scene {
         locals,
+        applied_locals,
         world,
         attachments,
         bounds,

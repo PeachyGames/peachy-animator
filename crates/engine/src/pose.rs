@@ -168,6 +168,12 @@ pub fn world_pose(doc: &Document, locals: &[Transform]) -> Vec<Affine> {
     world
 }
 
-pub fn evaluate(doc: &Document, animation: Option<usize>, time: f32) -> Vec<Affine> {
-    world_pose(doc, &local_pose(doc, animation, time))
+pub fn evaluate(
+    doc: &Document,
+    animation: Option<usize>,
+    time: f32,
+) -> Result<Vec<Affine>, String> {
+    Ok(crate::checked_evaluate_pose(doc, animation, time)?
+        .world()
+        .to_vec())
 }

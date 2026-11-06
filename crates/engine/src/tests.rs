@@ -184,8 +184,8 @@ fn scene_uses_skin_fallback_draw_order_and_one_geometry_for_bounds() {
     let fixture: Document =
         serde_json::from_str(include_str!("../../../examples/peach-bot/peach-bot.peachy")).unwrap();
     fixture.validate().unwrap();
-    let peach = evaluate_scene(&fixture, Some(0), 0.3, "peach", None);
-    let mint = evaluate_scene(&fixture, Some(0), 0.3, "mint", None);
+    let peach = evaluate_scene(&fixture, Some(0), 0.3, "peach", None).unwrap();
+    let mint = evaluate_scene(&fixture, Some(0), 0.3, "mint", None).unwrap();
     assert_eq!(peach.attachments.len(), 14);
     assert_eq!(mint.attachments.len(), 14);
     assert!(mint.attachments.iter().any(|r| r.image == "torso-mint"));
@@ -203,7 +203,7 @@ fn scene_uses_skin_fallback_draw_order_and_one_geometry_for_bounds() {
     }
     let mut changed = fixture.bones[0].setup;
     changed.x += 20.0;
-    let preview = evaluate_scene(&fixture, Some(0), 0.3, "mint", Some((0, changed)));
+    let preview = evaluate_scene(&fixture, Some(0), 0.3, "mint", Some((0, changed))).unwrap();
     assert!(
         (preview.attachments[0].vertices[0][0] - mint.attachments[0].vertices[0][0] - 20.0).abs()
             < 0.001
@@ -212,6 +212,7 @@ fn scene_uses_skin_fallback_draw_order_and_one_geometry_for_bounds() {
 }
 fn doc() -> Document {
     Document {
+        constraints: vec![],
         format: FORMAT_VERSION,
         name: "fixture".into(),
         fps: 30,
@@ -276,9 +277,9 @@ fn interpolation_is_deterministic_when_scrubbing_backwards() {
     })
     .unwrap();
     assert_eq!(local_pose(s.document(), Some(0), 0.5)[0].rotation, 45.0);
-    let a = evaluate(s.document(), Some(0), 0.25);
-    evaluate(s.document(), Some(0), 0.9);
-    assert_eq!(a[0].a, evaluate(s.document(), Some(0), 0.25)[0].a);
+    let a = evaluate(s.document(), Some(0), 0.25).unwrap();
+    evaluate(s.document(), Some(0), 0.9).unwrap();
+    assert_eq!(a[0].a, evaluate(s.document(), Some(0), 0.25).unwrap()[0].a);
 }
 #[test]
 fn hierarchy_composes_rotation_and_nonuniform_scale() {
@@ -294,7 +295,7 @@ fn hierarchy_composes_rotation_and_nonuniform_scale() {
             ..Default::default()
         },
     });
-    let w = evaluate(&d, None, 0.0);
+    let w = evaluate(&d, None, 0.0).unwrap();
     assert!(w[1].x.abs() < 0.0001);
     assert!((w[1].y - 20.0).abs() < 0.0001);
     let p = w[0].inverse_point(w[1].x, w[1].y).unwrap();
@@ -467,8 +468,8 @@ fn mesh_conversion_preserves_textured_geometry_under_animation_and_reflection() 
         Some(Attachment::Mesh(_))
     ));
     for time in [0.0, 0.3, 1.1, 2.4] {
-        let a = evaluate_scene(&before, Some(0), time, "peach", None);
-        let b = evaluate_scene(&after, Some(0), time, "peach", None);
+        let a = evaluate_scene(&before, Some(0), time, "peach", None).unwrap();
+        let b = evaluate_scene(&after, Some(0), time, "peach", None).unwrap();
         for (a, b) in a.attachments.iter().zip(b.attachments) {
             assert_eq!(a.vertices, b.vertices);
             assert_eq!(a.uvs, b.uvs);
@@ -605,7 +606,8 @@ fn unkeyed_multi_bone_pose_keys_atomically_without_touching_setup() {
         session.document(),
         "default",
         session.local_pose(Some(0), 0.5),
-    );
+    )
+    .unwrap();
     assert_eq!(scene.locals[1].rotation, 75.0);
     assert_eq!(
         session

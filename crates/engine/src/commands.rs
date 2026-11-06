@@ -5,6 +5,13 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(tag = "command", rename_all = "camelCase", deny_unknown_fields)]
 pub enum Command {
+    AddIkConstraint {
+        constraint: IkConstraint,
+    },
+    SetIkConstraint {
+        constraint: usize,
+        value: IkConstraint,
+    },
     SetPose {
         bone: usize,
         target: EditTarget,
@@ -278,6 +285,12 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
                 weight,
                 &pose,
             )?;
+        }
+        Command::AddIkConstraint { constraint } => doc.constraints.push(Constraint::Ik(constraint)),
+        Command::SetIkConstraint { constraint, value } => {
+            *doc.constraints
+                .get_mut(constraint)
+                .ok_or("Unknown IK constraint")? = Constraint::Ik(value);
         }
         Command::AddBone { bone } => doc.bones.push(bone),
         Command::AddAnimation { name, duration } => {

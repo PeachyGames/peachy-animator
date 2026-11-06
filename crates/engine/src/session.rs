@@ -1,4 +1,7 @@
-use crate::{Command, EditTarget, MeshBindPose, PoseEdits, apply_command, transform_group};
+use crate::{
+    Command, EditTarget, EvaluatedPose, MeshBindPose, PoseEdits, apply_command,
+    checked_pose_from_locals, transform_group,
+};
 use peachy_document::{AttachmentRef, Document, Property, Transform};
 
 #[derive(Clone, PartialEq)]
@@ -123,10 +126,9 @@ impl Session {
         });
         Ok(())
     }
-    /// Snapshot setup or current animation locals, including pending pose edits,
-    /// for reproducible command previews. This is read-only: it neither keys nor
-    /// discards a pose and leaves document, saved state and history unchanged.
-    pub fn mesh_bind_pose(&self, target: EditTarget) -> Result<MeshBindPose, String> {
+    /// Read authored setup or Animate+pending data through the checked applied-pose stage.
+    /// This snapshots without keying, discarding a pose or changing history.
+    pub fn evaluated_pose(&self, target: EditTarget) -> Result<EvaluatedPose, String> {
         let locals = match target {
             EditTarget::Setup => self
                 .document()
@@ -139,12 +141,19 @@ impl Session {
                     return Err("Unknown animation".into());
                 }
                 if !time.is_finite() || time < 0.0 {
-                    return Err("Bind time must be finite and nonnegative".into());
+                    return Err("Pose time must be finite and nonnegative".into());
                 }
                 self.local_pose(Some(animation), time)
             }
         };
-        Ok(MeshBindPose { locals })
+        checked_pose_from_locals(self.document(), locals)
+    }
+    /// Capture applied locals once, including pending edits. Binding reconstructs
+    /// FK from this explicit snapshot and must never apply constraints again.
+    pub fn mesh_bind_pose(&self, target: EditTarget) -> Result<MeshBindPose, String> {
+        Ok(MeshBindPose {
+            locals: self.evaluated_pose(target)?.applied_locals().to_vec(),
+        })
     }
     /// Bind at the explicit setup or posed animation state without keying or discarding it.
     pub fn bind_mesh_to_bone(
