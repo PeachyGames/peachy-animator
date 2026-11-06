@@ -210,6 +210,17 @@ impl Session {
             self.transaction = Some(self.state.clone());
         }
     }
+    /// Recompute a gesture preview from its fixed baseline, including overwritten keys.
+    /// A failed preview leaves the last valid preview and history intact.
+    pub fn preview_transaction(&mut self, command: Command) -> Result<(), String> {
+        let base = self.transaction.as_ref().ok_or("No active transaction")?;
+        let document = apply_command(&base.document, command)?;
+        self.state = WorkingState {
+            document,
+            pose: base.pose.clone(),
+        };
+        Ok(())
+    }
     pub fn commit_transaction(&mut self) {
         if let Some(previous) = self.transaction.take()
             && previous != self.state

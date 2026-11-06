@@ -8,6 +8,7 @@ mod playback;
 mod pose;
 mod scene;
 mod session;
+mod timeline;
 mod tools;
 
 pub use authoring::{KeyState, PoseEdits, transform_group};
@@ -20,6 +21,7 @@ pub use playback::{
 pub use pose::{Affine, curve_progress, evaluate, local_pose, sample, world_pose};
 pub use scene::{AttachmentDraw, Bounds, Scene, evaluate_scene, scene_from_locals};
 pub use session::Session;
+pub use timeline::{ClipboardKey, KeyClipboard, TimelineKey, copy_keys};
 pub use tools::{
     Axes, TransformGesture, TransformTool, drag_transform, parse_transform_input,
     set_transform_value, transform_axes, transform_values,

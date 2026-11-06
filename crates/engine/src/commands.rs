@@ -1,3 +1,4 @@
+use crate::{KeyClipboard, TimelineKey};
 use peachy_document::*;
 use serde::{Deserialize, Serialize};
 
@@ -45,6 +46,18 @@ pub enum Command {
         bone: usize,
         property: Property,
         time: f32,
+    },
+    MoveKeys {
+        animation: usize,
+        keys: Vec<TimelineKey>,
+        delta: f32,
+        copy: bool,
+    },
+    PasteKeys {
+        animation: usize,
+        bone: usize,
+        time: f32,
+        clipboard: KeyClipboard,
     },
     AddBone {
         bone: Bone,
@@ -302,6 +315,22 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
                 }
             }
             a.tracks.retain(|t| !t.keys.is_empty());
+        }
+        Command::MoveKeys {
+            animation,
+            keys,
+            delta,
+            copy,
+        } => {
+            crate::timeline::move_keys(doc, animation, &keys, delta, copy)?;
+        }
+        Command::PasteKeys {
+            animation,
+            bone,
+            time,
+            clipboard,
+        } => {
+            crate::timeline::paste_keys(doc, animation, bone, time, &clipboard)?;
         }
         Command::Batch { commands } => {
             for command in commands {
