@@ -26,6 +26,10 @@ pub fn load(path: &Path) -> Result<Document, String> {
 
 pub fn decode_project(text: &str) -> Result<Document, String> {
     let mut value: serde_json::Value = serde_json::from_str(text).map_err(|e| e.to_string())?;
+    let original_format = value["format"].as_u64();
+    if matches!(original_format, Some(1..=6)) {
+        reject_legacy_slot_color(&value)?;
+    }
     if matches!(value["format"].as_u64(), Some(1..=5)) && value.get("constraints").is_some() {
         return Err("Legacy project formats cannot contain constraints".into());
     }
@@ -76,6 +80,10 @@ pub fn decode_project(text: &str) -> Result<Document, String> {
         value["constraints"] = serde_json::json!([]);
         value["format"] = 6.into();
     }
+    if value["format"].as_u64() == Some(6) {
+        add_v6_slot_colors(&mut value)?;
+        value["format"] = 7.into();
+    }
     let mut doc: Document = serde_json::from_value(value).map_err(|e| e.to_string())?;
     // Wrapping vertices preserves their values and all surrounding fields. Decode
     // the strict schema and validate every legacy field before adding duration holds.
@@ -84,6 +92,37 @@ pub fn decode_project(text: &str) -> Result<Document, String> {
         materialize_v2_holds(&mut doc, durations)?;
     }
     Ok(doc)
+}
+
+fn reject_legacy_slot_color(value: &serde_json::Value) -> Result<(), String> {
+    if value["slots"]
+        .as_array()
+        .is_some_and(|slots| slots.iter().any(|slot| slot.get("color").is_some()))
+    {
+        return Err("Legacy project formats cannot contain slot color fields".into());
+    }
+    Ok(())
+}
+
+fn add_v6_slot_colors(value: &mut serde_json::Value) -> Result<(), String> {
+    let slots = value["slots"]
+        .as_array_mut()
+        .ok_or("Legacy slots must be an array")?;
+    for slot in slots {
+        let mut candidate = slot.clone();
+        candidate
+            .as_object_mut()
+            .ok_or("Legacy slot must be an object")?
+            .insert("color".into(), serde_json::json!([255, 255, 255, 255]));
+        // Validate the existing slot shape/types before materializing the sole
+        // new field. Cross-entity semantics remain Document::validate's job.
+        serde_json::from_value::<peachy_document::Slot>(candidate)
+            .map_err(|error| error.to_string())?;
+        slot.as_object_mut()
+            .expect("Validated slot object")
+            .insert("color".into(), serde_json::json!([255, 255, 255, 255]));
+    }
+    Ok(())
 }
 
 fn reject_legacy_shear(value: &serde_json::Value) -> Result<(), String> {
@@ -431,6 +470,12 @@ mod tests {
             Some(serde_json::json!([]))
         );
         v["format"] = 1.into();
+        for slot in v["slots"].as_array_mut().unwrap() {
+            assert_eq!(
+                slot.as_object_mut().unwrap().remove("color"),
+                Some(serde_json::json!([255, 255, 255, 255]))
+            );
+        }
         for bone in v["bones"].as_array_mut().unwrap() {
             for field in ["shear_x", "shear_y"] {
                 assert_eq!(bone["setup"][field].as_f64(), Some(0.0));

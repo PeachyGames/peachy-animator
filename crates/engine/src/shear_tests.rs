@@ -831,11 +831,13 @@ fn sheared_weighted_and_region_scene_matches_original_external_observation_point
     };
     document.slots = vec![
         Slot {
+            color: [255; 4],
             name: "mesh".into(),
             bone: 0,
             attachment: Some("mesh".into()),
         },
         Slot {
+            color: [255; 4],
             name: "region".into(),
             bone: 2,
             attachment: Some("region".into()),

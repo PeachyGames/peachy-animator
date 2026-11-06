@@ -54,6 +54,7 @@ fn rig(mesh: Mesh) -> Document {
         }],
         constraints: vec![],
         slots: vec![Slot {
+            color: [255; 4],
             name: "surface".into(),
             bone: 0,
             attachment: Some("mesh".into()),

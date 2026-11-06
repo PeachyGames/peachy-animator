@@ -413,6 +413,7 @@ fn contextual_edits_change_only_the_addressed_entity_and_undo_atomically() {
 fn picking_respects_triangles_draw_order_reflections_and_visibility_bounds() {
     let make = |slot, vertices: Vec<[f32; 2]>, triangles: Vec<u32>| AttachmentDraw {
         slot,
+        color: [255; 4],
         attachment: hand(),
         image: "original".into(),
         hull: vertices.len(),

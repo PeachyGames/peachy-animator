@@ -91,6 +91,7 @@ pub(super) fn rig() -> Document {
             ),
         ],
         slots: vec![Slot {
+            color: [255; 4],
             name: "weighted".into(),
             bone: 2,
             attachment: Some("shape".into()),
@@ -312,6 +313,7 @@ fn scene_uses_transient_posed_locals_and_the_same_weighted_geometry_for_bounds_a
 fn region_and_slot_local_mesh_paths_apply_the_slot_transform_once_and_keep_draw_order() {
     let mut doc = rig();
     doc.slots.push(Slot {
+        color: [255; 4],
         name: "overlay".into(),
         bone: 3,
         attachment: Some("shape".into()),

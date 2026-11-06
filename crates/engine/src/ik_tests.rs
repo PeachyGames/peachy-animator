@@ -550,6 +550,7 @@ fn relevant_wide_target_math_accepts_exact_large_and_tiny_directions_without_glo
 fn partial_mix_weight_binding_add_and_unbind_use_applied_snapshot_once_with_pending_history() {
     let mut document = one(0.5);
     document.slots.push(Slot {
+        color: [255; 4],
         name: "surface".into(),
         bone: 0,
         attachment: Some("triangle".into()),

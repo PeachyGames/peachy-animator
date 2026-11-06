@@ -42,6 +42,10 @@ pub enum Command {
         slot: usize,
         attachment: Option<String>,
     },
+    SetSlotColor {
+        slot: usize,
+        color: [u8; 4],
+    },
     SetKey {
         animation: usize,
         bone: usize,
@@ -221,6 +225,9 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
                 return Err("Unknown attachment placeholder for slot".into());
             }
             doc.slots[slot].attachment = attachment;
+        }
+        Command::SetSlotColor { slot, color } => {
+            doc.slots.get_mut(slot).ok_or("Unknown slot")?.color = color;
         }
         Command::ConvertRegionToMesh { attachment } => {
             let value = doc

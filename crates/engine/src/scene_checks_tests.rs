@@ -15,6 +15,7 @@ fn fixture() -> Document {
             setup: Transform::default(),
         }],
         slots: vec![Slot {
+            color: [255; 4],
             name: "body".into(),
             bone: 0,
             attachment: Some("triangle".into()),

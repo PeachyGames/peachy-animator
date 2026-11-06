@@ -110,8 +110,11 @@ pub fn inspect(value: &Value) -> Inspection {
         if slot["blend"].as_str().is_some_and(|v| v != "normal") {
             unsupported.push(format!("Slot {name}: blend mode"));
         }
-        if slot["color"].as_str().is_some_and(|v| v != "ffffffff") || slot.get("dark").is_some() {
-            unsupported.push(format!("Slot {name}: tint"));
+        if let Err(error) = read_slot_color(slot) {
+            unsupported.push(format!("Slot {name}: {error}"));
+        }
+        if slot.get("dark").is_some() {
+            unsupported.push(format!("Slot {name}: dark/two-color tint is unsupported"));
         }
         unknown_fields(
             slot,
@@ -299,6 +302,7 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
                 .get(required_string(slot, "bone")?)
                 .ok_or("Unknown slot bone")?,
             attachment: slot["attachment"].as_str().map(str::to_owned),
+            color: read_slot_color(slot)?,
         });
     }
     let mut skins = BTreeMap::new();
@@ -436,6 +440,10 @@ pub fn export_json(doc: &Document) -> Result<Value, String> {
             if let Some(a) = &s.attachment {
                 slot["attachment"] = json!(a);
             }
+            if s.color != [255; 4] {
+                let [r, g, b, a] = s.color;
+                slot["color"] = json!(format!("{r:02x}{g:02x}{b:02x}{a:02x}"));
+            }
             slot
         })
         .collect();
@@ -500,6 +508,33 @@ pub fn export_json(doc: &Document) -> Result<Value, String> {
         output["constraints"] = constraints::write(doc);
     }
     Ok(output)
+}
+
+/// Independent strict parser for the public setup-slot RGB/RGBA contract.
+/// Six ASCII hex digits imply opaque alpha; native storage always has four bytes.
+fn read_slot_color(slot: &Value) -> Result<[u8; 4], String> {
+    let Some(value) = slot.get("color") else {
+        return Ok([255; 4]);
+    };
+    let text = value
+        .as_str()
+        .ok_or("Setup slot color must be a hexadecimal string")?;
+    let bytes = text.as_bytes();
+    if !matches!(bytes.len(), 6 | 8) || !bytes.iter().all(u8::is_ascii_hexdigit) {
+        return Err("Setup slot color must contain 6 RGB or 8 RGBA ASCII hex digits".into());
+    }
+    let hex = |byte: u8| match byte {
+        b'0'..=b'9' => byte - b'0',
+        b'a'..=b'f' => byte - b'a' + 10,
+        b'A'..=b'F' => byte - b'A' + 10,
+        _ => unreachable!("ASCII hex checked above"),
+    };
+    let mut color = [255; 4];
+    let (pairs, _) = bytes.as_chunks::<2>();
+    for (channel, &[high, low]) in pairs.iter().enumerate() {
+        color[channel] = hex(high) * 16 + hex(low);
+    }
+    Ok(color)
 }
 
 fn checked_curve_coordinate(value: f64, context: &str) -> Result<f32, String> {
@@ -943,6 +978,7 @@ mod tests {
     fn target_naming_restrictions_do_not_leak_into_the_document_model() {
         let mut doc = import_json(&fixture(), "test").unwrap();
         doc.slots.push(Slot {
+            color: [255; 4],
             name: "body".into(),
             bone: 0,
             attachment: Some("shared".into()),

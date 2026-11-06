@@ -125,6 +125,16 @@ pub fn command_schema() -> Value {
             ],
         ),
         command(
+            "setSlotColor",
+            &[
+                ("slot", index()),
+                (
+                    "color",
+                    json!({"type":"array","items":{"type":"integer","minimum":0,"maximum":255},"minItems":4,"maxItems":4}),
+                ),
+            ],
+        ),
+        command(
             "setKey",
             &[
                 ("animation", index()),
@@ -250,6 +260,7 @@ mod tests {
             Command::SetBoneLength { .. } => "setBoneLength",
             Command::SetRegionTransform { .. } => "setRegionTransform",
             Command::SetSlotAttachment { .. } => "setSlotAttachment",
+            Command::SetSlotColor { .. } => "setSlotColor",
             Command::SetKey { .. } => "setKey",
             Command::DeleteKey { .. } => "deleteKey",
             Command::MoveKeys { .. } => "moveKeys",
@@ -306,7 +317,7 @@ mod tests {
     fn every_published_shape_decodes_through_strict_engine_serde() {
         let schema = command_schema();
         let variants = schema["oneOf"].as_array().unwrap();
-        assert_eq!(variants.len(), 24);
+        assert_eq!(variants.len(), 25);
         for variant in variants {
             let payload = sample(variant);
             let command: CommandInput = serde_json::from_value(payload.clone()).unwrap();
