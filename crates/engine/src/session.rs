@@ -69,7 +69,10 @@ impl Session {
         });
         Ok(())
     }
-    fn mesh_bind_pose(&self, target: EditTarget) -> Result<MeshBindPose, String> {
+    /// Snapshot setup or current animation locals, including pending pose edits,
+    /// for reproducible command previews. This is read-only: it neither keys nor
+    /// discards a pose and leaves document, saved state and history unchanged.
+    pub fn mesh_bind_pose(&self, target: EditTarget) -> Result<MeshBindPose, String> {
         let locals = match target {
             EditTarget::Setup => self
                 .document()
