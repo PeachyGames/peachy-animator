@@ -306,7 +306,7 @@ def main():
         peach[slot] = {slot: {**skin[slot][slot], "name": slot+".peach"}}
     # Skin placeholders must not collide with direct attachments in default.
     shared = {slot: entries for slot, entries in skin.items() if slot not in peach}
-    doc = dict(format=NATIVE_FORMAT, name="Peach Bot", fps=30, bones=bones, slots=slots, skins={"default":shared,"peach":peach,"mint":mint}, animations=[dict(name="wave",tracks=wave),dict(name="idle",tracks=idle)])
+    doc = dict(format=NATIVE_FORMAT, name="Peach Bot", fps=30, bones=bones, constraints=[], slots=slots, skins={"default":shared,"peach":peach,"mint":mint}, animations=[dict(name="wave",tracks=wave),dict(name="idle",tracks=idle)])
     (ROOT/"peach-bot.peachy").write_text(json.dumps(doc, indent=2)+"\n")
     contract = json.loads(json.dumps(doc))
     contract["name"] = "Transform Contract"
