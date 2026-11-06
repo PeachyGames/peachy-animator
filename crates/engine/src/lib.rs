@@ -1,6 +1,7 @@
 //! Functional animation core and the in-memory session that records its results.
 mod authoring;
 mod commands;
+mod ghosting;
 mod ik;
 mod ik_solver;
 mod mesh;
@@ -16,6 +17,10 @@ mod tools;
 
 pub use authoring::{KeyState, PoseEdits, transform_group};
 pub use commands::{Command, EditTarget, apply_command, keyframe_at};
+pub use ghosting::{
+    GhostRange, GhostSample, GhostSampling, GhostSide, GhostSource, MAX_GHOST_SAMPLES,
+    ghost_samples,
+};
 pub use ik::{EvaluatedPose, checked_evaluate_pose, checked_pose_from_locals};
 pub use mesh::{mesh_world_vertices, region_to_mesh, region_vertices};
 pub use mesh_binding::MeshBindPose;
