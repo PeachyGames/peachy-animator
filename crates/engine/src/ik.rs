@@ -148,3 +148,33 @@ pub(crate) fn check_world(doc: &Document, world: &[Affine]) -> Result<(), String
     }
     Ok(())
 }
+
+/// Key conversion must retain actual evaluated geometry, not merely a finite Mix.
+pub(crate) fn check_key_continuity(
+    doc: &Document,
+    before: &EvaluatedPose,
+    after: &EvaluatedPose,
+) -> Result<(), String> {
+    for ((bone, before), after) in doc.bones.iter().zip(before.world()).zip(after.world()) {
+        let components = |m: &Affine| {
+            let tip = m.point(bone.length, 0.);
+            [m.a, m.b, m.c, m.d, m.x, m.y, tip[0], tip[1]]
+        };
+        if components(before)
+            .into_iter()
+            .zip(components(after))
+            .any(|(a, b)| {
+                !a.is_finite()
+                    || !b.is_finite()
+                    || (f64::from(a) - f64::from(b)).abs()
+                        > crate::ik_solver::IK_WORLD_COORDINATE_TOLERANCE
+            })
+        {
+            return Err(format!(
+                "Keying IK would move bone {} beyond coordinate precision (0.001); keep the pending pose or choose a representable key time/value",
+                bone.name
+            ));
+        }
+    }
+    Ok(())
+}
