@@ -119,7 +119,7 @@ pub(super) fn pose_key_button(ui: &mut egui::Ui, state: KeyState) -> egui::Respo
 mod tests {
     use super::super::dopesheet_selection::KeyId;
     use super::super::key_drag::{ChartGeometry, KeyDrag};
-    use super::super::test_support::editor_fixture;
+    use super::super::test_support::{editor_context, editor_fixture};
     use super::*;
 
     fn empty_editor() -> Editor {
@@ -133,7 +133,7 @@ mod tests {
     }
 
     fn render_timeline(editor: &mut Editor) {
-        let ctx = egui::Context::default();
+        let ctx = editor_context();
         let mut output = ctx.run_ui(egui::RawInput::default(), |ui| {
             ui.set_min_size(vec2(1000., 240.));
             editor.timeline(ui);

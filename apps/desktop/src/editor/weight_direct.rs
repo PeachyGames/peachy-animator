@@ -343,7 +343,7 @@ impl Editor {
 
 #[cfg(test)]
 mod tests {
-    use super::super::test_support::mesh_editor;
+    use super::super::test_support::{editor_context, mesh_editor};
     use super::*;
 
     fn ready() -> (Editor, AttachmentRef) {
@@ -553,7 +553,7 @@ mod tests {
     #[test]
     fn numeric_frames_preview_across_pointer_idle_enter_commits_and_escape_restores_baseline() {
         let (mut editor, key) = ready();
-        let ctx = egui::Context::default();
+        let ctx = editor_context();
         frame(&mut editor, &ctx, vec![]);
         click(&mut editor, &ctx, "weightsWeightValue");
         frame(&mut editor, &ctx, vec![egui::Event::Text("30".into())]);
@@ -642,7 +642,7 @@ mod tests {
     fn held_pointer_escape_history_and_save_cannot_restart_a_cancelled_weight_gesture() {
         for key in [egui::Key::Escape, egui::Key::Z, egui::Key::S] {
             let (mut editor, attachment) = ready();
-            let ctx = egui::Context::default();
+            let ctx = editor_context();
             let folder = save_folder(&mut editor);
             let original = editor.session.document().clone();
             let (_, end) = slider_down(&mut editor, &ctx);
@@ -674,7 +674,7 @@ mod tests {
     fn numeric_save_cancels_before_write_and_stale_enter_or_lost_focus_cannot_reapply() {
         let (mut editor, key) = ready();
         let folder = save_folder(&mut editor);
-        let ctx = egui::Context::default();
+        let ctx = editor_context();
         frame(&mut editor, &ctx, vec![]);
         click(&mut editor, &ctx, "weightsWeightValue");
         frame(&mut editor, &ctx, vec![egui::Event::Text("30".into())]);
@@ -703,7 +703,7 @@ mod tests {
         let (mut editor, key) = ready();
         editor.set_setup_mode(false);
         editor.select(TreeItem::Bone(8));
-        let ctx = egui::Context::default();
+        let ctx = editor_context();
         frame(&mut editor, &ctx, vec![]);
         click(&mut editor, &ctx, "weightsWeightValue");
         frame(&mut editor, &ctx, vec![egui::Event::Text("30".into())]);
@@ -732,7 +732,7 @@ mod tests {
     fn numeric_text_tool_priority_tab_commit_and_window_focus_loss_are_explicit() {
         let (mut editor, key) = ready();
         editor.set_tool(Tool::Rotate);
-        let ctx = egui::Context::default();
+        let ctx = editor_context();
         frame(&mut editor, &ctx, vec![]);
         click(&mut editor, &ctx, "weightsWeightValue");
         frame(
@@ -777,7 +777,7 @@ mod tests {
     fn real_toolbar_save_click_cancels_numeric_preview_on_release_before_persisting() {
         let (mut editor, key) = ready();
         let folder = save_folder(&mut editor);
-        let ctx = egui::Context::default();
+        let ctx = editor_context();
         frame(&mut editor, &ctx, vec![]);
         click(&mut editor, &ctx, "weightsWeightValue");
         frame(&mut editor, &ctx, vec![egui::Event::Text("30".into())]);
@@ -841,7 +841,7 @@ mod tests {
             .unwrap();
         editor.undo();
         let original = editor.session.document().clone();
-        let ctx = egui::Context::default();
+        let ctx = editor_context();
         frame(&mut editor, &ctx, vec![]);
         click(&mut editor, &ctx, "weightsWeightValue");
         frame(
@@ -886,7 +886,7 @@ mod tests {
             .unwrap();
         editor.undo();
         let original = editor.session.document().clone();
-        let ctx = egui::Context::default();
+        let ctx = editor_context();
         frame(&mut editor, &ctx, vec![]);
         click(&mut editor, &ctx, "weightsWeightValue");
         frame(&mut editor, &ctx, vec![egui::Event::Text("junk".into())]);

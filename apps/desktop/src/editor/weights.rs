@@ -401,7 +401,7 @@ impl Editor {
 
 #[cfg(test)]
 mod tests {
-    use super::super::test_support::mesh_editor;
+    use super::super::test_support::{editor_context, mesh_editor};
     use super::*;
 
     fn world(editor: &Editor, key: &AttachmentRef) -> Vec<[f32; 2]> {
@@ -688,7 +688,7 @@ mod tests {
     #[test]
     fn weights_shortcuts_respect_text_modals_exit_bind_and_retain_tool_selection() {
         let (mut editor, key) = mesh_editor(false);
-        let ctx = egui::Context::default();
+        let ctx = editor_context();
         input(&mut editor, &ctx, chord(egui::Key::G), false);
         assert!(editor.tool == Tool::Weights && editor.show_weights);
         editor.weights.vertex = Some(2);
@@ -735,7 +735,7 @@ mod tests {
             (egui::Key::X, Tool::Scale),
         ] {
             let (mut editor, _) = mesh_editor(true);
-            let ctx = egui::Context::default();
+            let ctx = editor_context();
             input(&mut editor, &ctx, chord(egui::Key::G), false);
             input(&mut editor, &ctx, chord(key), false);
             assert!(editor.tool == tool);
@@ -743,7 +743,7 @@ mod tests {
             assert!(editor.tool == Tool::Weights);
         }
         let (mut editor, _) = mesh_editor(true);
-        let ctx = egui::Context::default();
+        let ctx = editor_context();
         editor.show_weights = false;
         editor.toggle_views();
         input(&mut editor, &ctx, chord(egui::Key::G), false);
@@ -828,7 +828,7 @@ mod tests {
         editor.select(TreeItem::Bone(7));
         assert!(editor.error.is_none());
         assert_eq!(editor.time, 0.7);
-        let ctx = egui::Context::default();
+        let ctx = editor_context();
         editor.set_tool(Tool::Rotate);
         editor.select(TreeItem::Bone(8));
         let mut output = ctx.run_ui(egui::RawInput::default(), |ui| {

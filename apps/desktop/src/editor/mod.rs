@@ -11,6 +11,7 @@ mod rename;
 mod selection;
 mod selection_history;
 mod shortcuts;
+mod style;
 #[cfg(test)]
 mod test_support;
 mod timeline_clipboard;
@@ -138,26 +139,7 @@ impl Editor {
         capture: Option<PathBuf>,
     ) -> Self {
         crate::platform::configure_shortcuts();
-        cc.egui_ctx.options_mut(|o| o.zoom_with_keyboard = false);
-        cc.egui_ctx.set_theme(egui::ThemePreference::Dark);
-        let mut style = (*cc.egui_ctx.style_of(egui::Theme::Dark)).clone();
-        style.visuals = egui::Visuals::dark();
-        style.visuals.panel_fill = PANEL;
-        style.visuals.window_fill = PANEL;
-        style.visuals.selection.bg_fill = Color32::from_rgb(91, 68, 45);
-        style.visuals.selection.stroke = Stroke::new(1.0, ACCENT);
-        style.visuals.widgets.active.bg_fill = Color32::from_rgb(106, 77, 47);
-        style.visuals.widgets.hovered.bg_fill = Color32::from_rgb(77, 77, 77);
-        style.visuals.widgets.inactive.bg_fill = Color32::from_rgb(66, 66, 66);
-        style.spacing.item_spacing = vec2(6.0, 5.0);
-        style.spacing.button_padding = vec2(7.0, 3.0);
-        style
-            .text_styles
-            .insert(egui::TextStyle::Body, FontId::proportional(13.0));
-        style
-            .text_styles
-            .insert(egui::TextStyle::Button, FontId::proportional(13.0));
-        cc.egui_ctx.set_style_of(egui::Theme::Dark, style);
+        style::configure_editor_context(&cc.egui_ctx);
         let demo = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("../../examples/peach-bot/peach-bot.peachy");
         let path = project.clone().unwrap_or(demo);
