@@ -28,6 +28,7 @@ impl Editor {
                     ui.checkbox(&mut self.tree.filters.attachments, "Attachments");
                     ui.checkbox(&mut self.tree.filters.skins, "Skins");
                     ui.checkbox(&mut self.tree.filters.animations, "Animations");
+                    ui.checkbox(&mut self.tree.filters.constraints, "Constraints");
                     if ui.button("Reset").clicked() {
                         self.tree.filters = Filters::default();
                     }
@@ -57,6 +58,7 @@ impl Editor {
                         attachments: false,
                         skins: false,
                         animations: false,
+                        constraints: false,
                     },
                 ),
                 (
@@ -67,6 +69,7 @@ impl Editor {
                         attachments: false,
                         skins: false,
                         animations: false,
+                        constraints: false,
                     },
                 ),
                 (
@@ -77,6 +80,7 @@ impl Editor {
                         attachments: true,
                         skins: false,
                         animations: false,
+                        constraints: false,
                     },
                 ),
             ] {
@@ -158,7 +162,8 @@ impl Editor {
                         let inactive = e
                             .item
                             .attachment()
-                            .is_some_and(|k| !self.attachment_editable(k));
+                            .is_some_and(|k| !self.attachment_editable(k))
+                            || matches!(e.item, TreeItem::Constraint(index) if self.ik_constraint(index).is_some_and(|ik|ik.setup.mix == 0.));
                         let row = ui.selectable_label(
                             selected,
                             RichText::new(format!("    {}", e.label)).color(if selected {
@@ -208,6 +213,21 @@ impl Editor {
                                 "Skin: {}\nSlot: {}\nPlaceholder: {}",
                                 k.skin, k.slot, k.placeholder
                             ));
+                        }
+                        if let TreeItem::Bone(bone) = e.item {
+                            let annotations: Vec<_> = self.session.document().constraints.iter().enumerate().filter_map(|(index,constraint)| {
+                                let Constraint::Ik(ik)=constraint;
+                                (ik.bones.contains(&bone) || ik.target==bone).then(||(index,ik.name.clone()))
+                            }).collect();
+                            if !annotations.is_empty() {
+                                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center),|ui| {
+                                    for (constraint,name) in annotations.into_iter().rev() {
+                                        let annotation=icons::toolbar_button(ui,icons::Icon::IkConstraint,&format!("Select IK constraint: {name}"),"",true);
+                                        self.record_target(&format!("ikAnnotation:{bone}:{constraint}"),annotation.rect);
+                                        if annotation.clicked() { actions.push(Action::Select(TreeItem::Constraint(constraint))); }
+                                    }
+                                });
+                            }
                         }
                     });
                 }
@@ -357,6 +377,9 @@ fn draw_icon(p: &egui::Painter, origin: Pos2, item: &TreeItem, color: Color32) {
     let stroke = Stroke::new(1., color);
     let r = egui::Rect::from_min_size(origin, vec2(10., 10.));
     match item {
+        TreeItem::Constraint(_) | TreeItem::Folder(Folder::Constraints) => {
+            icons::draw_ik(p, r, color)
+        }
         TreeItem::Bone(_) => {
             p.line_segment(
                 [origin + vec2(1., 8.), origin + vec2(9., 1.)],

@@ -10,6 +10,7 @@ pub struct Filters {
     pub attachments: bool,
     pub skins: bool,
     pub animations: bool,
+    pub constraints: bool,
 }
 impl Default for Filters {
     fn default() -> Self {
@@ -19,6 +20,7 @@ impl Default for Filters {
             attachments: true,
             skins: true,
             animations: true,
+            constraints: true,
         }
     }
 }
@@ -174,6 +176,17 @@ pub fn project(doc: &Document, skin: &str, setup: bool, options: &TreeState) -> 
             add(&mut entries, TreeItem::Animation(i), Some(group), doc);
         }
     }
+    if options.filters.constraints {
+        let group = add(
+            &mut entries,
+            TreeItem::Folder(Folder::Constraints),
+            Some(root),
+            doc,
+        );
+        for index in 0..doc.constraints.len() {
+            add(&mut entries, TreeItem::Constraint(index), Some(group), doc);
+        }
+    }
     let query = options.query.trim().to_lowercase();
     if !query.is_empty() {
         for entry in &mut entries {
@@ -238,6 +251,72 @@ mod tests {
             "../../../../examples/peach-bot/mesh-bot.peachy"
         ))
         .unwrap()
+    }
+    #[test]
+    fn constraint_rows_keep_application_order_and_typed_search_reveal_and_filtering() {
+        use peachy_document::{Constraint, IkConstraint, IkSetup};
+        let mut d = doc();
+        d.constraints = [("z-last", vec![7, 8]), ("a-first", vec![3, 4])]
+            .into_iter()
+            .map(|(name, bones)| {
+                Constraint::Ik(IkConstraint {
+                    name: name.into(),
+                    bones,
+                    target: 0,
+                    setup: IkSetup {
+                        mix: 1.,
+                        bend_positive: true,
+                    },
+                })
+            })
+            .collect();
+        let mut state = TreeState::for_document(&d, "peach");
+        let rows = project(&d, "peach", true, &state);
+        let constraints: Vec<_> = rows
+            .iter()
+            .filter(|entry| matches!(entry.item, TreeItem::Constraint(_)))
+            .map(|entry| entry.label.as_str())
+            .collect();
+        assert_eq!(constraints, ["z-last", "a-first"]);
+        let selected = TreeItem::Constraint(1);
+        assert_eq!(selected.bone(), None);
+        assert_eq!(selected.slot(&d), None);
+        assert!(selected.attachment().is_none());
+        state
+            .collapsed
+            .insert(TreeItem::Folder(Folder::Constraints).key());
+        state.reveal(&d, "peach", true, &selected);
+        assert!(
+            !state
+                .collapsed
+                .contains(&TreeItem::Folder(Folder::Constraints).key())
+        );
+        state.query = "a-first".into();
+        let rows = project(&d, "peach", false, &state);
+        let visible: Vec<_> = rows
+            .iter()
+            .enumerate()
+            .filter(|(index, _)| row_visible(&rows, *index, &state))
+            .map(|(_, entry)| entry.item.clone())
+            .collect();
+        assert_eq!(
+            visible,
+            [
+                TreeItem::Skeleton,
+                TreeItem::Folder(Folder::Constraints),
+                selected.clone()
+            ]
+        );
+        state.filters.constraints = false;
+        assert!(
+            project(&d, "peach", false, &state)
+                .iter()
+                .all(|entry| !matches!(entry.item, TreeItem::Constraint(_)))
+        );
+        let mut selection = Some(selected);
+        d.constraints.pop();
+        super::super::selection::reconcile(&mut selection, &d);
+        assert_eq!(selection, None);
     }
     #[test]
     fn skin_placeholders_show_active_appearance_and_default_fallback_without_duplicates() {
@@ -305,6 +384,7 @@ mod tests {
             attachments: false,
             skins: false,
             animations: false,
+            constraints: false,
         };
         let rows = project(&d, "peach", true, &state);
         let slots: Vec<_> = rows

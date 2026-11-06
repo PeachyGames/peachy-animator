@@ -8,6 +8,20 @@ pub(super) fn editor_context() -> egui::Context {
     ctx
 }
 
+/// Render the actual application UI with its shared native style and transaction settlement.
+pub(super) fn workspace_frame(editor: &mut Editor, ctx: &egui::Context, events: Vec<egui::Event>) {
+    let mut output = ctx.run_ui(
+        egui::RawInput {
+            screen_rect: Some(egui::Rect::from_min_size(Pos2::ZERO, vec2(1500., 960.))),
+            focused: true,
+            events,
+            ..Default::default()
+        },
+        |ui| editor.workspace_ui(ui),
+    );
+    output.textures_delta.clear();
+}
+
 pub(super) fn editor_fixture() -> Editor {
     let mut doc: Document = serde_json::from_str(include_str!(
         "../../../../examples/peach-bot/peach-bot.peachy"
@@ -72,6 +86,9 @@ pub(super) fn editor_fixture() -> Editor {
         weight_blocked: None,
         weight_controls: None,
         weights_handles: Vec::new(),
+        ik_edit: None,
+        ik_blocked: None,
+        ik_target: None,
         hidden_views: None,
         drag: None,
         transform_blocked: false,

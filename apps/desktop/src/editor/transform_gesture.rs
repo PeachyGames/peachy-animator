@@ -20,6 +20,8 @@ enum Input {
 pub(super) struct TransformEdit {
     item: TreeItem,
     initial: Transform,
+    applied_initial: Transform,
+    applied_world: Affine,
     parent: Affine,
     tool: Tool,
     axes: Axes,
@@ -33,7 +35,7 @@ pub(super) struct TransformEdit {
     error: Option<String>,
 }
 
-fn numeric_intent(ctx: &egui::Context) -> bool {
+pub(super) fn numeric_intent(ctx: &egui::Context) -> bool {
     ctx.input(|input| input.events.iter().any(|event| {
         matches!(event, egui::Event::Text(_) | egui::Event::Paste(_) | egui::Event::Cut
             | egui::Event::Ime(egui::ImeEvent::Commit(_) | egui::ImeEvent::DeleteSurrounding { .. })
@@ -59,12 +61,8 @@ impl Editor {
         {
             return Err("Select a bone for Shear, or an editable transform".into());
         }
-        let initial = self
-            .selected_transform()
-            .ok_or("Selected transform is unavailable")?;
-        let parent = self
-            .selected_parent()
-            .ok_or("Selected parent is unavailable")?;
+        let pose = self.selected_pose()?;
+        let (initial, parent) = (pose.authored, pose.parent);
         if let Input::Numeric {
             property,
             ref mut base,
@@ -88,6 +86,8 @@ impl Editor {
         self.drag = Some(TransformEdit {
             item: self.selection.clone().unwrap(),
             initial,
+            applied_initial: pose.applied,
+            applied_world: pose.world,
             parent,
             tool: self.tool,
             axes: self.axes,
@@ -291,23 +291,26 @@ impl Editor {
             } else {
                 vec![property]
             };
-            let current =
-                self.selected_transform()
-                    .zip(self.selected_parent())
-                    .map(|(local, parent)| {
-                        property.read(
-                            if property.is_scale()
-                                || matches!(property, Property::ShearX | Property::ShearY)
-                            {
-                                local
-                            } else {
-                                peachy_engine::transform_values(local, parent, self.axes)
-                            },
-                        )
-                    });
-            let Some(base) = current else {
-                return;
+            let current = match self.selected_pose() {
+                Ok(pose) => {
+                    let (local, parent) = (pose.authored, pose.parent);
+                    property.read(
+                        if property.is_scale()
+                            || matches!(property, Property::ShearX | Property::ShearY)
+                        {
+                            local
+                        } else {
+                            peachy_engine::transform_values(local, parent, self.axes)
+                        },
+                    )
+                }
+                Err(error) => {
+                    self.evaluation_error = Some(error.clone());
+                    self.status = error;
+                    return;
+                }
             };
+            let base = current;
             if let Err(error) = self.begin_transform_edit(
                 properties,
                 Input::Numeric {
@@ -428,7 +431,7 @@ impl Editor {
     }
     pub(super) fn transform_gesture_diagnostic(&self) -> serde_json::Value {
         self.drag.as_ref().map_or(serde_json::Value::Null,|edit|serde_json::json!({
-            "item":edit.item.diagnostic(),"tool":match edit.tool {Tool::Rotate=>"rotate",Tool::Move=>"translate",Tool::Scale=>"scale",Tool::Shear=>"shear",Tool::Mesh=>"mesh",Tool::Weights=>"weights"},"initialPose":edit.initial,"parent":edit.parent,"axes":edit.axes,
+            "item":edit.item.diagnostic(),"tool":match edit.tool {Tool::Rotate=>"rotate",Tool::Move=>"translate",Tool::Scale=>"scale",Tool::Shear=>"shear",Tool::Mesh=>"mesh",Tool::Weights=>"weights"},"initialPose":edit.initial,"appliedInitialPose":edit.applied_initial,"appliedWorld":edit.applied_world,"parent":edit.parent,"axes":edit.axes,
             "setup":edit.setup,"animation":edit.animation,"time":edit.time,"autoKey":edit.auto_key,
             "properties":edit.properties,"error":edit.error,"finishPending":edit.finish_pending,
             "input":match edit.input {Input::Viewport {start,axis}=>serde_json::json!({"kind":"viewport","start":start,"axis":axis}),

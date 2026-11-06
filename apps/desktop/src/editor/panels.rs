@@ -220,10 +220,25 @@ impl Editor {
         properties: &[Property],
         tool: Option<Tool>,
     ) {
-        let local = self.selected_transform().unwrap_or_default();
-        let parent = self
-            .selected_parent()
-            .unwrap_or_else(|| Affine::from_transform(Transform::default()));
+        let (local, parent, query_error) = if self.transform_editable() {
+            match self.selected_pose() {
+                Ok(pose) => (pose.authored, pose.parent, None),
+                Err(error) => {
+                    self.evaluation_error = Some(error.clone());
+                    (
+                        Transform::default(),
+                        Affine::from_transform(Transform::default()),
+                        Some(error),
+                    )
+                }
+            }
+        } else {
+            (
+                Transform::default(),
+                Affine::from_transform(Transform::default()),
+                None,
+            )
+        };
         let mut shown = peachy_engine::transform_values(local, parent, self.axes);
         if self.setup_mode {
             shown.rotation = shown.rotation.rem_euclid(360.);
@@ -262,6 +277,7 @@ impl Editor {
             } else {
                 ui.add_sized([112.0, 22.0], egui::Label::new(label));
             }
+            if let Some(error)=query_error { ui.colored_label(ACCENT,"Pose evaluation error").on_hover_text(error); return; }
             ui.add_enabled_ui(editable, |ui| {
                 if tool == Some(Tool::Shear) { ui.label(RichText::new("Local").small().color(MUTED)).on_hover_text("Shear angles are edited in local coordinates."); }
                 for &property in properties {

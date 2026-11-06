@@ -169,7 +169,18 @@ impl Editor {
                 [start, end],
                 Stroke::new(if selected { 2.5 } else { 1.3 }, color),
             );
-            painter.circle_filled(start, if selected { 5. } else { 3. }, color);
+            if doc.constraints.iter().any(|constraint| {
+                let Constraint::Ik(ik) = constraint;
+                ik.setup.mix > 0. && ik.bones.contains(&i)
+            }) {
+                painter.circle_stroke(
+                    start,
+                    if selected { 5. } else { 3. },
+                    Stroke::new(1.5, color),
+                );
+            } else {
+                painter.circle_filled(start, if selected { 5. } else { 3. }, color);
+            }
             if selected {
                 painter.circle_stroke(start, 13., Stroke::new(1., ACCENT));
                 painter.text(
@@ -180,7 +191,7 @@ impl Editor {
                     ACCENT,
                 );
             }
-            if (self.tree.filters.bones || self.weights.bind.is_some())
+            if (self.tree.filters.bones || self.weights.bind.is_some() || self.ik_target.is_some())
                 && let Some(mouse) = response.interact_pointer_pos()
             {
                 let distance = distance_to_segment(mouse, start, end);
@@ -354,14 +365,19 @@ impl Editor {
                 .as_ref()
                 .and_then(|item| super::tools::item_parent(item, doc, &scene.world))
         {
-            let pivot = screen(parent.point(local.x, local.y));
+            let (applied, world) = match self.selection.as_ref() {
+                Some(TreeItem::Bone(bone)) => (scene.applied_locals[*bone], scene.world[*bone]),
+                _ => (local, parent.then(Affine::from_transform(local))),
+            };
+            let pivot = screen(world.point(0., 0.));
             self.record_target(
                 "gizmoOrigin",
                 egui::Rect::from_center_size(pivot, vec2(6., 6.)),
             );
-            let basis = peachy_engine::transform_axes(
-                local,
+            let basis = peachy_engine::transform_axes_from_world(
+                applied,
                 parent,
+                world,
                 self.axes,
                 self.tool.transform_tool().unwrap(),
             );
@@ -426,7 +442,7 @@ impl Editor {
         painter.text(
             rect.left_bottom() + vec2(12., -14.),
             egui::Align2::LEFT_BOTTOM,
-            if self.weights.bind.is_some() {
+            if self.weights.bind.is_some() || self.ik_target.is_some() {
                 &self.status
             } else if self.tool == Tool::Weights {
                 "Weights · select a vertex to inspect bindings · G"
@@ -444,6 +460,18 @@ impl Editor {
         );
         if response.clicked_by(egui::PointerButton::Secondary) {
             self.toggle_transform_tool();
+            return;
+        }
+        if self.ik_target.is_some() {
+            if response.clicked() {
+                if let Some(item) = picked {
+                    self.select(item);
+                } else {
+                    self.status =
+                        "Choose an existing target bone; new-target creation is not supported yet"
+                            .into();
+                }
+            }
             return;
         }
         if self.weights.bind.is_some() {

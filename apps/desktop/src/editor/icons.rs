@@ -22,6 +22,8 @@ pub(super) enum Icon {
     Tree,
     Dopesheet,
     Weights,
+    IkConstraint,
+    ChooseBone,
     RestoreWorkspace,
     MinimizeViews,
     RestoreViews,
@@ -288,6 +290,21 @@ fn paint(ui: &Ui, rect: Rect, icon: Icon, response: &Response) {
                 painter.circle_filled(point, 2. * rect.width() / SIZE, ink);
             }
         }
+        Icon::IkConstraint => draw_ik(&painter, rect, ink),
+        Icon::ChooseBone => {
+            line(
+                &[
+                    [3., 12.],
+                    [10.5, 2.5],
+                    [14., 6.],
+                    [6.5, 15.],
+                    [3., 15.],
+                    [3., 12.],
+                ],
+                ink,
+            );
+            line(&[[9., 4.5], [12.5, 8.]], ink);
+        }
         Icon::Views | Icon::RestoreWorkspace => {
             box_at([1.5, 2.], [14.5, 14.], ink);
             line(&[[2., 5.], [14., 5.]], blue);
@@ -334,4 +351,19 @@ fn paint(ui: &Ui, rect: Rect, icon: Icon, response: &Response) {
             );
         }
     }
+}
+
+pub(super) fn draw_ik(painter: &egui::Painter, rect: Rect, color: Color32) {
+    let p = |x: f32, y: f32| {
+        pos2(
+            rect.left() + x * rect.width() / 16.,
+            rect.top() + y * rect.height() / 16.,
+        )
+    };
+    let stroke = Stroke::new(rect.width() / 12., color);
+    painter.line_segment([p(2., 13.), p(6., 5.)], stroke);
+    painter.line_segment([p(6., 5.), p(12., 9.)], stroke);
+    painter.circle_filled(p(2., 13.), rect.width() / 10., color);
+    painter.circle_filled(p(6., 5.), rect.width() / 10., color);
+    painter.circle_stroke(p(12., 9.), rect.width() / 5., stroke);
 }

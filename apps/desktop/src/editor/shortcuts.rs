@@ -3,6 +3,8 @@ use super::*;
 
 impl Editor {
     pub(super) fn cancel_gesture(&mut self) {
+        self.cancel_ik_edit();
+        self.ik_target = None;
         self.cancel_weight_edit();
         self.cancel_dopesheet_drag();
         self.cancel_transform_edit();
@@ -145,7 +147,8 @@ impl Editor {
             self.capture = Some(self.capture_directory.join(format!("editor-{stamp}.png")));
             ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
         }
-        if self.transform_shortcuts(ctx)
+        if self.ik_shortcuts(ctx)
+            || self.transform_shortcuts(ctx)
             || self.weight_edit_shortcuts(ctx)
             || self.weights_shortcuts(ctx)
         {

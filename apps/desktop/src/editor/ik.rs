@@ -1,0 +1,599 @@
+//! Constraint controls route explicit identities into shared commands and checked queries.
+use super::*;
+
+pub(super) struct IkEdit {
+    constraint: usize,
+    base: IkConstraint,
+    animation: usize,
+    time: f32,
+    control: egui::Id,
+    numeric: bool,
+    touched: bool,
+    percent: f64,
+    finish_pending: bool,
+    error: Option<String>,
+}
+
+pub(super) struct IkTargetPicker {
+    constraint: usize,
+    base: IkConstraint,
+}
+
+impl Editor {
+    pub(super) fn ik_constraint(&self, index: usize) -> Option<&IkConstraint> {
+        let Constraint::Ik(ik) = self.session.document().constraints.get(index)?;
+        Some(ik)
+    }
+    fn selected_ik(&self) -> Option<usize> {
+        match self.selection {
+            Some(TreeItem::Constraint(index)) => Some(index),
+            _ => None,
+        }
+    }
+    fn ik_evaluation_status(&mut self) {
+        if let Err(error) = self.session.evaluated_pose(self.weights_edit_target()) {
+            self.status = format!("IK settings updated; pose cannot be evaluated: {error}");
+            self.evaluation_error = Some(error);
+        }
+    }
+    fn begin_ik_edit(&mut self, control: egui::Id, numeric: bool) -> Result<(), String> {
+        self.cancel_gesture();
+        self.weights.bind = None;
+        if !self.setup_mode {
+            return Err(
+                "IK settings are edited in Setup; constraint keys are not supported yet".into(),
+            );
+        }
+        let constraint = self.selected_ik().ok_or("Select an IK constraint")?;
+        let base = self
+            .ik_constraint(constraint)
+            .ok_or("Select an existing IK constraint")?
+            .clone();
+        self.session.commit_transaction();
+        self.session.begin_transaction();
+        self.playing = false;
+        self.ik_edit = Some(IkEdit {
+            constraint,
+            percent: f64::from(base.setup.mix) * 100.,
+            base,
+            animation: self.animation,
+            time: self.time,
+            control,
+            numeric,
+            touched: false,
+            finish_pending: false,
+            error: None,
+        });
+        Ok(())
+    }
+    fn preview_ik_mix(&mut self, percent: f64) {
+        let Some(edit) = self.ik_edit.as_mut() else {
+            return;
+        };
+        let mut value = edit.base.clone();
+        value.setup.mix = (percent / 100.) as f32;
+        edit.percent = percent;
+        let result = self.session.preview_transaction(Command::SetIkConstraint {
+            constraint: edit.constraint,
+            value,
+        });
+        edit.error = result.as_ref().err().cloned();
+        match result {
+            Ok(()) => {
+                self.status = format!("IK Mix: {percent:.2}%");
+                self.ik_evaluation_status();
+            }
+            Err(error) => self.status = error,
+        }
+    }
+    pub(super) fn cancel_ik_edit(&mut self) {
+        if let Some(edit) = self.ik_edit.take() {
+            self.ik_blocked = Some(edit.control);
+            self.session.cancel_transaction();
+        }
+    }
+    fn finish_ik_edit(&mut self) {
+        if self.ik_edit.take().is_some() {
+            self.session.commit_transaction();
+        }
+    }
+    pub(super) fn reconcile_ik(&mut self) {
+        if self.ik_edit.as_ref().is_some_and(|edit| {
+            !self.setup_mode
+                || !self.show_tree
+                || self.selected_ik() != Some(edit.constraint)
+                || edit.animation != self.animation
+                || edit.time != self.time
+                || self.ik_constraint(edit.constraint).is_none_or(|ik| {
+                    ik.name != edit.base.name
+                        || ik.bones != edit.base.bones
+                        || ik.target != edit.base.target
+                        || ik.setup.bend_positive != edit.base.setup.bend_positive
+                })
+        }) {
+            self.cancel_ik_edit();
+        }
+        if self.ik_target.as_ref().is_some_and(|picker| {
+            !self.setup_mode
+                || !self.show_tree
+                || self.selected_ik() != Some(picker.constraint)
+                || self.ik_constraint(picker.constraint) != Some(&picker.base)
+        }) {
+            self.ik_target = None;
+        }
+    }
+    fn begin_ik_target(&mut self, constraint: usize) {
+        self.cancel_gesture();
+        self.weights.bind = None;
+        if !self.setup_mode {
+            return;
+        }
+        if let Some(base) = self.ik_constraint(constraint).cloned() {
+            self.playing = false;
+            self.ik_target = Some(IkTargetPicker { constraint, base });
+            self.status =
+                "Target: choose an existing bone in the Tree or viewport; Escape cancels".into();
+        }
+    }
+    pub(super) fn ik_target_selection(&mut self, item: &TreeItem) -> bool {
+        let Some(picker) = self.ik_target.take() else {
+            return false;
+        };
+        let TreeItem::Bone(bone) = item else {
+            self.ik_target = Some(picker);
+            self.status =
+                "Choose an existing target bone; creating a new target is not supported yet".into();
+            return true;
+        };
+        if !self.setup_mode || self.ik_constraint(picker.constraint) != Some(&picker.base) {
+            self.status = "Target choice canceled because its constraint changed".into();
+            return true;
+        }
+        let mut value = picker.base;
+        value.target = *bone;
+        if self.dispatch(Command::SetIkConstraint {
+            constraint: picker.constraint,
+            value,
+        }) {
+            self.status = "IK target updated".into();
+            self.ik_evaluation_status();
+        }
+        true
+    }
+    pub(super) fn ik_shortcuts(&mut self, ctx: &egui::Context) -> bool {
+        if !ctx.input(|input| input.focused)
+            || self.error.is_some()
+            || self.rename.is_some()
+            || self.duplicate_animation.is_some()
+            || egui::Popup::is_any_open(ctx)
+        {
+            self.cancel_ik_edit();
+            self.ik_target = None;
+            return false;
+        }
+        if self.ik_target.is_some()
+            && !ctx.text_edit_focused()
+            && ctx.input_mut(|input| input.consume_key(egui::Modifiers::NONE, egui::Key::Escape))
+        {
+            self.ik_target = None;
+            self.status = "Target choice canceled".into();
+            return true;
+        }
+        let Some(edit) = self.ik_edit.as_ref() else {
+            return false;
+        };
+        let control = edit.control;
+        let owns_text = ctx.memory(|memory| memory.has_focus(control));
+        if owns_text && edit.numeric && transform_gesture::numeric_intent(ctx) {
+            self.ik_edit.as_mut().unwrap().touched = true;
+        }
+        if owns_text
+            && ctx.input_mut(|input| input.consume_key(egui::Modifiers::COMMAND, egui::Key::S))
+        {
+            self.cancel_ik_edit();
+            ctx.memory_mut(|memory| memory.surrender_focus(control));
+            self.save_project();
+            return true;
+        }
+        if (!ctx.text_edit_focused() || owns_text)
+            && ctx.input_mut(|input| input.consume_key(egui::Modifiers::NONE, egui::Key::Escape))
+        {
+            self.cancel_ik_edit();
+            ctx.memory_mut(|memory| memory.surrender_focus(control));
+            return true;
+        }
+        false
+    }
+    fn ik_mix_response(&mut self, response: &egui::Response, percent: f64, numeric: bool) {
+        if self.ik_blocked.is_some() {
+            return;
+        }
+        let starts =
+            response.gained_focus() && numeric || response.drag_started() || response.changed();
+        if starts
+            && self
+                .ik_edit
+                .as_ref()
+                .is_none_or(|edit| edit.control != response.id)
+        {
+            self.finish_ik_edit();
+            if let Err(error) = self.begin_ik_edit(response.id, numeric && response.has_focus()) {
+                self.status = error;
+                return;
+            }
+        }
+        if self
+            .ik_edit
+            .as_ref()
+            .is_some_and(|edit| edit.control == response.id)
+        {
+            if response.changed()
+                && self
+                    .ik_edit
+                    .as_ref()
+                    .is_some_and(|edit| (!edit.numeric || edit.touched) && edit.percent != percent)
+            {
+                self.preview_ik_mix(percent);
+            }
+            if response.lost_focus()
+                || (!(numeric && response.has_focus())
+                    && !response.ctx.input(|input| input.pointer.any_down()))
+            {
+                self.ik_edit.as_mut().unwrap().finish_pending = true;
+            }
+        }
+    }
+    pub(super) fn ik_properties(&mut self, ui: &mut egui::Ui, index: usize) {
+        self.reconcile_ik();
+        let Some(ik) = self.ik_constraint(index).cloned() else {
+            return;
+        };
+        ui.label("IK constraint");
+        for (label, bone) in [
+            ("Parent", ik.bones.first().copied()),
+            ("Child", ik.bones.get(1).copied()),
+            ("Target", Some(ik.target)),
+        ] {
+            ui.horizontal(|ui| {
+                ui.label(label);
+                if let Some(bone) = bone {
+                    let link = ui.link(&self.session.document().bones[bone].name);
+                    self.record_target(&format!("ik{label}"), link.rect);
+                    if link.clicked() {
+                        self.select(TreeItem::Bone(bone));
+                    }
+                } else {
+                    ui.label(" ");
+                }
+                if label == "Target" {
+                    let choose = icons::toolbar_button(
+                        ui,
+                        icons::Icon::ChooseBone,
+                        "Choose target bone",
+                        "",
+                        self.setup_mode,
+                    );
+                    self.record_target("ikTargetChoose", choose.rect);
+                    if choose.clicked() {
+                        self.begin_ik_target(index);
+                    }
+                }
+            });
+        }
+        if !self.setup_mode {
+            ui.label(
+                RichText::new("Setup settings · IK constraint keys are not supported yet.")
+                    .small()
+                    .color(MUTED),
+            );
+        }
+        if ik.bones.len() == 2 {
+            let mut positive = ik.setup.bend_positive;
+            let response = ui.add_enabled(
+                self.setup_mode,
+                egui::Checkbox::new(&mut positive, "Positive"),
+            );
+            self.record_target("ikPositive", response.rect);
+            if response.changed() {
+                self.cancel_gesture();
+                self.weights.bind = None;
+                if let Some(mut value) = self.ik_constraint(index).cloned() {
+                    value.setup.bend_positive = positive;
+                    if self.dispatch(Command::SetIkConstraint {
+                        constraint: index,
+                        value,
+                    }) {
+                        self.status = "IK bend direction updated".into();
+                        self.ik_evaluation_status();
+                    }
+                }
+            }
+        }
+        if let Some(control) = self.ik_blocked {
+            ui.memory_mut(|memory| memory.surrender_focus(control));
+        }
+        let mut percent = self
+            .ik_edit
+            .as_ref()
+            .map_or(f64::from(ik.setup.mix) * 100., |edit| edit.percent);
+        ui.push_id(("ik-mix", index), |ui| {
+            ui.add_enabled_ui(self.setup_mode && self.ik_target.is_none(), |ui| {
+                ui.horizontal(|ui| {
+                    ui.label("Mix");
+                    let slider =
+                        ui.add(egui::Slider::new(&mut percent, 0.0..=100.0).show_value(false));
+                    self.record_target("ikMixSlider", slider.rect);
+                    self.ik_mix_response(&slider, percent, false);
+                    let value = ui.add(
+                        egui::DragValue::new(&mut percent)
+                            .range(0.0..=100.0)
+                            .fixed_decimals(2)
+                            .suffix("%")
+                            .speed(0.2),
+                    );
+                    self.record_target("ikMixValue", value.rect);
+                    self.ik_mix_response(&value, percent, true);
+                });
+            });
+        });
+        if let Some(error) = self.ik_edit.as_ref().and_then(|edit| edit.error.as_ref()) {
+            ui.label(RichText::new(error).small().color(ACCENT));
+        }
+        if let Err(error) = self.session.evaluated_pose(self.weights_edit_target()) {
+            ui.label(
+                RichText::new(format!("Pose cannot be evaluated: {error}"))
+                    .small()
+                    .color(ACCENT),
+            );
+            self.evaluation_error = Some(error);
+        }
+    }
+    pub(super) fn settle_ik_edit(&mut self, ctx: &egui::Context) {
+        if !ctx.input(|input| input.focused)
+            || self.error.is_some()
+            || self.rename.is_some()
+            || self.duplicate_animation.is_some()
+            || egui::Popup::is_any_open(ctx)
+        {
+            self.cancel_ik_edit();
+            self.ik_target = None;
+        }
+        self.reconcile_ik();
+        if !ctx.input(|input| input.pointer.any_down()) {
+            if self
+                .ik_edit
+                .as_ref()
+                .is_some_and(|edit| edit.finish_pending)
+            {
+                self.finish_ik_edit();
+            }
+            self.ik_blocked = None;
+        }
+    }
+    pub(super) fn ik_diagnostic(&self) -> serde_json::Value {
+        serde_json::json!({"selected":self.selected_ik(),"targetPicker":self.ik_target.as_ref().map(|picker|picker.constraint),
+            "edit":self.ik_edit.as_ref().map(|edit|serde_json::json!({"constraint":edit.constraint,"percent":edit.percent,
+                "animation":edit.animation,"time":edit.time,"numeric":edit.numeric,"finishPending":edit.finish_pending,"error":edit.error}))})
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::test_support::{
+        editor_context, editor_fixture, mesh_editor, workspace_frame,
+    };
+    use super::*;
+
+    fn install_ik(editor: &mut Editor, two: bool, mix: f32) -> usize {
+        let mut document = editor.session.document().clone();
+        let target = document.bones.len();
+        document.bones.push(Bone {
+            name: "ik-target".into(),
+            parent: Some(0),
+            length: 0.,
+            setup: Transform {
+                x: 130.,
+                y: 200.,
+                ..Default::default()
+            },
+        });
+        document.constraints.push(Constraint::Ik(IkConstraint {
+            name: "hand IK".into(),
+            bones: if two { vec![7, 8] } else { vec![8] },
+            target,
+            setup: IkSetup {
+                mix,
+                bend_positive: true,
+            },
+        }));
+        editor.session = Session::new(document).unwrap();
+        editor.setup_mode = true;
+        editor.select(TreeItem::Constraint(0));
+        target
+    }
+    fn point(editor: &Editor, target: &str) -> Pos2 {
+        let [left, top, right, bottom] = editor.capture_targets[target];
+        pos2((left + right) / 2., (top + bottom) / 2.)
+    }
+    fn pointer(pos: Pos2, pressed: bool) -> egui::Event {
+        egui::Event::PointerButton {
+            pos,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: egui::Modifiers::NONE,
+        }
+    }
+    fn click(editor: &mut Editor, ctx: &egui::Context, target: &str) {
+        let pos = point(editor, target);
+        workspace_frame(
+            editor,
+            ctx,
+            vec![egui::Event::PointerMoved(pos), pointer(pos, true)],
+        );
+        workspace_frame(editor, ctx, vec![pointer(pos, false)]);
+    }
+    fn key(key: egui::Key, modifiers: egui::Modifiers) -> Vec<egui::Event> {
+        [true, false]
+            .into_iter()
+            .map(|pressed| egui::Event::Key {
+                key,
+                physical_key: None,
+                pressed,
+                repeat: false,
+                modifiers,
+            })
+            .collect()
+    }
+    #[test]
+    fn actual_workspace_mix_entry_is_one_undo_and_animate_controls_are_read_only() {
+        let mut editor = editor_fixture();
+        install_ik(&mut editor, true, 0.);
+        let original = editor.session.document().clone();
+        let ctx = editor_context();
+        workspace_frame(&mut editor, &ctx, vec![]);
+        let [left, top, right, bottom] = editor.capture_targets["properties"];
+        let clip = egui::Rect::from_min_max(pos2(left, top), pos2(right, bottom));
+        for target in [
+            "ikParent",
+            "ikChild",
+            "ikTarget",
+            "ikTargetChoose",
+            "ikPositive",
+            "ikMixSlider",
+            "ikMixValue",
+        ] {
+            let [left, top, right, bottom] = editor.capture_targets[target];
+            assert!(
+                clip.contains_rect(egui::Rect::from_min_max(
+                    pos2(left, top),
+                    pos2(right, bottom)
+                )),
+                "{target} must be inside Properties clip"
+            );
+        }
+        click(&mut editor, &ctx, "ikMixValue");
+        workspace_frame(&mut editor, &ctx, vec![egui::Event::Text("37.5".into())]);
+        workspace_frame(&mut editor, &ctx, vec![]);
+        assert!(editor.ik_edit.is_some());
+        assert_eq!(editor.ik_constraint(0).unwrap().setup.mix, 0.375);
+        workspace_frame(
+            &mut editor,
+            &ctx,
+            key(egui::Key::Enter, egui::Modifiers::NONE),
+        );
+        assert!(editor.ik_edit.is_none());
+        let edited = editor.session.document().clone();
+        assert!(editor.session.is_dirty());
+        workspace_frame(
+            &mut editor,
+            &ctx,
+            key(egui::Key::Z, egui::Modifiers::COMMAND),
+        );
+        assert_eq!(editor.session.document(), &original);
+        assert!(!editor.session.can_undo());
+        workspace_frame(
+            &mut editor,
+            &ctx,
+            key(
+                egui::Key::Z,
+                egui::Modifiers::COMMAND | egui::Modifiers::SHIFT,
+            ),
+        );
+        assert_eq!(editor.session.document(), &edited);
+        editor.set_setup_mode(false);
+        workspace_frame(&mut editor, &ctx, vec![]);
+        click(&mut editor, &ctx, "ikMixSlider");
+        click(&mut editor, &ctx, "ikPositive");
+        assert!(editor.ik_edit.is_none());
+        assert_eq!(editor.session.document(), &edited);
+        assert!(editor.session.pose_edits().is_empty());
+        assert!(editor.selected_bone().is_none());
+        editor.nudge_transform([1., 0.], false);
+        assert_eq!(editor.session.document(), &edited);
+    }
+    #[test]
+    fn target_picker_cancels_mix_preview_preserves_pending_and_consumes_only_explicit_bones() {
+        let mut editor = editor_fixture();
+        let target = install_ik(&mut editor, true, 0.);
+        let mut pose = editor.session.local_pose(Some(0), editor.time)[2];
+        pose.rotation += 17.;
+        editor
+            .session
+            .edit_pose(
+                2,
+                EditTarget::Animate {
+                    animation: 0,
+                    time: editor.time,
+                },
+                pose,
+                &[Property::Rotation],
+                false,
+            )
+            .unwrap();
+        let pending = editor.session.pose_edits().clone();
+        let original = editor.session.document().clone();
+        let ctx = editor_context();
+        workspace_frame(&mut editor, &ctx, vec![]);
+        click(&mut editor, &ctx, "ikMixValue");
+        workspace_frame(&mut editor, &ctx, vec![egui::Event::Text("50".into())]);
+        click(&mut editor, &ctx, "ikTargetChoose");
+        assert!(editor.ik_edit.is_none());
+        assert!(editor.ik_target.is_some());
+        assert_eq!(editor.session.document(), &original);
+        assert_eq!(editor.session.pose_edits(), &pending);
+        editor.select(TreeItem::Skin("peach".into()));
+        assert!(editor.ik_target.is_some());
+        assert_eq!(editor.selection, Some(TreeItem::Constraint(0)));
+        editor.select(TreeItem::Bone(0));
+        assert!(editor.ik_target.is_none());
+        assert_eq!(editor.ik_constraint(0).unwrap().target, 0);
+        assert_eq!(editor.selection, Some(TreeItem::Constraint(0)));
+        assert_eq!(editor.session.pose_edits(), &pending);
+        editor.undo();
+        assert_eq!(editor.ik_constraint(0).unwrap().target, target);
+        assert_eq!(editor.session.pose_edits(), &pending);
+        editor.begin_ik_target(0);
+        editor.select(TreeItem::Bone(8));
+        assert!(editor.ik_target.is_none());
+        assert!(editor.error.is_some());
+        assert_eq!(editor.session.document(), &original);
+        assert_eq!(editor.session.pose_edits(), &pending);
+    }
+    #[test]
+    fn direct_and_ik_text_previews_cancel_before_capturing_the_other_baseline() {
+        let (mut editor, attachment) = mesh_editor(true);
+        install_ik(&mut editor, false, 0.);
+        editor.weights.select_mesh(attachment);
+        editor.weights.vertex = Some(0);
+        editor.weights.bone = Some(0);
+        editor.set_tool(Tool::Weights);
+        editor.show_weights = true;
+        let original = editor.session.document().clone();
+        let ctx = editor_context();
+        workspace_frame(&mut editor, &ctx, vec![]);
+        click(&mut editor, &ctx, "weightsWeightValue");
+        workspace_frame(&mut editor, &ctx, vec![egui::Event::Text("60".into())]);
+        assert!(editor.weight_edit.is_some());
+        assert_ne!(editor.session.document(), &original);
+        click(&mut editor, &ctx, "ikMixValue");
+        workspace_frame(&mut editor, &ctx, vec![egui::Event::Text("40".into())]);
+        assert!(editor.weight_edit.is_none());
+        assert!(editor.ik_edit.is_some());
+        let mut only_mix = original.clone();
+        let Constraint::Ik(ik) = &mut only_mix.constraints[0];
+        ik.setup.mix = 0.4;
+        assert_eq!(editor.session.document(), &only_mix);
+        click(&mut editor, &ctx, "weightsWeightValue");
+        workspace_frame(&mut editor, &ctx, vec![egui::Event::Text("50".into())]);
+        assert!(editor.ik_edit.is_none());
+        assert!(editor.weight_edit.is_some());
+        assert_eq!(editor.ik_constraint(0).unwrap().setup.mix, 0.);
+        workspace_frame(
+            &mut editor,
+            &ctx,
+            key(egui::Key::Escape, egui::Modifiers::NONE),
+        );
+        assert_eq!(editor.session.document(), &original);
+        assert!(!editor.session.can_undo());
+    }
+}

@@ -117,6 +117,10 @@ impl Editor {
                 }
             }
             TreeItem::Animation(animation) => self.animation_properties(ui, animation),
+            TreeItem::Constraint(index) => self.ik_properties(ui, index),
+            TreeItem::Folder(Folder::Constraints) => {
+                ui.label("Constraints are applied in Tree order. Select an IK constraint to edit its Setup settings.");
+            }
             TreeItem::Folder(Folder::Skins) => {
                 ui.label("Use a skin's visibility dot to make it active.");
                 if ui.button("Clear active skin").clicked() {
@@ -150,10 +154,12 @@ impl Editor {
                 );
                 self.record_target("boneLength", response.rect);
                 if response.gained_focus() {
+                    self.cancel_ik_edit();
                     self.cancel_transform_edit();
                     self.cancel_weight_edit();
                 }
                 if response.drag_started() {
+                    self.cancel_ik_edit();
                     self.cancel_transform_edit();
                     self.cancel_weight_edit();
                     self.session.begin_transaction();
