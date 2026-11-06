@@ -47,3 +47,6 @@ mod tests;
 mod timeline_tests;
 #[cfg(test)]
 mod weighted_tests;
+
+#[cfg(test)]
+mod wide_interpolation_tests;
