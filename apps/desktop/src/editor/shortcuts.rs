@@ -55,12 +55,9 @@ impl Editor {
             return;
         }
         if self.tool == Tool::Mesh {
-            if self.setup_mode
-                && let Some(key) = self.selected_attachment().cloned()
-                && self.attachment_editable(&key)
-                && let Some(Attachment::Mesh(mesh)) = self.session.document().attachment(&key)
+            if let Some(key) = self.selected_attachment().cloned()
+                && let Some(p) = self.editable_mesh_position(&key, self.mesh_vertex)
             {
-                let p = mesh.vertices[self.mesh_vertex];
                 self.dispatch(Command::SetMeshVertex {
                     attachment: key,
                     vertex: self.mesh_vertex,

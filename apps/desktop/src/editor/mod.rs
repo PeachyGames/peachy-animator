@@ -757,6 +757,8 @@ impl eframe::App for Editor {
                     "targets":self.capture_targets,"meshHandles":self.mesh_handles,"innerSize":[ctx.content_rect().width(),ctx.content_rect().height()]
                 });
                 report["animationEnd"] = self.animation_end().into();
+                report["weightedMeshCount"] = self.weighted_mesh_count().into();
+                report["meshInspection"] = self.mesh_inspection().unwrap_or_default();
                 report["displayExtent"] = self
                     .key_drag
                     .as_ref()
