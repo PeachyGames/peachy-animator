@@ -1,12 +1,13 @@
-//! Explicit bind-pose transitions. Bind positions change; the captured bone pose does not.
+//! Explicit binding and weight transitions. Captured bone poses are never changed.
 use crate::{Affine, mesh_world_vertices, world_pose};
 use peachy_document::{
     Attachment, AttachmentRef, BoneInfluence, Document, Mesh, MeshVertices, Transform,
     finite_transform,
 };
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeSet;
 
-/// Bind/Remove-all are shape-preserving commands. Reject a recovered f32 local
+/// Bind/Remove-all and additional bindings use checked positions. Reject a recovered f32 local
 /// position if rendering it would move either world coordinate by more than this
 /// absolute amount. This command policy has no relative or large-pose exception.
 const BIND_WORLD_COORDINATE_TOLERANCE: f64 = 0.001;
@@ -167,5 +168,119 @@ pub(super) fn unbind_mesh(
         unreachable!("Validated mesh target must remain present")
     };
     mesh.vertices = MeshVertices::SlotLocal { positions };
+    Ok(())
+}
+
+/// Add a distinct bone without rewriting old bindings or assigning it weight.
+pub(super) fn add_mesh_bone_binding(
+    document: &mut Document,
+    attachment: &AttachmentRef,
+    bone: usize,
+    pose: &MeshBindPose,
+) -> Result<(), String> {
+    let world = bind_world(document, pose)?;
+    if bone >= document.bones.len() {
+        return Err("Unknown bind bone".into());
+    }
+    let (slot_bone, mesh) = mesh_target(document, attachment)?;
+    let MeshVertices::Weighted { influences } = &mesh.vertices else {
+        return Err("Additional binding requires a weighted mesh".into());
+    };
+    if influences
+        .iter()
+        .flatten()
+        .any(|influence| influence.bone == bone)
+    {
+        return Err(
+            "Bone is already bound to this mesh; sparse binding updates are not supported".into(),
+        );
+    }
+    let inverse = Inverse::new(world[bone])?;
+    // Even a zero influence must transform to a finite point: the evaluator
+    // multiplies after transformation, and 0 * infinity would contaminate it.
+    let positions = mesh_world_vertices(mesh, slot_bone, &world)
+        .into_iter()
+        .map(|point| inverse.point(point))
+        .collect::<Result<Vec<_>, _>>()?;
+    let Some(Attachment::Mesh(mesh)) = document.attachment_mut(attachment) else {
+        unreachable!("Validated mesh target must remain present")
+    };
+    let MeshVertices::Weighted { influences } = &mut mesh.vertices else {
+        unreachable!("Validated weighted mesh must remain weighted")
+    };
+    for (vertex, position) in influences.iter_mut().zip(positions) {
+        vertex.push(BoneInfluence {
+            bone,
+            position,
+            weight: 0.0,
+        });
+    }
+    Ok(())
+}
+
+/// Change one unambiguous bone weight and proportionally resize positive recipients.
+/// Bind positions remain unchanged; Direct intentionally permits geometry to move.
+pub(super) fn set_mesh_bone_weight(
+    document: &mut Document,
+    attachment: &AttachmentRef,
+    vertex: usize,
+    bone: usize,
+    weight: f32,
+    pose: &MeshBindPose,
+) -> Result<(), String> {
+    let world = bind_world(document, pose)?;
+    if bone >= document.bones.len() {
+        return Err("Unknown weight bone".into());
+    }
+    if !weight.is_finite() || !(0.0..=1.0).contains(&weight) {
+        return Err("Direct weight must be finite and in 0–1".into());
+    }
+    let (_, mesh) = mesh_target(document, attachment)?;
+    let MeshVertices::Weighted { influences } = &mesh.vertices else {
+        return Err("Direct weights require a weighted mesh".into());
+    };
+    let selected = influences.get(vertex).ok_or("Unknown mesh vertex")?;
+    let mut bones = BTreeSet::new();
+    if selected
+        .iter()
+        .any(|influence| !bones.insert(influence.bone))
+    {
+        return Err("Direct weight editing is ambiguous for repeated bones on this vertex".into());
+    }
+    let chosen = selected
+        .iter()
+        .position(|influence| influence.bone == bone)
+        .ok_or("Bone has no binding on this vertex; sparse binding updates are not supported")?;
+    let others: f64 = selected
+        .iter()
+        .enumerate()
+        .filter(|(index, influence)| *index != chosen && influence.weight > 0.0)
+        .map(|(_, influence)| f64::from(influence.weight))
+        .sum();
+    if others == 0.0 && weight < 1.0 {
+        return Err("Cannot reduce a weight without another positive recipient".into());
+    }
+    let mut next = selected.clone();
+    for (index, influence) in next.iter_mut().enumerate() {
+        if index == chosen {
+            influence.weight = weight;
+        } else if influence.weight > 0.0 {
+            influence.weight =
+                (f64::from(influence.weight) * (1.0 - f64::from(weight)) / others) as f32;
+        }
+    }
+    if crate::mesh::weighted_world_vertex(&next, &world)
+        .iter()
+        .any(|value| !value.is_finite())
+    {
+        return Err("Direct weight would produce nonfinite world vertices at this pose".into());
+    }
+    let Some(Attachment::Mesh(mesh)) = document.attachment_mut(attachment) else {
+        unreachable!("Validated mesh target must remain present")
+    };
+    let MeshVertices::Weighted { influences } = &mut mesh.vertices else {
+        unreachable!("Validated weighted mesh must remain weighted")
+    };
+    influences[vertex] = next;
     Ok(())
 }

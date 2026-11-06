@@ -1,6 +1,6 @@
 //! Pure attachment geometry and topology edits; no renderer or file dependencies.
 use crate::Affine;
-use peachy_document::{Mesh, MeshVertices, Region};
+use peachy_document::{BoneInfluence, Mesh, MeshVertices, Region};
 
 pub const REGION_UVS: [[f32; 2]; 4] = [[0., 1.], [1., 1.], [1., 0.], [0., 0.]];
 pub const REGION_TRIANGLES: [u32; 6] = [0, 1, 2, 0, 2, 3];
@@ -37,19 +37,21 @@ pub fn mesh_world_vertices(mesh: &Mesh, slot_bone: usize, world: &[Affine]) -> V
             .collect(),
         MeshVertices::Weighted { influences } => influences
             .iter()
-            .map(|vertex| {
-                let mut point = [0.0, 0.0];
-                for influence in vertex {
-                    let transformed =
-                        world[influence.bone].point(influence.position[0], influence.position[1]);
-                    for axis in 0..2 {
-                        point[axis] += influence.weight * transformed[axis];
-                    }
-                }
-                point
-            })
+            .map(|vertex| weighted_world_vertex(vertex, world))
             .collect(),
     }
+}
+
+/// The same f32 evaluation is used for rendering and candidate weight validation.
+pub(super) fn weighted_world_vertex(vertex: &[BoneInfluence], world: &[Affine]) -> [f32; 2] {
+    let mut point = [0.0, 0.0];
+    for influence in vertex {
+        let transformed = world[influence.bone].point(influence.position[0], influence.position[1]);
+        for axis in 0..2 {
+            point[axis] += influence.weight * transformed[axis];
+        }
+    }
+    point
 }
 
 /// Insert a triangle centroid without changing the hull, UV mapping or winding.
