@@ -15,7 +15,7 @@ mod session;
 mod timeline;
 mod tools;
 
-pub use authoring::{KeyState, PoseEdits, transform_group};
+pub use authoring::{IkPoseEdit, KeyState, PoseEdits, transform_group};
 pub use commands::{Command, EditTarget, apply_command, ik_keyframe_at, keyframe_at};
 pub use ik::{
     AuthoredPose, EvaluatedPose, checked_evaluate_pose, checked_pose_from_authored,
