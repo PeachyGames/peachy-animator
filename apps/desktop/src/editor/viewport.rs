@@ -164,11 +164,14 @@ impl Editor {
             }
         }
         let mut nearest_vertex = None;
-        if self.tool == Tool::Mesh && self.setup_mode {
+        if self.tool == Tool::Mesh {
             for draw in &scene.attachments {
                 let Some(Attachment::Mesh(mesh)) = doc.attachment(&draw.attachment) else {
                     continue;
                 };
+                if !self.setup_mode && !mesh.is_weighted() {
+                    continue;
+                }
                 let selected = selected_key.as_ref() == Some(&draw.attachment);
                 if selected {
                     self.mesh_handles = draw
@@ -210,12 +213,11 @@ impl Editor {
                     if let Some(mouse) = response.interact_pointer_pos() {
                         let distance = mouse.distance(p);
                         if distance < 12.
-                            && nearest_vertex.as_ref().is_none_or(
-                                |hit: &(AttachmentRef, usize, [f32; 2], f32)| distance < hit.3,
-                            )
+                            && nearest_vertex
+                                .as_ref()
+                                .is_none_or(|hit: &(AttachmentRef, usize, f32)| distance < hit.2)
                         {
-                            nearest_vertex =
-                                Some((draw.attachment.clone(), i, mesh.vertices[i], distance));
+                            nearest_vertex = Some((draw.attachment.clone(), i, distance));
                         }
                     }
                 }
@@ -274,6 +276,7 @@ impl Editor {
                 })
         });
         let mesh_edit = self.mesh_drag.as_ref().and_then(|drag| {
+            self.editable_mesh_position(&drag.attachment, drag.vertex)?;
             let bone = doc
                 .slots
                 .iter()
@@ -374,7 +377,9 @@ impl Editor {
         painter.text(
             rect.left_bottom() + vec2(12., -14.),
             egui::Align2::LEFT_BOTTOM,
-            if self.tool == Tool::Mesh {
+            if self.tool == Tool::Mesh && self.selected_mesh_is_weighted() {
+                "Weighted vertices · select to inspect bone influences"
+            } else if self.tool == Tool::Mesh {
                 "Setup vertices · drag to deform · Escape cancels"
             } else {
                 "Select a bone or attachment · scroll to zoom · right-drag to pan"
@@ -386,9 +391,9 @@ impl Editor {
             self.set_tool(self.last_tool);
             return;
         }
-        if self.tool == Tool::Mesh && self.setup_mode {
+        if self.tool == Tool::Mesh && (self.setup_mode || self.selected_mesh_is_weighted()) {
             if (response.clicked() || response.drag_started_by(egui::PointerButton::Primary))
-                && let Some((key, vertex, position, _)) = nearest_vertex
+                && let Some((key, vertex, _)) = nearest_vertex
             {
                 self.select(TreeItem::Attachment(key.clone()));
                 self.mesh_vertex = vertex;
@@ -397,13 +402,7 @@ impl Editor {
                         .input(|i| i.pointer.press_origin())
                         .or(response.interact_pointer_pos())
                 {
-                    self.mesh_drag = Some(MeshDrag {
-                        attachment: key,
-                        vertex,
-                        position,
-                        pointer,
-                    });
-                    self.session.begin_transaction();
+                    self.begin_mesh_drag(key, vertex, pointer);
                 }
             } else if response.clicked() {
                 if let Some(item) = picked {
@@ -460,7 +459,7 @@ impl Editor {
                 self.edit_item_transform(item, transform, properties);
             }
         }
-        if response.drag_stopped() {
+        if response.drag_stopped() && (self.drag.is_some() || self.mesh_drag.is_some()) {
             self.session.commit_transaction();
             self.drag = None;
             self.mesh_drag = None;

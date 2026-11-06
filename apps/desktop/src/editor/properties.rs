@@ -83,13 +83,17 @@ impl Editor {
                         Attachment::Region(r) => {
                             ui.label(format!("Region · {} × {}", r.width, r.height));
                         }
-                        Attachment::Mesh(_) => {
-                            ui.label("Unweighted mesh");
+                        Attachment::Mesh(mesh) => {
+                            ui.label(if mesh.is_weighted() {
+                                "Weighted mesh"
+                            } else {
+                                "Unweighted mesh"
+                            });
                         }
                     }
                 }
                 self.attachment_panel(ui);
-                if !self.setup_mode {
+                if !self.setup_mode && !self.selected_mesh_is_weighted() {
                     ui.label(
                         RichText::new("Attachment transforms and vertices are edited in Setup.")
                             .small()
