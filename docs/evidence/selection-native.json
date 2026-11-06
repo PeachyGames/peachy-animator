@@ -1,13 +1,15 @@
 {
-  "captures": {
-    "expanded": "editor-1793937113331986000.json",
-    "editor": "editor-1793937134077200000.json"
-  },
-  "selectionExpansionAndOrderedCopy": true,
-  "rowLabelsChooseToolsWithoutChangingSelectionOrTime": true,
-  "manualSelectionResetsExpansionAndFooterStable": true,
-  "emptySelectionSelectsShownAndUndoRetainsRedo": true,
-  "textFocusPreserved": true,
+  "previousNextSelection": true,
+  "deselectionInHistory": true,
+  "numberedGroups": true,
+  "groupZeroDoesNotChangeUiZoom": true,
+  "typedSlotRecallCannotEditBone": true,
+  "skinRecallDoesNotActivate": true,
+  "attachmentRecallAndDocumentUndoIndependent": true,
+  "emptyGroupClears": true,
+  "typingDigitsDoesNotRecall": true,
+  "numericEntryStopsPlayback": true,
+  "relativeEntryAppliesOnce": true,
   "documentRestored": true,
-  "originalClipboardRestored": true
+  "capture": "editor-1793921807260696000.json"
 }

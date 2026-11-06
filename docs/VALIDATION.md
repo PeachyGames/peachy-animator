@@ -471,8 +471,8 @@ restored. Clipboard preservation keeps all item flavors in memory and only resto
 from a complete flavor snapshot verified as this run's explicit copy; a newer
 external copy is preserved.
 
-See [native acceptance](evidence/selection-native.json) and
-[expanded selection](selection-editor.png). The task-owned review process and
+See [native acceptance](evidence/timeline-selection-native.json) and
+[expanded selection](timeline-selection-editor.png). The task-owned review process and
 fresh-login authorization were cleaned up; no interactive handoff remains.
 The engine and adapters are unchanged, so the preceding timeline runtime/round-trip
 evidence remains applicable. This slice does not claim all-bone timelines, marquee,

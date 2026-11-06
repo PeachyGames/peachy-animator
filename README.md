@@ -5,7 +5,7 @@ core and Spine-compatible exports. The current slices add Spine-style naming dia
 animation duplication, Dopesheet key selection, retiming and clipboard actions.
 This is still a bounded subset of Spine.
 
-![Peach Bot in the editor](docs/selection-editor.png)
+![Peach Bot in the editor](docs/timeline-selection-editor.png)
 
 ## Try it
 
