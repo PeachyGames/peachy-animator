@@ -16,6 +16,7 @@ pub enum TransformTool {
     Rotate,
     Translate,
     Scale,
+    Shear,
 }
 
 fn rotate(p: [f32; 2], degrees: f32) -> [f32; 2] {
@@ -198,6 +199,26 @@ pub fn drag_transform(
             }
             if snap_rotation {
                 result.rotation = (result.rotation / 15.).round() * 15.;
+            }
+        }
+        TransformTool::Shear => {
+            let axis = axis.ok_or("Shear requires an explicit X or Y handle")?;
+            let a = parent
+                .inverse_point(start[0], start[1])
+                .ok_or("Cannot shear through a singular parent")?;
+            let b = parent
+                .inverse_point(end[0], end[1])
+                .ok_or("Cannot shear through a singular parent")?;
+            let a = [a[0] - local.x, a[1] - local.y];
+            let b = [b[0] - local.x, b[1] - local.y];
+            if a[0].hypot(a[1]) <= 1e-5 || b[0].hypot(b[1]) <= 1e-5 {
+                return Err("Shear handle needs a nonzero pointer direction".into());
+            }
+            let delta = signed_delta(a[1].atan2(a[0]).to_degrees(), b[1].atan2(b[0]).to_degrees());
+            if axis == 0 {
+                result.shear_x += delta;
+            } else {
+                result.shear_y += delta;
             }
         }
         TransformTool::Scale => {

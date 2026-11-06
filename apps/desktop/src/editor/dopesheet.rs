@@ -176,6 +176,7 @@ impl Editor {
                 Property::Rotation => (Tool::Rotate, "Rotate", "C"),
                 Property::X | Property::Y => (Tool::Move, "Translate", "V"),
                 Property::ScaleX | Property::ScaleY => (Tool::Scale, "Scale", "X"),
+                Property::ShearX | Property::ShearY => (Tool::Shear, "Shear", "Z"),
             };
             let label_rect = egui::Rect::from_min_max(
                 pos2(rect.left() + 6.0, y - 10.0),
@@ -232,6 +233,7 @@ impl Editor {
                         Property::Rotation => Color32::from_rgb(109, 189, 126),
                         Property::X | Property::Y => Color32::from_rgb(105, 168, 225),
                         Property::ScaleX | Property::ScaleY => Color32::from_rgb(211, 116, 116),
+                        Property::ShearX | Property::ShearY => Color32::from_rgb(190, 145, 210),
                     };
                     painter.rect_filled(
                         egui::Rect::from_center_size(p, vec2(5., 13.)),

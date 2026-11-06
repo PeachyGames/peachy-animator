@@ -45,6 +45,7 @@ enum Tool {
     Rotate,
     Move,
     Scale,
+    Shear,
     Mesh,
     Weights,
 }
@@ -334,7 +335,7 @@ impl Editor {
                 .copied(),
             TreeItem::Attachment(key) if self.attachment_editable(key) => {
                 if let Some(Attachment::Region(r)) = doc.attachment(key) {
-                    Some(r.transform)
+                    Some(r.transform.into())
                 } else {
                     None
                 }
@@ -381,10 +382,15 @@ impl Editor {
             TreeItem::Attachment(attachment)
                 if self.setup_mode && self.attachment_editable(&attachment) =>
             {
-                self.dispatch(Command::SetRegionTransform {
-                    attachment,
-                    transform: local,
-                });
+                match RegionTransform::try_from(local) {
+                    Ok(transform) => {
+                        self.dispatch(Command::SetRegionTransform {
+                            attachment,
+                            transform,
+                        });
+                    }
+                    Err(error) => self.error = Some(error),
+                }
             }
             _ => {}
         }
@@ -796,7 +802,7 @@ impl eframe::App for Editor {
                 let mut report = serde_json::json!({
                     "document":self.session.document(),"selection":self.selection.as_ref().map(TreeItem::diagnostic),
                     "selectedBone":self.selected_bone(),"hasSelection":self.selection.is_some(),
-                    "tool":match self.tool {Tool::Rotate=>"rotate",Tool::Move=>"translate",Tool::Scale=>"scale",Tool::Mesh=>"vertices",Tool::Weights=>"weights"},
+                    "tool":match self.tool {Tool::Rotate=>"rotate",Tool::Move=>"translate",Tool::Scale=>"scale",Tool::Shear=>"shear",Tool::Mesh=>"vertices",Tool::Weights=>"weights"},
                     "treeVisible":self.show_tree,"dopesheetVisible":!self.setup_mode && self.show_dopesheet,"showDopesheet":self.show_dopesheet,
                     "animation":self.animation,"skin":self.skin,"time":self.time,"playing":self.playing,"playDirection":self.play_direction,"looping":self.looping,"zoom":self.zoom,
                     "axes":self.axes,"toolValues":self.selected_transform().zip(self.selected_parent()).map(|(local,parent)|peachy_engine::transform_values(local,parent,self.axes)),
@@ -857,6 +863,8 @@ impl PropertyLabel for Property {
             Self::Rotation => "Rotation",
             Self::ScaleX => "Scale X",
             Self::ScaleY => "Scale Y",
+            Self::ShearX => "Shear X",
+            Self::ShearY => "Shear Y",
         }
     }
 }

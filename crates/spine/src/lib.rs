@@ -401,6 +401,14 @@ pub fn import_json(value: &Value, name: &str) -> Result<Document, String> {
 pub fn export_json(doc: &Document) -> Result<Value, String> {
     doc.validate()?;
     validate_export_names(doc)?;
+    // Temporary explicit boundary while the separately owned shear adapter is implemented.
+    if doc
+        .bones
+        .iter()
+        .any(|b| b.setup.shear_x != 0.0 || b.setup.shear_y != 0.0)
+    {
+        return Err("Bone shear interchange is not implemented yet".into());
+    }
     let bones: Vec<_> = doc
         .bones
         .iter()
@@ -453,6 +461,9 @@ pub fn export_json(doc: &Document) -> Result<Value, String> {
                 Property::Rotation => "rotate",
                 Property::ScaleX => "scalex",
                 Property::ScaleY => "scaley",
+                Property::ShearX | Property::ShearY => {
+                    return Err("Shear timeline interchange is not implemented yet".into());
+                }
             };
             let mut keys = vec![];
             for (i, key) in track.keys.iter().enumerate() {
@@ -647,6 +658,8 @@ fn transform(value: &Value) -> Transform {
         rotation: number(value, "rotation", 0.0),
         scale_x: number(value, "scaleX", 1.0),
         scale_y: number(value, "scaleY", 1.0),
+        shear_x: 0.0,
+        shear_y: 0.0,
     }
 }
 fn transform_json(t: Transform) -> Value {
@@ -874,7 +887,7 @@ mod tests {
             path: "body".into(),
             width: 10.0,
             height: 10.0,
-            transform: Transform::default(),
+            transform: RegionTransform::default(),
         };
         let skin = BTreeMap::from([(
             "body".into(),

@@ -37,6 +37,8 @@ pub fn transform_group(properties: &[Property]) -> Vec<Property> {
                             | (Property::Y, Property::X)
                             | (Property::ScaleX, Property::ScaleY)
                             | (Property::ScaleY, Property::ScaleX)
+                            | (Property::ShearX, Property::ShearY)
+                            | (Property::ShearY, Property::ShearX)
                     )
             })
         })

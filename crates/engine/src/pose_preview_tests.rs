@@ -17,6 +17,8 @@ fn fixture() -> Document {
                     rotation: 10.,
                     scale_x: 1.25,
                     scale_y: 0.8,
+                    shear_x: 0.0,
+                    shear_y: 0.0,
                 },
             },
             Bone {
@@ -29,6 +31,8 @@ fn fixture() -> Document {
                     rotation: -5.,
                     scale_x: 1.5,
                     scale_y: 1.,
+                    shear_x: 0.0,
+                    shear_y: 0.0,
                 },
             },
         ],
@@ -249,7 +253,7 @@ fn setup_previews_replace_the_full_prior_preview_and_preserve_pending_animation_
     assert_eq!(session.document().bones[0], before.bones[0]);
     assert_eq!(session.document().bones[1].setup, child);
     assert_eq!(session.document().animations, before.animations);
-    assert_eq!(session.document().format, 4);
+    assert_eq!(session.document().format, FORMAT_VERSION);
     assert_eq!(session.pose_edits(), &pending);
     assert!(session.is_dirty());
     session.commit_transaction();
