@@ -16,10 +16,13 @@ Spine runtime. Subsequent work should grow that working loop.
 2. **Weight authoring and broader mesh editing.** Unweighted editing and weighted
    import/export, deterministic bone-driven evaluation and read-only influence
    inspection now work through native v4. Initial one-bone Bind and Remove-all
-   have shared commands, a G Weights view/tool and native acceptance. Next add a
-   bone to an already weighted mesh, then manual Direct changes and Update bindings
-   through explicit shared commands and reference-matched controls. Redistribution,
-   duplicate influences, zero recipients, brush behavior and locks need their own gates.
+   have shared commands, a G Weights view/tool and native acceptance. Additional
+   zero bindings and one-vertex/bone Direct changes now have explicit shared
+   commands and percentage controls. Preserve their separate validation gates and
+   provisional dock status. Next establish Update bindings, individual removal,
+   multi-vertex/bone selection and locks through controlled reference observations.
+   Sparse/repeated editing, zero-recipient alternatives and brush behavior remain
+   bounded gaps, rather than reasons to normalize or merge imported data.
    Follow with UV/hull editing and controlled triangulation. Linked meshes, deform
    timelines and constraints remain major gaps for existing characters; weighted
    support alone leaves 0/11 sampled production exports fully supported.

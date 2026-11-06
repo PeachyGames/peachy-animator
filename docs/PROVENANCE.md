@@ -266,3 +266,59 @@ original-data round trip nor the installed editor's interactive Weights behavior
 Our separate native acceptance uses only original Peach Bot artwork. Earlier
 weighted-slice reports, including the 140-test checkpoint and the editor-coordinate
 quantization finding, retain their original scope.
+
+## Additional binding and Direct references — November 6, 2026 UTC
+
+The public [Weights Direct guide](https://esotericsoftware.com/spine-weights#Direct)
+describes exact weights for selected vertices/bones and a Weight control.
+[Erika's staff explanation](https://esotericsoftware.com/forum/d/16165-lock-a-bones-weights-in-specific-percent/5)
+supports proportionally resizing the remaining weights when one percentage is
+changed. [Nate's staff explanation](https://esotericsoftware.com/forum/d/11318-weight-smoothing-not-working-properly/8)
+supports initial single-bone 100% binding and subsequently added bones at 0%.
+Those references were retrieved through Agent Reach's official-page/Exa routes
+and are linked in the [approved design](slices/weight-direct-design.md). A historical
+discussion of missing locks is not evidence that current Spine lacks locks.
+
+Our Add command's inverse-current-world initialization for the new zero entry is
+an approved mathematical policy; the public zero-weight convention does not
+establish Spine's exact new bind position. Direct's independently written formula
+uses a wider sum for the other positive weights, then f32 storage. Its explicit
+selected-vertex normalization is separate from unchanged import/inspection/Add
+and unselected raw data. The engine intentionally permits Direct deformation.
+
+Rejecting ambiguous repeated selected-vertex bones, sparse missing targets and
+sole-positive reductions without recipients defines a bounded first authoring
+slice. These are not observations of Spine's complete edge behavior. No duplicate
+aggregation, sorting, pruning, equal fallback or silent normalization was inferred.
+Public references do not resolve locks, multi-selection, Update or brush semantics
+for this implementation.
+
+The independently written Direct controls reuse the existing Weights pane, vector
+icon, bone colors and retained explicit selection. Frozen-pose fixed-base previews
+and cancellation safety reuse our shared Session boundary. No editor/runtime
+implementation or proprietary UI assets were inspected or copied. Original Peach
+Bot derivatives are the only acceptance inputs; artist files remain untouched.
+
+Separate CLI, external-runtime, installed-editor and native-interaction results
+belong in the current validation section. Neither runtime agreement nor successful
+editor import establishes exact Weights docking, visual/interaction parity or
+lossless editor re-export.
+
+Black-box installed Spine 4.3.26 CLI probes import/re-export seven of eight Direct
+results, including both ordinary [8,7] and [7,8] limb orders. A repeated-influence
+Add result fails editor import despite runtime acceptance; no universal order rule
+is inferred from the older controlled probe. The seven accepted editor outputs
+show bind-coordinate quantization up to 0.00476837158203125 and positive-weight
+changes up to 0.0000044405460357666016 on the Direct weighted-bot input. This new
+result limits the older fixtures' positive-weight-preservation finding to those
+fixtures. Adapter acceptance of changed output is not a lossless-original-data
+claim. Every source input remains unchanged; no interactive Spine Weights UI was
+observed by these CLI probes.
+
+The full native run on `694576a` uses only task-owned original artwork and confirms
+typed 30% and 45% controls, real pointer/text cancellation, pending Animate locals,
+history and Save restoration. Its two reviewed captures show our independently
+written controls and artwork, not extracted proprietary assets. See
+[native acceptance](evidence/direct-native.json) and
+[visual review](evidence/direct-visual.json). These observations of our editor
+remain separate from interactive Spine comparison and exact docking/pixel parity.

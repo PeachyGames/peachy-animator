@@ -43,15 +43,24 @@ Mesh topology, UVs, binding data and weighted geometry belong in document/engine
 `evaluate_scene` emits shared vertex/UV/index buffers for rendering, bounds and CLI
 diagnostics. Mesh commands address an explicit skin/slot/placeholder; resolve default
 fallback before building a command. Existing unweighted vertex indices remain stable
-under centroid subdivision. Weighted meshes currently expose read-only influence
-inspection; the shell and engine reject slot-local vertex edits and subdivision on
-them. Initial one-bone Bind and Remove-all use `Session::bind_mesh_to_bone` and
+under centroid subdivision. Weighted meshes expose influence inspection and
+explicit weight commands; the shell and engine reject slot-local vertex edits and
+subdivision on them. Initial one-bone Bind and Remove-all use `Session::bind_mesh_to_bone` and
 `Session::unbind_mesh` with an explicit Setup/Animate target. The engine captures
 posed locals, inverts only the required target/slot bone and rejects nonfinite,
 singular or greater-than-0.001 forward world-coordinate residuals atomically.
-Do not silently normalize weights, key or discard pending poses, or rebuild inverse-bind
-geometry in the UI. Direct/brush editing, additional bindings and Update remain
-separate commands and acceptance gates.
+`AddMeshBoneBinding` appends a genuinely new bone at zero weight to every vertex,
+preserving all old entries. Reuse the same checked inverse and 0.001 residual
+guard; even a zero contribution must evaluate finitely. `SetMeshBoneWeight`
+changes one unambiguous vertex/bone and proportionally redistributes its other
+positive weights. Only that explicit Direct edit normalizes that vertex; it may
+deform geometry and uses no inverse or shape-preservation residual. Zero entries,
+positions, order and unselected vertices stay unchanged. Reject repeated bones on
+the selected vertex, sparse missing targets, existing-global-bone Add and a
+sole-positive reduction without recipients; these are bounded policies, not
+observations of every Spine edge case. Do not silently normalize imports, key or
+discard pending poses, merge bindings or rebuild geometry in the UI. Brush editing,
+locks, multiple selected vertices/bones and Update need separate commands/gates.
 Add stable vertex identity before removal/reindexing or cross-topology animation
 references, and remap all influences before any future bone reordering/deletion.
 
@@ -80,6 +89,16 @@ animation changes, Undo/Redo, selection-history navigation and view hide/restore
 mode after time scrubbing captures the live pose only on the concrete target click.
 Opening another document resets the context. Keep genuine Weights tool history
 separate from temporary Mesh inspection's return-tool tracking.
+
+Direct previews freeze the explicit mesh/vertex/bone, mode/clip/actual time and one
+pose snapshot, then use Session's fixed transaction baseline. Completion is one
+undo step after frame actions and pointer release. Escape, application focus loss,
+tool/context/history/Open/Save/Export/view-hide actions cancel before continuing;
+block stale numeric responses and a canceled held pointer until release. Text undo
+retains priority; owned Weight-field Save cancels then saves. Rounded display-only
+focus/blur and invalid numeric text alone must preserve raw values and redo. Pending poses
+are preserved by weight edits and excluded from saves. Keep these lifecycle rules
+in the shell, weight arithmetic and validation in the engine.
 
 ## Iconography
 

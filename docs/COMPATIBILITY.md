@@ -232,3 +232,67 @@ re-exports two original results and our adapter accepts that output. This is nei
 a lossless original-data round trip nor Weights UI/layout acceptance. The separate
 native run verifies our implemented controls and current-pose behavior; the right
 column dock remains provisional. See [binding validation](VALIDATION.md#initial-bind-and-remove-all--november-6-2026-utc).
+
+## Additional binding and Direct — November 6, 2026 UTC
+
+This extends the two historical weighted/binding checkpoints above without
+changing native v4 or the adapter's accepted subset. Bind on an already weighted
+mesh can append a genuinely new bone at zero weight on every vertex. Old weights,
+positions, zeros, repeated entries and order remain intact; there is no import or
+Add-time normalization. A bone already present anywhere, even at zero weight,
+rejects rather than filling sparse entries. Its new local position is initialized
+from the captured world point through the shared checked inverse, with the same
+absolute 0.001 forward residual and finite-zero-contribution guards.
+
+Direct explicitly changes one logical vertex and one uniquely bound bone. Other
+positive weights share the remainder proportionally, while positions, zero
+entries, order, other vertices and animation keys stay unchanged. Explicit Direct
+may normalize that selected vertex's imported nonunit total and deform it. A
+display-rounded focus/blur or invalid text does not dispatch that normalization.
+Direct needs no inverse or shape-preserving residual; it validates finite candidate
+world geometry at the captured pose.
+
+Repeated bones on the selected vertex, a missing selected-vertex target and
+reducing a sole positive weight without another positive recipient are rejected
+limits. Repeated entries elsewhere remain supported native/import data. These
+guards are our bounded authoring policies, not observed behavior for every Spine
+edge case; no silent merge, equal-recipient fallback, sort or prune is introduced.
+
+Setup/Animate edits retain actual time and pending poses without keying them.
+Preview gestures freeze their explicit target and pose, use the shared baseline
+and commit one history step. Escape and context/history/Save/Export boundaries
+cancel owned previews before continuing; saves still exclude unkeyed poses.
+Weights remains a provisional right-column pane with one selected vertex/bone.
+Brushes, locks, Auto, Update, individual removal and weighted vertex/topology
+editing remain unsupported.
+
+CLI and external-runtime results are recorded in the latest validation section;
+installed-editor interchange and native interaction are separate gates. Installed
+Spine 4.3.26 imports/re-exports seven of the eight Direct cases, including both
+ordinary [8,7] and [7,8] limb binding orders. The repeated-influence Add fixture
+fails that editor's import while passing the runtime; it is retained unchanged.
+These observations do not establish a universal parent-first influence order.
+
+For the seven editor outputs, measured bind-coordinate changes reach
+0.00476837158203125 and positive-weight changes reach 0.0000044405460357666016
+on the Direct weighted-bot case. Other measured positive weights are unchanged or
+within one f32 ULP. The independent adapter accepts all seven re-exports, but this
+does not prove lossless source-data or shape preservation, or interactive Spine UI
+parity. Do not generalize earlier fixtures' positive-weight preservation to every
+Direct output or canonicalize our data to repair the failed case.
+
+The seven editor outputs also remove one to four zero entries. Reimported results
+can therefore contain a bone on only some vertices. Such data remains valid, but
+the current missing-target and existing-global Add guards do not fill those sparse
+bindings; import acceptance does not promise every later weight edit is available.
+
+See [CLI](evidence/direct-cli.json), [runtime](evidence/direct-runtime.json), and
+[installed-editor interchange](evidence/direct-spine-editor.json). Separate
+[native acceptance](evidence/direct-native.json) verifies numeric/slider edits,
+one-step history, cancellation before Save, exact pending-pose retention and five
+Save backups. [Visual review](evidence/direct-visual.json) verifies loaded original
+artwork and the implemented cues; it does not establish exact Spine docking or
+pixel equivalence.
+
+Additional weight authoring does not add constraints, linked/deform timelines, binary `.skel`
+or native `.spine` support, and does not advance the **0/11** production-import result.
