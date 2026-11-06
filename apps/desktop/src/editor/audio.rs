@@ -226,6 +226,15 @@ impl AudioView {
 }
 
 impl Editor {
+    /// Stop owned audition before a synchronous native dialog blocks UI polling.
+    /// Retain the loaded snapshot and preferences even when the dialog is cancelled.
+    pub(super) fn pause_audio_for_modal(&mut self) {
+        self.audio.pause();
+        self.audio.epoch = self.audio.epoch.wrapping_add(1);
+        self.audio.controls.clear();
+        self.audio.owned_focus = false;
+    }
+
     pub(super) fn load_audio_path(&mut self, path: &std::path::Path) {
         self.audio.load(path);
     }
@@ -635,3 +644,131 @@ impl Editor {
 #[cfg(test)]
 #[path = "audio_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[test]
+fn blocking_modal_pause_retains_the_clip_preferences_and_main_history_even_on_pause_failure() {
+    use std::{cell::RefCell, rc::Rc};
+    struct State {
+        playing: bool,
+        position: f64,
+        gain: f32,
+        fail_pause: bool,
+    }
+    struct Player(Rc<RefCell<State>>);
+    impl AudioPlayer for Player {
+        fn position(&self) -> f64 {
+            self.0.borrow().position
+        }
+        fn is_playing(&self) -> bool {
+            self.0.borrow().playing
+        }
+        fn play(&mut self) -> Result<(), String> {
+            self.0.borrow_mut().playing = true;
+            Ok(())
+        }
+        fn pause(&mut self) -> Result<(), String> {
+            let mut state = self.0.borrow_mut();
+            if state.fail_pause {
+                return Err("Owned output pause failed".into());
+            }
+            state.playing = false;
+            Ok(())
+        }
+        fn stop(&mut self) -> Result<(), String> {
+            let mut state = self.0.borrow_mut();
+            state.playing = false;
+            state.position = 0.;
+            Ok(())
+        }
+        fn seek(&mut self, seconds: f64) -> Result<(), String> {
+            self.0.borrow_mut().position = seconds;
+            Ok(())
+        }
+        fn set_volume(&mut self, gain: f32) {
+            self.0.borrow_mut().gain = gain;
+        }
+        fn set_looping(&mut self, _looping: bool) {}
+    }
+    let mut bytes = b"RIFF".to_vec();
+    bytes.extend(16_036u32.to_le_bytes());
+    bytes.extend(b"WAVEfmt ");
+    bytes.extend(16u32.to_le_bytes());
+    bytes.extend(1u16.to_le_bytes());
+    bytes.extend(1u16.to_le_bytes());
+    bytes.extend(8_000u32.to_le_bytes());
+    bytes.extend(16_000u32.to_le_bytes());
+    bytes.extend(2u16.to_le_bytes());
+    bytes.extend(16u16.to_le_bytes());
+    bytes.extend(b"data");
+    bytes.extend(16_000u32.to_le_bytes());
+    bytes.resize(16_044, 0);
+    for fail_pause in [false, true] {
+        let mut editor = super::test_support::editor_fixture();
+        let mut pose = editor.selected_transform().unwrap();
+        pose.x += 3.;
+        editor.edit_transform(pose, &[Property::X]);
+        let document = editor.session.document().clone();
+        let pending = editor.session.pose_edits().clone();
+        let undo = editor.session.can_undo();
+        let redo = editor.session.can_redo();
+        let output = Rc::new(RefCell::new(State {
+            playing: true,
+            position: 0.25,
+            gain: 1.,
+            fail_pause,
+        }));
+        editor.audio.install(
+            "Original silent WAV".into(),
+            files::decode_wav(bytes.clone()).unwrap(),
+            Some(Box::new(Player(output.clone()))),
+        );
+        editor.audio.volume = 0.37;
+        editor.audio.looping = true;
+        editor.audio.apply_preferences();
+        editor.audio.poll();
+        editor.audio.start = 0.1;
+        editor.audio.span = 0.5;
+        editor.audio.blocked = false;
+        editor.audio.scrub = Some(Scrub {
+            left: 0.,
+            width: 100.,
+            start: 0.1,
+            span: 0.5,
+        });
+        editor.audio.controls.push(egui::Id::new("owned-volume"));
+        editor.audio.owned_focus = true;
+        let epoch = editor.audio.epoch;
+        editor.pause_audio_for_modal();
+        editor.audio.poll(); // Returning from a cancelled dialog never auto-resumes.
+        assert!(!output.borrow().playing && !editor.audio.playing());
+        assert_eq!(editor.audio.loaded.as_ref().unwrap().clip.bytes, bytes);
+        assert_eq!(
+            editor.audio.loaded.as_ref().unwrap().name,
+            "Original silent WAV"
+        );
+        assert_eq!(editor.audio.volume, 0.37);
+        assert!(!editor.audio.muted && editor.audio.looping);
+        assert_eq!((editor.audio.start, editor.audio.span), (0.1, 0.5));
+        assert!(
+            editor.audio.scrub.is_none()
+                && editor.audio.blocked
+                && editor.audio.controls.is_empty()
+        );
+        assert!(!editor.audio.owned_focus && editor.audio.epoch > epoch);
+        assert_eq!(editor.session.document(), &document);
+        assert_eq!(editor.session.pose_edits(), &pending);
+        assert_eq!(
+            (editor.session.can_undo(), editor.session.can_redo()),
+            (undo, redo)
+        );
+        assert!(editor.error.is_none());
+        if fail_pause {
+            assert!(editor.audio.error.is_some());
+            assert_eq!(output.borrow().gain, 0.);
+        } else {
+            assert!(editor.audio.error.is_none());
+            assert_eq!(editor.audio.position(), 0.25);
+        }
+    }
+}
