@@ -105,13 +105,18 @@ impl WorkingState {
             if !mix.is_finite() {
                 return Err("Sampled IK Mix cannot be represented by a finite stored key".into());
             }
-            let existing = self.document.animations[animation]
+            let keys = self.document.animations[animation]
                 .ik_tracks
                 .iter()
                 .find(|t| t.constraint == constraint)
-                .map(|t| ik_keyframe_at(&t.keys, key_time))
-                .transpose()?
-                .flatten();
+                .map(|t| t.keys.as_slice())
+                .unwrap_or(&[]);
+            // Existing imported fractional identities take priority over the
+            // frame grid; only a genuinely new key follows the snapping policy.
+            let existing = match ik_keyframe_at(keys, time)? {
+                Some(key) => Some(key),
+                None => ik_keyframe_at(keys, key_time)?,
+            };
             commands.push(Command::SetIkKey {
                 animation,
                 constraint,

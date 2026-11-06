@@ -20,11 +20,16 @@ pub enum IkPoseEdit {
     Mix { value: f32 },
     BendPositive { value: bool },
 }
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+enum IkProperty {
+    Mix,
+    BendPositive,
+}
 impl IkPoseEdit {
-    fn property(self) -> u8 {
+    fn property(self) -> IkProperty {
         match self {
-            Self::Mix { .. } => 0,
-            Self::BendPositive { .. } => 1,
+            Self::Mix { .. } => IkProperty::Mix,
+            Self::BendPositive { .. } => IkProperty::BendPositive,
         }
     }
 }
