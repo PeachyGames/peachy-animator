@@ -299,7 +299,7 @@ impl Editor {
 
 #[cfg(test)]
 mod tests {
-    use super::super::test_support::mesh_editor;
+    use super::super::test_support::{editor_context, mesh_editor};
     use super::*;
 
     fn frame(editor: &mut Editor, ctx: &egui::Context, events: Vec<egui::Event>, canvas: bool) {
@@ -380,7 +380,7 @@ mod tests {
                 assert!(editor.tool == Tool::Mesh);
                 assert!(editor.mesh_return_tool == Some(active));
                 assert!(editor.last_tool == prior);
-                let ctx = egui::Context::default();
+                let ctx = editor_context();
                 if select_bone {
                     editor.select(TreeItem::Bone(8));
                 } else {
@@ -417,7 +417,7 @@ mod tests {
                 editor.tool = active;
                 editor.last_tool = prior;
                 editor.enter_mesh_tool();
-                let ctx = egui::Context::default();
+                let ctx = editor_context();
                 frame(
                     &mut editor,
                     &ctx,
@@ -453,7 +453,7 @@ mod tests {
         editor.enter_mesh_tool();
         assert!(!editor.setup_mode);
         assert!(editor.tool == Tool::Mesh);
-        let ctx = egui::Context::default();
+        let ctx = editor_context();
         frame(&mut editor, &ctx, vec![], true);
         let before = editor.mesh_handles.clone();
         assert_eq!(before.len(), 4);
@@ -532,7 +532,7 @@ mod tests {
         assert!(editor.mesh_drag.is_none());
         editor.set_mesh_vertex(key.clone(), 1, [123., 456.]);
         editor.split_mesh_triangle(key);
-        let ctx = egui::Context::default();
+        let ctx = editor_context();
         frame(&mut editor, &ctx, vec![arrow()], false);
         assert!(editor.capture_targets.contains_key("meshVertex"));
         assert!(editor.capture_targets.contains_key("splitTriangle"));
@@ -586,7 +586,7 @@ mod tests {
             )
             .unwrap();
         let pending = editor.session.pose_edits().clone();
-        let ctx = egui::Context::default();
+        let ctx = editor_context();
         frame(&mut editor, &ctx, vec![], true);
         let point = pos2(editor.mesh_handles[2][0], editor.mesh_handles[2][1]);
         frame(
@@ -634,7 +634,7 @@ mod tests {
         editor.enter_mesh_tool();
         let original = editor.session.document().clone();
         let position = editor.editable_mesh_position(&key, 0).unwrap();
-        let ctx = egui::Context::default();
+        let ctx = editor_context();
         frame(&mut editor, &ctx, vec![arrow()], false);
         assert!(editor.capture_targets.contains_key("meshLocalX"));
         assert_eq!(

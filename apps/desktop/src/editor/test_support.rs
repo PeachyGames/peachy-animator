@@ -2,6 +2,12 @@
 use super::dopesheet_selection::KeyId;
 use super::*;
 
+pub(super) fn editor_context() -> egui::Context {
+    let ctx = egui::Context::default();
+    super::style::configure_editor_context(&ctx);
+    ctx
+}
+
 pub(super) fn editor_fixture() -> Editor {
     let mut doc: Document = serde_json::from_str(include_str!(
         "../../../../examples/peach-bot/peach-bot.peachy"

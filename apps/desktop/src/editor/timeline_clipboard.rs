@@ -346,7 +346,7 @@ impl Editor {
 
 #[cfg(test)]
 mod tests {
-    use super::super::test_support::{editor_fixture, select_rotation};
+    use super::super::test_support::{editor_context, editor_fixture, select_rotation};
     use super::*;
 
     fn clipboard() -> KeyClipboard {
@@ -606,7 +606,7 @@ mod tests {
             )
             .unwrap();
         let pending = editor.session.pose_edits().clone();
-        let ctx = egui::Context::default();
+        let ctx = editor_context();
         let mut events = a_cycle();
         events.insert(1, egui::Event::Copy);
         editor_frame(&mut editor, &ctx, events.clone(), false);
@@ -639,7 +639,7 @@ mod tests {
     fn editor_latch_observes_release_in_modal_and_text_fields_without_routing_selection() {
         let mut editor = editor_fixture();
         let original = editor.session.document().clone();
-        let ctx = egui::Context::default();
+        let ctx = editor_context();
         editor_frame(
             &mut editor,
             &ctx,
@@ -697,7 +697,7 @@ mod tests {
     #[test]
     fn editor_two_complete_a_chords_in_one_batch_progress_exactly_twice() {
         let mut editor = editor_fixture();
-        let ctx = egui::Context::default();
+        let ctx = editor_context();
         let mut events = a_cycle();
         events.extend(a_cycle());
         editor_frame(&mut editor, &ctx, events, false);
@@ -779,7 +779,7 @@ mod tests {
             property: Property::Rotation,
             time: 0.6
         }));
-        let ctx = egui::Context::default();
+        let ctx = editor_context();
         editor_frame(&mut editor, &ctx, a_cycle(), false);
         assert!(editor.key_drag.is_none());
         assert_eq!(editor.session.document(), &original);
@@ -809,7 +809,7 @@ mod tests {
 
     #[test]
     fn editor_delete_and_select_all_respect_the_original_keyboard_event_order() {
-        let ctx = egui::Context::default();
+        let ctx = editor_context();
         let mut editor = editor_fixture();
         let original = editor.session.document().clone();
         let expected = peachy_engine::apply_command(
