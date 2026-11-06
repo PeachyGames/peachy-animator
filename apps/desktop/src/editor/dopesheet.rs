@@ -1,7 +1,7 @@
 //! Dopesheet controls adapt pointer/keyboard input to shared commands.
 use super::dopesheet_selection::KeyId;
 use super::icons::Icon;
-use super::key_drag::{ChartGeometry, KeyDrag};
+use super::key_drag::{ChartGeometry, KeyDrag, primary_pointer_event};
 use super::*;
 
 impl Editor {
@@ -222,22 +222,24 @@ impl Editor {
                 .min_by(|(_, a), (_, b)| a.distance(pointer).total_cmp(&b.distance(pointer)))
                 .map(|(key, _)| *key)
         };
+        let (press_event, release_event) = ui.input(|input| {
+            (
+                primary_pointer_event(&input.events, true),
+                primary_pointer_event(&input.events, false),
+            )
+        });
         if self.error.is_none()
             && self.rename.is_none()
             && self.duplicate_animation.is_none()
             && !egui::Popup::is_any_open(ui.ctx())
             && ui.input(|input| input.focused)
-            && response.contains_pointer()
-            && ui.input(|input| input.pointer.button_pressed(egui::PointerButton::Primary))
-            && let Some(origin) = ui.input(|input| input.pointer.press_origin())
+            && (response.contains_pointer() || response.is_pointer_button_down_on())
+            && let Some((origin, modifiers)) = press_event
             && let Some(pressed) = hit_key(origin)
             && let Some(bone) = self.selected_bone()
         {
             self.cancel_gesture();
             self.reconcile_dopesheet_selection();
-            let copy = ui.input(|input| {
-                (input.modifiers.command || input.modifiers.ctrl) && input.modifiers.shift
-            });
             self.key_drag = KeyDrag::new(
                 self.animation,
                 bone,
@@ -245,27 +247,47 @@ impl Editor {
                 self.key_selection.keys(),
                 geometry,
                 origin.x,
-                copy,
+                modifiers,
             );
             response.request_focus();
         }
         let released = response.drag_stopped_by(egui::PointerButton::Primary);
-        if self.key_drag.is_some()
-            && (response.dragged_by(egui::PointerButton::Primary) || released)
-            && let Some(pointer) = response.interact_pointer_pos()
+        if let Some(pointer) = response.interact_pointer_pos()
+            && self.key_drag.as_ref().is_some_and(|drag| {
+                drag.should_preview(
+                    pointer.x,
+                    ui.ctx()
+                        .options(|options| options.input_options.max_click_dist),
+                    response.dragged_by(egui::PointerButton::Primary),
+                    released,
+                    response.clicked(),
+                )
+            })
         {
-            let unsnapped = ui.input(|input| input.modifiers.shift);
+            let unsnapped = release_event.map_or_else(
+                || ui.input(|input| input.modifiers.shift),
+                |(_, modifiers)| modifiers.shift,
+            );
             self.update_dopesheet_drag(pointer.x, unsnapped);
             response.request_focus();
             ui.ctx().request_repaint();
         }
-        if released {
+        if released && self.key_drag.as_ref().is_some_and(|drag| drag.active) {
             self.finish_dopesheet_drag();
-        } else if response.clicked() {
+        } else if response.clicked()
+            || (released && self.key_drag.as_ref().is_some_and(|drag| !drag.active))
+        {
             // A press that never crossed the drag threshold keeps ordinary click semantics.
+            let toggle = self.key_drag.as_ref().map_or_else(
+                || release_event.is_some_and(|(_, modifiers)| modifiers.command || modifiers.ctrl),
+                |drag| drag.toggle,
+            );
             self.finish_dopesheet_drag();
             response.request_focus();
-            if let Some(key) = response.interact_pointer_pos().and_then(hit_key) {
+            let pointer = release_event
+                .map(|(position, _)| position)
+                .or_else(|| response.interact_pointer_pos());
+            if let Some(key) = pointer.and_then(hit_key) {
                 self.playing = false;
                 self.set_time(key.time);
                 if response.double_clicked() {
@@ -279,7 +301,6 @@ impl Editor {
                         });
                     }
                 } else {
-                    let toggle = ui.input(|input| input.modifiers.command || input.modifiers.ctrl);
                     self.key_selection.select(key, toggle);
                 }
             } else {
@@ -288,6 +309,8 @@ impl Editor {
                     self.scrub_dopesheet(pointer, start, width, duration);
                 }
             }
+        } else if released {
+            self.finish_dopesheet_drag();
         } else if self.key_drag.is_none()
             && response.dragged_by(egui::PointerButton::Primary)
             && ui

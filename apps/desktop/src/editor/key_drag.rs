@@ -3,6 +3,22 @@ use super::dopesheet_selection::KeyId;
 use super::*;
 use peachy_engine::TimelineKey;
 
+/// Keep event-time modifiers even when later keys changed the frame's modifier snapshot.
+pub(super) fn primary_pointer_event(
+    events: &[egui::Event],
+    pressed: bool,
+) -> Option<(Pos2, egui::Modifiers)> {
+    events.iter().rev().find_map(|event| match event {
+        egui::Event::PointerButton {
+            pos,
+            button: egui::PointerButton::Primary,
+            pressed: event_pressed,
+            modifiers,
+        } if *event_pressed == pressed => Some((*pos, *modifiers)),
+        _ => None,
+    })
+}
+
 #[derive(Clone, Copy)]
 pub(super) struct ChartGeometry {
     pub start: f32,
@@ -19,6 +35,7 @@ pub(super) struct KeyDrag {
     origin_x: f32,
     pressed_time: f32,
     pub copy: bool,
+    pub toggle: bool,
     pub offset: f32,
     pub active: bool,
 }
@@ -31,7 +48,7 @@ impl KeyDrag {
         selected: &[KeyId],
         geometry: ChartGeometry,
         origin_x: f32,
-        copy: bool,
+        modifiers: egui::Modifiers,
     ) -> Option<Self> {
         if !geometry.start.is_finite()
             || !geometry.width.is_finite()
@@ -62,10 +79,25 @@ impl KeyDrag {
             selection_before: selected.to_vec(),
             origin_x,
             pressed_time: pressed.time,
-            copy,
+            copy: (modifiers.command || modifiers.ctrl) && modifiers.shift,
+            toggle: modifiers.command || modifiers.ctrl,
             offset: 0.,
             active: false,
         })
+    }
+    pub fn should_preview(
+        &self,
+        pointer_x: f32,
+        threshold: f32,
+        dragging: bool,
+        released: bool,
+        clicked: bool,
+    ) -> bool {
+        if self.active {
+            dragging || released
+        } else {
+            dragging && !released && !clicked && (pointer_x - self.origin_x).abs() > threshold
+        }
     }
     pub fn offset_at(&self, pointer_x: f32, fps: u32, unsnapped: bool) -> Option<f32> {
         let mut offset = (pointer_x - self.origin_x) / self.geometry.width * self.geometry.duration;
@@ -103,6 +135,7 @@ impl KeyDrag {
         serde_json::json!({
             "active":self.active,"animation":self.animation,"bone":self.bone,
             "sources":self.sources,"offset":self.offset,"copy":self.copy,
+            "toggle":self.toggle,
             "pressedTime":self.pressed_time,"originX":self.origin_x,
             "chart":{"start":self.geometry.start,"width":self.geometry.width,"duration":self.geometry.duration}
         })
@@ -196,7 +229,7 @@ mod tests {
             &[key(0.12345), key(0.6)],
             geometry(),
             140.,
-            false,
+            egui::Modifiers::NONE,
         )
         .unwrap();
         let offset = drag.offset_at(152., 30, false).unwrap();
@@ -218,7 +251,7 @@ mod tests {
             &[key(0.3), key(0.6)],
             geometry(),
             140.,
-            true,
+            egui::Modifiers::COMMAND | egui::Modifiers::SHIFT,
         )
         .unwrap();
         assert_eq!(drag.selection_at(0.), vec![key(0.9)]);
@@ -226,5 +259,71 @@ mod tests {
         assert!(drag.copy);
         assert_eq!(drag.sources[0].bone, 8);
         assert!(!drag.active);
+    }
+    #[test]
+    fn modified_click_release_selects_without_retiming_or_using_later_frame_modifiers() {
+        use super::super::dopesheet_selection::KeySelection;
+        let mut document: Document = serde_json::from_str(include_str!(
+            "../../../../examples/peach-bot/peach-bot.peachy"
+        ))
+        .unwrap();
+        document.animations[0].tracks[0].keys[1].time = 0.12345;
+        document.validate().unwrap();
+        let pressed = key(0.12345);
+        let raw = egui::RawInput {
+            events: vec![
+                egui::Event::PointerButton {
+                    pos: Pos2::ZERO,
+                    button: egui::PointerButton::Primary,
+                    pressed: true,
+                    modifiers: egui::Modifiers::COMMAND,
+                },
+                egui::Event::PointerButton {
+                    pos: Pos2::ZERO,
+                    button: egui::PointerButton::Secondary,
+                    pressed: true,
+                    modifiers: egui::Modifiers::NONE,
+                },
+                egui::Event::PointerButton {
+                    pos: Pos2::ZERO,
+                    button: egui::PointerButton::Primary,
+                    pressed: false,
+                    modifiers: egui::Modifiers::COMMAND,
+                },
+                egui::Event::ModifiersChanged(egui::Modifiers::NONE),
+            ],
+            ..Default::default()
+        };
+        let (position, modifiers) = primary_pointer_event(&raw.events, true).unwrap();
+        let mut selected = KeySelection::default();
+        selected.reconcile(&document, Some(0), Some(8));
+        selected.select(key(0.), false);
+        let mut drag = KeyDrag::new(
+            0,
+            8,
+            pressed,
+            selected.keys(),
+            geometry(),
+            position.x,
+            modifiers,
+        )
+        .unwrap();
+        let mut session = Session::new(document.clone()).unwrap();
+        // A release may also have a drag-stopped response after an earlier cancelled drag.
+        if drag.should_preview(position.x, 6., false, true, true) {
+            session.begin_transaction();
+            let offset = drag.offset_at(position.x, document.fps, false).unwrap();
+            session.preview_transaction(drag.command(offset)).unwrap();
+            selected.replace(drag.selection_at(offset));
+        }
+        selected.select(pressed, drag.toggle);
+        assert_eq!(selected.keys(), &[key(0.), pressed]);
+        assert_eq!(session.document(), &document);
+        assert!(!session.can_undo());
+        assert!(!drag.should_preview(position.x, 6., false, true, false));
+        assert!(!drag.should_preview(position.x, 6., true, false, false));
+        assert!(drag.should_preview(position.x + 7., 6., true, false, false));
+        drag.active = true;
+        assert!(drag.should_preview(position.x, 6., false, true, false));
     }
 }
