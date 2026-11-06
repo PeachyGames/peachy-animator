@@ -112,6 +112,38 @@ impl Session {
         let pose = self.mesh_bind_pose(target)?;
         self.dispatch(Command::UnbindMesh { attachment, pose })
     }
+    /// Append a genuinely new zero-weight binding at the explicit current pose.
+    pub fn add_mesh_bone_binding(
+        &mut self,
+        attachment: AttachmentRef,
+        bone: usize,
+        target: EditTarget,
+    ) -> Result<(), String> {
+        let pose = self.mesh_bind_pose(target)?;
+        self.dispatch(Command::AddMeshBoneBinding {
+            attachment,
+            bone,
+            pose,
+        })
+    }
+    /// Set one vertex/bone weight without keying, rebinding or discarding pending poses.
+    pub fn set_mesh_bone_weight(
+        &mut self,
+        attachment: AttachmentRef,
+        vertex: usize,
+        bone: usize,
+        weight: f32,
+        target: EditTarget,
+    ) -> Result<(), String> {
+        let pose = self.mesh_bind_pose(target)?;
+        self.dispatch(Command::SetMeshBoneWeight {
+            attachment,
+            vertex,
+            bone,
+            weight,
+            pose,
+        })
+    }
     /// Pose with Auto Key on or off through the same validation/undo boundary.
     pub fn edit_pose(
         &mut self,

@@ -95,6 +95,18 @@ pub enum Command {
         attachment: AttachmentRef,
         pose: MeshBindPose,
     },
+    AddMeshBoneBinding {
+        attachment: AttachmentRef,
+        bone: usize,
+        pose: MeshBindPose,
+    },
+    SetMeshBoneWeight {
+        attachment: AttachmentRef,
+        vertex: usize,
+        bone: usize,
+        weight: f32,
+        pose: MeshBindPose,
+    },
     Batch {
         commands: Vec<Command>,
     },
@@ -243,6 +255,29 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
         }
         Command::UnbindMesh { attachment, pose } => {
             crate::mesh_binding::unbind_mesh(doc, &attachment, &pose)?;
+        }
+        Command::AddMeshBoneBinding {
+            attachment,
+            bone,
+            pose,
+        } => {
+            crate::mesh_binding::add_mesh_bone_binding(doc, &attachment, bone, &pose)?;
+        }
+        Command::SetMeshBoneWeight {
+            attachment,
+            vertex,
+            bone,
+            weight,
+            pose,
+        } => {
+            crate::mesh_binding::set_mesh_bone_weight(
+                doc,
+                &attachment,
+                vertex,
+                bone,
+                weight,
+                &pose,
+            )?;
         }
         Command::AddBone { bone } => doc.bones.push(bone),
         Command::AddAnimation { name, duration } => {

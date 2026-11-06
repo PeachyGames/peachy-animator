@@ -34,6 +34,8 @@ mod animation_tests;
 #[cfg(test)]
 mod binding_tests;
 #[cfg(test)]
+mod direct_weight_tests;
+#[cfg(test)]
 mod duration_tests;
 #[cfg(test)]
 mod tests;
