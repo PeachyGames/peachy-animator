@@ -310,7 +310,11 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
                     }],
                 }]
             };
-            doc.animations.push(Animation { name, tracks });
+            doc.animations.push(Animation {
+                ik_tracks: vec![],
+                name,
+                tracks,
+            });
         }
         Command::RenameAnimation { animation, name } => {
             doc.animations

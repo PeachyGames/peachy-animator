@@ -2,9 +2,9 @@
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 mod ik;
-pub use ik::{Constraint, IkConstraint, IkSetup};
+pub use ik::{Constraint, IkConstraint, IkCurve, IkKeyframe, IkSetup, IkTrack};
 
-pub const FORMAT_VERSION: u32 = 6;
+pub const FORMAT_VERSION: u32 = 7;
 pub const KEY_TIME_EPSILON: f32 = 0.00001;
 pub fn same_key_time(a: f32, b: f32) -> bool {
     (a - b).abs() < KEY_TIME_EPSILON
@@ -337,6 +337,7 @@ pub struct Region {
 pub struct Animation {
     pub name: String,
     pub tracks: Vec<Track>,
+    pub ik_tracks: Vec<IkTrack>,
 }
 
 impl Animation {
@@ -344,8 +345,12 @@ impl Animation {
     pub fn duration(&self) -> f32 {
         self.tracks
             .iter()
-            .filter_map(|track| track.keys.last())
-            .map(|key| key.time)
+            .filter_map(|track| track.keys.last().map(|key| key.time))
+            .chain(
+                self.ik_tracks
+                    .iter()
+                    .filter_map(|track| track.keys.last().map(|key| key.time)),
+            )
             .fold(0.0, f32::max)
     }
 }
@@ -518,6 +523,21 @@ impl Document {
                         return Err("Bezier time handles must be ordered within 0–1".into());
                     }
                     previous = k.time;
+                }
+            }
+            let mut ik_tracks = BTreeSet::new();
+            for track in &a.ik_tracks {
+                if track.constraint >= self.constraints.len() || !ik_tracks.insert(track.constraint)
+                {
+                    return Err("Invalid or duplicate IK track".into());
+                }
+                let mut previous = -1.;
+                for key in &track.keys {
+                    key.validate()?;
+                    if key.time <= previous {
+                        return Err("IK keys must be strictly ordered".into());
+                    }
+                    previous = key.time;
                 }
             }
         }

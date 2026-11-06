@@ -225,6 +225,7 @@ fn doc() -> Document {
         slots: vec![],
         skins: Default::default(),
         animations: vec![Animation {
+            ik_tracks: vec![],
             name: "wave".into(),
 
             tracks: vec![],
@@ -602,7 +603,7 @@ fn unkeyed_multi_bone_pose_keys_atomically_without_touching_setup() {
     assert!(!session.is_dirty());
     assert_eq!(session.local_pose(Some(0), 0.5)[0], pose);
     assert_eq!(session.local_pose(None, 0.5)[0], fixture.bones[0].setup);
-    let scene = scene_from_locals(
+    let scene = checked_setup_scene_from_locals(
         session.document(),
         "default",
         session.local_pose(Some(0), 0.5),

@@ -1,6 +1,6 @@
 //! Bounded normal IK from elementary link geometry and original public pose
 //! observations. No external implementation or runtime constant was inspected.
-use crate::{Affine, ik::check_world, pose::OBSERVED_DEGREES_TO_RADIANS, world_pose};
+use crate::{Affine, IkPose, ik::check_world, pose::OBSERVED_DEGREES_TO_RADIANS, world_pose};
 use peachy_document::{Constraint, Document, IkConstraint, Transform};
 
 /// Applied f32 frames and bone endpoints must retain their solved f64 reference
@@ -9,20 +9,22 @@ const IK_WORLD_COORDINATE_TOLERANCE: f64 = 0.001;
 
 pub(crate) fn apply(
     doc: &Document,
+    poses: &[IkPose],
     locals: &mut [Transform],
     world: &mut Vec<Affine>,
 ) -> Result<(), String> {
     let active: Vec<_> = doc
         .constraints
         .iter()
-        .filter_map(|constraint| {
+        .zip(poses)
+        .filter_map(|(constraint, pose)| {
             let Constraint::Ik(ik) = constraint;
-            (ik.setup.mix > 0.0).then_some(ik)
+            (pose.mix != 0.0).then_some((ik, *pose))
         })
         .collect();
-    for (index, ik) in active.iter().enumerate() {
+    for (index, (ik, _)) in active.iter().enumerate() {
         validate_domain(doc, locals, ik)?;
-        for other in &active[..index] {
+        for (other, _) in &active[..index] {
             // Subtrees intersect exactly when one root is inside the other.
             let overlaps = within(doc, ik.bones[0], other.bones[0])
                 || within(doc, other.bones[0], ik.bones[0]);
@@ -37,8 +39,8 @@ pub(crate) fn apply(
             }
         }
     }
-    for ik in active {
-        solve(doc, locals, world, ik).map_err(|error| format!("IK {}: {error}", ik.name))?;
+    for (ik, pose) in active {
+        solve(doc, locals, world, ik, pose).map_err(|error| format!("IK {}: {error}", ik.name))?;
     }
     Ok(())
 }
@@ -99,6 +101,7 @@ fn solve(
     locals: &mut [Transform],
     world: &mut Vec<Affine>,
     ik: &IkConstraint,
+    pose: IkPose,
 ) -> Result<(), String> {
     let first = ik.bones[0];
     let parent_index = doc.bones[first]
@@ -137,7 +140,7 @@ fn solve(
         } else {
             ((distance * distance - a * a - b * b) / (2. * a * b)).clamp(-1., 1.)
         };
-        let child_angle = cosine.acos() * if ik.setup.bend_positive { 1. } else { -1. };
+        let child_angle = cosine.acos() * if pose.bend_positive { 1. } else { -1. };
         let parent_angle = dy.atan2(dx) - (b * child_angle.sin()).atan2(a + b * child_angle.cos());
         desired[0].1 = parent_angle / OBSERVED_DEGREES_TO_RADIANS;
         desired.push((child, child_angle / OBSERVED_DEGREES_TO_RADIANS));
@@ -153,7 +156,7 @@ fn solve(
         } else if delta > 180. {
             delta -= 360.;
         }
-        let rotation = authored + delta * f64::from(ik.setup.mix);
+        let rotation = authored + delta * pose.mix;
         if !rotation.is_finite() || !(rotation as f32).is_finite() {
             return Err("applied rotation is outside the finite coordinate range".into());
         }

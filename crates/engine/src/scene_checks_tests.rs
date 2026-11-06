@@ -42,6 +42,7 @@ fn fixture() -> Document {
             )]),
         )]),
         animations: vec![Animation {
+            ik_tracks: vec![],
             name: "pose".into(),
             tracks: vec![],
         }],
@@ -120,13 +121,13 @@ fn checked_evaluation_accepts_finite_wide_shear_and_reports_unrepresentable_over
 fn checked_locals_reject_wrong_counts_nonfinite_previews_and_world_overflow() {
     let document = fixture();
     assert!(
-        checked_scene_from_locals(&document, "default", vec![])
+        checked_setup_scene_from_locals(&document, "default", vec![])
             .err()
             .unwrap()
             .contains("one local transform")
     );
     assert!(
-        checked_scene_from_locals(
+        checked_setup_scene_from_locals(
             &document,
             "default",
             vec![Transform {

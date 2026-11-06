@@ -49,7 +49,7 @@ fn direct(vertex: usize, bone: usize, weight: f32, pose: MeshBindPose) -> Comman
 }
 
 fn positions(doc: &Document, pose: &MeshBindPose) -> Vec<[f32; 2]> {
-    scene_from_locals(doc, "default", pose.locals.clone())
+    checked_setup_scene_from_locals(doc, "default", pose.locals.clone())
         .unwrap()
         .attachments[0]
         .vertices
