@@ -1,6 +1,7 @@
 //! Functional animation core and the in-memory session that records its results.
 mod authoring;
 mod commands;
+mod ik;
 mod mesh;
 mod mesh_binding;
 mod names;
@@ -14,6 +15,7 @@ mod tools;
 
 pub use authoring::{KeyState, PoseEdits, transform_group};
 pub use commands::{Command, EditTarget, apply_command, keyframe_at};
+pub use ik::{EvaluatedPose, checked_evaluate_pose, checked_pose_from_locals};
 pub use mesh::{mesh_world_vertices, region_to_mesh, region_vertices};
 pub use mesh_binding::MeshBindPose;
 pub use picking::{attachment_bounds, pick_attachment};
@@ -40,6 +42,8 @@ mod binding_tests;
 mod direct_weight_tests;
 #[cfg(test)]
 mod duration_tests;
+#[cfg(test)]
+mod ik_tests;
 #[cfg(test)]
 mod pose_preview_tests;
 #[cfg(test)]

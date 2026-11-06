@@ -486,7 +486,8 @@ mod tests {
             editor
                 .session
                 .local_pose(editor.active_animation(), editor.time),
-        );
+        )
+        .unwrap();
         let draw = scene
             .attachments
             .iter()

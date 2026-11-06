@@ -4,6 +4,7 @@ use serde_json::json;
 
 fn rig() -> Document {
     Document {
+        constraints: vec![],
         format: FORMAT_VERSION,
         name: "Original shear contracts".into(),
         fps: 30,
@@ -863,7 +864,7 @@ fn sheared_weighted_and_region_scene_matches_original_external_observation_point
         ]),
     )]);
     document.validate().unwrap();
-    let scene = evaluate_scene(&document, None, 0., "default", None);
+    let scene = evaluate_scene(&document, None, 0., "default", None).unwrap();
     // Expected points come from recorded public-API parent/child world columns,
     // not from a second implementation of the new evaluator.
     crate::weighted_tests::assert_points(
@@ -931,6 +932,7 @@ fn bind_add_direct_and_unbind_share_sheared_pending_pose_geometry_and_one_step_h
             "default",
             session.local_pose(Some(0), 0.137),
         )
+        .unwrap()
         .attachments[0]
             .vertices
             .clone()
