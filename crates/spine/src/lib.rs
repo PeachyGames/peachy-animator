@@ -358,10 +358,10 @@ pub fn import_json(value: &Value, name: &str) -> Result<Document, String> {
                                             Curve::Linear
                                         } else {
                                             Curve::Bezier([
-                                                (h[0] - time) / (next_time - time),
-                                                (h[1] - value) / delta,
-                                                (h[2] - time) / (next_time - time),
-                                                (h[3] - value) / delta,
+                                                normalized_control(time, next_time, h[0])?,
+                                                normalized_control(value, next_value, h[1])?,
+                                                normalized_control(time, next_time, h[2])?,
+                                                normalized_control(value, next_value, h[3])?,
                                             ])
                                         }
                                     }
@@ -466,13 +466,11 @@ pub fn export_json(doc: &Document) -> Result<Value, String> {
                     Curve::Stepped => k["curve"] = json!("stepped"),
                     Curve::Bezier([x1, y1, x2, y2]) if i + 1 < track.keys.len() => {
                         let next = track.keys[i + 1];
-                        let dt = next.time - key.time;
-                        let dv = next.value - key.value;
                         k["curve"] = json!([
-                            key.time + x1 * dt,
-                            key.value + y1 * dv,
-                            key.time + x2 * dt,
-                            key.value + y2 * dv
+                            absolute_control(key.time, next.time, x1)?,
+                            absolute_control(key.value, next.value, y1)?,
+                            absolute_control(key.time, next.time, x2)?,
+                            absolute_control(key.value, next.value, y2)?
                         ]);
                     }
                     _ => {}
@@ -488,6 +486,42 @@ pub fn export_json(doc: &Document) -> Result<Value, String> {
     }
     Ok(
         json!({"skeleton":{"spine":TARGET_VERSION,"images":"./images/","fps":doc.fps},"bones":bones,"slots":slots,"skins":skins,"animations":animations}),
+    )
+}
+
+fn checked_curve_coordinate(value: f64, context: &str) -> Result<f32, String> {
+    let native = value as f32;
+    if !value.is_finite() || !native.is_finite() {
+        return Err(format!(
+            "Bezier {context} exceeds the finite native coordinate range"
+        ));
+    }
+    Ok(native)
+}
+
+fn normalized_control(start: f32, end: f32, handle: f32) -> Result<f32, String> {
+    let span = end - start;
+    let offset = handle - start;
+    let normalized = offset / span;
+    if span.is_finite() && offset.is_finite() && normalized.is_finite() {
+        return Ok(normalized);
+    }
+    checked_curve_coordinate(
+        (f64::from(handle) - f64::from(start)) / (f64::from(end) - f64::from(start)),
+        "normalization",
+    )
+}
+
+fn absolute_control(start: f32, end: f32, normalized: f32) -> Result<f32, String> {
+    let span = end - start;
+    let offset = normalized * span;
+    let handle = start + offset;
+    if span.is_finite() && offset.is_finite() && handle.is_finite() {
+        return Ok(handle);
+    }
+    checked_curve_coordinate(
+        f64::from(start) + f64::from(normalized) * (f64::from(end) - f64::from(start)),
+        "export handle",
     )
 }
 

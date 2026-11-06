@@ -111,6 +111,135 @@ fn serialized_pose_command_uses_the_shared_domain_transition() {
 }
 
 #[test]
+fn finite_extreme_curve_intermediates_roundtrip_and_pose_without_null_output() {
+    use serde_json::{Value, json};
+    let folder = std::env::temp_dir().join(format!(
+        "peachy-wide-curve-cli-{}-{}",
+        std::process::id(),
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
+    fs::create_dir(&folder).unwrap();
+    let cli = env!("CARGO_BIN_EXE_peachy-cli");
+    for (name, timelines) in [
+        (
+            "scalar-shear",
+            json!({"shearx":[{"time":0,"value":-2e38_f32,"curve":[0.2,-1e38_f32,0.8,1e38_f32]},{"time":1,"value":2e38_f32}]}),
+        ),
+        (
+            "paired-shear",
+            json!({"shear":[{"time":0,"x":-2e38_f32,"y":2e38_f32,"curve":[0.2,-1e38_f32,0.8,1e38_f32,0.2,1e38_f32,0.8,-1e38_f32]},{"time":1,"x":2e38_f32,"y":-2e38_f32}]}),
+        ),
+        (
+            "translate",
+            json!({"translatex":[{"time":0,"value":-2e38_f32,"curve":[0.2,-1e38_f32,0.8,1e38_f32]},{"time":1,"value":2e38_f32}]}),
+        ),
+    ] {
+        let source = folder.join(format!("{name}.json"));
+        let native = folder.join(format!("{name}.peachy"));
+        let exported = folder.join(format!("{name}-out.json"));
+        let reopened = folder.join(format!("{name}-reopened.peachy"));
+        let json = json!({"skeleton":{"spine":"4.3.26"},"bones":[{"name":"root"}],"slots":[],"skins":[],"animations":{"range":{"bones":{"root":timelines}}}});
+        let original = serde_json::to_vec_pretty(&json).unwrap();
+        fs::write(&source, &original).unwrap();
+        let inspect = Command::new(cli)
+            .args(["inspect".as_ref(), source.as_os_str()])
+            .output()
+            .unwrap();
+        assert!(inspect.status.success());
+        assert_eq!(
+            serde_json::from_slice::<Value>(&inspect.stdout).unwrap()["supported"],
+            true
+        );
+        for args in [
+            vec!["import".as_ref(), source.as_os_str(), native.as_os_str()],
+            vec!["export".as_ref(), native.as_os_str(), exported.as_os_str()],
+            vec![
+                "import".as_ref(),
+                exported.as_os_str(),
+                reopened.as_os_str(),
+            ],
+        ] {
+            let result = Command::new(cli).args(args).output().unwrap();
+            assert!(
+                result.status.success(),
+                "{name}: {}",
+                String::from_utf8_lossy(&result.stderr)
+            );
+        }
+        let pose = Command::new(cli)
+            .args([
+                "pose".as_ref(),
+                native.as_os_str(),
+                "range".as_ref(),
+                "0.5".as_ref(),
+            ])
+            .output()
+            .unwrap();
+        assert!(pose.status.success());
+        let posed: Value = serde_json::from_slice(&pose.stdout).unwrap();
+        assert!(
+            posed["bones"][0]["world"]
+                .as_object()
+                .unwrap()
+                .values()
+                .all(|v| v.as_f64().is_some_and(f64::is_finite)),
+            "{name}: {}",
+            String::from_utf8_lossy(&pose.stdout)
+        );
+        assert!(!fs::read_to_string(&exported).unwrap().contains("null"));
+        assert_eq!(
+            peachy_io::load(&native).unwrap().animations,
+            peachy_io::load(&reopened).unwrap().animations
+        );
+        assert_eq!(fs::read(&source).unwrap(), original);
+    }
+    let invalid_source = folder.join("unrepresentable-normalization.json");
+    let unpublished_native = folder.join("unpublished.peachy");
+    let invalid = json!({"skeleton":{"spine":"4.3.26"},"bones":[{"name":"root"}],"slots":[],"skins":[],"animations":{"range":{"bones":{"root":{"shearx":[{"time":0,"value":0,"curve":[0.2,f32::MAX,0.8,f32::MAX]},{"time":1,"value":1e-7_f32}]}}}}});
+    let original = serde_json::to_vec_pretty(&invalid).unwrap();
+    fs::write(&invalid_source, &original).unwrap();
+    let rejected = Command::new(cli)
+        .args([
+            "import".as_ref(),
+            invalid_source.as_os_str(),
+            unpublished_native.as_os_str(),
+        ])
+        .output()
+        .unwrap();
+    assert!(!rejected.status.success());
+    assert!(String::from_utf8_lossy(&rejected.stderr).contains("Bezier normalization exceeds"));
+    assert!(!unpublished_native.exists());
+    assert_eq!(fs::read(&invalid_source).unwrap(), original);
+
+    let mut invalid = peachy_io::load(&folder.join("scalar-shear.peachy")).unwrap();
+    invalid.animations[0].tracks[0].keys[0].value = 0.0;
+    invalid.animations[0].tracks[0].keys[1].value = 2.0;
+    invalid.animations[0].tracks[0].keys[0].curve =
+        peachy_document::Curve::Bezier([0.2, f32::MAX, 0.8, f32::MAX]);
+    assert!(invalid.validate().is_ok());
+    let native = folder.join("unrepresentable-export.peachy");
+    let unpublished_json = folder.join("unpublished.json");
+    let original = serde_json::to_vec_pretty(&invalid).unwrap();
+    fs::write(&native, &original).unwrap();
+    let rejected = Command::new(cli)
+        .args([
+            "export".as_ref(),
+            native.as_os_str(),
+            unpublished_json.as_os_str(),
+        ])
+        .output()
+        .unwrap();
+    assert!(!rejected.status.success());
+    assert!(String::from_utf8_lossy(&rejected.stderr).contains("Bezier export handle exceeds"));
+    assert!(!unpublished_json.exists());
+    assert_eq!(fs::read(&native).unwrap(), original);
+    fs::remove_dir_all(folder).unwrap();
+}
+
+#[test]
 fn serialized_mesh_edits_export_and_evaluate_the_shared_scene() {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
     let source = root.join("examples/peach-bot/peach-bot.peachy");
