@@ -669,6 +669,7 @@ impl eframe::App for Editor {
                         .show(ui, |ui| {
                             egui::ScrollArea::vertical()
                                 .id_salt("properties-scroll")
+                                .auto_shrink([false, false])
                                 .show(ui, |ui| self.inspector(ui));
                         });
                     egui::CentralPanel::default()
