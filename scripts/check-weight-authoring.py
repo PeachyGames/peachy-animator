@@ -92,7 +92,7 @@ def final_key_locals(document, clip):
 
 
 def clip_end(clip):
-    return max((key["time"] for track in clip["tracks"] for key in track["keys"]), default=0.0)
+    return max((key["time"] for track in [*clip["tracks"], *clip.get("ik_tracks", [])] for key in track["keys"]), default=0.0)
 
 
 def bind_command(bone, locals_):
@@ -111,7 +111,8 @@ class Acceptance:
         self.invocations = []
         self.scene_cache = {}
         self.metrics = {"sceneComparisons": 0, "worldCoordinates": 0, "vertexCoordinates": 0,
-                        "maxWorldError": 0.0, "maxVertexError": 0.0, "maxUVError": 0.0}
+                        "maxWorldError": 0.0, "maxVertexError": 0.0, "maxUVError": 0.0,
+                        "ikPoseComparisons": 0, "maxIKMixError": 0.0}
 
     def run(self, arguments, failure=False, executable=None, expected_error=None):
         argv = [str(executable or self.cli), *map(str, arguments)]
@@ -165,12 +166,21 @@ class Acceptance:
             for field in ["locals", "appliedLocals"]:
                 require(isinstance(scene.get(field), list) and len(scene[field]) == len(scene["bones"]),
                         f"CLI pose is missing the separate {field} diagnostic")
+            require(isinstance(scene.get("ikPoses"), list), "CLI pose is missing the separate ikPoses diagnostic")
             self.scene_cache[key] = scene
         return self.scene_cache[key]
 
     def compare(self, before, after, label):
         require([bone["name"] for bone in before["bones"]] == [bone["name"] for bone in after["bones"]],
                 f"{label}: bone identity changed")
+        require([(p["constraint"], p["name"]) for p in before["ikPoses"]] ==
+                [(p["constraint"], p["name"]) for p in after["ikPoses"]], f"{label}: IK group identity changed")
+        for a, b in zip(before["ikPoses"], after["ikPoses"]):
+            error = abs(a["mix"] - b["mix"])
+            require(math.isfinite(error) and error <= 1e-6, f"{label}: IK Mix error {error}")
+            require(a["bendPositive"] == b["bendPositive"], f"{label}: discrete IK bend changed")
+            self.metrics["ikPoseComparisons"] += 1
+            self.metrics["maxIKMixError"] = max(self.metrics["maxIKMixError"], error)
         for a, b in zip(before["bones"], after["bones"]):
             for field in ["a", "b", "c", "d", "x", "y"]:
                 error = abs(a["world"][field] - b["world"][field])

@@ -310,3 +310,40 @@ fn native_final_curve_is_inert_and_export_validates_bad_references_before_indexi
     }];
     assert!(export_json(&invalid).is_err());
 }
+
+#[test]
+fn eight_observed_native_and_retimed_curves_export_complete_f64_control_times() {
+    let directory =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/ik-time-fidelity");
+    let mut cases = 0;
+    for entry in std::fs::read_dir(directory).unwrap() {
+        let path = entry.unwrap().path();
+        if path.extension().and_then(|v| v.to_str()) != Some("peachy") {
+            continue;
+        }
+        let doc: Document = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        doc.validate().unwrap();
+        let track = &doc.animations[0].ik_tracks[0];
+        let left = track.keys[0];
+        let right = track.keys[1];
+        let IkCurve::Bezier { time, .. } = left.curve else {
+            panic!()
+        };
+        let expected = time.map(|ratio| {
+            f64::from(left.time) + (f64::from(right.time) - f64::from(left.time)) * ratio
+        });
+        assert!(
+            expected.iter().any(|&v| f64::from(v as f32) != v),
+            "Fixture must expose the old rounding loss"
+        );
+        let output = export_json(&doc).unwrap();
+        let Constraint::Ik(ik) = &doc.constraints[track.constraint];
+        let handles = &output["animations"][&doc.animations[0].name]["ik"][&ik.name][0]["curve"];
+        assert_eq!(handles[0].as_f64(), Some(expected[0]), "{}", path.display());
+        assert_eq!(handles[2].as_f64(), Some(expected[1]), "{}", path.display());
+        assert_eq!(handles[4], handles[0]);
+        assert_eq!(handles[6], handles[2]);
+        cases += 1;
+    }
+    assert_eq!(cases, 8);
+}

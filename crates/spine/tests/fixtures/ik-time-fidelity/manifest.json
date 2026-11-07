@@ -1,0 +1,50 @@
+[
+  {
+    "case": "arbitrary-native-ratio-4",
+    "sourceSHA256": "eb19c5ef6c519a63a16f194646d72d0e343181829cc2aa9f22b80441745c55c1",
+    "originalWorldErrorFromF32XExport": 0.061586414826524126,
+    "query": 0.5
+  },
+  {
+    "case": "arbitrary-native-ratio-7",
+    "sourceSHA256": "636f395c73c478a2af8e688cd851bbfe5c53c012f0d44c60803f9e7e777ff898",
+    "originalWorldErrorFromF32XExport": 0.09557249016715355,
+    "query": 0.5
+  },
+  {
+    "case": "arbitrary-native-ratio-11",
+    "sourceSHA256": "c5784c1d2849252cefbd520b0f61a5b2bd603d3d18736b870f718bf375cf2e7b",
+    "originalWorldErrorFromF32XExport": 0.0012372104768027673,
+    "query": 0.5000000596046448
+  },
+  {
+    "case": "arbitrary-native-ratio-17",
+    "sourceSHA256": "eafb26d0fc82f8029eeba25ac8b89d64791742d4b350ae4841fa80062f39d009",
+    "originalWorldErrorFromF32XExport": 0.1935414675085237,
+    "query": 0.5
+  },
+  {
+    "case": "retimed-source-derived-12198",
+    "sourceSHA256": "bd22f10ae7e890df9575cdc51f85c19e99a71c62722fb99097d1b5543f181dc4",
+    "originalWorldErrorFromF32XExport": 0.15403930626000406,
+    "query": 0.8000000715255737
+  },
+  {
+    "case": "retimed-source-derived-12246",
+    "sourceSHA256": "bc0f8165adb1cd12159d949b71435afece108f8317fec1d021198ed9205d4448",
+    "originalWorldErrorFromF32XExport": 0.15036987577259453,
+    "query": 0.8000006079673767
+  },
+  {
+    "case": "retimed-source-derived-12419",
+    "sourceSHA256": "4f2c10a62a58b6f47d8c7848cbf096ea38c84d7838822ee63ee78484e1b2721b",
+    "originalWorldErrorFromF32XExport": 0.0015465124263854759,
+    "query": 0.8000008463859558
+  },
+  {
+    "case": "retimed-source-derived-12938",
+    "sourceSHA256": "f5bde958b2c9536f08967938c34a38f575b031420ef2220b5d4a639ec51e02a4",
+    "originalWorldErrorFromF32XExport": 1.9772410074584466,
+    "query": 0.8000002503395081
+  }
+]
