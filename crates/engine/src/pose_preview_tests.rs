@@ -40,6 +40,7 @@ fn fixture() -> Document {
         slots: vec![],
         skins: Default::default(),
         animations: vec![Animation {
+            ik_tracks: vec![],
             name: "pose".into(),
             tracks: vec![
                 Track {

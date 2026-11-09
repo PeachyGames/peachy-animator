@@ -149,7 +149,7 @@ fn all_nine_current_examples_equal_their_white_v6_migration() {
         let mut old = current;
         old["format"] = json!(6);
         for animation in old["animations"].as_array_mut().unwrap() {
-            for field in ["physics", "physics_resets"] {
+            for field in ["ik_tracks", "physics", "physics_resets"] {
                 assert_eq!(
                     animation.as_object_mut().unwrap().remove(field),
                     Some(json!([]))

@@ -13,6 +13,7 @@ enum Input {
         base: f32,
         value: f32,
         touched: bool,
+        valid_text: bool,
         text: bool,
     },
 }
@@ -109,6 +110,36 @@ impl Editor {
             }
             self.transform_blocked = true;
             self.session.cancel_transaction();
+        }
+    }
+    pub(super) fn transform_key_ready(&mut self) -> Result<(), String> {
+        let Some(edit) = self.drag.as_mut() else {
+            return Ok(());
+        };
+        edit.finish_pending = false;
+        if matches!(
+            edit.input,
+            Input::Numeric {
+                valid_text: false,
+                ..
+            }
+        ) {
+            return Err("Enter a valid transform value before keying".into());
+        }
+        edit.error.clone().map_or(Ok(()), Err)
+    }
+    pub(super) fn seal_transform_for_key(&mut self) {
+        if let Some(edit) = self.drag.take() {
+            if let Input::Numeric { control, .. } = edit.input {
+                self.transform_blocked_control = Some(control);
+            }
+            self.transform_blocked = true;
+        }
+    }
+    pub(super) fn hold_transform_key_error(&mut self, error: &str) {
+        if let Some(edit) = &mut self.drag {
+            edit.finish_pending = false;
+            edit.error = Some(error.into());
         }
     }
     fn finish_transform_edit(&mut self) {
@@ -264,6 +295,7 @@ impl Editor {
         response: &egui::Response,
         property: Property,
         value: f32,
+        parsed: Option<bool>,
     ) {
         if self.transform_blocked || !response.enabled() {
             return;
@@ -321,6 +353,7 @@ impl Editor {
                     base,
                     value: base,
                     touched: false,
+                    valid_text: true,
                     text: response.has_focus(),
                 },
             ) {
@@ -334,6 +367,7 @@ impl Editor {
         let Input::Numeric {
             control,
             touched,
+            valid_text,
             text,
             value: requested,
             ..
@@ -345,7 +379,14 @@ impl Editor {
             return;
         }
         *touched |= numeric_intent(&response.ctx);
-        let changes = response.changed() && (!*text || *touched) && value != *requested;
+        if response.has_focus() || response.is_pointer_button_down_on() {
+            edit.finish_pending = false;
+        }
+        if let Some(valid) = parsed {
+            *valid_text = valid;
+        }
+        let changes =
+            *valid_text && response.changed() && (!*text || *touched) && value != *requested;
         if changes {
             *requested = value;
         }
@@ -425,7 +466,17 @@ impl Editor {
         }
         self.reconcile_transform_edit();
         if !ctx.input(|input| input.pointer.any_down()) {
-            if self.drag.as_ref().is_some_and(|edit| edit.finish_pending) {
+            if self.drag.as_ref().is_some_and(|edit| {
+                edit.finish_pending
+                    && edit.error.is_none()
+                    && !matches!(
+                        edit.input,
+                        Input::Numeric {
+                            valid_text: false,
+                            ..
+                        }
+                    )
+            }) {
                 self.finish_transform_edit();
             }
             self.transform_blocked = false;

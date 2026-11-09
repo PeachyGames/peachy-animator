@@ -164,8 +164,6 @@ fn unknown_kinds_invalid_references_chains_targets_and_settings_are_atomic_impor
         ("target", json!("lower")),
         ("target", json!("missing")),
         ("target", json!(3)),
-        ("mix", json!(-0.1)),
-        ("mix", json!(1.00000001)),
         ("mix", Value::Null),
         ("bendPositive", json!(1)),
     ] {
@@ -203,7 +201,7 @@ fn unknown_kinds_invalid_references_chains_targets_and_settings_are_atomic_impor
 }
 
 #[test]
-fn legacy_aliases_malformed_collections_and_even_named_empty_ik_timelines_reject() {
+fn legacy_aliases_and_malformed_collections_reject_while_known_empty_ik_tracks_are_retained() {
     for bad in [Value::Null, json!({}), json!(false), json!([null])] {
         let mut input = fixture();
         input["constraints"] = bad;
@@ -220,24 +218,20 @@ fn legacy_aliases_malformed_collections_and_even_named_empty_ik_timelines_reject
         input["ik"] = bad;
         reject(&input, "Legacy root ik");
     }
-    for bad in [
-        json!([]),
-        Value::Null,
-        json!({"limb":[]}),
-        json!({"limb":[{"mix":0.5}]}),
-        json!({"limb":[{"mix":0.5,"curve":[0.2,0,0.8,1]}]}),
-    ] {
+    for bad in [json!([]), Value::Null] {
         let mut input = fixture();
         input["animations"]["move"]["ik"] = bad;
         reject(&input, "ik");
     }
     let mut empty = fixture();
+    empty["animations"]["move"]["ik"] = json!({"limb":[]});
+    assert!(import_json(&empty, "Empty typed track").is_ok());
     empty["animations"]["move"]["ik"] = json!({});
     assert!(import_json(&empty, "Empty").is_ok());
     for bad in [json!({}), json!([]), Value::Null] {
         let mut input = fixture();
         input["animations"]["move"]["constraints"] = bad;
-        reject(&input, "guessed constraints");
+        reject(&input, "constraints");
     }
 }
 

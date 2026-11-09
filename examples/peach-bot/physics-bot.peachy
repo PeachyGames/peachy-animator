@@ -1,5 +1,5 @@
 {
-  "format": 8,
+  "format": 9,
   "constraints": [
     {
       "type": "physics",
@@ -913,6 +913,7 @@
           ]
         }
       ],
+      "ik_tracks": [],
       "physics": [
         {
           "constraint": 0,
@@ -1062,6 +1063,7 @@
           ]
         }
       ],
+      "ik_tracks": [],
       "physics": [
         {
           "constraint": 0,

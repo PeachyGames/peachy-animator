@@ -20,6 +20,11 @@ legacy IK-field-presence guard covers formats1–7. (Superseded November 9: read
 native9, literal8→9 after strict…→7→8, and a guard covering formats1–8.) Existing slot colors must be
 preserved byte-for-byte. This renumbering does not mark Phase B implemented.
 
+The unaccepted slice's numeric representation is superseded by the
+[raw-value/frame correction](ik-raw-precision.md), based on subsequent original
+public-API counterexamples. Apply that correction before implementing or accepting
+the numeric and IK clipboard details below.
+
 ## Scope and evidence
 
 Add animation and pending authoring for the two existing IK settings: Mix and

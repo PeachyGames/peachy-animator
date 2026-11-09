@@ -44,6 +44,7 @@ fn rig() -> Document {
         slots: vec![],
         skins: BTreeMap::new(),
         animations: vec![Animation {
+            ik_tracks: vec![],
             name: "reach".into(),
             tracks: vec![],
             physics: vec![],
@@ -260,7 +261,7 @@ fn animated_targets_and_fractional_pending_poses_use_authored_data_then_one_solv
     assert_eq!(snapshot.locals, pose.applied_locals());
     let fk = world_pose(session.document(), &snapshot.locals);
     point(fk[2].point(10., 0.), pose.world()[2].point(10., 0.));
-    let twice = checked_pose_from_locals(session.document(), snapshot.locals).unwrap();
+    let twice = checked_setup_pose_from_locals(session.document(), snapshot.locals).unwrap();
     near(twice.applied_locals()[1].rotation, 72.5);
     assert_eq!(session.pose_edits(), &pending);
     assert_eq!(session.document(), &saved);
@@ -668,7 +669,7 @@ fn partial_mix_weight_binding_add_and_unbind_use_applied_snapshot_once_with_pend
     let pending = session.pose_edits().clone();
     let baseline = session.document().clone();
     let scene = |session: &Session| {
-        checked_scene_from_locals(
+        checked_setup_scene_from_locals(
             session.document(),
             "default",
             session.local_pose(Some(0), 0.137),
@@ -1128,7 +1129,7 @@ fn constraint_commands_validate_structure_atomically_and_preserve_order() {
             .is_err()
         );
     }
-    for mix in [-0.1, 1.1, f32::NAN, f32::INFINITY] {
+    for mix in [f32::NAN, f32::INFINITY] {
         let mut invalid = constraint();
         invalid.setup.mix = mix;
         assert!(
@@ -1198,7 +1199,7 @@ fn checked_fk_and_disabled_ik_keep_authored_bits_and_reject_invalid_queries() {
     assert!(checked_evaluate_pose(&document, Some(99), 0.).is_err());
     assert!(checked_evaluate_pose(&document, None, f32::NAN).is_err());
     assert!(checked_evaluate_pose(&document, None, -0.1).is_err());
-    assert!(checked_pose_from_locals(&document, vec![]).is_err());
+    assert!(checked_setup_pose_from_locals(&document, vec![]).is_err());
     assert_eq!(document, before);
     let mut session = Session::new(document).unwrap();
     let mut target = session.local_pose(Some(0), 0.137)[3];

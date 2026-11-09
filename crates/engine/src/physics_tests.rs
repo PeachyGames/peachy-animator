@@ -51,6 +51,7 @@ fn document() -> Document {
                 constraint: None,
                 times: vec![0.5, 2.],
             }],
+            ik_tracks: vec![],
         }],
     }
 }

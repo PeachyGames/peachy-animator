@@ -9,7 +9,7 @@ import math
 from pathlib import Path
 import struct
 import zlib
-from native_schema import NATIVE_FORMAT, bone_transform, region_transform
+from native_schema import NATIVE_FORMAT, animation, bone_transform, region_transform, slot
 
 ROOT = Path(__file__).resolve().parents[1] / "examples" / "peach-bot"
 INK = (28, 39, 47, 255)
@@ -70,7 +70,7 @@ def weighted_fixtures(mesh_document):
     influences = contract["skins"]["default"]["hand.R"]["hand.R"]["vertices"]["influences"]
     influences[2] = [bind(7, positions[2], .5001), bind(8, positions[2], .5)]
     influences[3][0]["weight"] = .9999
-    contract["animations"] = [dict(name="weighted contract", tracks=[
+    contract["animations"] = [animation("weighted contract", tracks=[
         track(0, "scaleX", [(0, 1), (.5, 0), (1, -1.2), (2, 1)]),
         track(7, "scaleY", [(0, 1), (.5, 0), (1, -.6), (2, 1)]),
         track(8, "rotation", [(0, 0), (1, 400), (2, 0)]),
@@ -106,17 +106,17 @@ def shear_fixture(weighted_document):
     document["bones"][head]["setup"].update(shear_x=-6, shear_y=9)
     document["bones"][forearm]["setup"].update(shear_x=5, shear_y=-3)
     document["animations"] = [
-        dict(name="shear linear", tracks=[
+        animation("shear linear", tracks=[
             track(body, "shearX", [(0, 0), (1, 20), (2, 0)]),
             track(body, "shearY", [(0, 0), (1, -12), (2, 0)]),
             track(forearm, "shearX", [(0, 0), (1, 15), (2, 0)]),
         ]),
-        dict(name="shear stepped", tracks=[
+        animation("shear stepped", tracks=[
             track(body, "shearX", [(0, 0), (.5, 8), (1.5, -8), (2, 0)], "stepped"),
             track(body, "shearY", [(0, 0), (.5, -6), (1.5, 10), (2, 0)], "stepped"),
             track(head, "shearY", [(0, 0), (.5, 6), (1.5, -10), (2, 0)], "stepped"),
         ]),
-        dict(name="shear bezier", tracks=[
+        animation("shear bezier", tracks=[
             track(head, "shearX", [(0, -10), (1, 18), (2, -10)], {"bezier":[.2, .1, .7, .9]}),
             track(head, "shearY", [(0, 7), (1, -12), (2, 7)], {"bezier":[.35, 0, .8, 1]}),
             track(forearm, "shearY", [(0, -4), (1, 10), (2, -4)], {"bezier":[.25, 0, .75, 1]}),
@@ -154,25 +154,79 @@ def ik_fixture(weighted_document):
              setup=dict(mix=0.5, bend_positive=True)),
     ]
     document["animations"] = [
-        dict(name="ik positive", tracks=[
+        animation("ik positive", tracks=[
             track(arm_target, "x", [(0,0),(.6,35),(1.5,15),(2.4,0)]),
             track(arm_target, "y", [(0,0),(.6,20),(1.5,35),(2.4,0)]),
             track(head_target, "x", [(.25,0),(1,24),(2.4,0)]),
             track(head_target, "y", [(0,0),(1,20),(2.4,0)]),
         ]),
-        dict(name="ik negative", tracks=[
+        animation("ik negative", tracks=[
             track(arm_target, "x", [(0,0),(.5,-90),(1.5,-35),(2.4,0)], "stepped"),
             track(arm_target, "y", [(0,0),(.5,-20),(1.5,-30),(2.4,0)], "stepped"),
             track(head_target, "x", [(0,0),(1,-20),(2.4,0)]),
             track(head_target, "y", [(0,0),(1,-75),(2.4,0)]),
         ]),
-        dict(name="ik reach", tracks=[
+        animation("ik reach", tracks=[
             # Deliberately exceed ordinary outer reach, without stretch.
             track(arm_target, "x", [(0,0),(1,160),(2.4,0)], {"bezier":[.2,.1,.8,.95]}),
             track(arm_target, "y", [(0,0),(1,-10),(2.4,0)], {"bezier":[.3,0,.7,1]}),
             track(head_target, "x", [(0,0),(1,12),(2.4,0)], {"bezier":[.2,.1,.8,.9]}),
             track(head_target, "y", [(0,0),(1,-45),(2.4,0)], {"bezier":[.25,0,.75,1]}),
         ]),
+        *document["animations"],
+    ]
+    return document
+
+
+def ik_animation_fixture(ik_document):
+    """Original grouped Mix/bend keys, independent of the nine migration goldens."""
+    document = json.loads(json.dumps(ik_document))
+    document["name"] = "Peach Bot IK Animation Lab"
+    constraints = {item["name"]: index for index, item in enumerate(document["constraints"])}
+    arm, head = constraints["right arm IK"], constraints["head aim"]
+    body = next(index for index, bone in enumerate(document["bones"]) if bone["name"] == "body")
+
+    def f32(value):
+        return struct.unpack("<f", struct.pack("<f", value))[0]
+
+    def bezier(start, end, x1, y1, x2, y2):
+        start, end = f32(start), f32(end)
+        return dict(type="bezier", time=[(f32(x1)-start)/(end-start), (f32(x2)-start)/(end-start)],
+                    mix=[f32(y1), f32(y2)])
+
+    def key(time, mix, positive=True, curve=None):
+        return dict(time=time, mix=mix, bend_positive=positive,
+                    curve=json.loads(json.dumps(curve if curve is not None else dict(type="linear"))))
+
+    def group(constraint, keys):
+        return dict(constraint=constraint, keys=keys)
+
+    document["animations"] = [
+        animation("ik mix linear", ik_tracks=[
+            group(arm, [key(0,0), key(.5,.5), key(1.5,1), key(2.4,.25)]),
+            group(head, [key(0,.25), key(1,.75), key(2.4,.5)]),
+        ]),
+        animation("ik bend stepped", ik_tracks=[
+            group(arm, [key(0,1,True,dict(type="stepped")),
+                        key(.75,1,False,dict(type="stepped")),
+                        key(1.5,.5,True,dict(type="stepped")), key(2,1,False)]),
+        ]),
+        animation("ik bezier excursion", ik_tracks=[
+            group(arm, [key(0,.5,True,bezier(0,1,.2,.9,.8,.9)),
+                        key(1,.5,False), key(2,.5)]),
+            group(head, [key(0,0,True,bezier(0,1,.8,-.5,.2,1.5)),
+                         key(1,1), key(2,.5)]),
+        ]),
+        animation("ik mix signed", ik_tracks=[
+            group(arm, [key(.25,-.25), key(1,1.5,False), key(2,-.5)]),
+            group(head, [key(0,-1,False), key(1,1.5), key(2,.5,False)]),
+        ]),
+        animation("ik ratio time", ik_tracks=[
+            group(arm, [key(.25,.2,False,bezier(.25,1,.4,-.15,.775,1.25)), key(1,.8)]),
+        ]),
+        animation("ik disabled scale", tracks=[
+            track(body,"scaleX",[(0,1),(1,1.3),(2,1)]),
+        ], ik_tracks=[group(arm,[key(0,0),key(2,0)]), group(head,[key(0,0),key(2,0)])]),
         *document["animations"],
     ]
     return document
@@ -331,7 +385,7 @@ def main():
     foot_r = bone("foot.R", shin_r, 72, 0, 93, 36)
     slots, skin = [], {}
     def region(name, b, part, x=0, y=0, rotation=0):
-        slots.append(dict(name=name, bone=b, attachment=name))
+        slots.append(slot(name, b, name))
         c = parts[part]
         skin[name] = {name: dict(type="region", path=part, width=c.width, height=c.height, transform=region_transform(x, y, rotation))}
     for label, leg, shin, foot in [("L", leg_l, shin_l, foot_l), ("R", leg_r, shin_r, foot_r)]:
@@ -358,14 +412,14 @@ def main():
         peach[slot] = {slot: {**skin[slot][slot], "name": slot+".peach"}}
     # Skin placeholders must not collide with direct attachments in default.
     shared = {slot: entries for slot, entries in skin.items() if slot not in peach}
-    doc = dict(format=NATIVE_FORMAT, name="Peach Bot", fps=30, bones=bones, constraints=[], slots=slots, skins={"default":shared,"peach":peach,"mint":mint}, animations=[dict(name="wave",tracks=wave),dict(name="idle",tracks=idle)])
+    doc = dict(format=NATIVE_FORMAT, name="Peach Bot", fps=30, bones=bones, constraints=[], slots=slots, skins={"default":shared,"peach":peach,"mint":mint}, animations=[animation("wave", tracks=wave),animation("idle", tracks=idle)])
     (ROOT/"peach-bot.peachy").write_text(json.dumps(doc, indent=2)+"\n")
     contract = json.loads(json.dumps(doc))
     contract["name"] = "Transform Contract"
     contract["bones"][0]["setup"].update(rotation=37, scale_x=1.3, scale_y=.8)
     def contract_keys(a, b, curve):
         return [dict(time=0, value=a, curve=curve), dict(time=1, value=b, curve="linear"), dict(time=2, value=a, curve="linear")]
-    contract["animations"] = [dict(name="contract", tracks=[
+    contract["animations"] = [animation("contract", tracks=[
         dict(bone=1, property="x", keys=contract_keys(-10, 28, {"bezier":[.2,.3,.8,1]})),
         dict(bone=1, property="y", keys=contract_keys(0, 20, "stepped")),
         dict(bone=6, property="scaleX", keys=contract_keys(1, 1.4, {"bezier":[.42,0,.58,1]})),
@@ -404,8 +458,10 @@ def main():
     (ROOT/"weighted-contract.peachy").write_text(json.dumps(weighted_contract,indent=2)+"\n")
     (ROOT/"weighted-repeated.peachy").write_text(json.dumps(repeated_influence_fixture(weighted),indent=2)+"\n")
     (ROOT/"shear-bot.peachy").write_text(json.dumps(shear_fixture(weighted),indent=2)+"\n")
-    (ROOT/"ik-bot.peachy").write_text(json.dumps(ik_fixture(weighted),indent=2)+"\n")
-    print(f"Wrote original fixtures: {len(bones)} base bones, {len(slots)} slots, {len(parts)} textures; Shear Lab and IK Lab each have 5 animations")
+    ik = ik_fixture(weighted)
+    (ROOT/"ik-bot.peachy").write_text(json.dumps(ik,indent=2)+"\n")
+    (ROOT/"ik-animation-bot.peachy").write_text(json.dumps(ik_animation_fixture(ik),indent=2)+"\n")
+    print(f"Wrote original fixtures: {len(bones)} base bones, {len(slots)} slots, {len(parts)} textures; IK Animation Lab has 11 animations")
 
 
 if __name__ == "__main__":

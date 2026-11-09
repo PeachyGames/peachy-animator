@@ -1,6 +1,7 @@
-//! Independently written, bounded Spine 4.3 constraint interchange: static IK
-//! and physics data. Source-feature checks only: solving belongs to the engine.
-use super::{array, required_string, unknown_fields};
+//! Independently written, bounded Spine 4.3 constraint interchange: IK with
+//! grouped Mix/Positive timelines, and physics data. Source-feature checks
+//! only: solving belongs to the engine.
+use super::{array, ik_timelines, required_string, unknown_fields};
 use peachy_document::{
     Constraint, Document, IkConstraint, IkSetup, PHYSICS_DEFAULT_FPS, PHYSICS_DEFAULT_LIMIT,
     PHYSICS_DEFAULT_SETUP, PhysicsConstraint, PhysicsGlobal, PhysicsInfluence, PhysicsProperty,
@@ -18,22 +19,18 @@ pub(super) fn inspect(root: &Value, issues: &mut Vec<String>) {
         .enumerate()
         .filter_map(|(i, bone)| bone["name"].as_str().map(|name| (name.to_owned(), i)))
         .collect();
-    if let Err(error) = read(root, &indices) {
-        issues.push(error);
-    }
+    let constraints = match read(root, &indices) {
+        Ok(value) => value,
+        Err(error) => {
+            issues.push(error);
+            vec![]
+        }
+    };
+    let names = ik_timelines::indices(&constraints);
     if let Some(animations) = root["animations"].as_object() {
         for (name, animation) in animations {
-            if animation.get("constraints").is_some() {
-                issues.push(format!(
-                    "Animation {name}: guessed constraints timelines are unsupported"
-                ));
-            }
-            if let Some(ik) = animation.get("ik") {
-                if !ik.is_object() {
-                    issues.push(format!("Animation {name}: ik must be an object"));
-                } else if !ik.as_object().unwrap().is_empty() {
-                    issues.push(format!("Animation {name}: IK timelines are unsupported, including named empty timelines"));
-                }
+            if let Err(error) = ik_timelines::read(animation, &names) {
+                issues.push(format!("Animation {name}: {error}"));
             }
         }
     }
@@ -146,8 +143,8 @@ fn read_ik(entry: &Value, indices: &BTreeMap<String, usize>) -> Result<IkConstra
         Some(value) => {
             let number = value
                 .as_f64()
-                .filter(|v| v.is_finite() && (0.0..=1.0).contains(v))
-                .ok_or_else(|| format!("{}: mix must be a finite number within 0–1", context()))?;
+                .filter(|v| v.is_finite() && (*v as f32).is_finite())
+                .ok_or_else(|| format!("{}: mix must be a finite native number", context()))?;
             number as f32
         }
     };
@@ -400,12 +397,37 @@ fn inside(doc: &Document, mut bone: usize, root: usize) -> bool {
 /// validates the native graph first. There is deliberately no sampled solver or
 /// claim that all intermediate target poses are numerically evaluable.
 pub(super) fn validate_source(doc: &Document) -> Result<(), String> {
-    let active: Vec<_> = doc
+    let setup: Vec<_> = doc
         .constraints
         .iter()
         .filter_map(Constraint::as_ik)
-        .filter(|ik| ik.setup.mix > 0.0)
+        .filter(|ik| ik.setup.mix != 0.0)
         .collect();
+    validate_context(doc, &setup, None)?;
+    for animation in &doc.animations {
+        let active: Vec<_> = doc
+            .constraints
+            .iter()
+            .enumerate()
+            .filter_map(|(index, constraint)| {
+                let ik = constraint.as_ik()?;
+                let track = animation
+                    .ik_tracks
+                    .iter()
+                    .find(|track| track.constraint == index);
+                ik_timelines::potentially_active(ik.setup.mix, track).then_some(ik)
+            })
+            .collect();
+        validate_context(doc, &active, Some(animation))?;
+    }
+    Ok(())
+}
+
+fn validate_context(
+    doc: &Document,
+    active: &[&IkConstraint],
+    clip: Option<&peachy_document::Animation>,
+) -> Result<(), String> {
     for (i, ik) in active.iter().enumerate() {
         let first = ik.bones[0];
         if doc.bones[first].parent.is_none() {
@@ -440,7 +462,7 @@ pub(super) fn validate_source(doc: &Document) -> Result<(), String> {
                     ik.name, bone.name
                 ));
             }
-            for animation in &doc.animations {
+            if let Some(animation) = clip {
                 for track in animation.tracks.iter().filter(|track| track.bone == index) {
                     if matches!(
                         track.property,
@@ -470,17 +492,17 @@ pub(super) fn validate_source(doc: &Document) -> Result<(), String> {
                     ik.name
                 ));
             }
-            for animation in &doc.animations {
-                if animation.tracks.iter().any(|track| {
+            if let Some(animation) = clip
+                && animation.tracks.iter().any(|track| {
                     track.bone == index
                         && matches!(track.property, Property::X | Property::Y)
                         && track.keys.iter().any(|key| key.value != 0.0)
-                }) {
-                    return Err(format!(
-                        "IK {}: animation {} varies the child setup offset",
-                        ik.name, animation.name
-                    ));
-                }
+                })
+            {
+                return Err(format!(
+                    "IK {}: animation {} varies the child setup offset",
+                    ik.name, animation.name
+                ));
             }
         }
     }

@@ -71,6 +71,7 @@ fn rig(mesh: Mesh) -> Document {
             tracks: vec![],
             physics: vec![],
             physics_resets: vec![],
+            ik_tracks: vec![],
         }],
     };
     doc.validate().unwrap();

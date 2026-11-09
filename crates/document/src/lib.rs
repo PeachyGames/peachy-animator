@@ -3,14 +3,14 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 mod ik;
 mod physics;
-pub use ik::{Constraint, IkConstraint, IkSetup};
+pub use ik::{Constraint, IkConstraint, IkCurve, IkKeyframe, IkSetup, IkTrack};
 pub use physics::{
     PHYSICS_DEFAULT_FPS, PHYSICS_DEFAULT_LIMIT, PHYSICS_DEFAULT_SETUP, PhysicsConstraint,
     PhysicsGlobal, PhysicsInfluence, PhysicsProperty, PhysicsReset, PhysicsSetup, PhysicsTrack,
     ScaleYMode,
 };
 
-pub const FORMAT_VERSION: u32 = 8;
+pub const FORMAT_VERSION: u32 = 9;
 pub const KEY_TIME_EPSILON: f32 = 0.00001;
 pub fn same_key_time(a: f32, b: f32) -> bool {
     (a - b).abs() < KEY_TIME_EPSILON
@@ -345,6 +345,8 @@ pub struct Region {
 pub struct Animation {
     pub name: String,
     pub tracks: Vec<Track>,
+    /// Keyed IK Mix/Positive per constraint. Required in native v9.
+    pub ik_tracks: Vec<IkTrack>,
     /// Keyed physics settings. Required in native v8.
     pub physics: Vec<PhysicsTrack>,
     /// Physics reset keys. Required in native v8.
@@ -356,6 +358,7 @@ impl Animation {
         Self {
             name: name.into(),
             tracks,
+            ik_tracks: vec![],
             physics: vec![],
             physics_resets: vec![],
         }
@@ -368,17 +371,27 @@ impl Animation {
             .chain(physics)
             .map(|key| key.time)
             .chain(
+                self.ik_tracks
+                    .iter()
+                    .filter_map(|track| track.keys.last().map(|key| key.time)),
+            )
+            .chain(
                 self.physics_resets
                     .iter()
                     .filter_map(|reset| reset.times.last().copied()),
             )
             .fold(0.0, f32::max)
     }
-    /// Every authored key time across bone, physics and reset timelines.
+    /// Every authored key time across bone, IK, physics and reset timelines.
     pub fn key_times(&self) -> impl Iterator<Item = f32> + '_ {
         self.tracks
             .iter()
             .flat_map(|track| track.keys.iter().map(|key| key.time))
+            .chain(
+                self.ik_tracks
+                    .iter()
+                    .flat_map(|track| track.keys.iter().map(|key| key.time)),
+            )
             .chain(
                 self.physics
                     .iter()
@@ -392,7 +405,8 @@ impl Animation {
     }
     /// Whether any timeline other than bone transforms has keys.
     pub fn has_constraint_keys(&self) -> bool {
-        self.physics.iter().any(|track| !track.keys.is_empty())
+        self.ik_tracks.iter().any(|track| !track.keys.is_empty())
+            || self.physics.iter().any(|track| !track.keys.is_empty())
             || self
                 .physics_resets
                 .iter()
@@ -584,6 +598,24 @@ impl Document {
                         return Err("Reset keys must be finite, nonnegative and ordered".into());
                     }
                     previous = time;
+                }
+            }
+            let mut ik_tracks = BTreeSet::new();
+            for track in &a.ik_tracks {
+                if !matches!(
+                    self.constraints.get(track.constraint),
+                    Some(Constraint::Ik(_))
+                ) || !ik_tracks.insert(track.constraint)
+                {
+                    return Err("IK tracks must reference distinct IK constraints".into());
+                }
+                let mut previous = -1.;
+                for key in &track.keys {
+                    key.validate()?;
+                    if key.time <= previous {
+                        return Err("IK keys must be strictly ordered".into());
+                    }
+                    previous = key.time;
                 }
             }
         }

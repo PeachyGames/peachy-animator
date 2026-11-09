@@ -6,6 +6,8 @@ impl Editor {
         self.cancel_timeline_interaction();
         self.cancel_graph_edit();
         self.cancel_slot_color_edit();
+        self.pose_key_request = None;
+        self.ik_bend_request = None;
         self.cancel_ik_edit();
         self.ik_target = None;
         self.cancel_weight_edit();
@@ -228,6 +230,11 @@ impl Editor {
         if !ctx.text_edit_focused() {
             self.file_history_shortcuts(ctx);
             self.tool_shortcuts(ctx);
+            if !self.setup_mode
+                && ctx.input_mut(|input| input.consume_key(egui::Modifiers::NONE, egui::Key::K))
+            {
+                self.key_edited(None);
+            }
         }
         if self.graph_shortcuts(ctx) {
             return;
@@ -328,9 +335,6 @@ impl Editor {
             }
         }
         if !self.setup_mode {
-            if ctx.input(|i| i.key_pressed(egui::Key::K)) {
-                self.key_edited(None);
-            }
             if ctx.input(|i| i.key_pressed(egui::Key::A)) {
                 self.toggle_playback(PlayDirection::Backward);
             }

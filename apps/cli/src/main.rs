@@ -84,7 +84,7 @@ fn run() -> Result<(), String> {
                 return Err("Unknown skin".into());
             }
             let scene = checked_evaluate_scene(&doc, Some(animation), time, skin, None)?;
-            println!("{}",serde_json::to_string_pretty(&json!({"time":time,"locals":scene.locals,"appliedLocals":scene.applied_locals,"bones":doc.bones.iter().zip(scene.world).map(|(b,p)|json!({"name":b.name,"world":p})).collect::<Vec<_>>(),"attachments":scene.attachments})).unwrap());
+            println!("{}",serde_json::to_string_pretty(&json!({"time":time,"locals":scene.locals,"appliedLocals":scene.applied_locals,"ikPoses":doc.constraints.iter().zip(&scene.ik_poses).enumerate().filter_map(|(index,(constraint,pose))|{let ik=constraint.as_ik()?;Some(json!({"constraint":index,"name":ik.name,"mix":pose.mix,"bendPositive":pose.bend_positive}))}).collect::<Vec<_>>(),"bones":doc.bones.iter().zip(scene.world).map(|(b,p)|json!({"name":b.name,"world":p})).collect::<Vec<_>>(),"attachments":scene.attachments})).unwrap());
         }
         "apply" => {
             let doc = peachy_io::decode_project(&contents)?;

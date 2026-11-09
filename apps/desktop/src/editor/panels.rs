@@ -160,7 +160,9 @@ impl Editor {
                     if auto_key.changed() {
                         self.cancel_gesture();
                     }
-                    auto_key.on_hover_text("Set keys automatically when a transform changes.");
+                    auto_key.on_hover_text(
+                        "Set keys automatically when supported bone or IK pose values change.",
+                    );
                     let key = ui.add_enabled(
                         !self.session.pose_edits().is_empty(),
                         egui::Button::new("Key Edited  [K]").small(),
@@ -252,15 +254,16 @@ impl Editor {
                     let focused = ui.memory(|memory|memory.has_focus(id));
                     let world_scale = property.is_scale() && self.axes==Axes::World && !focused && !ui.ctx().is_being_dragged(id);
                     let display = property.read(shown);
+                    let parsed = std::cell::Cell::new(None);
                     let response = ui.add(egui::DragValue::new(&mut value)
                         .speed(if property.is_scale() {0.01} else {0.25})
                         .max_decimals(2).update_while_editing(false)
-                        .custom_parser(move |text|peachy_engine::parse_transform_input(text,base).map(f64::from))
+                        .custom_parser(|text| {let value=peachy_engine::parse_transform_input(text,base).map(f64::from);parsed.set(Some(value.is_some()));value})
                         .custom_formatter(move |value,_|if focused {value.to_string()}else{format!("{:.2}",if world_scale {f64::from(display)}else{value})}));
                     self.record_target(&format!("value:{property:?}"),response.rect);
                     if matches!(property,Property::ShearX|Property::ShearY) {response.clone().on_hover_text("Shear angles are edited in local coordinates.");}
                     if property.is_scale() && self.axes==Axes::World {response.clone().on_hover_text("World scale is shown; entry and dragging edit Local scale.");}
-                    self.transform_numeric_response(&response,property,value);
+                    self.transform_numeric_response(&response,property,value,parsed.get());
                 }
                 if !self.setup_mode {
                     let state = self.selected_bone().map_or(KeyState::Absent, |b| self.key_state(b, properties));

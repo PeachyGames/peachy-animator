@@ -1,5 +1,5 @@
 {
-  "format": 8,
+  "format": 9,
   "name": "Peach Bot IK Lab",
   "fps": 30,
   "bones": [
@@ -1003,6 +1003,7 @@
           ]
         }
       ],
+      "ik_tracks": [],
       "physics": [],
       "physics_resets": []
     },
@@ -1104,6 +1105,7 @@
           ]
         }
       ],
+      "ik_tracks": [],
       "physics": [],
       "physics_resets": []
     },
@@ -1279,6 +1281,7 @@
           ]
         }
       ],
+      "ik_tracks": [],
       "physics": [],
       "physics_resets": []
     },
@@ -1471,6 +1474,7 @@
           ]
         }
       ],
+      "ik_tracks": [],
       "physics": [],
       "physics_resets": []
     },
@@ -1541,6 +1545,7 @@
           ]
         }
       ],
+      "ik_tracks": [],
       "physics": [],
       "physics_resets": []
     }

@@ -36,3 +36,15 @@ def require_fk_document(document, purpose):
     """
     if document.get("constraints"):
         raise RuntimeError(f"{purpose} requires an unconstrained document; use an explicit checked applied pose")
+
+
+def animation(name, tracks=(), ik_tracks=()):
+    """Construct the current required animation shape with independent lists.
+
+    Native9 requires bone tracks, IK tracks and the native8 physics lists."""
+    return dict(name=name, tracks=list(tracks), ik_tracks=list(ik_tracks), physics=[], physics_resets=[])
+
+
+def slot(name, bone, attachment):
+    """Native7+ slots carry exact unpremultiplied setup RGBA; white is neutral."""
+    return dict(color=[255, 255, 255, 255], name=name, bone=bone, attachment=attachment)

@@ -116,7 +116,70 @@ pub fn command_schema() -> Value {
             object(&settings.map(|name| (name, json!({"type":"boolean"})))),
         ),
     ]);
+    let tag = |name: &str| json!({"const":name,"type":"string"});
+    let pair = json!({"type":"array","items":{"type":"number"},"minItems":2,"maxItems":2});
+    let ik_curve = json!({"oneOf":[
+        object(&[("type", tag("linear"))]),
+        object(&[("type", tag("stepped"))]),
+        object(&[("type", tag("bezier")), ("time", pair.clone()), ("mix", pair)]),
+    ]});
+    let ik_key = object(&[
+        ("time", number()),
+        ("mix", number()),
+        ("bend_positive", json!({"type":"boolean"})),
+        ("curve", ik_curve),
+    ]);
+    let key_owner = json!({"oneOf":[
+        object(&[("type", tag("bone")), ("bone", index())]),
+        object(&[("type", tag("ik")), ("constraint", index())]),
+    ]});
+    let animation_key = json!({"oneOf":[
+        object(&[("type", tag("bone")), ("bone", index()), ("property", property.clone()), ("time", number())]),
+        object(&[("type", tag("ik")), ("constraint", index()), ("time", number())]),
+    ]});
+    let animation_clipboard = json!({"oneOf":[
+        object(&[("type", tag("bone")), ("keys", clipboard["properties"]["keys"].clone())]),
+        object(&[("type", tag("ik")), ("keys", list(ik_key.clone()))]),
+    ]});
     let variants = vec![
+        command(
+            "setIkKey",
+            &[
+                ("animation", index()),
+                ("constraint", index()),
+                ("key", ik_key),
+            ],
+        ),
+        command(
+            "deleteIkKey",
+            &[
+                ("animation", index()),
+                ("constraint", index()),
+                ("time", number()),
+            ],
+        ),
+        command(
+            "moveAnimationKeys",
+            &[
+                ("animation", index()),
+                ("keys", list(animation_key.clone())),
+                ("delta", number()),
+                ("copy", json!({"type":"boolean"})),
+            ],
+        ),
+        command(
+            "deleteAnimationKeys",
+            &[("animation", index()), ("keys", list(animation_key))],
+        ),
+        command(
+            "pasteAnimationKeys",
+            &[
+                ("animation", index()),
+                ("target", key_owner),
+                ("time", number()),
+                ("clipboard", animation_clipboard),
+            ],
+        ),
         command("addIkConstraint", &[("constraint", ik.clone())]),
         command("setIkConstraint", &[("constraint", index()), ("value", ik)]),
         command("addPhysicsConstraint", &[("constraint", physics.clone())]),
@@ -282,6 +345,11 @@ mod tests {
             Command::SetIkConstraint { .. } => "setIkConstraint",
             Command::AddPhysicsConstraint { .. } => "addPhysicsConstraint",
             Command::SetPhysicsConstraint { .. } => "setPhysicsConstraint",
+            Command::SetIkKey { .. } => "setIkKey",
+            Command::DeleteIkKey { .. } => "deleteIkKey",
+            Command::MoveAnimationKeys { .. } => "moveAnimationKeys",
+            Command::DeleteAnimationKeys { .. } => "deleteAnimationKeys",
+            Command::PasteAnimationKeys { .. } => "pasteAnimationKeys",
             Command::SetPose { .. } => "setPose",
             Command::SetSetup { .. } => "setSetup",
             Command::RenameBone { .. } => "renameBone",
@@ -346,7 +414,7 @@ mod tests {
     fn every_published_shape_decodes_through_strict_engine_serde() {
         let schema = command_schema();
         let variants = schema["oneOf"].as_array().unwrap();
-        assert_eq!(variants.len(), 27);
+        assert_eq!(variants.len(), 32);
         for variant in variants {
             let payload = sample(variant);
             let command: CommandInput = serde_json::from_value(payload.clone()).unwrap();

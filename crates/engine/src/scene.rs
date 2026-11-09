@@ -1,8 +1,8 @@
 //! Evaluated geometry shared by rendering, fit-to-view and future headless export.
 use crate::{
-    Affine, checked_pose_from_locals, local_pose,
+    Affine, AuthoredPose, IkPose, checked_pose_from_authored,
     mesh::{REGION_TRIANGLES, REGION_UVS, region_vertices},
-    mesh_world_vertices,
+    mesh_world_vertices, sample_authored_pose,
 };
 use peachy_document::{Attachment, AttachmentRef, Document, Transform};
 use serde::Serialize;
@@ -48,6 +48,7 @@ pub struct Scene {
     pub world: Vec<Affine>,
     pub attachments: Vec<AttachmentDraw>,
     pub bounds: Option<Bounds>,
+    pub ik_poses: Vec<IkPose>,
 }
 
 /// The caller supplies a validated document, as held by Session.
@@ -78,22 +79,25 @@ pub fn checked_evaluate_scene(
     if animation.is_some_and(|index| index >= doc.animations.len()) {
         return Err("Unknown animation".into());
     }
-    let mut locals = local_pose(doc, animation, time);
+    let mut authored = sample_authored_pose(doc, animation, time)?;
     if let Some((bone, transform)) = preview {
-        *locals.get_mut(bone).ok_or("Unknown preview bone")? = transform;
+        *authored
+            .locals
+            .get_mut(bone)
+            .ok_or("Unknown preview bone")? = transform;
     }
-    checked_scene_from_locals(doc, skin, locals)
+    checked_scene_from_authored(doc, skin, &authored)
 }
 
 /// Evaluate already posed locals through a finite-output boundary. In addition
 /// to local count/values, check composed matrices and every emitted coordinate
 /// before a shell can turn nonfinite numbers into JSON null or invalid drawing.
-pub fn checked_scene_from_locals(
+pub fn checked_scene_from_authored(
     doc: &Document,
     skin: &str,
-    locals: Vec<Transform>,
+    authored: &AuthoredPose,
 ) -> Result<Scene, String> {
-    let pose = checked_pose_from_locals(doc, locals)?;
+    let pose = checked_pose_from_authored(doc, authored)?;
     let scene = scene_from_evaluated(doc, skin, pose);
     for draw in &scene.attachments {
         if !draw
@@ -133,13 +137,15 @@ pub fn checked_scene_from_locals(
     Ok(scene)
 }
 
-/// Evaluate an already posed rig, including transient multi-bone authoring edits.
-pub fn scene_from_locals(
+/// Explicit Setup-only helper. Animated/pending callers pass a complete capsule.
+pub fn checked_setup_scene_from_locals(
     doc: &Document,
     skin: &str,
     locals: Vec<Transform>,
 ) -> Result<Scene, String> {
-    checked_scene_from_locals(doc, skin, locals)
+    let mut authored = sample_authored_pose(doc, None, 0.)?;
+    authored.locals = locals;
+    checked_scene_from_authored(doc, skin, &authored)
 }
 
 fn scene_from_evaluated(doc: &Document, skin: &str, pose: crate::EvaluatedPose) -> Scene {
@@ -147,6 +153,7 @@ fn scene_from_evaluated(doc: &Document, skin: &str, pose: crate::EvaluatedPose) 
         authored_locals: locals,
         applied_locals,
         world,
+        authored_ik: ik_poses,
     } = pose;
     let mut attachments = vec![];
     for (slot_index, slot) in doc.slots.iter().enumerate() {
@@ -188,5 +195,6 @@ fn scene_from_evaluated(doc: &Document, skin: &str, pose: crate::EvaluatedPose) 
         world,
         attachments,
         bounds,
+        ik_poses,
     }
 }

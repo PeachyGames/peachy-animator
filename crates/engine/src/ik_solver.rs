@@ -1,26 +1,30 @@
 //! Bounded normal IK from elementary link geometry and original public pose
 //! observations. No external implementation or runtime constant was inspected.
-use crate::{Affine, ik::check_world, pose::OBSERVED_DEGREES_TO_RADIANS, world_pose};
-use peachy_document::{Constraint, Document, IkConstraint, Transform};
+use crate::{Affine, IkPose, ik::check_world, pose::OBSERVED_DEGREES_TO_RADIANS, world_pose};
+use peachy_document::{Document, IkConstraint, Transform};
 
 /// Applied f32 frames and bone endpoints must retain their solved f64 reference
 /// within this absolute bound. There is no relative or large-coordinate exception.
-const IK_WORLD_COORDINATE_TOLERANCE: f64 = 0.001;
+pub(crate) const IK_WORLD_COORDINATE_TOLERANCE: f64 = 0.001;
 
 pub(crate) fn apply(
     doc: &Document,
+    poses: &[IkPose],
     locals: &mut [Transform],
     world: &mut Vec<Affine>,
 ) -> Result<(), String> {
     let active: Vec<_> = doc
         .constraints
         .iter()
-        .filter_map(Constraint::as_ik)
-        .filter(|ik| ik.setup.mix > 0.0)
+        .zip(poses)
+        .filter_map(|(constraint, pose)| {
+            let ik = constraint.as_ik()?;
+            (pose.mix != 0.0).then_some((ik, *pose))
+        })
         .collect();
-    for (index, ik) in active.iter().enumerate() {
+    for (index, (ik, _)) in active.iter().enumerate() {
         validate_domain(doc, locals, ik)?;
-        for other in &active[..index] {
+        for (other, _) in &active[..index] {
             // Nested chains (a toe inside a leg) solve sequentially in constraint
             // order: each solve writes applied locals and rebuilds world frames
             // before the next. Shared bones and targets inside another chain's
@@ -36,8 +40,8 @@ pub(crate) fn apply(
             }
         }
     }
-    for ik in active {
-        solve(doc, locals, world, ik).map_err(|error| format!("IK {}: {error}", ik.name))?;
+    for (ik, pose) in active {
+        solve(doc, locals, world, ik, pose).map_err(|error| format!("IK {}: {error}", ik.name))?;
     }
     Ok(())
 }
@@ -99,6 +103,7 @@ fn solve(
     locals: &mut [Transform],
     world: &mut Vec<Affine>,
     ik: &IkConstraint,
+    pose: IkPose,
 ) -> Result<(), String> {
     let first = ik.bones[0];
     let parent_index = doc.bones[first]
@@ -142,7 +147,7 @@ fn solve(
         } else {
             ((distance * distance - a * a - b * b) / (2. * a * b)).clamp(-1., 1.)
         };
-        let bend = cosine.acos() * if ik.setup.bend_positive { 1. } else { -1. };
+        let bend = cosine.acos() * if pose.bend_positive { 1. } else { -1. };
         let parent_angle = dy.atan2(dx) - (b * bend.sin()).atan2(a + b * bend.cos()) - offset;
         desired[0].1 = parent_angle / OBSERVED_DEGREES_TO_RADIANS;
         desired.push((child, (bend + offset) / OBSERVED_DEGREES_TO_RADIANS));
@@ -158,7 +163,7 @@ fn solve(
         } else if delta > 180. {
             delta -= 360.;
         }
-        let rotation = authored + delta * f64::from(ik.setup.mix);
+        let rotation = authored + delta * pose.mix;
         if !rotation.is_finite() || !(rotation as f32).is_finite() {
             return Err("applied rotation is outside the finite coordinate range".into());
         }
