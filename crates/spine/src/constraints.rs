@@ -415,13 +415,14 @@ pub(super) fn validate_source(doc: &Document) -> Result<(), String> {
             ));
         }
         for other in active.iter().skip(i + 1) {
-            if inside(doc, first, other.bones[0])
-                || inside(doc, other.bones[0], first)
+            // Nested chains are evaluated sequentially in array order. Shared
+            // bones and targets inside another constrained subtree are refused.
+            if ik.bones.iter().any(|bone| other.bones.contains(bone))
                 || inside(doc, ik.target, other.bones[0])
                 || inside(doc, other.target, first)
             {
                 return Err(format!(
-                    "IK {} / {}: dependent constraint subtrees are unsupported",
+                    "IK {} / {}: shared bones or targets inside another constrained chain are unsupported",
                     ik.name, other.name
                 ));
             }
@@ -461,9 +462,11 @@ pub(super) fn validate_source(doc: &Document) -> Result<(), String> {
         if ik.bones.len() == 2 {
             let index = ik.bones[1];
             let child = &doc.bones[index];
-            if child.setup.x <= 0.0 || child.setup.y != 0.0 || child.length <= 0.0 {
+            if f64::from(child.setup.x).hypot(f64::from(child.setup.y)) == 0.0
+                || child.length <= 0.0
+            {
                 return Err(format!(
-                    "IK {}: child needs positive setup X/length and zero Y",
+                    "IK {}: child needs a nonzero setup offset and positive length",
                     ik.name
                 ));
             }

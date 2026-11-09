@@ -1403,3 +1403,18 @@ window was not run for this slice**, so no native interaction parity is claimed.
 The game-rig comparison exercises private artist data locally only. Its inputs
 were verified unchanged by SHA-256; outputs and reports stay under `.local/`.
 Region corners are not compared for that rig because its atlas trims whitespace.
+
+
+## Nested IK chains, child offsets and export names — November 9, 2026
+
+| Check | Result |
+| --- | --- |
+| Original IK Chain Lab (`ik-chain-bot.peachy`): leg + foot aim, arm + hand aim, off-axis children | 93,600 bone, 72,800 region and 13,000 mesh comparisons against external 4.3.13; max world error 0.000034 |
+| Same rig with inner chains listed first | Poses differ from forward order by up to 1.6 units on the foot; runtime matches again (93,600 comparisons) |
+| Wide (20, 30) and negative-X (−30, 25) child offsets | Runtime matches (93,600 comparisons each) |
+| Installed 4.3.26 attachment-name probes | Reused names across skins, within one skin and in the default skin all import and re-export |
+| Game audit | Fully supported 1 → **2** of 19; inputs unchanged |
+| Game rig (62 bones, 6 IK incl. nested leg/toe, 16 physics, 40 skins) | Our evaluated pose vs runtime `Physics.none`: 9,300 comparisons, max 0.00042 (long hair-chain tip). Original vs Peachy re-export with `Physics.update`, 40 skins × 240 frames: max bone 0.000092, mesh 0.00024; physics moves bones up to 11.6 units |
+| Rust suite | fmt, clippy `-D warnings`, architecture and build pass; **420** tests pass |
+
+Artist inputs and reports stay under `.local/`; only counts are recorded here.

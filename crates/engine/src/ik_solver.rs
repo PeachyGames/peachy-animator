@@ -21,15 +21,16 @@ pub(crate) fn apply(
     for (index, ik) in active.iter().enumerate() {
         validate_domain(doc, locals, ik)?;
         for other in &active[..index] {
-            // Subtrees intersect exactly when one root is inside the other.
-            let overlaps = within(doc, ik.bones[0], other.bones[0])
-                || within(doc, other.bones[0], ik.bones[0]);
-            if overlaps
+            // Nested chains (a toe inside a leg) solve sequentially in constraint
+            // order: each solve writes applied locals and rebuilds world frames
+            // before the next. Shared bones and targets inside another chain's
+            // subtree remain unsupported.
+            if ik.bones.iter().any(|bone| other.bones.contains(bone))
                 || within(doc, ik.target, other.bones[0])
                 || within(doc, other.target, ik.bones[0])
             {
                 return Err(format!(
-                    "IK {} and {}: dependent constraint subtrees or targets are not supported",
+                    "IK {} and {}: shared constrained bones or targets inside another chain are not supported",
                     other.name, ik.name
                 ));
             }
@@ -78,13 +79,14 @@ fn validate_domain(doc: &Document, locals: &[Transform], ik: &IkConstraint) -> R
     }
     if ik.bones.len() == 2 {
         let child = ik.bones[1];
-        if locals[child].x <= 0.
-            || locals[child].x != doc.bones[child].setup.x
-            || locals[child].y != 0.
+        let setup = doc.bones[child].setup;
+        if locals[child].x != setup.x
+            || locals[child].y != setup.y
+            || f64::from(setup.x).hypot(f64::from(setup.y)) == 0.
             || doc.bones[child].length <= 0.
         {
             return Err(format!(
-                "IK {}: child requires a constant positive setup X, zero Y and positive length",
+                "IK {}: child requires a constant nonzero setup offset and positive length",
                 ik.name
             ));
         }
@@ -123,7 +125,12 @@ fn solve(
     let mut desired = vec![(first, dy.atan2(dx) / OBSERVED_DEGREES_TO_RADIANS)];
     if ik.bones.len() == 2 {
         let child = ik.bones[1];
-        let a = f64::from(locals[child].x);
+        // The child origin sits at (x, y) in the parent's frame: a link of
+        // length `a` at angle `offset` from the parent's X axis. Elementary
+        // triangle geometry, verified against the external runtime.
+        let (cx, cy) = (f64::from(locals[child].x), f64::from(locals[child].y));
+        let a = cx.hypot(cy);
+        let offset = cy.atan2(cx);
         let b = f64::from(doc.bones[child].length);
         // Reach limiting is geometry, not normalization of authored angles.
         // Branch before division to avoid extreme but finite length ratios
@@ -135,10 +142,10 @@ fn solve(
         } else {
             ((distance * distance - a * a - b * b) / (2. * a * b)).clamp(-1., 1.)
         };
-        let child_angle = cosine.acos() * if ik.setup.bend_positive { 1. } else { -1. };
-        let parent_angle = dy.atan2(dx) - (b * child_angle.sin()).atan2(a + b * child_angle.cos());
+        let bend = cosine.acos() * if ik.setup.bend_positive { 1. } else { -1. };
+        let parent_angle = dy.atan2(dx) - (b * bend.sin()).atan2(a + b * bend.cos()) - offset;
         desired[0].1 = parent_angle / OBSERVED_DEGREES_TO_RADIANS;
-        desired.push((child, child_angle / OBSERVED_DEGREES_TO_RADIANS));
+        desired.push((child, (bend + offset) / OBSERVED_DEGREES_TO_RADIANS));
     }
     let mut solved = Vec::with_capacity(desired.len());
     for (bone, angle) in desired {

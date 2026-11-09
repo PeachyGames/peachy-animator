@@ -531,3 +531,11 @@ timeline frames), read as a black box. Public TypeScript declarations named the
 `ScaleYMode` values. No runtime or editor implementation source was read; no
 simulation behavior is derived or claimed. Data model, adapter, commands, UI and
 the pendulum icon are independent code.
+
+
+### Nested IK chains, child offsets and attachment names — November 9, 2026
+
+Sequential solving and the offset correction are elementary triangle geometry,
+checked only by black-box comparison with the external runtime on original
+fixtures. The attachment-name rule was corrected from installed-editor CLI probes
+with original minimal JSON. No implementation source was read.

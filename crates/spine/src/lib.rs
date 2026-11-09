@@ -613,17 +613,13 @@ fn array(value: &Value) -> &[Value] {
 }
 
 /// Spine Editor interchange restrictions belong to this adapter, not our model.
+/// Installed 4.3.26 imports reused attachment names across skins, slots and the
+/// default skin (November 9 probes; shipped game exports reuse them), so only the
+/// observed named-skin/default placeholder collision is refused.
 fn validate_export_names(doc: &Document) -> Result<(), String> {
-    let mut names = BTreeSet::new();
     for (skin_name, skin) in &doc.skins {
         for (slot, attachments) in skin {
-            for (placeholder, region) in attachments {
-                if !names.insert(region.name().unwrap_or(placeholder)) {
-                    return Err(
-                        "Spine Editor export requires distinct attachment names across skins"
-                            .into(),
-                    );
-                }
+            for placeholder in attachments.keys() {
                 if skin_name != "default"
                     && doc
                         .skins
@@ -1030,8 +1026,26 @@ mod tests {
             BTreeMap::from([("shared".into(), Attachment::Region(region))]),
         )]);
         doc.skins.insert("default".into(), skin.clone());
-        doc.skins.insert("variant".into(), skin);
+        doc.skins.insert("variant".into(), skin.clone());
         assert!(doc.validate().is_ok());
         assert!(export_json(&doc).is_err());
+        // Reusing one attachment name across named skins and slots is valid
+        // Spine data (installed 4.3.26 imports it; shipped exports use it).
+        doc.skins.remove("default");
+        doc.skins.insert("other".into(), skin);
+        doc.slots.push(Slot {
+            color: [255; 4],
+            name: "body2".into(),
+            bone: 0,
+            attachment: None,
+        });
+        let shared = doc.skins["other"]["body"].clone();
+        doc.skins
+            .get_mut("other")
+            .unwrap()
+            .insert("body2".into(), shared);
+        assert!(doc.validate().is_ok());
+        let output = export_json(&doc).unwrap();
+        assert_eq!(import_json(&output, "test").unwrap().skins, doc.skins);
     }
 }

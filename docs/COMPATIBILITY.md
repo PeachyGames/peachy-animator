@@ -5,9 +5,10 @@ oracle is separately installed `@esotericsoftware/spine-core` **4.3.13**.
 Compatibility applies to the subset below, not every 4.3 project or future patch.
 
 Static IK is a bounded subset: one or two connected bones, unit positive scale
-and zero shear on their chain/ancestors, a parent for the first bone, and disjoint
-affected subtrees without cross-target dependencies. Two-bone child translation
-is a constant positive X offset with Y zero. Target coincidence and unrepresentable
+and zero shear on their chain/ancestors, and a parent for the first bone. Chains
+may nest (a toe below a leg) and solve sequentially in constraint order; shared
+constrained bones and targets inside another constrained chain are refused.
+Two-bone child translation is any constant nonzero setup offset, including Y. Target coincidence and unrepresentable
 solved frames fail explicitly; ordinary inner/outer unreachable targets work.
 Setup Mix is [0,1]. See the [complete Phase A rules](slices/ik-design.md).
 Neutral advanced defaults and `skin:false` are accepted; active advanced features,
@@ -22,7 +23,7 @@ Input-only obsolete integer `order` is validated and omitted, never used to sort
 | Skins | Region/mesh maps, explicit attachment names and default-skin fallback | Skin-required bones or constraints |
 | Animation | Bone rotation, translation, scale and shear; combined or scalar input timelines; physics setting and reset timelines, including global (`""`) timelines | Slot, attachment, draw-order, event, IK, transform and path timelines |
 | Curves | Linear, stepped, normalized monotone-time cubic handles | Nonfinite or unordered controls; overshooting curves between equal values |
-| Constraints | Static one-/two-bone normal IK, Mix [0,1], two-bone Positive, disjoint chains; animated targets. Physics constraints as data: every setting, Scale Y mode and Global flag, in unified constraint order | IK timelines, advanced/dependent/transformed chains; skin-required physics; transform, path, slider and other constraints |
+| Constraints | Static one-/two-bone normal IK, Mix [0,1], two-bone Positive, nested chains in list order, off-axis child offsets; animated targets. Physics constraints as data: every setting, Scale Y mode and Global flag, in unified constraint order | IK timelines, advanced settings, shared-bone or cross-target chains, transformed chains; skin-required physics; transform, path, slider and other constraints |
 | Images | Loose PNGs for editing; one untrimmed atlas page for desktop export | Packed-atlas import, rotated/trimmed atlas regions, multipage export |
 | Files | `.peachy` v8; in-memory v1–v7 migration; Spine JSON adapter | Native `.spine` projects and binary `.skel`; `skeleton.referenceScale` other than 100 |
 
@@ -51,9 +52,10 @@ See [current validation](VALIDATION.md#normal-ik-phase-a--november-6-2026-utc).
 
 The original fixture also imports into a new native project with Spine Editor
 4.3.26, re-exports from that editor, and imports back into Peachy Animator. Its
-re-exported animations retain the same sampled transform agreement. Appearance
-attachments use unique names, and skin placeholders do not collide with direct
-attachments in the default skin. Select `peach` or `mint` for a complete demo character.
+re-exported animations retain the same sampled transform agreement. Skin
+placeholders must not collide with direct attachments in the default skin.
+Attachment names may repeat across skins and slots (corrected November 9, 2026
+after installed-editor probes; shipped game exports reuse names). Select `peach` or `mint` for a complete demo character.
 
 - Rust checks cover interpolation, transform composition, validation, command atomicity,
   undo/redo, curve conversion and file save/reopen/backup/export.

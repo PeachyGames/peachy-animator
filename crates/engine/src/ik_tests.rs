@@ -316,7 +316,7 @@ fn independent_constraints_keep_list_order_and_dependencies_are_explicit_errors(
     assert!(
         checked_evaluate_pose(&document, None, 0.)
             .unwrap_err()
-            .contains("dependent")
+            .contains("inside another chain")
     );
     let Constraint::Ik(second) = &mut document.constraints[0] else {
         unreachable!("fixture constraint is IK")
@@ -326,8 +326,74 @@ fn independent_constraints_keep_list_order_and_dependencies_are_explicit_errors(
     assert!(
         checked_evaluate_pose(&document, None, 0.)
             .unwrap_err()
-            .contains("dependent")
+            .contains("shared constrained bones")
     );
+}
+
+/// A one-bone aim nested below a two-bone chain (a toe below a leg) solves after
+/// the chain in list order, against the chain's solved frame. Listing it first
+/// solves it against the unsolved frame instead; both orders were matched with
+/// the external runtime (docs/VALIDATION.md).
+#[test]
+fn nested_chains_solve_sequentially_in_constraint_order() {
+    let mut document = two(1., true);
+    document.bones.extend([
+        Bone {
+            name: "toe".into(),
+            parent: Some(2),
+            length: 4.,
+            setup: Transform {
+                x: 10.,
+                ..Transform::default()
+            },
+        },
+        Bone {
+            name: "toe target".into(),
+            parent: Some(0),
+            length: 0.,
+            setup: Transform {
+                x: 20.,
+                y: 10.,
+                ..Transform::default()
+            },
+        },
+    ]);
+    let mut toe = constraint();
+    toe.name = "toe".into();
+    toe.bones = vec![4];
+    toe.target = 5;
+    document.constraints.push(Constraint::Ik(toe));
+    document.validate().unwrap();
+    let forward = checked_evaluate_pose(&document, None, 0.).unwrap();
+    // The leg reaches its target, then the toe aims from the solved ankle.
+    point(forward.world()[2].point(10., 0.), [10., 10.]);
+    let ankle = forward.world()[4].point(0., 0.);
+    point(ankle, [10., 10.]);
+    let tip = forward.world()[4].point(4., 0.);
+    point(tip, [14., 10.]);
+    document.constraints.reverse();
+    let reverse = checked_evaluate_pose(&document, None, 0.).unwrap();
+    assert_ne!(forward.applied_locals(), reverse.applied_locals());
+    point(reverse.world()[2].point(10., 0.), [10., 10.]);
+}
+
+#[test]
+fn two_bone_child_offsets_off_the_parent_axis_reach_the_target() {
+    for (x, y) in [(10., 3.), (6., -8.), (-4., 9.)] {
+        for positive in [true, false] {
+            let mut document = two(1., positive);
+            document.bones[2].setup.x = x;
+            document.bones[2].setup.y = y;
+            document.bones[3].setup.x = 8.;
+            document.bones[3].setup.y = 9.;
+            document.validate().unwrap();
+            let pose = checked_evaluate_pose(&document, None, 0.).unwrap();
+            point(pose.world()[2].point(10., 0.), [8., 9.]);
+            // The authored child offset is untouched; only rotations are applied.
+            assert_eq!(pose.applied_locals()[2].x, x);
+            assert_eq!(pose.applied_locals()[2].y, y);
+        }
+    }
 }
 
 #[test]
@@ -360,14 +426,6 @@ fn unsupported_or_degenerate_queries_preserve_raw_native_data_pending_pose_and_h
             1,
             Transform {
                 shear_x: 20.,
-                ..Transform::default()
-            },
-        ),
-        (
-            2,
-            Transform {
-                x: 10.,
-                y: 3.,
                 ..Transform::default()
             },
         ),
@@ -431,7 +489,7 @@ fn unsupported_or_degenerate_queries_preserve_raw_native_data_pending_pose_and_h
         session
             .evaluated_pose(target)
             .unwrap_err()
-            .contains("constant positive")
+            .contains("constant nonzero setup offset")
     );
     assert_eq!(session.document(), &document);
     assert_eq!(session.pose_edits(), &pending);

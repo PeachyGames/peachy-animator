@@ -242,14 +242,14 @@ fn legacy_aliases_malformed_collections_and_even_named_empty_ik_timelines_reject
 }
 
 #[test]
-fn source_domain_preflight_rejects_transformed_chains_dependent_lists_and_child_offset_tracks() {
+fn source_domain_preflight_rejects_transformed_chains_shared_or_cross_target_lists_and_child_offset_tracks()
+ {
     for (bone, field, value) in [
         (0, "scaleX", 1.01),
         (1, "scaleY", -1.0),
         (2, "shearX", 0.1),
         (0, "shearY", 1.0),
         (2, "x", 0.0),
-        (2, "y", 0.1),
         (2, "length", 0.0),
     ] {
         let mut input = fixture();
@@ -273,7 +273,7 @@ fn source_domain_preflight_rejects_transformed_chains_dependent_lists_and_child_
         .as_array_mut()
         .unwrap()
         .push(json!({"type":"ik","name":"again","bones":["lower"],"target":"target","mix":0.5}));
-    reject(&overlap, "dependent constraint");
+    reject(&overlap, "shared bones");
     let mut cross = fixture();
     cross["bones"].as_array_mut().unwrap().extend([
         json!({"name":"other","parent":"root","length":2}),
@@ -285,7 +285,28 @@ fn source_domain_preflight_rejects_transformed_chains_dependent_lists_and_child_
         .unwrap()
         .push(json!({"type":"ik","name":"other-aim",
         "bones":["other"],"target":"target2"}));
-    reject(&cross, "dependent constraint");
+    reject(&cross, "inside another constrained chain");
+}
+
+#[test]
+fn nested_chains_and_child_offsets_off_the_axis_import_and_roundtrip() {
+    let mut input = fixture();
+    input["bones"][2]["y"] = json!(-2.5);
+    input["bones"].as_array_mut().unwrap().extend([
+        json!({"name":"toe","parent":"lower","x":10,"length":4}),
+        json!({"name":"toe target","parent":"root","x":20,"y":10}),
+    ]);
+    input["constraints"]
+        .as_array_mut()
+        .unwrap()
+        .push(json!({"type":"ik","name":"toe aim","bones":["toe"],"target":"toe target"}));
+    let report = inspect(&input);
+    assert!(report.supported, "{:?}", report.unsupported);
+    let doc = import_json(&input, "Nested").unwrap();
+    assert_eq!(doc.bones[2].setup.y, -2.5);
+    assert_eq!(doc.constraints.len(), 2);
+    let output = export_json(&doc).unwrap();
+    assert_eq!(import_json(&output, "Nested").unwrap(), doc);
 }
 
 #[test]

@@ -349,3 +349,21 @@ and actual native target/property interactions. Retain failures and source hashe
 This remains a bounded constraint slice. Physics, path and transform constraints,
 IK timelines/settings and full artist-rig support are separate work. Private
 aggregate compatibility findings remain separate from these original fixtures.
+
+
+## Addendum — nested chains and child offsets (November 9, 2026)
+
+Two Phase A restrictions are lifted after external-runtime comparison:
+
+- **Nested chains.** A chain inside another chain's subtree (leg + toe) is solved
+  after or before it exactly in constraint list order; each solve writes applied
+  locals and rebuilds world frames. Forward and reversed orders give different
+  poses, and the external 4.3.13 runtime matched both. Shared constrained bones
+  and targets inside another constrained chain remain refused.
+- **Child offsets.** A two-bone child may sit at any constant nonzero setup offset
+  `(x, y)`. The solve uses link length `hypot(x, y)` and subtracts the offset
+  angle `atan2(y, x)` from the parent; the child receives bend plus that angle.
+  Offsets with Y ≠ 0 and negative X matched the runtime.
+
+All other Phase A gates (unit scale, zero shear, no IK timelines, 0.001 residual)
+are unchanged.
