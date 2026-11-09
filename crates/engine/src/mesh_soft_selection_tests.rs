@@ -69,6 +69,8 @@ fn rig(mesh: Mesh) -> Document {
         animations: vec![Animation {
             name: "move".into(),
             tracks: vec![],
+            physics: vec![],
+            physics_resets: vec![],
         }],
     };
     doc.validate().unwrap();

@@ -1,5 +1,5 @@
 {
-  "format": 7,
+  "format": 8,
   "constraints": [],
   "name": "Weighted Repeated Influence Contract",
   "fps": 30,
@@ -1047,7 +1047,9 @@
             }
           ]
         }
-      ]
+      ],
+      "physics": [],
+      "physics_resets": []
     },
     {
       "name": "idle",
@@ -1115,7 +1117,9 @@
             }
           ]
         }
-      ]
+      ],
+      "physics": [],
+      "physics_resets": []
     }
   ]
 }

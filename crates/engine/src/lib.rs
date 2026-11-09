@@ -56,6 +56,8 @@ mod ik_tests;
 #[cfg(test)]
 mod mesh_soft_selection_tests;
 #[cfg(test)]
+mod physics_tests;
+#[cfg(test)]
 mod pose_preview_tests;
 #[cfg(test)]
 mod scene_checks_tests;

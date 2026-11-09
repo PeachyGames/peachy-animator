@@ -54,6 +54,14 @@ pub fn inspect(value: &Value) -> Inspection {
     if !version.starts_with("4.3.") {
         unsupported.push(format!("Spine {version}: only 4.3.x JSON is supported"));
     }
+    // Reference scale changes distance-based physics. Until the native model
+    // stores it, only the observed default is accepted.
+    if value["skeleton"]
+        .get("referenceScale")
+        .is_some_and(|scale| scale.as_f64() != Some(100.0))
+    {
+        unsupported.push("Skeleton referenceScale other than 100 is unsupported".into());
+    }
     for field in ["ik", "transform", "path", "physics", "events"] {
         if nonempty(&value[field]) {
             unsupported.push(format!("{field}: not supported in slice 1"));
@@ -167,7 +175,8 @@ pub fn inspect(value: &Value) -> Inspection {
         for (name, animation) in animations {
             if let Some(fields) = animation.as_object() {
                 for (field, contents) in fields {
-                    if field != "bones" && nonempty(contents) {
+                    // Physics timelines are decoded and checked by read_document below.
+                    if !matches!(field.as_str(), "bones" | "physics") && nonempty(contents) {
                         unsupported.push(format!("Animation {name}: {field} timelines"));
                     }
                 }
@@ -238,10 +247,9 @@ pub fn inspect(value: &Value) -> Inspection {
         "Skeleton",
         &mut unsupported,
     );
-    // For nonempty IK, use the same strict graph/source checks as import. This
-    // is decoding only, with no engine dependency or second solver.
+    // Use the same strict graph/source checks as import, including constraints
+    // and physics timelines. This is decoding only, with no engine dependency.
     if unsupported.is_empty()
-        && !array(&value["constraints"]).is_empty()
         && let Err(error) = read_document(value, "Inspection")
     {
         unsupported.push(error);
@@ -323,6 +331,12 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
             return Err(format!("Duplicate skin name {name}"));
         }
     }
+    let constraints = constraints::read(value, &indices)?;
+    let constraint_indices: BTreeMap<String, usize> = constraints
+        .iter()
+        .enumerate()
+        .map(|(index, constraint)| (constraint.name().to_owned(), index))
+        .collect();
     let mut animations = vec![];
     if let Some(entries) = value["animations"].as_object() {
         for (name, animation) in entries {
@@ -335,65 +349,22 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
                             .ok_or_else(|| format!("Unsupported timeline {timeline}"))?;
                         let keys = keys.as_array().ok_or("Timeline must be an array")?;
                         for (channel, &(property, field)) in properties.iter().enumerate() {
-                            let mut mapped_keys = vec![];
-                            for (i, key) in keys.iter().enumerate() {
-                                let time = number(key, "time", 0.0);
-                                let value = number(key, field, property.neutral());
-                                let curve = match key.get("curve") {
-                                    None => Curve::Linear,
-                                    Some(Value::String(v)) if v == "stepped" => Curve::Stepped,
-                                    Some(Value::Array(handles)) => {
-                                        let next = keys.get(i + 1).ok_or("Bezier on last key")?;
-                                        let next_time = number(next, "time", 0.0);
-                                        let next_value = number(next, field, property.neutral());
-                                        if next_time <= time {
-                                            return Err("Unordered keyframes".into());
-                                        }
-                                        let offset = channel * 4;
-                                        let h: Vec<f32> = handles
-                                            .iter()
-                                            .skip(offset)
-                                            .take(4)
-                                            .filter_map(|v| v.as_f64().map(|v| v as f32))
-                                            .collect();
-                                        if h.len() != 4 {
-                                            return Err(
-                                                "Expected four Bezier handles per channel".into()
-                                            );
-                                        }
-                                        let delta = next_value - value;
-                                        if delta.abs() < 1e-8 {
-                                            if (h[1] - value).abs() > 1e-5
-                                                || (h[3] - value).abs() > 1e-5
-                                            {
-                                                return Err("Bezier overshoot between equal values is not supported".into());
-                                            }
-                                            Curve::Linear
-                                        } else {
-                                            Curve::Bezier([
-                                                normalized_control(time, next_time, h[0])?,
-                                                normalized_control(value, next_value, h[1])?,
-                                                normalized_control(time, next_time, h[2])?,
-                                                normalized_control(value, next_value, h[3])?,
-                                            ])
-                                        }
-                                    }
-                                    _ => return Err("Unsupported interpolation".into()),
-                                };
-                                mapped_keys.push(Keyframe { time, value, curve });
-                            }
                             tracks.push(Track {
                                 bone,
                                 property,
-                                keys: mapped_keys,
+                                keys: read_keys(keys, field, channel, property.neutral())?,
                             });
                         }
                     }
                 }
             }
+            let (physics, physics_resets) =
+                constraints::read_physics_timelines(name, animation, &constraint_indices)?;
             animations.push(Animation {
                 name: name.clone(),
                 tracks,
+                physics,
+                physics_resets,
             });
         }
     }
@@ -402,7 +373,7 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
         return Err("FPS must be 1–240".into());
     }
     let doc = Document {
-        constraints: constraints::read(value, &indices)?,
+        constraints,
         format: FORMAT_VERSION,
         name: name.into(),
         fps: fps as u32,
@@ -478,30 +449,17 @@ pub fn export_json(doc: &Document) -> Result<Value, String> {
                 Property::ShearX => "shearx",
                 Property::ShearY => "sheary",
             };
-            let mut keys = vec![];
-            for (i, key) in track.keys.iter().enumerate() {
-                let mut k = json!({"time":key.time,"value":key.value});
-                match key.curve {
-                    Curve::Stepped => k["curve"] = json!("stepped"),
-                    Curve::Bezier([x1, y1, x2, y2]) if i + 1 < track.keys.len() => {
-                        let next = track.keys[i + 1];
-                        k["curve"] = json!([
-                            absolute_control(key.time, next.time, x1)?,
-                            absolute_control(key.value, next.value, y1)?,
-                            absolute_control(key.time, next.time, x2)?,
-                            absolute_control(key.value, next.value, y2)?
-                        ]);
-                    }
-                    _ => {}
-                }
-                keys.push(k);
-            }
+            let keys = write_keys(&track.keys)?;
             if bone_timelines.get(bone).is_none() {
                 bone_timelines[bone] = json!({});
             }
             bone_timelines[bone][timeline] = json!(keys);
         }
         animations[&animation.name] = json!({"bones":bone_timelines});
+        let physics = constraints::write_physics_timelines(doc, animation)?;
+        if !physics.as_object().is_some_and(serde_json::Map::is_empty) {
+            animations[&animation.name]["physics"] = physics;
+        }
     }
     let mut output = json!({"skeleton":{"spine":TARGET_VERSION,"images":"./images/","fps":doc.fps},"bones":bones,"slots":slots,"skins":skins,"animations":animations});
     if !doc.constraints.is_empty() {
@@ -535,6 +493,83 @@ fn read_slot_color(slot: &Value) -> Result<[u8; 4], String> {
         color[channel] = hex(high) * 16 + hex(low);
     }
     Ok(color)
+}
+
+/// Reads one scalar channel. `channel` selects the Bezier handle group for
+/// two-channel timelines; `omitted` is the observed value for a missing field.
+pub(crate) fn read_keys(
+    keys: &[Value],
+    field: &str,
+    channel: usize,
+    omitted: f32,
+) -> Result<Vec<Keyframe>, String> {
+    let mut mapped_keys = vec![];
+    for (i, key) in keys.iter().enumerate() {
+        let time = number(key, "time", 0.0);
+        let value = number(key, field, omitted);
+        let curve = match key.get("curve") {
+            None => Curve::Linear,
+            Some(Value::String(v)) if v == "stepped" => Curve::Stepped,
+            Some(Value::Array(handles)) => {
+                let next = keys.get(i + 1).ok_or("Bezier on last key")?;
+                let next_time = number(next, "time", 0.0);
+                let next_value = number(next, field, omitted);
+                if next_time <= time {
+                    return Err("Unordered keyframes".into());
+                }
+                let offset = channel * 4;
+                let h: Vec<f32> = handles
+                    .iter()
+                    .skip(offset)
+                    .take(4)
+                    .filter_map(|v| v.as_f64().map(|v| v as f32))
+                    .collect();
+                if h.len() != 4 {
+                    return Err("Expected four Bezier handles per channel".into());
+                }
+                let delta = next_value - value;
+                if delta.abs() < 1e-8 {
+                    if (h[1] - value).abs() > 1e-5 || (h[3] - value).abs() > 1e-5 {
+                        return Err("Bezier overshoot between equal values is not supported".into());
+                    }
+                    Curve::Linear
+                } else {
+                    Curve::Bezier([
+                        normalized_control(time, next_time, h[0])?,
+                        normalized_control(value, next_value, h[1])?,
+                        normalized_control(time, next_time, h[2])?,
+                        normalized_control(value, next_value, h[3])?,
+                    ])
+                }
+            }
+            _ => return Err("Unsupported interpolation".into()),
+        };
+        mapped_keys.push(Keyframe { time, value, curve });
+    }
+    Ok(mapped_keys)
+}
+
+/// Writes scalar keys with absolute Bezier handles. The last key's curve is moot.
+pub(crate) fn write_keys(keys: &[Keyframe]) -> Result<Vec<Value>, String> {
+    let mut written = vec![];
+    for (i, key) in keys.iter().enumerate() {
+        let mut k = json!({"time":key.time,"value":key.value});
+        match key.curve {
+            Curve::Stepped => k["curve"] = json!("stepped"),
+            Curve::Bezier([x1, y1, x2, y2]) if i + 1 < keys.len() => {
+                let next = keys[i + 1];
+                k["curve"] = json!([
+                    absolute_control(key.time, next.time, x1)?,
+                    absolute_control(key.value, next.value, y1)?,
+                    absolute_control(key.time, next.time, x2)?,
+                    absolute_control(key.value, next.value, y2)?
+                ]);
+            }
+            _ => {}
+        }
+        written.push(k);
+    }
+    Ok(written)
 }
 
 fn checked_curve_coordinate(value: f64, context: &str) -> Result<f32, String> {

@@ -46,6 +46,8 @@ fn rig() -> Document {
         animations: vec![Animation {
             name: "reach".into(),
             tracks: vec![],
+            physics: vec![],
+            physics_resets: vec![],
         }],
     }
 }
@@ -307,14 +309,18 @@ fn independent_constraints_keep_list_order_and_dependencies_are_explicit_errors(
     document.constraints.reverse();
     let reverse = checked_evaluate_pose(&document, None, 0.).unwrap();
     assert_eq!(forward.applied_locals(), reverse.applied_locals());
-    let Constraint::Ik(second) = &mut document.constraints[0];
+    let Constraint::Ik(second) = &mut document.constraints[0] else {
+        unreachable!("fixture constraint is IK")
+    };
     second.target = 2;
     assert!(
         checked_evaluate_pose(&document, None, 0.)
             .unwrap_err()
             .contains("dependent")
     );
-    let Constraint::Ik(second) = &mut document.constraints[0];
+    let Constraint::Ik(second) = &mut document.constraints[0] else {
+        unreachable!("fixture constraint is IK")
+    };
     second.target = 6;
     second.bones = vec![1];
     assert!(
@@ -469,7 +475,9 @@ fn relevant_target_precision_cannot_hide_a_wrong_orientation_behind_zero_length(
     for length in [0., 16.] {
         let mut document = one(1.);
         document.bones.remove(2);
-        let Constraint::Ik(ik) = &mut document.constraints[0];
+        let Constraint::Ik(ik) = &mut document.constraints[0] else {
+            unreachable!("fixture constraint is IK")
+        };
         ik.target = 2;
         document.bones[0].setup.x = 1e8;
         document.bones[1].length = length;
@@ -494,7 +502,9 @@ fn relevant_target_precision_cannot_hide_a_wrong_orientation_behind_zero_length(
 fn relevant_wide_target_math_accepts_exact_large_and_tiny_directions_without_global_bans() {
     let mut document = one(1.);
     document.bones.remove(2);
-    let Constraint::Ik(ik) = &mut document.constraints[0];
+    let Constraint::Ik(ik) = &mut document.constraints[0] else {
+        unreachable!("fixture constraint is IK")
+    };
     ik.target = 2;
     document.bones[0].setup.x = 1e8;
     document.bones[1].setup.rotation = 90.;

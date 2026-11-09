@@ -135,7 +135,7 @@ RGBA is stored as four unmultiplied bytes in native7, preserving hidden RGB at z
 alpha. Current fields are required; legacy1–6 migrate to white without modifying
 source files. Save/export preserve bytes, and Spine setup interchange accepts
 strict6/8-digit hex. Color timelines, dark/two-color tint and other blend modes
-remain unsupported. The pending IK proposal advances explicitly to native8.
+remain unsupported. The pending IK proposal now targets native9, after native8 physics data.
 
 A picker drag freezes its typed context and forms one Session Undo step. Hex
 applies on Enter/Tab; invalid/no-op/cancelled entry preserves document/redo and

@@ -45,6 +45,8 @@ fn fixture() -> Document {
         animations: vec![Animation {
             name: "pose".into(),
             tracks: vec![],
+            physics: vec![],
+            physics_resets: vec![],
         }],
     }
 }

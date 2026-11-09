@@ -106,6 +106,9 @@ impl Editor {
             TreeItem::Bone(_) => "bone",
             TreeItem::Slot(_) => "slot",
             TreeItem::Animation(_) => "animation",
+            TreeItem::Constraint(index) if self.physics_constraint(index).is_some() => {
+                "physics constraint"
+            }
             TreeItem::Constraint(_) => "IK constraint",
             _ => return,
         };
@@ -142,11 +145,17 @@ impl Editor {
                     TreeItem::Slot(slot) => Command::RenameSlot { slot, name },
                     TreeItem::Animation(animation) => Command::RenameAnimation { animation, name },
                     TreeItem::Constraint(constraint) => {
-                        let Some(mut value) = self.ik_constraint(constraint).cloned() else {
-                            return;
-                        };
-                        value.name = name;
-                        Command::SetIkConstraint { constraint, value }
+                        match self.session.document().constraints.get(constraint).cloned() {
+                            Some(Constraint::Ik(mut value)) => {
+                                value.name = name;
+                                Command::SetIkConstraint { constraint, value }
+                            }
+                            Some(Constraint::Physics(mut value)) => {
+                                value.name = name;
+                                Command::SetPhysicsConstraint { constraint, value }
+                            }
+                            None => return,
+                        }
                     }
                     _ => return,
                 };
@@ -267,7 +276,9 @@ mod tests {
         workspace_frame(&mut editor, &ctx, key(egui::Key::Enter));
         assert!(editor.rename.is_none());
         let mut renamed = original.clone();
-        let Constraint::Ik(ik) = &mut renamed.constraints[0];
+        let Constraint::Ik(ik) = &mut renamed.constraints[0] else {
+            unreachable!("fixture constraint is IK")
+        };
         ik.name = "edited IK".into();
         assert_eq!(editor.session.document(), &renamed);
         assert_eq!(editor.selection, Some(TreeItem::Constraint(0)));
@@ -332,7 +343,9 @@ mod tests {
         workspace_frame(&mut editor, &ctx, key(egui::Key::Enter));
         assert!(editor.rename.is_none());
         let mut renamed = original.clone();
-        let Constraint::Ik(ik) = &mut renamed.constraints[0];
+        let Constraint::Ik(ik) = &mut renamed.constraints[0] else {
+            unreachable!("fixture constraint is IK")
+        };
         ik.name = "corrected IK".into();
         assert_eq!(editor.session.document(), &renamed);
         assert_eq!(editor.selection, Some(TreeItem::Constraint(0)));

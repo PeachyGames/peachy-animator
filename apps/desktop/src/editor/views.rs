@@ -480,6 +480,23 @@ impl Editor {
                     .map(|track| track.keys.len())
                     .sum::<usize>()
             ));
+            if !animation.physics.is_empty() || !animation.physics_resets.is_empty() {
+                let keys = animation
+                    .physics
+                    .iter()
+                    .map(|track| track.keys.len())
+                    .chain(
+                        animation
+                            .physics_resets
+                            .iter()
+                            .map(|reset| reset.times.len()),
+                    )
+                    .sum::<usize>();
+                ui.label(format!(
+                    "Physics timelines: {} · keys: {keys}",
+                    animation.physics.len() + animation.physics_resets.len()
+                ));
+            }
         }
     }
 

@@ -4,10 +4,14 @@ impl Editor {
     pub(super) fn inspector(&mut self, ui: &mut egui::Ui) {
         self.record_target("properties", ui.clip_rect());
         let title = match self.selection {
-            Some(TreeItem::Constraint(index)) => format!(
-                "IK Constraint: {}",
-                self.ik_constraint(index).map_or("?", |ik| ik.name.as_str())
-            ),
+            Some(TreeItem::Constraint(index)) => self
+                .session
+                .document()
+                .constraints
+                .get(index)
+                .map_or("Constraint: ?".into(), |constraint| {
+                    format!("{}: {}", constraint.kind_label(), constraint.name())
+                }),
             _ => "Properties".into(),
         };
         ui.horizontal(|ui| {
@@ -136,9 +140,12 @@ impl Editor {
                 }
             }
             TreeItem::Animation(animation) => self.animation_properties(ui, animation),
+            TreeItem::Constraint(index) if self.physics_constraint(index).is_some() => {
+                self.physics_properties(ui, index)
+            }
             TreeItem::Constraint(index) => self.ik_properties(ui, index),
             TreeItem::Folder(Folder::Constraints) => {
-                ui.label("Constraints are applied in Tree order. Select an IK constraint to edit its Setup settings.");
+                ui.label("Constraints are applied in Tree order. Select a constraint to edit its Setup settings.");
             }
             TreeItem::Folder(Folder::Skins) => {
                 ui.label("Use a skin's visibility dot to make it active.");

@@ -29,6 +29,9 @@ pub fn load(path: &Path) -> Result<Document, String> {
 pub fn decode_project(text: &str) -> Result<Document, String> {
     let mut value: serde_json::Value = serde_json::from_str(text).map_err(|e| e.to_string())?;
     let original_format = value["format"].as_u64();
+    if matches!(original_format, Some(1..=7)) {
+        reject_legacy_physics(&value)?;
+    }
     if matches!(original_format, Some(1..=6)) {
         reject_legacy_slot_color(&value)?;
     }
@@ -86,6 +89,10 @@ pub fn decode_project(text: &str) -> Result<Document, String> {
         add_v6_slot_colors(&mut value)?;
         value["format"] = 7.into();
     }
+    if value["format"].as_u64() == Some(7) {
+        add_v7_physics_timelines(&mut value)?;
+        value["format"] = 8.into();
+    }
     let mut doc: Document = serde_json::from_value(value).map_err(|e| e.to_string())?;
     // Wrapping vertices preserves their values and all surrounding fields. Decode
     // the strict schema and validate every legacy field before adding duration holds.
@@ -94,6 +101,41 @@ pub fn decode_project(text: &str) -> Result<Document, String> {
         materialize_v2_holds(&mut doc, durations)?;
     }
     Ok(doc)
+}
+
+/// Formats 1–7 had only IK constraints and bone-transform tracks. A physics
+/// constraint or physics field there is malformed, never silently accepted.
+fn reject_legacy_physics(value: &serde_json::Value) -> Result<(), String> {
+    if value["constraints"].as_array().is_some_and(|constraints| {
+        constraints
+            .iter()
+            .any(|constraint| constraint["type"].as_str() != Some("ik"))
+    }) {
+        return Err("Legacy project formats can contain only IK constraints".into());
+    }
+    if value["animations"].as_array().is_some_and(|animations| {
+        animations.iter().any(|animation| {
+            animation.get("physics").is_some() || animation.get("physics_resets").is_some()
+        })
+    }) {
+        return Err("Legacy project formats cannot contain physics timelines".into());
+    }
+    Ok(())
+}
+
+/// v7→v8 adds the two required, empty physics timeline lists to each animation.
+fn add_v7_physics_timelines(value: &mut serde_json::Value) -> Result<(), String> {
+    let animations = value["animations"]
+        .as_array_mut()
+        .ok_or("Legacy animations must be an array")?;
+    for animation in animations {
+        let object = animation
+            .as_object_mut()
+            .ok_or("Legacy animation must be an object")?;
+        object.insert("physics".into(), serde_json::json!([]));
+        object.insert("physics_resets".into(), serde_json::json!([]));
+    }
+    Ok(())
 }
 
 fn reject_legacy_slot_color(value: &serde_json::Value) -> Result<(), String> {
@@ -491,6 +533,12 @@ mod tests {
             .zip(&doc.animations)
         {
             animation["duration"] = serde_json::json!(source.duration());
+            for field in ["physics", "physics_resets"] {
+                assert_eq!(
+                    animation.as_object_mut().unwrap().remove(field),
+                    Some(serde_json::json!([]))
+                );
+            }
         }
         for skin in v["skins"].as_object_mut().unwrap().values_mut() {
             for slot in skin.as_object_mut().unwrap().values_mut() {

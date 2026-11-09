@@ -1377,3 +1377,29 @@ verified exited, scoped localhost authorization and temporary command files are
 removed, no private key is written, and no browser is launched. Audio event
 keys, animation synchronization, audio Save/export, other formats and
 cross-platform output remain explicit gaps.
+
+## Physics constraint data — November 9, 2026
+
+Scope: physics constraints and physics timelines as lossless data in native v8,
+with typed Setup editing. **No editor simulation** is claimed; see
+[the slice](slices/physics-data.md) and [evidence](evidence/physics-data.json).
+
+| Check | Result |
+| --- | --- |
+| Format probes | Original probes through installed Spine **4.3.26** import/re-export and the external **4.3.13** public data API establish field names and defaults (inertia 0.5, damping 0.85, strength 100, mass 1, mix 1, limit 5000, FPS 60) and omitted key values (Mix 1, others 0) |
+| Original Physics Lab fixture | 3 constraints, 63 settings, 8 timelines and 16 frames equal in the external runtime; 28,080 bone and 33,280 region comparisons with `Physics.none`, max world error 0.000026; clip ends include reset keys (idle 2.75) |
+| Installed editor round trip | 4.3.26 imports/re-exports the fixture; our importer accepts it; constraints, setting keys and resets equal at f32 precision; the same runtime checks pass on the re-export |
+| Game skeleton audit | 19 shipped exports read-only and unchanged; fully supported 0 → **1**; physics refusals remain only for skin-required physics (2 files) |
+| Game rig with simulation | One newly supported game skeleton (6 bones, 2 physics constraints) and its Peachy import→export run side by side in the runtime with `Physics.update`, 60 fps for 6 s: max bone difference 0.00012 and mesh vertex difference 0.00024, while physics itself moves bones up to 16.4 units |
+| Rust suite | `cargo fmt --check`, `clippy -D warnings`, architecture check and build pass; **417** tests pass, 1 ignored (two test threads) |
+
+The desktop checks render the real workspace through egui: every physics control
+is reachable inside Properties (scrolling as a user would), a typed Strength value
+applies once on Enter as one undo step, the Global toggle is a separate step, Animate
+controls are read-only, and rename routes to the physics command while keyed
+references stay attached. **Native OS mouse/keyboard acceptance in a task-owned
+window was not run for this slice**, so no native interaction parity is claimed.
+
+The game-rig comparison exercises private artist data locally only. Its inputs
+were verified unchanged by SHA-256; outputs and reports stay under `.local/`.
+Region corners are not compared for that rig because its atlas trims whitespace.

@@ -1,5 +1,5 @@
 {
-  "format": 7,
+  "format": 8,
   "constraints": [],
   "name": "Peach Bot Shear Lab",
   "fps": 30,
@@ -917,7 +917,9 @@
             }
           ]
         }
-      ]
+      ],
+      "physics": [],
+      "physics_resets": []
     },
     {
       "name": "shear stepped",
@@ -1000,7 +1002,9 @@
             }
           ]
         }
-      ]
+      ],
+      "physics": [],
+      "physics_resets": []
     },
     {
       "name": "shear bezier",
@@ -1131,7 +1135,9 @@
             }
           ]
         }
-      ]
+      ],
+      "physics": [],
+      "physics_resets": []
     },
     {
       "name": "wave",
@@ -1321,7 +1327,9 @@
             }
           ]
         }
-      ]
+      ],
+      "physics": [],
+      "physics_resets": []
     },
     {
       "name": "idle",
@@ -1389,7 +1397,9 @@
             }
           ]
         }
-      ]
+      ],
+      "physics": [],
+      "physics_resets": []
     }
   ]
 }

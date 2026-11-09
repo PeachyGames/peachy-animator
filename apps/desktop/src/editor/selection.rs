@@ -74,10 +74,7 @@ impl TreeItem {
             Self::Constraint(i) => doc
                 .constraints
                 .get(*i)
-                .map_or("?", |constraint| {
-                    let peachy_document::Constraint::Ik(ik) = constraint;
-                    ik.name.as_str()
-                })
+                .map_or("?", peachy_document::Constraint::name)
                 .into(),
         }
     }

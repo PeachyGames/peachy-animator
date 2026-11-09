@@ -140,17 +140,13 @@ fn valid_width(width: f32) -> bool {
     width.is_finite() && width > 0.
 }
 
-/// Summary diamonds describe every supported track, irrespective of selection.
-/// The caller supplies a validated document, as held by the editor's Session.
+/// Summary diamonds describe every bone, physics and reset key, irrespective of
+/// selection, matching W/S key navigation. The caller supplies a validated document.
 pub(super) fn key_times(doc: &Document, animation: usize) -> Vec<f32> {
     let Some(animation) = doc.animations.get(animation) else {
         return Vec::new();
     };
-    let mut times: Vec<_> = animation
-        .tracks
-        .iter()
-        .flat_map(|track| track.keys.iter().map(|key| key.time))
-        .collect();
+    let mut times: Vec<_> = animation.key_times().collect();
     times.sort_by(f32::total_cmp);
     times.dedup();
     times
@@ -247,6 +243,30 @@ mod tests {
         assert!(key_times(&doc, usize::MAX).is_empty());
         doc.animations[0].tracks.clear();
         assert!(key_times(&doc, 0).is_empty());
+        // Physics and reset keys appear like bone keys, matching W/S navigation.
+        doc.constraints.push(peachy_document::Constraint::Physics(
+            peachy_document::PhysicsConstraint::new("sway", 8),
+        ));
+        doc.animations[0]
+            .physics
+            .push(peachy_document::PhysicsTrack {
+                constraint: Some(doc.constraints.len() - 1),
+                property: peachy_document::PhysicsProperty::Wind,
+                keys: vec![Keyframe {
+                    time: 0.45,
+                    value: 2.,
+                    curve: Curve::Stepped,
+                }],
+            });
+        doc.animations[0]
+            .physics_resets
+            .push(peachy_document::PhysicsReset {
+                constraint: None,
+                times: vec![0.2, 0.45],
+            });
+        doc.validate().unwrap();
+        assert_eq!(key_times(&doc, 0), vec![0.2, 0.45]);
+        doc.constraints.pop();
         doc.animations[0] = original.animations[0].clone();
         assert_eq!(doc, original);
     }

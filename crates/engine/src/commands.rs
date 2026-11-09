@@ -12,6 +12,15 @@ pub enum Command {
         constraint: usize,
         value: IkConstraint,
     },
+    /// Appends a constraint after all existing ones (Spine's evaluation order).
+    AddPhysicsConstraint {
+        constraint: PhysicsConstraint,
+    },
+    /// Replaces one existing physics constraint's data, including its name.
+    SetPhysicsConstraint {
+        constraint: usize,
+        value: PhysicsConstraint,
+    },
     SetPose {
         bone: usize,
         target: EditTarget,
@@ -295,9 +304,19 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
         }
         Command::AddIkConstraint { constraint } => doc.constraints.push(Constraint::Ik(constraint)),
         Command::SetIkConstraint { constraint, value } => {
-            *doc.constraints
-                .get_mut(constraint)
-                .ok_or("Unknown IK constraint")? = Constraint::Ik(value);
+            let Some(slot @ Constraint::Ik(_)) = doc.constraints.get_mut(constraint) else {
+                return Err("Unknown IK constraint".into());
+            };
+            *slot = Constraint::Ik(value);
+        }
+        Command::AddPhysicsConstraint { constraint } => {
+            doc.constraints.push(Constraint::Physics(constraint))
+        }
+        Command::SetPhysicsConstraint { constraint, value } => {
+            let Some(slot @ Constraint::Physics(_)) = doc.constraints.get_mut(constraint) else {
+                return Err("Unknown physics constraint".into());
+            };
+            *slot = Constraint::Physics(value);
         }
         Command::AddBone { bone } => doc.bones.push(bone),
         Command::AddAnimation { name, duration } => {
@@ -317,7 +336,7 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
                     }],
                 }]
             };
-            doc.animations.push(Animation { name, tracks });
+            doc.animations.push(Animation::new(name, tracks));
         }
         Command::RenameAnimation { animation, name } => {
             doc.animations

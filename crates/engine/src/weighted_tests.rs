@@ -121,6 +121,8 @@ pub(super) fn rig() -> Document {
                     },
                 ],
             }],
+            physics: vec![],
+            physics_resets: vec![],
         }],
     }
 }

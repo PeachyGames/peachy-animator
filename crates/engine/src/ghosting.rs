@@ -435,6 +435,8 @@ mod tests {
                         })
                         .collect(),
                 }],
+                physics: vec![],
+                physics_resets: vec![],
             }],
         }
     }

@@ -1,11 +1,52 @@
 //! Ordered static IK data. Evaluation capabilities do not rewrite authored data.
-use crate::Bone;
+use crate::{Bone, PhysicsConstraint};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase", deny_unknown_fields)]
 pub enum Constraint {
     Ik(IkConstraint),
+    Physics(PhysicsConstraint),
+}
+
+impl Constraint {
+    pub fn name(&self) -> &str {
+        match self {
+            Self::Ik(ik) => &ik.name,
+            Self::Physics(physics) => &physics.name,
+        }
+    }
+    pub fn set_name(&mut self, name: String) {
+        match self {
+            Self::Ik(ik) => ik.name = name,
+            Self::Physics(physics) => physics.name = name,
+        }
+    }
+    pub fn as_ik(&self) -> Option<&IkConstraint> {
+        match self {
+            Self::Ik(ik) => Some(ik),
+            Self::Physics(_) => None,
+        }
+    }
+    pub fn as_physics(&self) -> Option<&PhysicsConstraint> {
+        match self {
+            Self::Physics(physics) => Some(physics),
+            Self::Ik(_) => None,
+        }
+    }
+    /// Spine 4.3's unified constraint `type` and Tree terminology.
+    pub fn kind_label(&self) -> &'static str {
+        match self {
+            Self::Ik(_) => "IK Constraint",
+            Self::Physics(_) => "Physics Constraint",
+        }
+    }
+    pub fn validate(&self, bones: &[Bone]) -> Result<(), String> {
+        match self {
+            Self::Ik(ik) => ik.validate(bones),
+            Self::Physics(physics) => physics.validate(bones),
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

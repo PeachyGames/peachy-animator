@@ -170,7 +170,7 @@ impl Editor {
                             .item
                             .attachment()
                             .is_some_and(|k| !self.attachment_editable(k))
-                            || matches!(e.item, TreeItem::Constraint(index) if self.ik_constraint(index).is_some_and(|ik|ik.setup.mix == 0.));
+                            || matches!(e.item, TreeItem::Constraint(index) if self.ik_constraint(index).is_some_and(|ik|ik.setup.mix == 0.) || self.physics_constraint(index).is_some_and(|physics|physics.setup.mix == 0.));
                         let row = ui.selectable_label(
                             selected,
                             RichText::new(format!("    {}", e.label)).color(if selected {
@@ -181,10 +181,12 @@ impl Editor {
                                 Color32::LIGHT_GRAY
                             }),
                         );
+                        let physics = matches!(e.item, TreeItem::Constraint(index) if self.physics_constraint(index).is_some());
                         draw_icon(
                             ui.painter(),
                             row.rect.min + vec2(4., 4.),
                             &e.item,
+                            physics,
                             if selected { ACCENT } else { MUTED },
                         );
                         if row.rect.intersects(ui.clip_rect()) {
@@ -223,7 +225,7 @@ impl Editor {
                         }
                         if let TreeItem::Bone(bone) = e.item {
                             let annotations: Vec<_> = self.session.document().constraints.iter().enumerate().filter_map(|(index,constraint)| {
-                                let Constraint::Ik(ik)=constraint;
+                                let ik=constraint.as_ik()?;
                                 (ik.bones.contains(&bone) || ik.target==bone).then(||(index,ik.name.clone()))
                             }).collect();
                             if !annotations.is_empty() {
@@ -380,10 +382,11 @@ fn set_hidden(set: &mut BTreeSet<usize>, index: usize, hidden: bool) {
         set.remove(&index);
     }
 }
-fn draw_icon(p: &egui::Painter, origin: Pos2, item: &TreeItem, color: Color32) {
+fn draw_icon(p: &egui::Painter, origin: Pos2, item: &TreeItem, physics: bool, color: Color32) {
     let stroke = Stroke::new(1., color);
     let r = egui::Rect::from_min_size(origin, vec2(10., 10.));
     match item {
+        TreeItem::Constraint(_) if physics => icons::draw_physics(p, r, color),
         TreeItem::Constraint(_) | TreeItem::Folder(Folder::Constraints) => {
             icons::draw_ik(p, r, color)
         }

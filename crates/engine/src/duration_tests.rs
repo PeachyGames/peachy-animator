@@ -26,6 +26,8 @@ fn document() -> Document {
         animations: vec![Animation {
             name: "empty".into(),
             tracks: vec![],
+            physics: vec![],
+            physics_resets: vec![],
         }],
     }
 }

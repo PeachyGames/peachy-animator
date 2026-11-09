@@ -498,7 +498,8 @@ renderer tint and icons are independent code. General HSV mathematics uses publi
 egui Hsva conversions. The compact custom drawing avoids global numeric-color
 style mutation or copied assets. Native bytes remain unmultiplied; premultiplication
 occurs only at rendering. The separate future IK contract is explicitly renumbered
-to native8 without changing its approved semantic requirements or gates.
+to native8 without changing its approved semantic requirements or gates. (November 9:
+native8 went to physics data; the IK contract now targets native9.)
 
 
 ### WAV waveform and independent Audio audition — November 6, 2026
@@ -516,3 +517,17 @@ checks the stopped native clock. No proprietary Spine implementation, private au
 and captures generate an original PCM tone; native state verification sets only
 that owned sound's volume to zero, never system volume. No listening-quality or
 complete Spine Audio interchange/parity claim is made.
+
+
+### Physics constraint data — November 9, 2026
+
+The public [physics constraints guide](https://esotericsoftware.com/spine-physics-constraints)
+describes each setting qualitatively; the public JSON format page predates physics
+and the unified 4.3 `constraints` array. Field names, omitted values and key
+defaults were therefore observed from original probe files: installed Spine
+4.3.26 import/re-export through its public CLI, and the separately installed
+4.3.13 runtime's public data API (`PhysicsConstraintData`, its `setupPose` and
+timeline frames), read as a black box. Public TypeScript declarations named the
+`ScaleYMode` values. No runtime or editor implementation source was read; no
+simulation behavior is derived or claimed. Data model, adapter, commands, UI and
+the pendulum icon are independent code.

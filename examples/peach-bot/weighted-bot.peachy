@@ -1,5 +1,5 @@
 {
-  "format": 7,
+  "format": 8,
   "constraints": [],
   "name": "Peach Bot Weighted Lab",
   "fps": 30,
@@ -1039,7 +1039,9 @@
             }
           ]
         }
-      ]
+      ],
+      "physics": [],
+      "physics_resets": []
     },
     {
       "name": "idle",
@@ -1107,7 +1109,9 @@
             }
           ]
         }
-      ]
+      ],
+      "physics": [],
+      "physics_resets": []
     }
   ]
 }

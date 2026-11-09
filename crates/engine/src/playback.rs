@@ -67,7 +67,7 @@ pub fn advance_playback(
     }
 }
 
-/// Nearest strict key time across the active animation's supported tracks.
+/// Nearest strict key time across the active animation's bone, physics and reset keys.
 pub fn adjacent_key_time(
     doc: &Document,
     animation: usize,
@@ -80,10 +80,7 @@ pub fn adjacent_key_time(
     let times = doc
         .animations
         .get(animation)?
-        .tracks
-        .iter()
-        .flat_map(|t| t.keys.iter())
-        .map(|k| k.time)
+        .key_times()
         .filter(|t| !same_key_time(*t, time));
     match direction {
         PlayDirection::Forward => times.filter(|t| *t > time).min_by(f32::total_cmp),

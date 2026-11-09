@@ -228,6 +228,8 @@ fn doc() -> Document {
             name: "wave".into(),
 
             tracks: vec![],
+            physics: vec![],
+            physics_resets: vec![],
         }],
     }
 }

@@ -45,6 +45,15 @@ in every skin, including zero-weight entries and inactive attachments. Preserve
 influence order, repeated bones, zero entries and positive nonunit totals;
 imports/exports must not silently normalize, merge, sort or prune them.
 
+Native v8 adds `Constraint::Physics` (bone, influences, Scale Y mode, limit, FPS,
+seven keyable settings and Global flags) and required per-animation `physics` /
+`physics_resets` lists; v7→v8 inserts empty lists, and formats 1–7 refuse physics
+data. Physics is data only: evaluation must equal the runtime's `Physics.none`
+until a calibrated simulation slice lands. Keep observed Spine defaults
+(inertia 0.5, damping 0.85) in `peachy_document::PHYSICS_DEFAULT_SETUP`; export
+writes every field explicitly. Never let an IK command replace a physics
+constraint or the reverse.
+
 IK evaluation uses one checked engine solve. `EvaluatedPose` distinguishes authored
 locals, applied locals and world transforms; `Session::local_pose` stays authored.
 Rendering, picking, bounds and tools use the evaluated frame. The old evaluation

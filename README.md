@@ -58,6 +58,18 @@ to pose its chain; authored bone values remain separate from solved values.
 Constraint settings are static in this slice. See [the IK contract](docs/slices/ik-design.md)
 for its chain, transform and precision limits.
 
+The original Physics Lab adds three physics constraints with keyed settings,
+global wind keys and reset keys:
+
+```sh
+cargo run -p peachy-animator -- examples/peach-bot/physics-bot.peachy
+```
+
+Select a physics constraint in the Tree's **Constraints** folder to edit its
+Setup settings and Global flags. Physics is saved and exported for the game
+runtime, but the editor preview does not simulate it yet. See
+[physics data](docs/slices/physics-data.md).
+
 For either mesh fixture, select its hand.R attachment and **Vertices** to inspect the selected
 vertex's bone influences. Weighted inspection works in Setup and Animate, including
 an unkeyed pose. It stops playback and preserves the current pose and mode. Bone

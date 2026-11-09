@@ -80,6 +80,8 @@ fn fixture() -> Document {
                     ],
                 },
             ],
+            physics: vec![],
+            physics_resets: vec![],
         }],
     }
 }

@@ -41,6 +41,7 @@ pub(super) enum Icon {
     Preview,
     Weights,
     IkConstraint,
+    PhysicsConstraint,
     ChooseBone,
     Bone,
     TargetBone,
@@ -311,6 +312,7 @@ fn paint(ui: &Ui, rect: Rect, icon: Icon, response: &Response) {
             }
         }
         Icon::IkConstraint => draw_ik(&painter, rect, ink),
+        Icon::PhysicsConstraint => draw_physics(&painter, rect, ink),
         Icon::Bone => draw_bone(&painter, rect, ink),
         Icon::TargetBone => {
             painter.circle_stroke(p(8., 8.), 4. * rect.width() / SIZE, stroke(warm));
@@ -550,6 +552,27 @@ pub(super) fn draw_ik(painter: &egui::Painter, rect: Rect, color: Color32) {
     painter.circle_filled(p(2., 13.), rect.width() / 10., color);
     painter.circle_filled(p(6., 5.), rect.width() / 10., color);
     painter.circle_stroke(p(12., 9.), rect.width() / 5., stroke);
+}
+
+/// Original pendulum cue: a pivot, a swinging arm and motion arcs.
+pub(super) fn draw_physics(painter: &egui::Painter, rect: Rect, color: Color32) {
+    let p = |x: f32, y: f32| {
+        pos2(
+            rect.left() + x * rect.width() / 16.,
+            rect.top() + y * rect.height() / 16.,
+        )
+    };
+    let stroke = Stroke::new(rect.width() / 12., color);
+    painter.circle_filled(p(8., 2.5), rect.width() / 10., color);
+    painter.line_segment([p(8., 2.5), p(11., 11.)], stroke);
+    painter.circle_filled(p(11., 11.), rect.width() / 6., color);
+    for [a, b, c] in [
+        [[3., 9.], [3.6, 11.5], [5., 13.5]],
+        [[1., 8.], [1.8, 11.5], [3.4, 14.5]],
+    ] {
+        painter.line_segment([p(a[0], a[1]), p(b[0], b[1])], stroke);
+        painter.line_segment([p(b[0], b[1]), p(c[0], c[1])], stroke);
+    }
 }
 
 pub(super) fn draw_bone(painter: &egui::Painter, rect: Rect, color: Color32) {

@@ -742,3 +742,20 @@ no pretend device/rate/recording UI. [Evidence](evidence/audio-view.json) distin
 mock UI behavior, native silent-volume backend state, loaded native rendering and
 pending full native mouse/keyboard acceptance. All 15 named views now have a
 functional bounded scope; this is not complete installed-editor parity.
+
+
+## Physics constraint properties — November 9, 2026
+
+Implemented: physics constraints appear in the Tree's Constraints folder in
+Spine's unified order with an original pendulum icon; selecting one shows
+`Physics Constraint: name` with Bone, Translate X/Y, Rotate, Scale X, Shear X,
+Scale Y mode, Limit, FPS, Inertia, Strength, Damping, Mass, Wind, Gravity and Mix,
+each keyable setting with a Global checkbox, plus Rename. Animate shows the same
+values read-only and lists this clip's physics keys.
+
+Remaining differences: no viewport/toolbar physics controls (Simulate,
+Deterministic, Reset, Reset All, Warm up), no simulation, no keying from
+Properties, no Dopesheet physics rows, no constraint creation/deletion, and no
+Tree warnings for invalid physics. Percent display for influences, Inertia,
+Damping and Mix, and row order/grouping, are local choices not yet compared with
+the installed editor's panel. Native OS input acceptance is pending.

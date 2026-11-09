@@ -13,6 +13,7 @@ mod layout;
 mod mesh;
 mod mesh_tools;
 mod panels;
+mod physics;
 mod playback;
 mod preview;
 mod properties;
@@ -157,6 +158,12 @@ pub(crate) struct Editor {
 }
 
 impl Editor {
+    /// Startup selection for capture automation; an unknown index is ignored.
+    pub fn select_constraint_on_start(&mut self, index: usize) {
+        if index < self.session.document().constraints.len() {
+            self.select(TreeItem::Constraint(index));
+        }
+    }
     fn record_target(&mut self, name: &str, rect: egui::Rect) {
         self.capture_targets.insert(
             name.into(),

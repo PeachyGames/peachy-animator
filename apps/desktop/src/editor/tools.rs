@@ -43,16 +43,13 @@ impl Editor {
     /// IK mixes depend on raw turns, including when a currently zero mix is later enabled.
     pub(super) fn setup_rotation_value(&self, item: Option<&TreeItem>, rotation: f32) -> f32 {
         let ik_bone = match item {
-            Some(TreeItem::Bone(bone)) => {
-                self.session
-                    .document()
-                    .constraints
-                    .iter()
-                    .any(|constraint| {
-                        let Constraint::Ik(ik) = constraint;
-                        ik.bones.contains(bone)
-                    })
-            }
+            Some(TreeItem::Bone(bone)) => self
+                .session
+                .document()
+                .constraints
+                .iter()
+                .filter_map(Constraint::as_ik)
+                .any(|ik| ik.bones.contains(bone)),
             _ => false,
         };
         if ik_bone {

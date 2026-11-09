@@ -21,7 +21,7 @@ pub(super) struct IkTargetPicker {
 
 impl Editor {
     pub(super) fn ik_constraint(&self, index: usize) -> Option<&IkConstraint> {
-        let Constraint::Ik(ik) = self.session.document().constraints.get(index)?;
+        let ik = self.session.document().constraints.get(index)?.as_ik()?;
         Some(ik)
     }
     fn selected_ik(&self) -> Option<usize> {
@@ -469,6 +469,8 @@ mod tests {
         document.animations = vec![Animation {
             name: "pose".into(),
             tracks: vec![],
+            physics: vec![],
+            physics_resets: vec![],
         }];
         document.constraints = vec![Constraint::Ik(IkConstraint {
             name: "arm IK".into(),
@@ -676,7 +678,9 @@ mod tests {
         assert!(editor.weight_edit.is_none());
         assert!(editor.ik_edit.is_some());
         let mut only_mix = original.clone();
-        let Constraint::Ik(ik) = &mut only_mix.constraints[0];
+        let Constraint::Ik(ik) = &mut only_mix.constraints[0] else {
+            unreachable!("fixture constraint is IK")
+        };
         ik.setup.mix = 0.4;
         assert_eq!(editor.session.document(), &only_mix);
         click(&mut editor, &ctx, "weightsWeightValue");

@@ -2,9 +2,15 @@
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 mod ik;
+mod physics;
 pub use ik::{Constraint, IkConstraint, IkSetup};
+pub use physics::{
+    PHYSICS_DEFAULT_FPS, PHYSICS_DEFAULT_LIMIT, PHYSICS_DEFAULT_SETUP, PhysicsConstraint,
+    PhysicsGlobal, PhysicsInfluence, PhysicsProperty, PhysicsReset, PhysicsSetup, PhysicsTrack,
+    ScaleYMode,
+};
 
-pub const FORMAT_VERSION: u32 = 7;
+pub const FORMAT_VERSION: u32 = 8;
 pub const KEY_TIME_EPSILON: f32 = 0.00001;
 pub fn same_key_time(a: f32, b: f32) -> bool {
     (a - b).abs() < KEY_TIME_EPSILON
@@ -339,16 +345,58 @@ pub struct Region {
 pub struct Animation {
     pub name: String,
     pub tracks: Vec<Track>,
+    /// Keyed physics settings. Required in native v8.
+    pub physics: Vec<PhysicsTrack>,
+    /// Physics reset keys. Required in native v8.
+    pub physics_resets: Vec<PhysicsReset>,
 }
 
 impl Animation {
-    /// The highest authored key time across validated, ordered tracks, or zero.
+    pub fn new(name: impl Into<String>, tracks: Vec<Track>) -> Self {
+        Self {
+            name: name.into(),
+            tracks,
+            physics: vec![],
+            physics_resets: vec![],
+        }
+    }
+    /// The highest authored key time across validated, ordered timelines, or zero.
     pub fn duration(&self) -> f32 {
+        let bones = self.tracks.iter().filter_map(|track| track.keys.last());
+        let physics = self.physics.iter().filter_map(|track| track.keys.last());
+        bones
+            .chain(physics)
+            .map(|key| key.time)
+            .chain(
+                self.physics_resets
+                    .iter()
+                    .filter_map(|reset| reset.times.last().copied()),
+            )
+            .fold(0.0, f32::max)
+    }
+    /// Every authored key time across bone, physics and reset timelines.
+    pub fn key_times(&self) -> impl Iterator<Item = f32> + '_ {
         self.tracks
             .iter()
-            .filter_map(|track| track.keys.last())
-            .map(|key| key.time)
-            .fold(0.0, f32::max)
+            .flat_map(|track| track.keys.iter().map(|key| key.time))
+            .chain(
+                self.physics
+                    .iter()
+                    .flat_map(|track| track.keys.iter().map(|key| key.time)),
+            )
+            .chain(
+                self.physics_resets
+                    .iter()
+                    .flat_map(|reset| reset.times.iter().copied()),
+            )
+    }
+    /// Whether any timeline other than bone transforms has keys.
+    pub fn has_constraint_keys(&self) -> bool {
+        self.physics.iter().any(|track| !track.keys.is_empty())
+            || self
+                .physics_resets
+                .iter()
+                .any(|reset| !reset.times.is_empty())
     }
 }
 
@@ -458,13 +506,12 @@ impl Document {
                 return Err(format!("Invalid transform for {}", b.name));
             }
         }
-        names.clear();
+        let mut constraint_names = BTreeSet::new();
         for constraint in &self.constraints {
-            let Constraint::Ik(ik) = constraint;
-            if !names.insert(&ik.name) {
+            if !constraint_names.insert(constraint.name()) {
                 return Err("Constraint names must be unique".into());
             }
-            ik.validate(&self.bones)?;
+            constraint.validate(&self.bones)?;
         }
         names.clear();
         for s in &self.slots {
@@ -502,24 +549,41 @@ impl Document {
                 if t.bone >= self.bones.len() || !tracks.insert((t.bone, t.property)) {
                     return Err("Invalid or duplicate track".into());
                 }
+                physics::validate_keys(&t.keys)?;
+            }
+            let physics_target = |constraint: Option<usize>| match constraint {
+                None => Ok(()),
+                Some(index) => match self.constraints.get(index) {
+                    Some(Constraint::Physics(_)) => Ok(()),
+                    _ => Err(format!(
+                        "Animation {}: physics keys must reference a physics constraint",
+                        a.name
+                    )),
+                },
+            };
+            let mut physics = BTreeSet::new();
+            for t in &a.physics {
+                physics_target(t.constraint)?;
+                if !physics.insert((t.constraint, t.property)) {
+                    return Err(format!("Animation {}: duplicate physics track", a.name));
+                }
+                physics::validate_keys(&t.keys)?;
+            }
+            let mut resets = BTreeSet::new();
+            for reset in &a.physics_resets {
+                physics_target(reset.constraint)?;
+                if !resets.insert(reset.constraint) {
+                    return Err(format!(
+                        "Animation {}: duplicate physics reset track",
+                        a.name
+                    ));
+                }
                 let mut previous = -1.0;
-                for k in &t.keys {
-                    if !k.time.is_finite()
-                        || !k.value.is_finite()
-                        || k.time < 0.0
-                        || k.time <= previous
-                    {
-                        return Err("Keys must be finite, nonnegative and ordered".into());
+                for &time in &reset.times {
+                    if !time.is_finite() || time < 0.0 || time <= previous {
+                        return Err("Reset keys must be finite, nonnegative and ordered".into());
                     }
-                    if let Curve::Bezier(c) = k.curve
-                        && (!c.iter().all(|v| v.is_finite())
-                            || !(0.0..=1.0).contains(&c[0])
-                            || !(0.0..=1.0).contains(&c[2])
-                            || c[0] > c[2])
-                    {
-                        return Err("Bezier time handles must be ordered within 0–1".into());
-                    }
-                    previous = k.time;
+                    previous = time;
                 }
             }
         }

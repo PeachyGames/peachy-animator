@@ -136,6 +136,8 @@ fn extreme_shear_sampling_and_pose_preview_preserve_original_keys_curves_and_his
         animations: vec![Animation {
             name: "extreme".into(),
             tracks: vec![track(Property::ShearX, -2e38, 2e38, curve)],
+            physics: vec![],
+            physics_resets: vec![],
         }],
     };
     let mut session = Session::new(document.clone()).unwrap();

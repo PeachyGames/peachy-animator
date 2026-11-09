@@ -1,6 +1,6 @@
 //! Authored and applied poses are separate. FK reconstruction never solves IK.
 use crate::{Affine, local_pose, world_pose};
-use peachy_document::{Constraint, Document, Transform, finite_transform};
+use peachy_document::{Document, Transform, finite_transform};
 
 #[derive(Clone, Debug)]
 pub struct EvaluatedPose {
@@ -46,9 +46,11 @@ pub fn checked_pose_from_locals(
         }
     }
     let mut applied_locals = authored_locals.clone();
+    // Physics constraints are validated authored data. This slice deliberately
+    // has no editor simulation: they leave the evaluated pose unchanged, matching
+    // the external runtime with physics disabled. See docs/slices/physics-data.md.
     for constraint in &doc.constraints {
-        let Constraint::Ik(ik) = constraint;
-        ik.validate(&doc.bones)?;
+        constraint.validate(&doc.bones)?;
     }
     let mut world = world_pose(doc, &applied_locals);
     check_world(doc, &world)?;

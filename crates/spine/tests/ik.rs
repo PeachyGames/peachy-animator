@@ -31,7 +31,9 @@ fn static_one_and_two_bone_defaults_settings_and_target_keys_roundtrip_without_b
                 input["constraints"][0]["mix"] = json!(mix);
                 input["constraints"][0]["bendPositive"] = json!(bend);
                 let doc = import_json(&input, "Original IK").unwrap();
-                let Constraint::Ik(ik) = &doc.constraints[0];
+                let Constraint::Ik(ik) = &doc.constraints[0] else {
+                    unreachable!("fixture constraint is IK")
+                };
                 assert_eq!(ik.bones.len(), bones.as_array().unwrap().len());
                 assert_eq!(ik.setup.mix, mix);
                 assert_eq!(ik.setup.bend_positive, bend);
@@ -48,7 +50,9 @@ fn static_one_and_two_bone_defaults_settings_and_target_keys_roundtrip_without_b
         }
     }
     let defaults = import_json(&fixture(), "Defaults").unwrap();
-    let Constraint::Ik(ik) = &defaults.constraints[0];
+    let Constraint::Ik(ik) = &defaults.constraints[0] else {
+        unreachable!("fixture constraint is IK")
+    };
     assert_eq!(ik.setup.mix, 1.0);
     assert!(ik.setup.bend_positive);
 }
@@ -170,12 +174,24 @@ fn unknown_kinds_invalid_references_chains_targets_and_settings_are_atomic_impor
         assert!(!inspect(&bad_input).supported, "{field}: {bad_input}");
         assert!(import_json(&bad_input, "Bad").is_err());
     }
-    let mut mixed = fixture();
-    mixed["constraints"]
-        .as_array_mut()
-        .unwrap()
-        .push(json!({"type":"physics","name":"unsupported"}));
-    reject(&mixed, "static normal IK");
+    for (extra, reason) in [
+        (
+            json!({"type":"transform","name":"unsupported"}),
+            "transform constraints are unsupported",
+        ),
+        (
+            json!({"type":"physics","name":"boneless"}),
+            "Physics boneless: bone references must be names",
+        ),
+        (
+            json!({"type":"future","name":"unknown"}),
+            "unknown or missing type",
+        ),
+    ] {
+        let mut mixed = fixture();
+        mixed["constraints"].as_array_mut().unwrap().push(extra);
+        reject(&mixed, reason);
+    }
     let mut duplicate = fixture();
     let mut second = duplicate["constraints"][0].clone();
     second["mix"] = json!(0);
@@ -283,7 +299,9 @@ fn native_data_stays_serializable_when_adapter_domain_refuses_and_mix_zero_is_ex
             .unwrap_err()
             .contains("unit positive axes")
     );
-    let Constraint::Ik(ik) = &mut doc.constraints[0];
+    let Constraint::Ik(ik) = &mut doc.constraints[0] else {
+        unreachable!("fixture constraint is IK")
+    };
     ik.setup.mix = 0.0;
     let export = export_json(&doc).unwrap();
     assert_eq!(import_json(&export, &doc.name).unwrap(), doc);

@@ -145,9 +145,17 @@ fn all_nine_current_examples_equal_their_white_v6_migration() {
         let bytes = fs::read(examples.join(format!("{name}.peachy"))).unwrap();
         let current: Value = serde_json::from_slice(&bytes).unwrap();
         let doc = decode(&current).unwrap();
-        assert_eq!(doc.format, 7);
+        assert_eq!(doc.format, FORMAT_VERSION);
         let mut old = current;
         old["format"] = json!(6);
+        for animation in old["animations"].as_array_mut().unwrap() {
+            for field in ["physics", "physics_resets"] {
+                assert_eq!(
+                    animation.as_object_mut().unwrap().remove(field),
+                    Some(json!([]))
+                );
+            }
+        }
         for slot in old["slots"].as_array_mut().unwrap() {
             assert_eq!(
                 slot.as_object_mut().unwrap().remove("color"),
@@ -190,7 +198,7 @@ fn loading_v6_is_read_only_and_explicit_save_backs_up_exact_original_bytes() {
         .unwrap();
     assert_eq!(fs::read(backup.path()).unwrap(), original);
     let saved: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
-    assert_eq!(saved["format"], 7);
+    assert_eq!(saved["format"], FORMAT_VERSION);
     assert_eq!(saved["slots"][0]["color"], json!([255, 255, 255, 255]));
     assert_eq!(load(&path).unwrap(), doc);
     fs::remove_dir_all(folder).unwrap();

@@ -149,6 +149,10 @@ fn v5_load_is_read_only_and_explicit_latest_save_backs_up_original_bytes() {
     for slot in expected["slots"].as_array_mut().unwrap() {
         slot["color"] = json!([255, 255, 255, 255]);
     }
+    for animation in expected["animations"].as_array_mut().unwrap() {
+        animation["physics"] = json!([]);
+        animation["physics_resets"] = json!([]);
+    }
     assert_eq!(doc, serde_json::from_value::<Document>(expected).unwrap());
     save(&path, &doc, &folder).unwrap();
     let backup = fs::read_dir(&folder)

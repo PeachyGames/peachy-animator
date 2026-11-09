@@ -1,5 +1,5 @@
 {
-  "format": 7,
+  "format": 8,
   "constraints": [],
   "name": "Mesh Transform Contract",
   "fps": 30,
@@ -871,7 +871,9 @@
             }
           ]
         }
-      ]
+      ],
+      "physics": [],
+      "physics_resets": []
     }
   ]
 }

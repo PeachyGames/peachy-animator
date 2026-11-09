@@ -1,7 +1,13 @@
 # IK animation: Phase B proposal
 
+Version sequencing update (November 9, 2026): physics constraint data shipped first
+as **native8** (`physics`/`physics_resets` animation lists; see
+[physics-data.md](physics-data.md)). This unimplemented contract therefore advances
+again to **native9**. Requirements and gates are otherwise unchanged; the unmerged
+`review/animated-ik` checkpoint must be renumbered before integration.
+
 Status: internally approved for staged implementation, November 6, 2026. Native7
-setup slot colors retain the accepted Native6 Phase A IK solver baseline. This contract does not claim accepted native8,
+setup slot colors retain the accepted Native6 Phase A IK solver baseline. This contract does not claim accepted native9,
 compiled sampling parity or interactive UI parity; those gates remain below.
 
 
@@ -10,7 +16,8 @@ required setup RGBA bytes in native7 first. This pending IK animation contract
 therefore advances to **native8**, with its data/solver/authoring/compatibility
 requirements and acceptance gates unchanged. Native7 adds no unused `ik_tracks`.
 Migration becomes literal7→8 after the existing strict1→…→6→7 steps, and the
-legacy IK-field-presence guard covers formats1–7. Existing slot colors must be
+legacy IK-field-presence guard covers formats1–7. (Superseded November 9: read
+native9, literal8→9 after strict…→7→8, and a guard covering formats1–8.) Existing slot colors must be
 preserved byte-for-byte. This renumbering does not mark Phase B implemented.
 
 ## Scope and evidence
@@ -60,7 +67,7 @@ Observed facts:
 - Source times can collapse after conversion to f32. Reject that collision rather
   than epsilon-merging or silently replacing a source key.
 
-## Native8 data and migration
+## Native9 data and migration
 
 Keep bone `Property`, `Track`, `Keyframe` and `Curve` unchanged. Add one required
 collection to each `Animation`:
@@ -96,7 +103,7 @@ pub enum IkCurve {
 Follow the existing derive conventions; all shown native fields are required.
 Bezier time controls are normalized to the segment, individually finite within
 0–1. Mix controls are absolute finite f32 values. Fixed arrays require exactly
-two values. Native8 `IkSetup.mix` and stored key Mix accept all finite f32 values.
+two values. Native9 `IkSetup.mix` and stored key Mix accept all finite f32 values.
 There is no normalization, range clamp, hidden enabled flag or softness field.
 
 Time handles need f64 storage even though key times remain f32. In original
@@ -374,7 +381,7 @@ every intermediate numeric pose is representable.
 
 ## Acceptance before a parity claim
 
-- Strict native8/command/clipboard serde, legacy typed range and presence guards;
+- Strict native9/command/clipboard serde, legacy typed range and presence guards;
   all nine empty-IK migration/export byte goldens; no artist inputs changed.
 - Nondefault setup, omitted reset defaults, fractional first key, adjacent-close
   keys, exact bend boundaries, linear/stepped/Bezier holds and IK-only duration.

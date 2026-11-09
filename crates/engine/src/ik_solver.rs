@@ -15,10 +15,8 @@ pub(crate) fn apply(
     let active: Vec<_> = doc
         .constraints
         .iter()
-        .filter_map(|constraint| {
-            let Constraint::Ik(ik) = constraint;
-            (ik.setup.mix > 0.0).then_some(ik)
-        })
+        .filter_map(Constraint::as_ik)
+        .filter(|ik| ik.setup.mix > 0.0)
         .collect();
     for (index, ik) in active.iter().enumerate() {
         validate_domain(doc, locals, ik)?;

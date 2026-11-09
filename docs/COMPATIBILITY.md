@@ -20,11 +20,11 @@ Input-only obsolete integer `order` is validated and omitted, never used to sort
 | Attachments | Regions, unweighted meshes and weighted meshes with explicit UVs/topology and bone-local influences | Linked meshes, clipping, paths, sequences, other attachment types |
 | Slots | Setup attachment, exact RGBA tint and normal blending in fixed draw order | Dark/two-color tint, other blend modes |
 | Skins | Region/mesh maps, explicit attachment names and default-skin fallback | Skin-required bones or constraints |
-| Animation | Bone rotation, translation, scale and shear; combined or scalar input timelines | Slot, attachment, draw-order, event or constraint timelines |
+| Animation | Bone rotation, translation, scale and shear; combined or scalar input timelines; physics setting and reset timelines, including global (`""`) timelines | Slot, attachment, draw-order, event, IK, transform and path timelines |
 | Curves | Linear, stepped, normalized monotone-time cubic handles | Nonfinite or unordered controls; overshooting curves between equal values |
-| Constraints | Static one-/two-bone normal IK, Mix [0,1], two-bone Positive, disjoint chains; animated targets | IK timelines, advanced/dependent/transformed chains; transform, path, physics and other constraints |
+| Constraints | Static one-/two-bone normal IK, Mix [0,1], two-bone Positive, disjoint chains; animated targets. Physics constraints as data: every setting, Scale Y mode and Global flag, in unified constraint order | IK timelines, advanced/dependent/transformed chains; skin-required physics; transform, path, slider and other constraints |
 | Images | Loose PNGs for editing; one untrimmed atlas page for desktop export | Packed-atlas import, rotated/trimmed atlas regions, multipage export |
-| Files | `.peachy` v7; in-memory v1–v6 migration; Spine JSON adapter | Native `.spine` projects and binary `.skel` |
+| Files | `.peachy` v8; in-memory v1–v7 migration; Spine JSON adapter | Native `.spine` projects and binary `.skel`; `skeleton.referenceScale` other than 100 |
 
 Our own project format is JSON and holds the editable rig, skin references and clips.
 It is distinct from a runtime export. The importer ignores documented editor-only
@@ -368,7 +368,7 @@ image pixels, not geometry, picking/bounds or bone overlays. This is setup tint
 only: slot/attachment/color animation timelines, dark/two-color tint, additive
 and other blend modes remain refused. Native7 does not add placeholder IK tracks;
 the separately approved pending [IK animation contract](slices/ik-animation-design.md)
-now targets native8 with the same gates. No new private-rig acceptance audit is
+then targeted native8 (now native9, after physics data) with the same gates. No new private-rig acceptance audit is
 claimed. See [Slot Color evidence](evidence/slot-color-view.json).
 
 
@@ -384,3 +384,36 @@ is available without that backend on other platforms. No new audio crate/runtime
 is redistributed. Audio timelines, synchronization, recorded data, other formats,
 cross-platform output and audio Save/export remain unsupported. [Evidence](evidence/audio-view.json)
 separates mock UI checks, silent native backend state and native input acceptance.
+
+## Physics constraint data and native v8 — November 9, 2026
+
+Physics constraints import, edit, save and export as **data**. The editor does
+not simulate physics: the evaluated pose equals the external runtime with
+`Physics.none`, and the Properties panel says so. The game runtime simulates the
+exported settings. See the [slice scope](slices/physics-data.md).
+
+| Spine 4.3 field | Native | Omitted value |
+| --- | --- | --- |
+| `bone` | `bone` index | required |
+| `x`, `y`, `rotate`, `scaleX`, `shearX` | `influence` | 0 |
+| `scaleY` (`none`/`uniform`/`volume`) | `scale_y_mode` | none |
+| `limit`, `fps` | `limit`, `fps` (positive) | 5000, 60 |
+| `inertia`, `strength`, `damping`, `mass`, `wind`, `gravity`, `mix` | `setup` (mass > 0, mix ≥ 0) | 0.5, 100, 0.85, 1, 0, 0, 1 |
+| `<setting>Global` | `global` flags | false |
+| `skin` | refused when true | false |
+| `order` | validated, not stored; array order is evaluation order | — |
+
+Defaults were observed, not assumed: inertia **0.5** and damping **0.85** differ
+from the values many older references show. Export writes every field explicitly,
+so consumers never depend on defaults.
+
+Animation `physics` maps constraint name, or `""` for global timelines, to
+`inertia`/`strength`/`damping`/`mass`/`wind`/`gravity`/`mix` keys and time-only
+`reset` keys. Omitted key values are 1 for `mix` and 0 otherwise; omitted times
+are 0. Values are absolute settings, not offsets. Physics and reset keys extend
+the animation end, W/S key navigation and Timeline markers. Keys must reference
+a physics constraint; each constraint/setting and reset list appears once.
+
+Native v8 adds required `physics` and `physics_resets` lists to every animation.
+v7 and earlier migrate in memory with empty lists and refuse any physics
+constraint or physics field. `.peachy` files are rewritten only by an explicit save.

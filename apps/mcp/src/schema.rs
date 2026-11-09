@@ -94,9 +94,36 @@ pub fn command_schema() -> Value {
             ]),
         ),
     ]);
+    let settings = [
+        "inertia", "strength", "damping", "mass", "wind", "gravity", "mix",
+    ];
+    let physics = object(&[
+        ("name", text()),
+        ("bone", index()),
+        (
+            "influence",
+            object(&["x", "y", "rotate", "scale_x", "shear_x"].map(|name| (name, number()))),
+        ),
+        (
+            "scale_y_mode",
+            json!({"type":"string","enum":["none","uniform","volume"]}),
+        ),
+        ("limit", number()),
+        ("fps", number()),
+        ("setup", object(&settings.map(|name| (name, number())))),
+        (
+            "global",
+            object(&settings.map(|name| (name, json!({"type":"boolean"})))),
+        ),
+    ]);
     let variants = vec![
         command("addIkConstraint", &[("constraint", ik.clone())]),
         command("setIkConstraint", &[("constraint", index()), ("value", ik)]),
+        command("addPhysicsConstraint", &[("constraint", physics.clone())]),
+        command(
+            "setPhysicsConstraint",
+            &[("constraint", index()), ("value", physics)],
+        ),
         command(
             "setPose",
             &[
@@ -253,6 +280,8 @@ mod tests {
         match command {
             Command::AddIkConstraint { .. } => "addIkConstraint",
             Command::SetIkConstraint { .. } => "setIkConstraint",
+            Command::AddPhysicsConstraint { .. } => "addPhysicsConstraint",
+            Command::SetPhysicsConstraint { .. } => "setPhysicsConstraint",
             Command::SetPose { .. } => "setPose",
             Command::SetSetup { .. } => "setSetup",
             Command::RenameBone { .. } => "renameBone",
@@ -317,7 +346,7 @@ mod tests {
     fn every_published_shape_decodes_through_strict_engine_serde() {
         let schema = command_schema();
         let variants = schema["oneOf"].as_array().unwrap();
-        assert_eq!(variants.len(), 25);
+        assert_eq!(variants.len(), 27);
         for variant in variants {
             let payload = sample(variant);
             let command: CommandInput = serde_json::from_value(payload.clone()).unwrap();

@@ -1,5 +1,5 @@
 {
-  "format": 7,
+  "format": 8,
   "name": "Peach Bot IK Lab",
   "fps": 30,
   "bones": [
@@ -1002,7 +1002,9 @@
             }
           ]
         }
-      ]
+      ],
+      "physics": [],
+      "physics_resets": []
     },
     {
       "name": "ik negative",
@@ -1101,7 +1103,9 @@
             }
           ]
         }
-      ]
+      ],
+      "physics": [],
+      "physics_resets": []
     },
     {
       "name": "ik reach",
@@ -1274,7 +1278,9 @@
             }
           ]
         }
-      ]
+      ],
+      "physics": [],
+      "physics_resets": []
     },
     {
       "name": "wave",
@@ -1464,7 +1470,9 @@
             }
           ]
         }
-      ]
+      ],
+      "physics": [],
+      "physics_resets": []
     },
     {
       "name": "idle",
@@ -1532,7 +1540,9 @@
             }
           ]
         }
-      ]
+      ],
+      "physics": [],
+      "physics_resets": []
     }
   ]
 }

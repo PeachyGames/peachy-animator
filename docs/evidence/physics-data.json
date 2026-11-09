@@ -1,0 +1,126 @@
+{
+ "date": "2026-11-09",
+ "scope": "Physics constraints as data (native v8). No editor simulation; poses compared with Physics.none.",
+ "spineEditor": "4.3.26 (installed, public CLI import/re-export)",
+ "runtimeOracle": "@esotericsoftware/spine-core 4.3.13 (separately installed, black-box public API)",
+ "formatProbes": {
+  "method": "Original probe JSON imported and re-exported by the installed editor; the same files read through the runtime's public data API",
+  "observedDefaults": {
+   "inertia": 0.5,
+   "strength": 100,
+   "damping": 0.85,
+   "mass": 1,
+   "wind": 0,
+   "gravity": 0,
+   "mix": 1,
+   "limit": 5000,
+   "fps": 60,
+   "influences": 0,
+   "scaleY": "none",
+   "globals": false
+  },
+  "omittedKeyValues": {
+   "mix": 1,
+   "otherSettings": 0,
+   "time": 0
+  },
+  "notes": [
+   "Editor drops non-default-looking inertia 0.5/damping 0.85 because they are the defaults",
+   "scaleY none/uniform/volume round-trips",
+   "Global timelines use the empty constraint name"
+  ]
+ },
+ "fixture": {
+  "source": "examples/peach-bot/physics-bot.peachy",
+  "sha256": "c97054871690f9179a0c06b4f781d0d3a662c64490d14b534a0eda81529d16fd",
+  "constraints": 3,
+  "physicsTimelines": 8
+ },
+ "ourExport": {
+  "sha256": "f16867b984b7eaa482b1a6f0cd3f286bb0fa9664b68479d50963322657d0ed01",
+  "runtime": {
+   "physicsConstraints": 3,
+   "physicsValues": 63,
+   "physicsTimelines": 8,
+   "physicsFrames": 16,
+   "comparisons": 28080,
+   "maxWorldError": 2.6437081885433145e-05,
+   "regionComparisons": 33280,
+   "maxRegionError": 3.0517578125e-05,
+   "clips": [
+    {
+     "name": "idle",
+     "nativeEnd": 2.75,
+     "runtimeEnd": 2.75
+    },
+    {
+     "name": "wave",
+     "nativeEnd": 2.4000000953674316,
+     "runtimeEnd": 2.4000000953674316
+    }
+   ]
+  }
+ },
+ "editorReexport": {
+  "sha256": "dfe851fbd0005d3042ec2bbb9c4e5f0f9b55849bf7c8f62663ddc1a014bf257b",
+  "ourImporterAccepts": true,
+  "constraintsAndTimelinesEqualAtF32": true,
+  "runtime": {
+   "physicsConstraints": 3,
+   "physicsValues": 63,
+   "physicsTimelines": 8,
+   "physicsFrames": 16,
+   "comparisons": 28080,
+   "maxWorldError": 2.6437081885433145e-05,
+   "regionComparisons": 33280,
+   "maxRegionError": 3.0517578125e-05,
+   "clips": [
+    {
+     "name": "idle",
+     "nativeEnd": 2.75,
+     "runtimeEnd": 2.75
+    },
+    {
+     "name": "wave",
+     "nativeEnd": 2.4000000953674316,
+     "runtimeEnd": 2.4000000953674316
+    }
+   ]
+  },
+  "notes": [
+   "Curve on a final key is dropped by the editor (no effect)",
+   "Editor writes short decimals; comparison at f32 precision"
+  ]
+ },
+ "gameAudit": {
+  "inputs": 19,
+  "inputsUnchanged": true,
+  "fullySupportedBefore": 0,
+  "fullySupportedAfter": 1,
+  "physicsRefusalsRemaining": "skin-required physics only (2 files)",
+  "nextBlockersByFileCount": {
+   "transformConstraints": 13,
+   "attachmentDeformTimelines": 13,
+   "slotTimelines": 11,
+   "inheritModes": 9,
+   "drawOrderTimelines": 8,
+   "pathConstraintsAndAttachments": 5,
+   "linkedMeshes": 4,
+   "events": 4,
+   "attachmentTint": 4,
+   "skinBonesAndConstraints": 4,
+   "clipping": 3,
+   "dependentIkChains": 1
+  }
+ },
+ "gameRigSimulation": {
+  "description": "Previously refused game skeleton (6 bones, 2 physics constraints): original file vs Peachy Animator import\u2192export, both run in the external runtime with Physics.update at 60 fps for 6 s",
+  "frames": 360,
+  "boneValues": 12960,
+  "vertexValues": 10800,
+  "maxBoneDifference": 0.00011718750010913936,
+  "maxVertexDifference": 0.000244140625,
+  "physicsOffsetVersusNone": 16.426361161179102,
+  "atlasNote": "Region-corner comparison is not applicable: the game atlas trims whitespace"
+ }
+}

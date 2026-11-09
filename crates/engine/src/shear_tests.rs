@@ -27,6 +27,8 @@ fn rig() -> Document {
         animations: vec![Animation {
             name: "shear".into(),
             tracks: vec![],
+            physics: vec![],
+            physics_resets: vec![],
         }],
     }
 }
@@ -1047,6 +1049,8 @@ fn shear_clipboard_and_retiming_keep_scalar_identity_curves_fractional_neighbors
     document.animations.push(Animation {
         name: "destination".into(),
         tracks: vec![],
+        physics: vec![],
+        physics_resets: vec![],
     });
     let keys = vec![
         TimelineKey {

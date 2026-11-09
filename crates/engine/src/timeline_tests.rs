@@ -65,6 +65,8 @@ fn fixture() -> Document {
                         keys: vec![key(0.5, 50., Curve::Linear)],
                     },
                 ],
+                physics: vec![],
+                physics_resets: vec![],
             },
             Animation {
                 name: "target".into(),
@@ -74,6 +76,8 @@ fn fixture() -> Document {
                     property: Property::Rotation,
                     keys: vec![key(0.25, 99., Curve::Linear)],
                 }],
+                physics: vec![],
+                physics_resets: vec![],
             },
         ],
     }

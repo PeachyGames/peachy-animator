@@ -196,6 +196,10 @@ fn v4_weighted_raw_payload_and_original_bytes_survive_load_and_explicit_latest_s
         bone["setup"]["shear_x"] = json!(0);
         bone["setup"]["shear_y"] = json!(0);
     }
+    for animation in expected["animations"].as_array_mut().unwrap() {
+        animation["physics"] = json!([]);
+        animation["physics_resets"] = json!([]);
+    }
     assert_eq!(doc, serde_json::from_value::<Document>(expected).unwrap());
     let Attachment::Mesh(mesh) = &doc.skins["default"]["body"]["cloth"] else {
         panic!()

@@ -39,12 +39,72 @@ const sourceProject = JSON.parse(readFileSync(source, 'utf8'));
 const data = new SkeletonJson(new AtlasAttachmentLoader(atlas)).readSkeletonData(readFileSync(exportPath, 'utf8'));
 assert.equal(data.version.split('.').slice(0, 2).join('.'), '4.3');
 assert.equal(data.animations.length, sourceProject.animations.length, 'Every native clip is exported, including empty clips');
-const report = { regionComparisons: 0, maxRegionError: 0, meshComparisons: 0, weightedMeshComparisons: 0, maxMeshError: 0, uvComparisons: 0, maxUVError: 0, runtime: 'Spine 4.3 external oracle', bones: data.bones.length, slots: data.slots.length, skins:data.skins.map(s=>s.name), clips: [], tolerance: 0.001, maxWorldError: 0, comparisons: 0 };
+const report = { physicsConstraints: 0, physicsValues: 0, physicsTimelines: 0, physicsFrames: 0, regionComparisons: 0, maxRegionError: 0, meshComparisons: 0, weightedMeshComparisons: 0, maxMeshError: 0, uvComparisons: 0, maxUVError: 0, runtime: 'Spine 4.3 external oracle', bones: data.bones.length, slots: data.slots.length, skins:data.skins.map(s=>s.name), clips: [], tolerance: 0.001, maxWorldError: 0, comparisons: 0 };
+// Physics data: every native setting and key reaches the runtime's public data API
+// unchanged at f32 precision. The editor does not simulate; poses below use Physics.none.
+const nativeConstraints = sourceProject.constraints ?? [];
+assert.equal(data.constraints.length, nativeConstraints.length, 'Every native constraint is exported');
+const settingNames = ['inertia', 'strength', 'damping', 'mass', 'wind', 'gravity', 'mix'];
+nativeConstraints.forEach((native, index) => {
+  const runtime = data.constraints[index];
+  assert.equal(runtime.name, native.name, 'Constraint order and names are preserved');
+  if (native.type !== 'physics') return;
+  report.physicsConstraints++;
+  // Settings are compared at f32 precision: the JS runtime keeps decimal JSON as
+  // doubles, while native data is f32. Derived step/inverse mass allow f32 rounding.
+  const same = (actual, expected, label, derived = false) => {
+    const equal = derived
+      ? Math.abs(actual - expected) <= 1e-6 * Math.max(1, Math.abs(expected))
+      : Math.fround(actual) === Math.fround(expected);
+    assert.ok(equal, `${native.name} ${label}: runtime ${actual} vs native ${expected}`);
+    report.physicsValues++;
+  };
+  assert.equal(runtime.bone.name, sourceProject.bones[native.bone].name, `${native.name} bone`);
+  for (const [ours, theirs] of [['x','x'],['y','y'],['rotate','rotate'],['scale_x','scaleX'],['shear_x','shearX']]) same(runtime[theirs], native.influence[ours], theirs);
+  same(runtime.limit, native.limit, 'limit');
+  same(runtime.step, 1 / Math.fround(native.fps), 'step', true);
+  assert.equal(runtime.scaleYMode, { none: 0, uniform: 1, volume: 2 }[native.scale_y_mode], `${native.name} scaleY`);
+  for (const name of settingNames) {
+    if (name === 'mass') same(runtime.setupPose.massInverse, 1 / Math.fround(native.setup.mass), 'massInverse', true);
+    else same(runtime.setupPose[name], native.setup[name], name);
+    assert.equal(runtime[`${name}Global`], native.global[name], `${native.name} ${name}Global`);
+    report.physicsValues++;
+  }
+});
+const timelineClass = name => `PhysicsConstraint${name[0].toUpperCase()}${name.slice(1)}Timeline`;
+for (const animation of data.animations) {
+  const native = sourceProject.animations.find(clip => clip.name === animation.name);
+  const physicsTimelines = animation.timelines.filter(t => t.constructor.name.startsWith('PhysicsConstraint'));
+  const expected = (native?.physics ?? []).filter(t => t.keys.length).length + (native?.physics_resets ?? []).filter(r => r.times.length).length;
+  assert.equal(physicsTimelines.length, expected, `${animation.name}: physics timeline count`);
+  for (const track of (native?.physics ?? []).filter(t => t.keys.length)) {
+    const index = track.constraint ?? -1;
+    const timeline = physicsTimelines.find(t => t.constraintIndex === index && t.constructor.name === timelineClass(track.property));
+    assert.ok(timeline, `${animation.name}: ${track.property} timeline for constraint ${index}`);
+    const frames = Array.from(timeline.frames);
+    assert.equal(frames.length, track.keys.length * 2);
+    track.keys.forEach((key, i) => {
+      assert.equal(frames[i * 2], Math.fround(key.time));
+      assert.equal(frames[i * 2 + 1], Math.fround(key.value));
+      report.physicsFrames++;
+    });
+    report.physicsTimelines++;
+  }
+  for (const reset of (native?.physics_resets ?? []).filter(r => r.times.length)) {
+    const index = reset.constraint ?? -1;
+    const timeline = physicsTimelines.find(t => t.constraintIndex === index && t.constructor.name === 'PhysicsConstraintResetTimeline');
+    assert.ok(timeline, `${animation.name}: reset timeline for constraint ${index}`);
+    assert.deepEqual(Array.from(timeline.frames), reset.times.map(Math.fround));
+    report.physicsTimelines++; report.physicsFrames += reset.times.length;
+  }
+}
 for (const animation of data.animations) {
   const native = sourceProject.animations.find(clip => clip.name === animation.name);
   assert.ok(native, 'Exported clip has a native source');
+  const keyEnd = tracks => (tracks ?? []).reduce((end, track) => track.keys.reduce((end, key) => Math.max(end, Math.fround(key.time)), end), 0);
+  const resetEnd = (native.physics_resets ?? []).reduce((end, reset) => reset.times.reduce((end, time) => Math.max(end, Math.fround(time)), end), 0);
   const nativeEnd = sourceProject.format >= 3
-    ? native.tracks.reduce((end, track) => track.keys.reduce((end, key) => Math.max(end, Math.fround(key.time)), end), 0)
+    ? Math.max(keyEnd(native.tracks), keyEnd(native.physics), resetEnd)
     : Math.fround(native.duration);
   assert.equal(animation.duration, nativeEnd, `${animation.name}: runtime end matches native end`);
   let maxError = 0;
