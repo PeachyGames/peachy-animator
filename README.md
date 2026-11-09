@@ -1,8 +1,8 @@
 # Peachy Animator
 
-This review branch includes animated IK and native7 projects. See the
+This branch adds animated IK (keyed Mix/Positive) on native9 projects. See the
 [review checkpoint](docs/IK_ANIMATION_REVIEW.md) for controls, verification and
-the remaining raw-curve import precision issue.
+the remaining raw-curve import precision issue. Interactive review is still pending.
 
 A native 2D skeletal animation editor from Team Peachy, with an independent Rust
 core and Spine-compatible exports. The current slices include Spine-style naming,

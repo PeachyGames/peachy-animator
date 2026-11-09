@@ -10,9 +10,12 @@ may nest (a toe below a leg) and solve sequentially in constraint order; shared
 constrained bones and targets inside another constrained chain are refused.
 Two-bone child translation is any constant nonzero setup offset, including Y. Target coincidence and unrepresentable
 solved frames fail explicitly; ordinary inner/outer unreachable targets work.
-Setup Mix is [0,1]. See the [complete Phase A rules](slices/ik-design.md).
-Neutral advanced defaults and `skin:false` are accepted; active advanced features,
-skin-required constraints and nonempty IK timelines are rejected even at Mix 0.
+Native9 Setup Mix is any finite value (signed and overshooting Mix observed);
+legacy formats keep [0,1]. See the [complete Phase A rules](slices/ik-design.md).
+Neutral advanced defaults and `skin:false` are accepted; active advanced features
+and skin-required constraints are rejected even at Mix 0. Grouped IK Mix/Positive
+timelines import and export ([animated IK](IK_ANIMATION_REVIEW.md)); raw curve
+values are stored at f32, an open precision gap ([contract](slices/ik-raw-precision.md)).
 Input-only obsolete integer `order` is validated and omitted, never used to sort.
 
 | Area | Supported | Import refuses |
@@ -21,11 +24,11 @@ Input-only obsolete integer `order` is validated and omitted, never used to sort
 | Attachments | Regions, unweighted meshes and weighted meshes with explicit UVs/topology and bone-local influences | Linked meshes, clipping, paths, sequences, other attachment types |
 | Slots | Setup attachment, exact RGBA tint and normal blending in fixed draw order | Dark/two-color tint, other blend modes |
 | Skins | Region/mesh maps, explicit attachment names and default-skin fallback | Skin-required bones or constraints |
-| Animation | Bone rotation, translation, scale and shear; combined or scalar input timelines; physics setting and reset timelines, including global (`""`) timelines | Slot, attachment, draw-order, event, IK, transform and path timelines |
+| Animation | Bone rotation, translation, scale and shear; combined or scalar input timelines; grouped IK Mix/Positive timelines; physics setting and reset timelines, including global (`""`) timelines | Slot, attachment, draw-order, event, transform and path timelines |
 | Curves | Linear, stepped, normalized monotone-time cubic handles | Nonfinite or unordered controls; overshooting curves between equal values |
-| Constraints | Static one-/two-bone normal IK, Mix [0,1], two-bone Positive, nested chains in list order, off-axis child offsets; animated targets. Physics constraints as data: every setting, Scale Y mode and Global flag, in unified constraint order | IK timelines, advanced settings, shared-bone or cross-target chains, transformed chains; skin-required physics; transform, path, slider and other constraints |
+| Constraints | One-/two-bone normal IK with keyed Mix/Positive, two-bone Positive, nested chains in list order, off-axis child offsets; animated targets. Physics constraints as data: every setting, Scale Y mode and Global flag, in unified constraint order | Advanced IK settings, shared-bone or cross-target chains, transformed chains; skin-required physics; transform, path, slider and other constraints |
 | Images | Loose PNGs for editing; one untrimmed atlas page for desktop export | Packed-atlas import, rotated/trimmed atlas regions, multipage export |
-| Files | `.peachy` v8; in-memory v1–v7 migration; Spine JSON adapter | Native `.spine` projects and binary `.skel`; `skeleton.referenceScale` other than 100 |
+| Files | `.peachy` v9; in-memory v1–v8 migration; Spine JSON adapter | Native `.spine` projects and binary `.skel`; `skeleton.referenceScale` other than 100 |
 
 Our own project format is JSON and holds the editable rig, skin references and clips.
 It is distinct from a runtime export. The importer ignores documented editor-only
