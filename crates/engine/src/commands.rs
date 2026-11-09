@@ -439,7 +439,12 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
             constraint,
             key,
         } => {
-            if constraint >= doc.constraints.len() {
+            if doc
+                .constraints
+                .get(constraint)
+                .and_then(Constraint::as_ik)
+                .is_none()
+            {
                 return Err("Unknown IK constraint".into());
             }
             key.validate()?;

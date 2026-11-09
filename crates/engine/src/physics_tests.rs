@@ -193,3 +193,80 @@ fn physics_timelines_must_reference_physics_constraints_once() {
     unordered.animations[0].physics_resets[0].times = vec![1., 0.5];
     assert!(unordered.validate().is_err());
 }
+
+/// Native9: IK animation tracks and physics data share one constraint list.
+/// Physics indices get an inactive IK placeholder and never accept IK keys.
+#[test]
+fn ik_tracks_and_physics_constraints_share_one_ordered_constraint_list() {
+    let mut doc = document();
+    doc.bones.push(Bone {
+        name: "aim".into(),
+        parent: Some(0),
+        length: 0.,
+        setup: Transform {
+            x: 0.,
+            y: 40.,
+            ..Transform::default()
+        },
+    });
+    doc.constraints.push(Constraint::Ik(IkConstraint {
+        name: "tail aim".into(),
+        bones: vec![1],
+        target: 2,
+        setup: IkSetup {
+            mix: 0.,
+            bend_positive: true,
+        },
+    }));
+    doc.animations[0].ik_tracks.push(IkTrack {
+        constraint: 1,
+        keys: vec![
+            IkKeyframe {
+                time: 0.,
+                mix: 0.,
+                bend_positive: true,
+                curve: IkCurve::Linear,
+            },
+            IkKeyframe {
+                time: 1.,
+                mix: 1.,
+                bend_positive: true,
+                curve: IkCurve::Linear,
+            },
+        ],
+    });
+    doc.validate().unwrap();
+    let authored = sample_authored_pose(&doc, Some(0), 0.5).unwrap();
+    assert_eq!(authored.ik_poses()[0], IkPose::INACTIVE);
+    assert!((authored.ik_poses()[1].mix - 0.5).abs() < 1e-9);
+    // Half Mix moves the tail halfway (in angle) toward the target, keyed in time.
+    let half = checked_evaluate_pose(&doc, Some(0), 0.5).unwrap();
+    let full = checked_evaluate_pose(&doc, Some(0), 1.).unwrap();
+    let start = checked_evaluate_pose(&doc, Some(0), 0.).unwrap();
+    assert_eq!(start.applied_locals()[1], start.authored_locals()[1]);
+    assert_ne!(half.applied_locals()[1], half.authored_locals()[1]);
+    assert_ne!(full.applied_locals()[1], half.applied_locals()[1]);
+    // IK keys extend key navigation like bone, physics and reset keys.
+    assert_eq!(doc.animations[0].duration(), 2.);
+    // An IK track or IK key can never address the physics constraint.
+    let mut wrong = doc.clone();
+    wrong.animations[0].ik_tracks[0].constraint = 0;
+    assert!(wrong.validate().is_err());
+    assert!(
+        apply_command(
+            &doc,
+            Command::SetIkKey {
+                animation: 0,
+                constraint: 0,
+                key: IkKeyframe {
+                    time: 0.25,
+                    mix: 1.,
+                    bend_positive: true,
+                    curve: IkCurve::Linear,
+                },
+            },
+        )
+        .unwrap_err()
+        .contains("Unknown IK constraint")
+    );
+}

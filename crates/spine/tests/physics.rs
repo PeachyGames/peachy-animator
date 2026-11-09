@@ -250,3 +250,30 @@ fn inspection_names_each_constraint_kind_instead_of_calling_it_ik() {
     assert!(joined.contains("Path constraint rail: path constraints are unsupported"));
     assert!(!joined.contains("IK constraint"), "{joined}");
 }
+
+#[test]
+fn ik_and_physics_timelines_roundtrip_together_in_one_animation() {
+    let mut input = fixture();
+    input["animations"]["move"]["ik"] = json!({
+        "limb": [
+            {"time":0,"mix":0.25,"bendPositive":false},
+            {"time":1.25,"mix":1}
+        ]
+    });
+    let report = inspect(&input);
+    assert!(report.supported, "{:?}", report.unsupported);
+    let doc = import_json(&input, "Both").unwrap();
+    let animation = &doc.animations[0];
+    assert_eq!(animation.ik_tracks.len(), 1);
+    assert_eq!(animation.ik_tracks[0].constraint, 1);
+    assert!(!animation.physics.is_empty());
+    let output = export_json(&doc).unwrap();
+    assert!(output["animations"]["move"]["ik"]["limb"].is_array());
+    assert!(output["animations"]["move"]["physics"]["sway"].is_object());
+    assert_eq!(import_json(&output, "Both").unwrap(), doc);
+    // A physics constraint name is never accepted as an IK timeline target.
+    let mut wrong = fixture();
+    wrong["animations"]["move"]["ik"] = json!({"sway": [{"time":0,"mix":1}]});
+    assert!(!inspect(&wrong).supported);
+    assert!(import_json(&wrong, "Wrong").is_err());
+}
