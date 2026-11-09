@@ -420,6 +420,7 @@ mod tests {
                 y: 200.,
                 ..Default::default()
             },
+            inherit: peachy_document::Inherit::Normal,
         });
         document.constraints.push(Constraint::Ik(IkConstraint {
             name: "hand IK".into(),
@@ -444,6 +445,7 @@ mod tests {
                 parent: None,
                 length: 0.,
                 setup: Transform::default(),
+                inherit: peachy_document::Inherit::Normal,
             },
             Bone {
                 name: "arm".into(),
@@ -453,6 +455,7 @@ mod tests {
                     rotation,
                     ..Default::default()
                 },
+                inherit: peachy_document::Inherit::Normal,
             },
             Bone {
                 name: "target".into(),
@@ -462,6 +465,7 @@ mod tests {
                     y: 10.,
                     ..Default::default()
                 },
+                inherit: peachy_document::Inherit::Normal,
             },
         ];
         document.slots.clear();
@@ -471,6 +475,7 @@ mod tests {
             tracks: vec![],
             physics: vec![],
             physics_resets: vec![],
+            inherit_tracks: vec![],
         }];
         document.constraints = vec![Constraint::Ik(IkConstraint {
             name: "arm IK".into(),

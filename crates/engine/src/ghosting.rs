@@ -417,6 +417,7 @@ mod tests {
                 parent: None,
                 length: 10.,
                 setup: Transform::default(),
+                inherit: peachy_document::Inherit::Normal,
             }],
             constraints: vec![],
             slots: vec![],
@@ -437,6 +438,7 @@ mod tests {
                 }],
                 physics: vec![],
                 physics_resets: vec![],
+                inherit_tracks: vec![],
             }],
         }
     }

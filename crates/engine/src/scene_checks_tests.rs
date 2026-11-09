@@ -13,6 +13,7 @@ fn fixture() -> Document {
             parent: None,
             length: 10.,
             setup: Transform::default(),
+            inherit: peachy_document::Inherit::Normal,
         }],
         slots: vec![Slot {
             color: [255; 4],
@@ -47,6 +48,7 @@ fn fixture() -> Document {
             tracks: vec![],
             physics: vec![],
             physics_resets: vec![],
+            inherit_tracks: vec![],
         }],
     }
 }
@@ -179,6 +181,7 @@ fn checked_locals_reject_wrong_counts_nonfinite_previews_and_world_overflow() {
             scale_x: 2.,
             ..Default::default()
         },
+        inherit: peachy_document::Inherit::Normal,
     });
     large.validate().unwrap();
     assert!(

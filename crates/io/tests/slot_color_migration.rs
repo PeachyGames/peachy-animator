@@ -149,12 +149,18 @@ fn all_nine_current_examples_equal_their_white_v6_migration() {
         let mut old = current;
         old["format"] = json!(6);
         for animation in old["animations"].as_array_mut().unwrap() {
-            for field in ["physics", "physics_resets"] {
+            for field in ["physics", "physics_resets", "inherit_tracks"] {
                 assert_eq!(
                     animation.as_object_mut().unwrap().remove(field),
                     Some(json!([]))
                 );
             }
+        }
+        for bone in old["bones"].as_array_mut().unwrap() {
+            assert_eq!(
+                bone.as_object_mut().unwrap().remove("inherit"),
+                Some(json!("normal"))
+            );
         }
         for slot in old["slots"].as_array_mut().unwrap() {
             assert_eq!(

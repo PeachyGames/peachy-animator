@@ -1,5 +1,5 @@
 {
-  "format": 8,
+  "format": 9,
   "name": "Peach Bot IK Chain Lab",
   "fps": 30,
   "bones": [
@@ -15,7 +15,8 @@
         "scale_y": 1,
         "shear_x": 0.0,
         "shear_y": 0.0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "body",
@@ -29,7 +30,8 @@
         "scale_y": 1,
         "shear_x": 0.0,
         "shear_y": 0.0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "head",
@@ -43,7 +45,8 @@
         "scale_y": 1,
         "shear_x": 0.0,
         "shear_y": 0.0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "arm.L",
@@ -57,7 +60,8 @@
         "scale_y": 1,
         "shear_x": 0.0,
         "shear_y": 0.0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "forearm.L",
@@ -71,7 +75,8 @@
         "scale_y": 1,
         "shear_x": 0.0,
         "shear_y": 0.0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "hand.L",
@@ -85,7 +90,8 @@
         "scale_y": 1,
         "shear_x": 0.0,
         "shear_y": 0.0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "arm.R",
@@ -99,7 +105,8 @@
         "scale_y": 1,
         "shear_x": 0.0,
         "shear_y": 0.0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "forearm.R",
@@ -113,7 +120,8 @@
         "scale_y": 1,
         "shear_x": 0.0,
         "shear_y": 0.0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "hand.R",
@@ -127,7 +135,8 @@
         "scale_y": 1,
         "shear_x": 0.0,
         "shear_y": 0.0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "leg.L",
@@ -141,7 +150,8 @@
         "scale_y": 1,
         "shear_x": 0.0,
         "shear_y": 0.0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "shin.L",
@@ -155,7 +165,8 @@
         "scale_y": 1,
         "shear_x": 0.0,
         "shear_y": 0.0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "foot.L",
@@ -169,7 +180,8 @@
         "scale_y": 1,
         "shear_x": 0.0,
         "shear_y": 0.0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "leg.R",
@@ -183,7 +195,8 @@
         "scale_y": 1,
         "shear_x": 0.0,
         "shear_y": 0.0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "shin.R",
@@ -197,7 +210,8 @@
         "scale_y": 1,
         "shear_x": 0.0,
         "shear_y": 0.0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "foot.R",
@@ -211,7 +225,8 @@
         "scale_y": 1,
         "shear_x": 0.0,
         "shear_y": 0.0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "arm.R target",
@@ -225,7 +240,8 @@
         "scale_y": 1,
         "shear_x": 0.0,
         "shear_y": 0.0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "head target",
@@ -239,7 +255,8 @@
         "scale_y": 1,
         "shear_x": 0.0,
         "shear_y": 0.0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "leg.L target",
@@ -253,7 +270,8 @@
         "scale_y": 1,
         "shear_x": 0.0,
         "shear_y": 0.0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "foot.L target",
@@ -267,7 +285,8 @@
         "scale_y": 1,
         "shear_x": 0.0,
         "shear_y": 0.0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "hand.R target",
@@ -281,7 +300,8 @@
         "scale_y": 1,
         "shear_x": 0.0,
         "shear_y": 0.0
-      }
+      },
+      "inherit": "normal"
     }
   ],
   "constraints": [
@@ -1153,7 +1173,8 @@
         }
       ],
       "physics": [],
-      "physics_resets": []
+      "physics_resets": [],
+      "inherit_tracks": []
     },
     {
       "name": "ik negative",
@@ -1254,7 +1275,8 @@
         }
       ],
       "physics": [],
-      "physics_resets": []
+      "physics_resets": [],
+      "inherit_tracks": []
     },
     {
       "name": "ik reach",
@@ -1429,7 +1451,8 @@
         }
       ],
       "physics": [],
-      "physics_resets": []
+      "physics_resets": [],
+      "inherit_tracks": []
     },
     {
       "name": "wave",
@@ -1705,7 +1728,8 @@
         }
       ],
       "physics": [],
-      "physics_resets": []
+      "physics_resets": [],
+      "inherit_tracks": []
     },
     {
       "name": "idle",
@@ -1775,7 +1799,8 @@
         }
       ],
       "physics": [],
-      "physics_resets": []
+      "physics_resets": [],
+      "inherit_tracks": []
     }
   ]
 }

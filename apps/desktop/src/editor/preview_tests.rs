@@ -100,6 +100,7 @@ fn fixture() -> (Editor, egui::Context) {
         }],
         physics: vec![],
         physics_resets: vec![],
+        inherit_tracks: vec![],
     });
     editor.session = Session::new(doc).unwrap();
     pending(&mut editor);
@@ -209,6 +210,7 @@ fn preview_reads_checked_keyed_weighted_mesh_and_ik_geometry_without_pending_pos
             y: 200.,
             ..Default::default()
         },
+        inherit: peachy_document::Inherit::Normal,
     });
     doc.constraints.push(Constraint::Ik(IkConstraint {
         name: "preview IK".into(),

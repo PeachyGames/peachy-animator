@@ -1,6 +1,6 @@
 //! Evaluated geometry shared by rendering, fit-to-view and future headless export.
 use crate::{
-    Affine, checked_pose_from_locals, local_pose,
+    Affine, local_pose,
     mesh::{REGION_TRIANGLES, REGION_UVS, region_vertices},
     mesh_world_vertices,
 };
@@ -82,7 +82,12 @@ pub fn checked_evaluate_scene(
     if let Some((bone, transform)) = preview {
         *locals.get_mut(bone).ok_or("Unknown preview bone")? = transform;
     }
-    checked_scene_from_locals(doc, skin, locals)
+    checked_scene_from_locals_with(
+        doc,
+        skin,
+        locals,
+        &crate::inherit_pose(doc, animation, time),
+    )
 }
 
 /// Evaluate already posed locals through a finite-output boundary. In addition
@@ -93,7 +98,18 @@ pub fn checked_scene_from_locals(
     skin: &str,
     locals: Vec<Transform>,
 ) -> Result<Scene, String> {
-    let pose = checked_pose_from_locals(doc, locals)?;
+    let inherits: Vec<_> = doc.bones.iter().map(|bone| bone.inherit).collect();
+    checked_scene_from_locals_with(doc, skin, locals, &inherits)
+}
+
+/// As [`checked_scene_from_locals`], with explicit (keyed) inheritance modes.
+pub fn checked_scene_from_locals_with(
+    doc: &Document,
+    skin: &str,
+    locals: Vec<Transform>,
+    inherits: &[peachy_document::Inherit],
+) -> Result<Scene, String> {
+    let pose = crate::checked_pose_from_locals_with(doc, locals, inherits)?;
     let scene = scene_from_evaluated(doc, skin, pose);
     for draw in &scene.attachments {
         if !draw

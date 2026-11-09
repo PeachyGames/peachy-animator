@@ -21,6 +21,7 @@ fn fixture() -> Document {
                     shear_x: 0.0,
                     shear_y: 0.0,
                 },
+                inherit: peachy_document::Inherit::Normal,
             },
             Bone {
                 name: "child".into(),
@@ -35,6 +36,7 @@ fn fixture() -> Document {
                     shear_x: 0.0,
                     shear_y: 0.0,
                 },
+                inherit: peachy_document::Inherit::Normal,
             },
         ],
         slots: vec![],
@@ -82,6 +84,7 @@ fn fixture() -> Document {
             ],
             physics: vec![],
             physics_resets: vec![],
+            inherit_tracks: vec![],
         }],
     }
 }

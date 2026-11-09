@@ -29,6 +29,9 @@ pub fn load(path: &Path) -> Result<Document, String> {
 pub fn decode_project(text: &str) -> Result<Document, String> {
     let mut value: serde_json::Value = serde_json::from_str(text).map_err(|e| e.to_string())?;
     let original_format = value["format"].as_u64();
+    if matches!(original_format, Some(1..=8)) {
+        reject_legacy_inherit(&value)?;
+    }
     if matches!(original_format, Some(1..=7)) {
         reject_legacy_physics(&value)?;
     }
@@ -93,6 +96,10 @@ pub fn decode_project(text: &str) -> Result<Document, String> {
         add_v7_physics_timelines(&mut value)?;
         value["format"] = 8.into();
     }
+    if value["format"].as_u64() == Some(8) {
+        add_v8_inherit(&mut value)?;
+        value["format"] = 9.into();
+    }
     let mut doc: Document = serde_json::from_value(value).map_err(|e| e.to_string())?;
     // Wrapping vertices preserves their values and all surrounding fields. Decode
     // the strict schema and validate every legacy field before adding duration holds.
@@ -101,6 +108,44 @@ pub fn decode_project(text: &str) -> Result<Document, String> {
         materialize_v2_holds(&mut doc, durations)?;
     }
     Ok(doc)
+}
+
+/// Formats 1–8 had normal inheritance only; any inherit field there is malformed.
+fn reject_legacy_inherit(value: &serde_json::Value) -> Result<(), String> {
+    if value["bones"]
+        .as_array()
+        .is_some_and(|bones| bones.iter().any(|bone| bone.get("inherit").is_some()))
+        || value["animations"].as_array().is_some_and(|animations| {
+            animations
+                .iter()
+                .any(|animation| animation.get("inherit_tracks").is_some())
+        })
+    {
+        return Err("Legacy project formats cannot contain inherit fields".into());
+    }
+    Ok(())
+}
+
+/// v8→v9 makes every bone inherit normally and adds empty inherit key lists.
+fn add_v8_inherit(value: &mut serde_json::Value) -> Result<(), String> {
+    for bone in value["bones"]
+        .as_array_mut()
+        .ok_or("Legacy bones must be an array")?
+    {
+        bone.as_object_mut()
+            .ok_or("Legacy bone must be an object")?
+            .insert("inherit".into(), "normal".into());
+    }
+    for animation in value["animations"]
+        .as_array_mut()
+        .ok_or("Legacy animations must be an array")?
+    {
+        animation
+            .as_object_mut()
+            .ok_or("Legacy animation must be an object")?
+            .insert("inherit_tracks".into(), serde_json::json!([]));
+    }
+    Ok(())
 }
 
 /// Formats 1–7 had only IK constraints and bone-transform tracks. A physics
@@ -521,6 +566,10 @@ mod tests {
             );
         }
         for bone in v["bones"].as_array_mut().unwrap() {
+            assert_eq!(
+                bone.as_object_mut().unwrap().remove("inherit"),
+                Some(serde_json::json!("normal"))
+            );
             for field in ["shear_x", "shear_y"] {
                 assert_eq!(bone["setup"][field].as_f64(), Some(0.0));
                 bone["setup"].as_object_mut().unwrap().remove(field);
@@ -533,7 +582,7 @@ mod tests {
             .zip(&doc.animations)
         {
             animation["duration"] = serde_json::json!(source.duration());
-            for field in ["physics", "physics_resets"] {
+            for field in ["physics", "physics_resets", "inherit_tracks"] {
                 assert_eq!(
                     animation.as_object_mut().unwrap().remove(field),
                     Some(serde_json::json!([]))

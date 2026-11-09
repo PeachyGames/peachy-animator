@@ -12,6 +12,7 @@ fn bone(name: &str, parent: Option<usize>) -> Bone {
             rotation: 15.,
             ..Transform::default()
         },
+        inherit: peachy_document::Inherit::Normal,
     }
 }
 
@@ -51,6 +52,7 @@ fn document() -> Document {
                 constraint: None,
                 times: vec![0.5, 2.],
             }],
+            inherit_tracks: vec![],
         }],
     }
 }

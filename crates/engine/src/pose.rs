@@ -156,16 +156,139 @@ pub fn local_pose(doc: &Document, animation: Option<usize>, time: f32) -> Vec<Tr
     pose
 }
 
+/// Forward kinematics with each bone's Setup inheritance mode.
 pub fn world_pose(doc: &Document, locals: &[Transform]) -> Vec<Affine> {
+    let inherits: Vec<_> = doc.bones.iter().map(|bone| bone.inherit).collect();
+    world_pose_with(doc, locals, &inherits)
+}
+
+/// Forward kinematics with explicit (possibly keyed) inheritance modes.
+pub fn world_pose_with(doc: &Document, locals: &[Transform], inherits: &[Inherit]) -> Vec<Affine> {
     let mut world: Vec<Affine> = Vec::with_capacity(doc.bones.len());
-    for (bone, local) in doc.bones.iter().zip(locals) {
+    for (index, (bone, local)) in doc.bones.iter().zip(locals).enumerate() {
         let matrix = Affine::from_transform(*local);
-        world.push(
-            bone.parent
-                .map_or(matrix, |parent| world[parent].then(matrix)),
-        );
+        let mode = inherits.get(index).copied().unwrap_or_default();
+        world.push(match bone.parent {
+            None => matrix,
+            Some(parent) if mode == Inherit::Normal => world[parent].then(matrix),
+            Some(parent) => inherited(world[parent], *local, mode),
+        });
     }
     world
+}
+
+/// The keyed inheritance mode of every bone at `time`, falling back to Setup.
+pub fn inherit_pose(doc: &Document, animation: Option<usize>, time: f32) -> Vec<Inherit> {
+    let mut modes: Vec<_> = doc.bones.iter().map(|bone| bone.inherit).collect();
+    if let Some(animation) = animation.and_then(|index| doc.animations.get(index)) {
+        let time = if time.is_finite() { time.max(0.0) } else { 0.0 };
+        for track in &animation.inherit_tracks {
+            if let Some(mode) = track.sample(time)
+                && let Some(slot) = modes.get_mut(track.bone)
+            {
+                *slot = mode;
+            }
+        }
+    }
+    modes
+}
+
+/// A non-normal child frame. Translation always passes through the full parent.
+fn inherited(parent: Affine, local: Transform, mode: Inherit) -> Affine {
+    let p = [parent.a, parent.b, parent.c, parent.d].map(f64::from);
+    let [x, y] = parent.point(local.x, local.y);
+    match inherit_linear(mode, p, local) {
+        Some([a, b, c, d]) => Affine {
+            a: a as f32,
+            b: b as f32,
+            c: c as f32,
+            d: d as f32,
+            x,
+            y,
+        },
+        None => Affine {
+            a: f32::NAN,
+            b: f32::NAN,
+            c: f32::NAN,
+            d: f32::NAN,
+            x,
+            y,
+        },
+    }
+}
+
+/// Parent X-axis squared length below which `noRotationOrReflection` is
+/// refused. The external runtime switches to a different degenerate branch
+/// between 1e-10 and 4e-10; the model below was verified exact down to 4e-10,
+/// so this keeps a margin. See docs/slices/inherit-modes.md.
+pub const INHERIT_MIN_PARENT_AXIS_SQUARED: f64 = 1e-8;
+
+fn local_linear(t: Transform, rotation: f64) -> [f64; 4] {
+    let x = (rotation + f64::from(t.shear_x)) * OBSERVED_DEGREES_TO_RADIANS;
+    let y = (rotation + 90.0 + f64::from(t.shear_y)) * OBSERVED_DEGREES_TO_RADIANS;
+    [
+        x.cos() * f64::from(t.scale_x),
+        y.cos() * f64::from(t.scale_y),
+        x.sin() * f64::from(t.scale_x),
+        y.sin() * f64::from(t.scale_y),
+    ]
+}
+
+fn multiply(p: [f64; 4], q: [f64; 4]) -> [f64; 4] {
+    [
+        p[0] * q[0] + p[1] * q[2],
+        p[0] * q[1] + p[1] * q[3],
+        p[2] * q[0] + p[3] * q[2],
+        p[2] * q[1] + p[3] * q[3],
+    ]
+}
+
+/// Child world linear part (a, b, c, d) under a non-normal mode, or `None` for a
+/// degenerate parent this model does not cover. Independently derived from
+/// black-box observations of the external runtime (docs/PROVENANCE.md):
+/// - onlyTranslation: the local matrix alone;
+/// - noRotationOrReflection: the parent's stretch along its own X axis angle θ,
+///   R(θ)·diag(|X|, |det|/|X|)·R(−θ), times the local matrix;
+/// - noScale / noScaleOrReflection: the local matrix without rotation, turned to
+///   the angle the parent maps the local rotation direction to, mirrored first
+///   for noScale when the parent frame is reflected.
+pub(crate) fn inherit_linear(mode: Inherit, p: [f64; 4], local: Transform) -> Option<[f64; 4]> {
+    let rotation = f64::from(local.rotation);
+    let result = match mode {
+        Inherit::Normal => multiply(p, local_linear(local, rotation)),
+        Inherit::OnlyTranslation => local_linear(local, rotation),
+        Inherit::NoRotationOrReflection => {
+            let axis_squared = p[0] * p[0] + p[2] * p[2];
+            if !(axis_squared >= INHERIT_MIN_PARENT_AXIS_SQUARED) {
+                return None;
+            }
+            let length = axis_squared.sqrt();
+            let (sin, cos) = p[2].atan2(p[0]).sin_cos();
+            let other = (p[0] * p[3] - p[1] * p[2]).abs() / length;
+            let stretch = [
+                cos * cos * length + sin * sin * other,
+                cos * sin * (length - other),
+                cos * sin * (length - other),
+                sin * sin * length + cos * cos * other,
+            ];
+            multiply(stretch, local_linear(local, rotation))
+        }
+        Inherit::NoScale | Inherit::NoScaleOrReflection => {
+            let (sin, cos) = (rotation * OBSERVED_DEGREES_TO_RADIANS).sin_cos();
+            let (vx, vy) = (p[0] * cos + p[1] * sin, p[2] * cos + p[3] * sin);
+            if !(vx.is_finite() && vy.is_finite()) || (vx == 0.0 && vy == 0.0) {
+                return None;
+            }
+            let (s, c) = vy.atan2(vx).sin_cos();
+            let mut unrotated = local_linear(local, 0.0);
+            if mode == Inherit::NoScale && p[0] * p[3] - p[1] * p[2] < 0.0 {
+                unrotated[2] = -unrotated[2];
+                unrotated[3] = -unrotated[3];
+            }
+            multiply([c, -s, s, c], unrotated)
+        }
+    };
+    result.iter().all(|v| v.is_finite()).then_some(result)
 }
 
 pub fn evaluate(

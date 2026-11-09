@@ -434,6 +434,7 @@ fn invalid_weights_repeats_sparse_rebinding_and_batches_are_atomic_with_pending_
                         parent: Some(usize::MAX),
                         length: 1.,
                         setup: Transform::default(),
+                        inherit: peachy_document::Inherit::Normal,
                     },
                 },
                 add(2, new_bone_pose),

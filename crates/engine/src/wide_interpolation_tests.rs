@@ -130,6 +130,7 @@ fn extreme_shear_sampling_and_pose_preview_preserve_original_keys_curves_and_his
             parent: None,
             length: 10.,
             setup: Transform::default(),
+            inherit: peachy_document::Inherit::Normal,
         }],
         slots: vec![],
         skins: Default::default(),
@@ -138,6 +139,7 @@ fn extreme_shear_sampling_and_pose_preview_preserve_original_keys_curves_and_his
             tracks: vec![track(Property::ShearX, -2e38, 2e38, curve)],
             physics: vec![],
             physics_resets: vec![],
+            inherit_tracks: vec![],
         }],
     };
     let mut session = Session::new(document.clone()).unwrap();

@@ -221,6 +221,7 @@ fn doc() -> Document {
             parent: None,
             length: 50.0,
             setup: Transform::default(),
+            inherit: peachy_document::Inherit::Normal,
         }],
         slots: vec![],
         skins: Default::default(),
@@ -230,6 +231,7 @@ fn doc() -> Document {
             tracks: vec![],
             physics: vec![],
             physics_resets: vec![],
+            inherit_tracks: vec![],
         }],
     }
 }
@@ -296,6 +298,7 @@ fn hierarchy_composes_rotation_and_nonuniform_scale() {
             x: 10.0,
             ..Default::default()
         },
+        inherit: peachy_document::Inherit::Normal,
     });
     let w = evaluate(&d, None, 0.0).unwrap();
     assert!(w[1].x.abs() < 0.0001);
@@ -582,6 +585,7 @@ fn unkeyed_multi_bone_pose_keys_atomically_without_touching_setup() {
         parent: Some(0),
         length: 10.0,
         setup: Transform::default(),
+        inherit: peachy_document::Inherit::Normal,
     });
     let mut session = Session::new(fixture.clone()).unwrap();
     let target = EditTarget::Animate {

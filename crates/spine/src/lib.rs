@@ -81,13 +81,19 @@ pub fn inspect(value: &Value) -> Inspection {
         if bone["skin"].as_bool() == Some(true) {
             unsupported.push(format!("Bone {name}: skin-required bone"));
         }
-        for field in ["transform", "inherit"] {
-            if bone
-                .get(field)
-                .is_some_and(|v| v.as_str() != Some("normal"))
-            {
-                unsupported.push(format!("Bone {name}: non-normal inheritance"));
-            }
+        // Spine 4.3 reads `inherit`; installed 4.3.26 ignores the legacy
+        // `transform` alias, so a non-normal alias is refused, never guessed.
+        if bone
+            .get("transform")
+            .is_some_and(|v| v.as_str() != Some("normal"))
+        {
+            unsupported.push(format!("Bone {name}: legacy transform inheritance alias"));
+        }
+        if bone
+            .get("inherit")
+            .is_some_and(|v| v.as_str().and_then(Inherit::from_spine_name).is_none())
+        {
+            unsupported.push(format!("Bone {name}: unknown inherit mode"));
         }
         unknown_fields(
             bone,
@@ -186,6 +192,10 @@ pub fn inspect(value: &Value) -> Inspection {
                     if let Some(timelines) = timelines.as_object() {
                         let mut properties = BTreeSet::new();
                         for (field, keys) in timelines {
+                            if field == "inherit" {
+                                inspect_inherit_keys(keys, name, bone, &mut unsupported);
+                                continue;
+                            }
                             let channels = timeline_properties(field);
                             if let Some(channels) = channels {
                                 for &(property, _) in channels {
@@ -300,6 +310,10 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
             parent,
             length: number(bone, "length", 0.0),
             setup: bone_transform(bone),
+            inherit: bone["inherit"]
+                .as_str()
+                .map_or(Some(Inherit::Normal), Inherit::from_spine_name)
+                .ok_or_else(|| format!("Bone {name}: unknown inherit mode"))?,
         });
     }
     let mut slots = vec![];
@@ -341,10 +355,33 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
     if let Some(entries) = value["animations"].as_object() {
         for (name, animation) in entries {
             let mut tracks = vec![];
+            let mut inherit_tracks = vec![];
             if let Some(entries) = animation["bones"].as_object() {
                 for (bone, timelines) in entries {
                     let bone = *indices.get(bone).ok_or("Unknown animated bone")?;
                     for (timeline, keys) in timelines.as_object().ok_or("Invalid bone timelines")? {
+                        if timeline == "inherit" {
+                            let keys = keys.as_array().ok_or("Timeline must be an array")?;
+                            inherit_tracks.push(InheritTrack {
+                                bone,
+                                keys: keys
+                                    .iter()
+                                    .map(|key| {
+                                        Ok(InheritKey {
+                                            time: number(key, "time", 0.0),
+                                            inherit: key["inherit"]
+                                                .as_str()
+                                                .map_or(
+                                                    Some(Inherit::Normal),
+                                                    Inherit::from_spine_name,
+                                                )
+                                                .ok_or("Unknown inherit key mode")?,
+                                        })
+                                    })
+                                    .collect::<Result<_, String>>()?,
+                            });
+                            continue;
+                        }
                         let properties = timeline_properties(timeline)
                             .ok_or_else(|| format!("Unsupported timeline {timeline}"))?;
                         let keys = keys.as_array().ok_or("Timeline must be an array")?;
@@ -365,6 +402,7 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
                 tracks,
                 physics,
                 physics_resets,
+                inherit_tracks,
             });
         }
     }
@@ -397,6 +435,9 @@ pub fn export_json(doc: &Document) -> Result<Value, String> {
             let mut bone = bone_transform_json(b.setup);
             bone["name"] = json!(b.name);
             bone["length"] = json!(b.length);
+            if b.inherit != Inherit::Normal {
+                bone["inherit"] = json!(b.inherit.spine_name());
+            }
             if let Some(parent) = b.parent {
                 bone["parent"] = json!(doc.bones[parent].name);
             }
@@ -454,6 +495,23 @@ pub fn export_json(doc: &Document) -> Result<Value, String> {
                 bone_timelines[bone] = json!({});
             }
             bone_timelines[bone][timeline] = json!(keys);
+        }
+        for track in animation
+            .inherit_tracks
+            .iter()
+            .filter(|t| !t.keys.is_empty())
+        {
+            let bone = &doc.bones[track.bone].name;
+            if bone_timelines.get(bone).is_none() {
+                bone_timelines[bone] = json!({});
+            }
+            bone_timelines[bone]["inherit"] = Value::Array(
+                track
+                    .keys
+                    .iter()
+                    .map(|key| json!({"time":key.time,"inherit":key.inherit.spine_name()}))
+                    .collect(),
+            );
         }
         animations[&animation.name] = json!({"bones":bone_timelines});
         let physics = constraints::write_physics_timelines(doc, animation)?;
@@ -740,6 +798,36 @@ fn inspect_shapes(root: &Value, issues: &mut Vec<String>) {
         }
     }
 }
+fn inspect_inherit_keys(keys: &Value, animation: &str, bone: &str, issues: &mut Vec<String>) {
+    let context = format!("Animation {animation}/{bone}/inherit");
+    let Some(keys) = keys.as_array() else {
+        issues.push(format!("{context}: must be an array"));
+        return;
+    };
+    let mut previous = f64::NEG_INFINITY;
+    for key in keys {
+        if !key.is_object() {
+            issues.push(format!("{context}: keys must be objects"));
+            continue;
+        }
+        unknown_fields(key, &["time", "inherit"], &context, issues);
+        inspect_numbers(key, &["time"], &context, issues);
+        let time = key["time"].as_f64().unwrap_or(0.0);
+        if time < 0.0 || time <= previous {
+            issues.push(format!(
+                "{context}: key times must be nonnegative and increasing"
+            ));
+        }
+        previous = time;
+        if key
+            .get("inherit")
+            .is_some_and(|v| v.as_str().and_then(Inherit::from_spine_name).is_none())
+        {
+            issues.push(format!("{context}: unknown inherit mode"));
+        }
+    }
+}
+
 fn nonempty(value: &Value) -> bool {
     match value {
         Value::Null => false,
@@ -958,7 +1046,11 @@ mod tests {
         v["constraints"] = json!([{"type":"physics"}]);
         assert!(import_json(&v, "test").is_err());
         v["constraints"] = json!([]);
-        v["bones"][0]["inherit"] = json!("noScale");
+        // The legacy alias is ignored by installed 4.3.26, so it is refused, never guessed.
+        v["bones"][0]["transform"] = json!("noScale");
+        assert!(import_json(&v, "test").is_err());
+        v["bones"][0].as_object_mut().unwrap().remove("transform");
+        v["bones"][0]["inherit"] = json!("noShear");
         assert!(import_json(&v, "test").is_err());
         v["bones"][0]["inherit"] = json!("normal");
         v["bones"][0]["futureField"] = json!(1);

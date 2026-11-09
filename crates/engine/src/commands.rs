@@ -43,6 +43,11 @@ pub enum Command {
         bone: usize,
         length: f32,
     },
+    /// Setup transform inheritance (Spine's Inherit Rotation/Scale/Reflection).
+    SetBoneInherit {
+        bone: usize,
+        inherit: Inherit,
+    },
     SetRegionTransform {
         attachment: AttachmentRef,
         transform: RegionTransform,
@@ -211,6 +216,9 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
         }
         Command::RenameBone { bone, name } => crate::names::rename_bone(doc, bone, name)?,
         Command::RenameSlot { slot, name } => crate::names::rename_slot(doc, slot, name)?,
+        Command::SetBoneInherit { bone, inherit } => {
+            doc.bones.get_mut(bone).ok_or("Unknown bone")?.inherit = inherit;
+        }
         Command::SetBoneLength { bone, length } => {
             doc.bones.get_mut(bone).ok_or("Unknown bone")?.length = length;
         }

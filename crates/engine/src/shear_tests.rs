@@ -14,12 +14,14 @@ fn rig() -> Document {
                 parent: None,
                 length: 20.,
                 setup: Transform::default(),
+                inherit: peachy_document::Inherit::Normal,
             },
             Bone {
                 name: "child".into(),
                 parent: Some(0),
                 length: 10.,
                 setup: Transform::default(),
+                inherit: peachy_document::Inherit::Normal,
             },
         ],
         slots: vec![],
@@ -29,6 +31,7 @@ fn rig() -> Document {
             tracks: vec![],
             physics: vec![],
             physics_resets: vec![],
+            inherit_tracks: vec![],
         }],
     }
 }
@@ -774,6 +777,7 @@ fn sheared_weighted_and_region_scene_matches_original_external_observation_point
                 shear_x: 11.,
                 shear_y: -17.,
             },
+            inherit: peachy_document::Inherit::Normal,
         },
         Bone {
             name: "child".into(),
@@ -788,6 +792,7 @@ fn sheared_weighted_and_region_scene_matches_original_external_observation_point
                 shear_x: 26.,
                 shear_y: -13.,
             },
+            inherit: peachy_document::Inherit::Normal,
         },
         Bone {
             name: "tip".into(),
@@ -802,6 +807,7 @@ fn sheared_weighted_and_region_scene_matches_original_external_observation_point
                 shear_x: -9.,
                 shear_y: 4.,
             },
+            inherit: peachy_document::Inherit::Normal,
         },
     ];
     let influence = |bone, position, weight| BoneInfluence {
@@ -1051,6 +1057,7 @@ fn shear_clipboard_and_retiming_keep_scalar_identity_curves_fractional_neighbors
         tracks: vec![],
         physics: vec![],
         physics_resets: vec![],
+        inherit_tracks: vec![],
     });
     let keys = vec![
         TimelineKey {

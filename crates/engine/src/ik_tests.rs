@@ -13,12 +13,14 @@ fn rig() -> Document {
                 parent: None,
                 length: 0.,
                 setup: Transform::default(),
+                inherit: peachy_document::Inherit::Normal,
             },
             Bone {
                 name: "upper".into(),
                 parent: Some(0),
                 length: 10.,
                 setup: Transform::default(),
+                inherit: peachy_document::Inherit::Normal,
             },
             Bone {
                 name: "lower".into(),
@@ -28,6 +30,7 @@ fn rig() -> Document {
                     x: 10.,
                     ..Transform::default()
                 },
+                inherit: peachy_document::Inherit::Normal,
             },
             Bone {
                 name: "target".into(),
@@ -38,6 +41,7 @@ fn rig() -> Document {
                     y: 10.,
                     ..Transform::default()
                 },
+                inherit: peachy_document::Inherit::Normal,
             },
         ],
         constraints: vec![],
@@ -48,6 +52,7 @@ fn rig() -> Document {
             tracks: vec![],
             physics: vec![],
             physics_resets: vec![],
+            inherit_tracks: vec![],
         }],
     }
 }
@@ -276,6 +281,7 @@ fn independent_constraints_keep_list_order_and_dependencies_are_explicit_errors(
             parent: Some(0),
             length: 10.,
             setup: Transform::default(),
+            inherit: peachy_document::Inherit::Normal,
         },
         Bone {
             name: "second lower".into(),
@@ -285,6 +291,7 @@ fn independent_constraints_keep_list_order_and_dependencies_are_explicit_errors(
                 x: 10.,
                 ..Transform::default()
             },
+            inherit: peachy_document::Inherit::Normal,
         },
         Bone {
             name: "second target".into(),
@@ -295,6 +302,7 @@ fn independent_constraints_keep_list_order_and_dependencies_are_explicit_errors(
                 y: -10.,
                 ..Transform::default()
             },
+            inherit: peachy_document::Inherit::Normal,
         },
     ]);
     let mut other = constraint();
@@ -346,6 +354,7 @@ fn nested_chains_solve_sequentially_in_constraint_order() {
                 x: 10.,
                 ..Transform::default()
             },
+            inherit: peachy_document::Inherit::Normal,
         },
         Bone {
             name: "toe target".into(),
@@ -356,6 +365,7 @@ fn nested_chains_solve_sequentially_in_constraint_order() {
                 y: 10.,
                 ..Transform::default()
             },
+            inherit: peachy_document::Inherit::Normal,
         },
     ]);
     let mut toe = constraint();
@@ -463,6 +473,7 @@ fn unsupported_or_degenerate_queries_preserve_raw_native_data_pending_pose_and_h
             shear_y: 45.,
             ..Transform::default()
         },
+        inherit: peachy_document::Inherit::Normal,
     });
     assert!(checked_evaluate_pose(&unrelated, None, 0.).is_ok());
     let mut session = Session::new(unrelated).unwrap();
@@ -592,6 +603,7 @@ fn relevant_wide_target_math_accepts_exact_large_and_tiny_directions_without_glo
                 x: 1e8,
                 ..Transform::default()
             },
+            inherit: peachy_document::Inherit::Normal,
         },
         Bone {
             name: "unrelated child".into(),
@@ -602,6 +614,7 @@ fn relevant_wide_target_math_accepts_exact_large_and_tiny_directions_without_glo
                 y: 10.,
                 ..Transform::default()
             },
+            inherit: peachy_document::Inherit::Normal,
         },
     ]);
     document.validate().unwrap();

@@ -1,6 +1,5 @@
 use crate::{
-    Command, EditTarget, EvaluatedPose, MeshBindPose, PoseEdits, apply_command,
-    checked_pose_from_locals, transform_group,
+    Command, EditTarget, EvaluatedPose, MeshBindPose, PoseEdits, apply_command, transform_group,
 };
 use peachy_document::{AttachmentRef, Document, Property, Transform};
 
@@ -129,6 +128,12 @@ impl Session {
     /// Read authored setup or Animate+pending data through the checked applied-pose stage.
     /// This snapshots without keying, discarding a pose or changing history.
     pub fn evaluated_pose(&self, target: EditTarget) -> Result<EvaluatedPose, String> {
+        let inherits = match target {
+            EditTarget::Setup => crate::inherit_pose(self.document(), None, 0.0),
+            EditTarget::Animate { animation, time } => {
+                crate::inherit_pose(self.document(), Some(animation), time)
+            }
+        };
         let locals = match target {
             EditTarget::Setup => self
                 .document()
@@ -146,7 +151,7 @@ impl Session {
                 self.local_pose(Some(animation), time)
             }
         };
-        checked_pose_from_locals(self.document(), locals)
+        crate::checked_pose_from_locals_with(self.document(), locals, &inherits)
     }
     /// Capture applied locals once, including pending edits. Binding reconstructs
     /// FK from this explicit snapshot and must never apply constraints again.

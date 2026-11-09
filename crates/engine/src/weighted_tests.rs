@@ -38,6 +38,7 @@ pub(super) fn rig() -> Document {
         parent,
         length: 10.,
         setup,
+        inherit: peachy_document::Inherit::Normal,
     };
     Document {
         constraints: vec![],
@@ -123,6 +124,7 @@ pub(super) fn rig() -> Document {
             }],
             physics: vec![],
             physics_resets: vec![],
+            inherit_tracks: vec![],
         }],
     }
 }

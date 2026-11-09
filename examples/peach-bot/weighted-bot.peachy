@@ -1,5 +1,5 @@
 {
-  "format": 8,
+  "format": 9,
   "constraints": [],
   "name": "Peach Bot Weighted Lab",
   "fps": 30,
@@ -16,7 +16,8 @@
         "scale_y": 1,
         "shear_x": 0,
         "shear_y": 0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "body",
@@ -30,7 +31,8 @@
         "scale_y": 1,
         "shear_x": 0,
         "shear_y": 0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "head",
@@ -44,7 +46,8 @@
         "scale_y": 1,
         "shear_x": 0,
         "shear_y": 0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "arm.L",
@@ -58,7 +61,8 @@
         "scale_y": 1,
         "shear_x": 0,
         "shear_y": 0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "forearm.L",
@@ -72,7 +76,8 @@
         "scale_y": 1,
         "shear_x": 0,
         "shear_y": 0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "hand.L",
@@ -86,7 +91,8 @@
         "scale_y": 1,
         "shear_x": 0,
         "shear_y": 0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "arm.R",
@@ -100,7 +106,8 @@
         "scale_y": 1,
         "shear_x": 0,
         "shear_y": 0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "forearm.R",
@@ -114,7 +121,8 @@
         "scale_y": 1,
         "shear_x": 0,
         "shear_y": 0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "hand.R",
@@ -128,7 +136,8 @@
         "scale_y": 1,
         "shear_x": 0,
         "shear_y": 0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "leg.L",
@@ -142,7 +151,8 @@
         "scale_y": 1,
         "shear_x": 0,
         "shear_y": 0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "shin.L",
@@ -156,7 +166,8 @@
         "scale_y": 1,
         "shear_x": 0,
         "shear_y": 0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "foot.L",
@@ -170,7 +181,8 @@
         "scale_y": 1,
         "shear_x": 0,
         "shear_y": 0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "leg.R",
@@ -184,7 +196,8 @@
         "scale_y": 1,
         "shear_x": 0,
         "shear_y": 0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "shin.R",
@@ -198,7 +211,8 @@
         "scale_y": 1,
         "shear_x": 0,
         "shear_y": 0
-      }
+      },
+      "inherit": "normal"
     },
     {
       "name": "foot.R",
@@ -212,7 +226,8 @@
         "scale_y": 1,
         "shear_x": 0,
         "shear_y": 0
-      }
+      },
+      "inherit": "normal"
     }
   ],
   "slots": [
@@ -1041,7 +1056,8 @@
         }
       ],
       "physics": [],
-      "physics_resets": []
+      "physics_resets": [],
+      "inherit_tracks": []
     },
     {
       "name": "idle",
@@ -1111,7 +1127,8 @@
         }
       ],
       "physics": [],
-      "physics_resets": []
+      "physics_resets": [],
+      "inherit_tracks": []
     }
   ]
 }

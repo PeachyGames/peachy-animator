@@ -94,6 +94,7 @@ pub fn command_schema() -> Value {
             ]),
         ),
     ]);
+    let inherit = json!({"type":"string","enum":["normal","onlyTranslation","noRotationOrReflection","noScale","noScaleOrReflection"]});
     let settings = [
         "inertia", "strength", "damping", "mass", "wind", "gravity", "mix",
     ];
@@ -206,9 +207,11 @@ pub fn command_schema() -> Value {
                     ("parent", json!({"type":["integer","null"],"minimum":0})),
                     ("length", number()),
                     ("setup", transform),
+                    ("inherit", inherit.clone()),
                 ]),
             )],
         ),
+        command("setBoneInherit", &[("bone", index()), ("inherit", inherit)]),
         command("addAnimation", &[("name", text()), ("duration", number())]),
         command(
             "renameAnimation",
@@ -295,6 +298,7 @@ mod tests {
             Command::MoveKeys { .. } => "moveKeys",
             Command::PasteKeys { .. } => "pasteKeys",
             Command::AddBone { .. } => "addBone",
+            Command::SetBoneInherit { .. } => "setBoneInherit",
             Command::AddAnimation { .. } => "addAnimation",
             Command::RenameAnimation { .. } => "renameAnimation",
             Command::DuplicateAnimation { .. } => "duplicateAnimation",
@@ -346,7 +350,7 @@ mod tests {
     fn every_published_shape_decodes_through_strict_engine_serde() {
         let schema = command_schema();
         let variants = schema["oneOf"].as_array().unwrap();
-        assert_eq!(variants.len(), 27);
+        assert_eq!(variants.len(), 28);
         for variant in variants {
             let payload = sample(variant);
             let command: CommandInput = serde_json::from_value(payload.clone()).unwrap();

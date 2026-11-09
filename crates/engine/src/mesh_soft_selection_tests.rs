@@ -51,6 +51,7 @@ fn rig(mesh: Mesh) -> Document {
             parent: None,
             length: 5.,
             setup: Transform::default(),
+            inherit: peachy_document::Inherit::Normal,
         }],
         constraints: vec![],
         slots: vec![Slot {
@@ -71,6 +72,7 @@ fn rig(mesh: Mesh) -> Document {
             tracks: vec![],
             physics: vec![],
             physics_resets: vec![],
+            inherit_tracks: vec![],
         }],
     };
     doc.validate().unwrap();

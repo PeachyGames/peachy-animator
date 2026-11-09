@@ -1,6 +1,6 @@
 //! Checked scene output and view-coordinate guards, without changing authoring state.
 use super::*;
-use peachy_engine::{Scene, checked_scene_from_locals};
+use peachy_engine::{Scene, checked_scene_from_locals_with, inherit_pose};
 
 pub(super) fn screen_point(origin: Pos2, zoom: f32, point: [f32; 2]) -> Pos2 {
     let ordinary = origin + vec2(point[0] * zoom, -point[1] * zoom);
@@ -69,10 +69,12 @@ pub(super) fn ghost_tint(ghost: Color32, slot: [u8; 4], solid: bool) -> Color32 
 
 impl Editor {
     pub(super) fn scene_for_view(&self) -> Result<Scene, String> {
-        checked_scene_from_locals(
+        let animation = self.active_animation();
+        checked_scene_from_locals_with(
             self.session.document(),
             &self.skin,
-            self.session.local_pose(self.active_animation(), self.time),
+            self.session.local_pose(animation, self.time),
+            &inherit_pose(self.session.document(), animation, self.time),
         )
     }
     pub(super) fn check_view_projection(

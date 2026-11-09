@@ -204,8 +204,9 @@ fn bone_finiteness_and_region_only_fields_keep_their_distinct_interchange_bounda
             assert!(import_json(&region, "region shear unsupported").is_err());
         }
     }
+    // Inheritance modes are supported since native v9; an unknown mode is refused.
     let mut inherited = fixture(json!({}));
-    inherited["bones"][0]["inherit"] = json!("noScale");
+    inherited["bones"][0]["inherit"] = json!("noShear");
     assert!(!inspect(&inherited).supported);
-    assert!(import_json(&inherited, "shear does not add inheritance modes").is_err());
+    assert!(import_json(&inherited, "unknown inheritance mode").is_err());
 }

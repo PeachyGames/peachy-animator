@@ -211,6 +211,7 @@ impl Editor {
                                 x: self.session.document().bones[bone].length,
                                 ..Default::default()
                             },
+                            inherit: peachy_document::Inherit::Normal,
                         },
                     })
                 {

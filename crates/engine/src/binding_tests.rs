@@ -486,6 +486,7 @@ fn invalid_bind_commands_and_batches_preserve_document_pose_saved_state_and_redo
         parent: Some(usize::MAX),
         length: 1.,
         setup: Transform::default(),
+        inherit: peachy_document::Inherit::Normal,
     };
     let mut hierarchy_pose = pose.clone();
     hierarchy_pose.locals.push(Transform::default());

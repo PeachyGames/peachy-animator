@@ -1,7 +1,10 @@
 //! Bounded normal IK from elementary link geometry and original public pose
 //! observations. No external implementation or runtime constant was inspected.
-use crate::{Affine, ik::check_world, pose::OBSERVED_DEGREES_TO_RADIANS, world_pose};
-use peachy_document::{Constraint, Document, IkConstraint, Transform};
+use crate::{
+    Affine, ik::check_world, pose::OBSERVED_DEGREES_TO_RADIANS, pose::inherit_linear,
+    world_pose_with,
+};
+use peachy_document::{Constraint, Document, IkConstraint, Inherit, Transform};
 
 /// Applied f32 frames and bone endpoints must retain their solved f64 reference
 /// within this absolute bound. There is no relative or large-coordinate exception.
@@ -11,6 +14,7 @@ pub(crate) fn apply(
     doc: &Document,
     locals: &mut [Transform],
     world: &mut Vec<Affine>,
+    inherits: &[Inherit],
 ) -> Result<(), String> {
     let active: Vec<_> = doc
         .constraints
@@ -20,6 +24,17 @@ pub(crate) fn apply(
         .collect();
     for (index, ik) in active.iter().enumerate() {
         validate_domain(doc, locals, ik)?;
+        // Spine: bones affected by IK cannot disable transform inheritance.
+        if let Some(&bone) = ik
+            .bones
+            .iter()
+            .find(|&&bone| inherits[bone] != Inherit::Normal)
+        {
+            return Err(format!(
+                "IK {}: constrained bone {} must inherit normally",
+                ik.name, doc.bones[bone].name
+            ));
+        }
         for other in &active[..index] {
             // Nested chains (a toe inside a leg) solve sequentially in constraint
             // order: each solve writes applied locals and rebuilds world frames
@@ -37,7 +52,8 @@ pub(crate) fn apply(
         }
     }
     for ik in active {
-        solve(doc, locals, world, ik).map_err(|error| format!("IK {}: {error}", ik.name))?;
+        solve(doc, locals, world, ik, inherits)
+            .map_err(|error| format!("IK {}: {error}", ik.name))?;
     }
     Ok(())
 }
@@ -99,12 +115,13 @@ fn solve(
     locals: &mut [Transform],
     world: &mut Vec<Affine>,
     ik: &IkConstraint,
+    inherits: &[Inherit],
 ) -> Result<(), String> {
     let first = ik.bones[0];
     let parent_index = doc.bones[first]
         .parent
         .ok_or("Constrained root is not supported")?;
-    let incoming = wide_pose(doc, locals);
+    let incoming = wide_pose(doc, locals, inherits);
     check_input_precision(world, &incoming, parent_index, first, ik.target)?;
     if WideAffine::from(world[parent_index]).determinant() == 0. {
         return Err("target requires an invertible finite parent frame".into());
@@ -173,9 +190,9 @@ fn solve(
     for &(bone, rotation) in &solved {
         locals[bone].rotation = rotation as f32;
     }
-    let candidate = world_pose(doc, locals);
+    let candidate = world_pose_with(doc, locals, inherits);
     check_world(doc, &candidate)?;
-    check_reconstruction(doc, locals, &incoming, &candidate, first, &solved)?;
+    check_reconstruction(doc, locals, &incoming, &candidate, first, &solved, inherits)?;
     *world = candidate;
     Ok(())
 }
@@ -254,14 +271,22 @@ impl WideAffine {
     }
 }
 
-fn wide_pose(doc: &Document, locals: &[Transform]) -> Vec<WideAffine> {
+fn wide_pose(doc: &Document, locals: &[Transform], inherits: &[Inherit]) -> Vec<WideAffine> {
     let mut world: Vec<WideAffine> = Vec::with_capacity(locals.len());
-    for (bone, local) in doc.bones.iter().zip(locals) {
+    for (index, (bone, local)) in doc.bones.iter().zip(locals).enumerate() {
         let matrix = WideAffine::from_local(*local, f64::from(local.rotation));
-        world.push(
-            bone.parent
-                .map_or(matrix, |parent| world[parent].then(matrix)),
-        );
+        world.push(match bone.parent {
+            None => matrix,
+            Some(parent) if inherits[index] == Inherit::Normal => world[parent].then(matrix),
+            Some(parent) => {
+                let p = world[parent];
+                // Degenerate frames already failed the checked f32 evaluation.
+                let [a, b, c, d] = inherit_linear(inherits[index], [p.a, p.b, p.c, p.d], *local)
+                    .unwrap_or([f64::NAN; 4]);
+                let [x, y] = p.point([f64::from(local.x), f64::from(local.y)]);
+                WideAffine { a, b, c, d, x, y }
+            }
+        });
     }
     world
 }
@@ -302,6 +327,7 @@ fn check_reconstruction(
     candidate: &[Affine],
     first: usize,
     solved: &[(usize, f64)],
+    inherits: &[Inherit],
 ) -> Result<(), String> {
     let mut reference = vec![None; doc.bones.len()];
     for (index, bone) in doc.bones.iter().enumerate() {
@@ -315,7 +341,17 @@ fn check_reconstruction(
         let local = WideAffine::from_local(locals[index], rotation);
         let parent = bone.parent.ok_or("Constrained root is not supported")?;
         let parent_world = reference[parent].unwrap_or(incoming[parent]);
-        let expected = parent_world.then(local);
+        let expected = if inherits[index] == Inherit::Normal {
+            parent_world.then(local)
+        } else {
+            let p = parent_world;
+            let mut posed = locals[index];
+            posed.rotation = rotation as f32;
+            let [a, b, c, d] = inherit_linear(inherits[index], [p.a, p.b, p.c, p.d], posed)
+                .ok_or_else(|| format!("bone {}: degenerate inherited frame", bone.name))?;
+            let [x, y] = p.point([f64::from(posed.x), f64::from(posed.y)]);
+            WideAffine { a, b, c, d, x, y }
+        };
         reference[index] = Some(expected);
         let actual = candidate[index];
         let mut pairs: Vec<_> = WideAffine::from(actual)

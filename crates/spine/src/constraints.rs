@@ -408,6 +408,38 @@ pub(super) fn validate_source(doc: &Document) -> Result<(), String> {
         .collect();
     for (i, ik) in active.iter().enumerate() {
         let first = ik.bones[0];
+        // Spine: bones affected by IK cannot disable transform inheritance.
+        for &bone in &ik.bones {
+            if doc.bones[bone].inherit != peachy_document::Inherit::Normal
+                || doc.animations.iter().any(|animation| {
+                    animation
+                        .inherit_tracks
+                        .iter()
+                        .any(|track| track.bone == bone && !track.keys.is_empty())
+                })
+            {
+                return Err(format!(
+                    "IK {}: constrained bone {} must inherit normally",
+                    ik.name, doc.bones[bone].name
+                ));
+            }
+        }
+        // Spine: bones affected by IK cannot disable transform inheritance.
+        for &bone in &ik.bones {
+            if doc.bones[bone].inherit != peachy_document::Inherit::Normal
+                || doc.animations.iter().any(|animation| {
+                    animation
+                        .inherit_tracks
+                        .iter()
+                        .any(|track| track.bone == bone && !track.keys.is_empty())
+                })
+            {
+                return Err(format!(
+                    "IK {}: constrained bone {} must inherit normally",
+                    ik.name, doc.bones[bone].name
+                ));
+            }
+        }
         if doc.bones[first].parent.is_none() {
             return Err(format!(
                 "IK {}: root-constrained chains are unsupported",

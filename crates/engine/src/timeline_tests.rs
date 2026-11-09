@@ -26,6 +26,7 @@ fn fixture() -> Document {
                 parent: None,
                 length: 10.,
                 setup: Transform::default(),
+                inherit: peachy_document::Inherit::Normal,
             },
             Bone {
                 name: "child".into(),
@@ -35,6 +36,7 @@ fn fixture() -> Document {
                     rotation: 90.,
                     ..Default::default()
                 },
+                inherit: peachy_document::Inherit::Normal,
             },
         ],
         slots: vec![],
@@ -67,6 +69,7 @@ fn fixture() -> Document {
                 ],
                 physics: vec![],
                 physics_resets: vec![],
+                inherit_tracks: vec![],
             },
             Animation {
                 name: "target".into(),
@@ -78,6 +81,7 @@ fn fixture() -> Document {
                 }],
                 physics: vec![],
                 physics_resets: vec![],
+                inherit_tracks: vec![],
             },
         ],
     }

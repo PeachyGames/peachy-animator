@@ -22,7 +22,9 @@ pub use ghosting::{
     GhostRange, GhostSample, GhostSampling, GhostSide, GhostSource, MAX_GHOST_SAMPLES,
     ghost_samples,
 };
-pub use ik::{EvaluatedPose, checked_evaluate_pose, checked_pose_from_locals};
+pub use ik::{
+    EvaluatedPose, checked_evaluate_pose, checked_pose_from_locals, checked_pose_from_locals_with,
+};
 pub use mesh::{mesh_world_vertices, region_to_mesh, region_vertices};
 pub use mesh_binding::MeshBindPose;
 pub use mesh_soft_selection::{MeshSoftSelection, MeshTranslation};
@@ -30,10 +32,13 @@ pub use picking::{attachment_bounds, pick_attachment};
 pub use playback::{
     PlayDirection, PlaybackStep, adjacent_key_time, advance_playback, last_key_time,
 };
-pub use pose::{Affine, curve_progress, evaluate, local_pose, sample, world_pose};
+pub use pose::{
+    Affine, INHERIT_MIN_PARENT_AXIS_SQUARED, curve_progress, evaluate, inherit_pose, local_pose,
+    sample, world_pose, world_pose_with,
+};
 pub use scene::{
     AttachmentDraw, Bounds, Scene, checked_evaluate_scene, checked_scene_from_locals,
-    evaluate_scene, scene_from_locals,
+    checked_scene_from_locals_with, evaluate_scene, scene_from_locals,
 };
 pub use session::Session;
 pub use timeline::{ClipboardKey, KeyClipboard, TimelineKey, copy_keys};

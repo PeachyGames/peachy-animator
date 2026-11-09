@@ -429,6 +429,7 @@ mod tests {
             parent: Some(0),
             length: 10.,
             setup: Default::default(),
+            inherit: peachy_document::Inherit::Normal,
         });
         let mut selected = Some(TreeItem::Bone(last));
         d.bones.pop();

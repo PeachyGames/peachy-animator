@@ -2,15 +2,17 @@
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 mod ik;
+mod inherit;
 mod physics;
 pub use ik::{Constraint, IkConstraint, IkSetup};
+pub use inherit::{Inherit, InheritKey, InheritTrack};
 pub use physics::{
     PHYSICS_DEFAULT_FPS, PHYSICS_DEFAULT_LIMIT, PHYSICS_DEFAULT_SETUP, PhysicsConstraint,
     PhysicsGlobal, PhysicsInfluence, PhysicsProperty, PhysicsReset, PhysicsSetup, PhysicsTrack,
     ScaleYMode,
 };
 
-pub const FORMAT_VERSION: u32 = 8;
+pub const FORMAT_VERSION: u32 = 9;
 pub const KEY_TIME_EPSILON: f32 = 0.00001;
 pub fn same_key_time(a: f32, b: f32) -> bool {
     (a - b).abs() < KEY_TIME_EPSILON
@@ -36,6 +38,8 @@ pub struct Bone {
     pub parent: Option<usize>,
     pub length: f32,
     pub setup: Transform,
+    /// Setup transform inheritance. Required in native v9.
+    pub inherit: Inherit,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
@@ -349,6 +353,8 @@ pub struct Animation {
     pub physics: Vec<PhysicsTrack>,
     /// Physics reset keys. Required in native v8.
     pub physics_resets: Vec<PhysicsReset>,
+    /// Stepped bone inheritance keys. Required in native v9.
+    pub inherit_tracks: Vec<InheritTrack>,
 }
 
 impl Animation {
@@ -358,6 +364,7 @@ impl Animation {
             tracks,
             physics: vec![],
             physics_resets: vec![],
+            inherit_tracks: vec![],
         }
     }
     /// The highest authored key time across validated, ordered timelines, or zero.
@@ -371,6 +378,11 @@ impl Animation {
                 self.physics_resets
                     .iter()
                     .filter_map(|reset| reset.times.last().copied()),
+            )
+            .chain(
+                self.inherit_tracks
+                    .iter()
+                    .filter_map(|track| track.keys.last().map(|key| key.time)),
             )
             .fold(0.0, f32::max)
     }
@@ -389,6 +401,11 @@ impl Animation {
                     .iter()
                     .flat_map(|reset| reset.times.iter().copied()),
             )
+            .chain(
+                self.inherit_tracks
+                    .iter()
+                    .flat_map(|track| track.keys.iter().map(|key| key.time)),
+            )
     }
     /// Whether any timeline other than bone transforms has keys.
     pub fn has_constraint_keys(&self) -> bool {
@@ -397,6 +414,10 @@ impl Animation {
                 .physics_resets
                 .iter()
                 .any(|reset| !reset.times.is_empty())
+            || self
+                .inherit_tracks
+                .iter()
+                .any(|track| !track.keys.is_empty())
     }
 }
 
@@ -584,6 +605,22 @@ impl Document {
                         return Err("Reset keys must be finite, nonnegative and ordered".into());
                     }
                     previous = time;
+                }
+            }
+            let mut inherit_bones = BTreeSet::new();
+            for track in &a.inherit_tracks {
+                if track.bone >= self.bones.len() || !inherit_bones.insert(track.bone) {
+                    return Err(format!(
+                        "Animation {}: invalid or duplicate inherit track",
+                        a.name
+                    ));
+                }
+                let mut previous = -1.0;
+                for key in &track.keys {
+                    if !key.time.is_finite() || key.time < 0.0 || key.time <= previous {
+                        return Err("Inherit keys must be finite, nonnegative and ordered".into());
+                    }
+                    previous = key.time;
                 }
             }
         }

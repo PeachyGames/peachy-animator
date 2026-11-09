@@ -13,12 +13,14 @@ fn document() -> Document {
                 parent: None,
                 length: 10.,
                 setup: Transform::default(),
+                inherit: peachy_document::Inherit::Normal,
             },
             Bone {
                 name: "other".into(),
                 parent: Some(0),
                 length: 5.,
                 setup: Transform::default(),
+                inherit: peachy_document::Inherit::Normal,
             },
         ],
         slots: vec![],
@@ -28,6 +30,7 @@ fn document() -> Document {
             tracks: vec![],
             physics: vec![],
             physics_resets: vec![],
+            inherit_tracks: vec![],
         }],
     }
 }
