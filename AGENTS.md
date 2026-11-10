@@ -1,5 +1,8 @@
 # Peachy Animator
 
+Starting a new session on Spine parity? Read [docs/NEXT-RUN.md](docs/NEXT-RUN.md) first: current
+state, verification workflow, pitfalls and the prioritized next tasks.
+
 Build a native, open-source 2D skeletal animation editor with versioned Spine-compatible exports.
 
 ## Spine user interface parity
