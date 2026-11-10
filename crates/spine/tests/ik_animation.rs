@@ -376,6 +376,7 @@ fn review_schema_document(text: &str) -> Document {
         animation["deform_tracks"] = serde_json::json!([]);
         animation["attachment_tracks"] = serde_json::json!([]);
         animation["color_tracks"] = serde_json::json!([]);
+        animation["events"] = serde_json::json!([]);
     }
     for bone in value["bones"].as_array_mut().unwrap() {
         assert!(bone.get("inherit").is_none());
@@ -383,5 +384,7 @@ fn review_schema_document(text: &str) -> Document {
     }
     value["skin_scope"] =
         serde_json::json!({"required_bones":[],"required_constraints":[],"skins":{}});
+    value["events"] = serde_json::json!([]);
+    value["reference_scale"] = serde_json::json!(100.0);
     serde_json::from_value(value).unwrap()
 }

@@ -2,6 +2,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 mod deform;
+mod events;
 mod ik;
 mod inherit;
 mod physics;
@@ -9,6 +10,7 @@ mod skin_scope;
 mod slot_keys;
 mod transform;
 pub use deform::{DeformKey, DeformTrack};
+pub use events::{EventDef, EventKey};
 pub use ik::{Constraint, IkConstraint, IkCurve, IkKeyframe, IkSetup, IkTrack};
 pub use inherit::{Inherit, InheritKey, InheritTrack};
 pub use physics::{
@@ -22,7 +24,7 @@ pub use transform::{
     TransformConstraint, TransformMapping, TransformProperty, TransformTarget, TransformValues,
 };
 
-pub const FORMAT_VERSION: u32 = 14;
+pub const FORMAT_VERSION: u32 = 15;
 pub const KEY_TIME_EPSILON: f32 = 0.00001;
 pub fn same_key_time(a: f32, b: f32) -> bool {
     (a - b).abs() < KEY_TIME_EPSILON
@@ -41,6 +43,11 @@ pub struct Document {
     /// Skin-required bones/constraints and the named skins that list them.
     /// Required in native v12.
     pub skin_scope: SkinScope,
+    /// Event definitions. Required in native v15.
+    pub events: Vec<EventDef>,
+    /// Spine's skeleton reference scale for distance-based physics (default
+    /// 100). Data only until physics is simulated. Required in native v15.
+    pub reference_scale: f32,
     pub animations: Vec<Animation>,
 }
 
@@ -376,6 +383,8 @@ pub struct Animation {
     pub attachment_tracks: Vec<AttachmentTrack>,
     /// Slot color keys. Required in native v14.
     pub color_tracks: Vec<ColorTrack>,
+    /// Timed event keys, in firing order. Required in native v15.
+    pub events: Vec<EventKey>,
 }
 
 impl Animation {
@@ -390,6 +399,7 @@ impl Animation {
             deform_tracks: vec![],
             attachment_tracks: vec![],
             color_tracks: vec![],
+            events: vec![],
         }
     }
     /// The highest authored key time across validated, ordered timelines, or zero.
@@ -429,6 +439,7 @@ impl Animation {
                     .iter()
                     .filter_map(|track| track.keys.last().map(|key| key.time)),
             )
+            .chain(self.events.iter().map(|key| key.time))
             .fold(0.0, f32::max)
     }
     /// Every authored key time across bone, IK, physics and reset timelines.
@@ -471,6 +482,7 @@ impl Animation {
                     .iter()
                     .flat_map(|track| track.keys.iter().map(|key| key.time)),
             )
+            .chain(self.events.iter().map(|key| key.time))
     }
     /// Whether any timeline other than bone transforms has keys.
     pub fn has_constraint_keys(&self) -> bool {
@@ -593,10 +605,12 @@ impl Document {
                 return Err(format!("Invalid transform for {}", b.name));
             }
         }
+        // Spine scopes constraint names by type: an IK and a physics constraint
+        // may share a name (shipped game exports do).
         let mut constraint_names = BTreeSet::new();
         for constraint in &self.constraints {
-            if !constraint_names.insert(constraint.name()) {
-                return Err("Constraint names must be unique".into());
+            if !constraint_names.insert((constraint.kind_label(), constraint.name())) {
+                return Err("Constraint names must be unique within each type".into());
             }
             constraint.validate(&self.bones)?;
         }
@@ -711,6 +725,10 @@ impl Document {
             }
         }
         self.validate_skin_scope()?;
+        self.validate_events()?;
+        if !self.reference_scale.is_finite() || self.reference_scale <= 0.0 {
+            return Err("Reference scale must be finite and positive".into());
+        }
         Ok(())
     }
 

@@ -559,3 +559,12 @@ original probes through the installed editor CLI and the runtime's public data
 API. Evaluation rules were fitted to black-box runtime observations of original
 random rigs; the IK ancestor relaxation rests on the same kind of comparison. No
 runtime or editor implementation source was read.
+
+
+### Events, reference scale, constraint name scope and crossed curves — November 10, 2026
+
+Event fields and defaults came from an original probe through the installed
+editor CLI (import/re-export) and the runtime's public data API. Per-type
+constraint names and crossed Bezier handles were observed in a shipped game
+export and confirmed by black-box runtime comparison of original fixtures. No
+runtime or editor implementation source was read.

@@ -673,6 +673,7 @@ mod tests {
             deform_tracks: vec![],
             attachment_tracks: vec![],
             color_tracks: vec![],
+            events: vec![],
         }];
         document.constraints = vec![Constraint::Ik(IkConstraint {
             name: "arm IK".into(),

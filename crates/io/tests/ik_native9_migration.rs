@@ -17,6 +17,14 @@ fn v8() -> Value {
             .remove("skin_scope")
             .is_some()
     );
+    assert!(value.as_object_mut().unwrap().remove("events").is_some());
+    assert!(
+        value
+            .as_object_mut()
+            .unwrap()
+            .remove("reference_scale")
+            .is_some()
+    );
     for animation in value["animations"].as_array_mut().unwrap() {
         for field in [
             "ik_tracks",
@@ -24,6 +32,7 @@ fn v8() -> Value {
             "deform_tracks",
             "attachment_tracks",
             "color_tracks",
+            "events",
         ] {
             assert_eq!(
                 animation.as_object_mut().unwrap().remove(field),

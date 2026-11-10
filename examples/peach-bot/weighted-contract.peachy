@@ -1,5 +1,5 @@
 {
-  "format": 14,
+  "format": 15,
   "constraints": [],
   "name": "Weighted Transform Contract",
   "fps": 30,
@@ -878,6 +878,8 @@
     "required_constraints": [],
     "skins": {}
   },
+  "events": [],
+  "reference_scale": 100.0,
   "animations": [
     {
       "name": "weighted contract",
@@ -1004,7 +1006,8 @@
       "inherit_tracks": [],
       "deform_tracks": [],
       "attachment_tracks": [],
-      "color_tracks": []
+      "color_tracks": [],
+      "events": []
     }
   ]
 }

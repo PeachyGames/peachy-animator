@@ -74,6 +74,7 @@ fn fixture() -> Document {
                 deform_tracks: vec![],
                 attachment_tracks: vec![],
                 color_tracks: vec![],
+                events: vec![],
             },
             Animation {
                 ik_tracks: vec![],
@@ -90,9 +91,12 @@ fn fixture() -> Document {
                 deform_tracks: vec![],
                 attachment_tracks: vec![],
                 color_tracks: vec![],
+                events: vec![],
             },
         ],
         skin_scope: Default::default(),
+        events: vec![],
+        reference_scale: 100.0,
     }
 }
 fn keys(doc: &Document, animation: usize, bone: usize, property: Property) -> &[Keyframe] {
@@ -367,7 +371,8 @@ fn malformed_clipboards_and_target_overflow_fail_without_changing_data_or_redo()
         |v: &mut KeyClipboard| v.keys[0].key.time = 0.1,
         |v: &mut KeyClipboard| v.keys[0].key.value = f32::NAN,
         |v: &mut KeyClipboard| v.keys[0].key.time = f32::INFINITY,
-        |v: &mut KeyClipboard| v.keys[0].key.curve = Curve::Bezier([0.8, 0., 0.2, 1.]),
+        // Crossed time handles are valid Spine data; out-of-interval ones are not.
+        |v: &mut KeyClipboard| v.keys[0].key.curve = Curve::Bezier([1.2, 0., 0.2, 1.]),
         |v: &mut KeyClipboard| v.keys.push(v.keys[0]),
     ] {
         let mut payload = good.clone();

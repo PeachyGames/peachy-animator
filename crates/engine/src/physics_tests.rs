@@ -57,8 +57,11 @@ fn document() -> Document {
             deform_tracks: vec![],
             attachment_tracks: vec![],
             color_tracks: vec![],
+            events: vec![],
         }],
         skin_scope: Default::default(),
+        events: vec![],
+        reference_scale: 100.0,
     }
 }
 
@@ -130,20 +133,27 @@ fn physics_commands_are_atomic_typed_and_validated() {
         Command::AddPhysicsConstraint {
             constraint: PhysicsConstraint::new("ghost", 7),
         },
-        Command::AddIkConstraint {
-            constraint: IkConstraint {
-                name: "sway".into(),
-                bones: vec![1],
-                target: 0,
-                setup: IkSetup {
-                    mix: 1.,
-                    bend_positive: true,
-                },
-            },
-        },
     ] {
         assert!(apply_command(&doc, bad).is_err());
     }
+    // An IK constraint may share a physics constraint's name, as in Spine.
+    assert!(
+        apply_command(
+            &doc,
+            Command::AddIkConstraint {
+                constraint: IkConstraint {
+                    name: "sway".into(),
+                    bones: vec![1],
+                    target: 0,
+                    setup: IkSetup {
+                        mix: 1.,
+                        bend_positive: true,
+                    },
+                },
+            },
+        )
+        .is_ok()
+    );
     // An IK edit can never silently replace a physics constraint, or vice versa.
     assert!(
         apply_command(

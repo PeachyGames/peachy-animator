@@ -1492,3 +1492,14 @@ Animated IK (native9) was merged into `main` first; inheritance became native10.
 | Original Slot Lab (`slot-bot.peachy`): swap to a second image, hide, return; per-channel Bezier, stepped and linear color keys | Visibility agrees at every sample; 32,992 region coordinates and 16,496 color channels (within half a byte) against external 4.3.13 |
 | Game audit | Slot keys no longer block any skeleton; still **8 of 21** fully supported (remaining rigs have other blockers) |
 | Rust suite | fmt, clippy `-D warnings`, architecture and build pass; **514** tests pass |
+
+
+## Events and reference scale, native v15 — November 10, 2026
+
+| Check | Result |
+| --- | --- |
+| Editor and runtime probes (original) | Defaults written as omitted fields; key overrides kept as written; event times extend duration |
+| Crossed Bezier time handles (original Peach Bot variant) | 28,080 comparisons against external 4.3.13, max error 0.00003 |
+| Doggy-scene female (game asset, local only; SHA-256 unchanged) | Imports with events and reference scale 92. Across 73 skins: 107,310 bone-activity checks and 643,860 world values match our CLI, max 0.0015 (the 292 values above 0.001 are all `toe.L`, at the end of a two-bone IK chain at 99.98% reach, where the bend angle is ill-conditioned); 80,558 mesh values, max 0.002. Original vs re-export with physics: 65,700 frames, max bone difference 0.0001, 56 physics constraints |
+| Game audit | **9 of 21** skeletons import fully |
+| Rust suite | fmt, clippy `-D warnings`, architecture and build pass; **518** tests pass |

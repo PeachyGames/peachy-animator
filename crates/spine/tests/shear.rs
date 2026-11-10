@@ -184,7 +184,7 @@ fn malformed_or_conflicting_shear_channels_never_silently_default_or_discard_dat
     let mut unordered = fixture(json!({"shearx":[{"time":1,"value":0},{"time":0,"value":10}]}));
     assert!(import_json(&unordered, "unordered").is_err());
     unordered["animations"]["test"]["bones"]["root"]["shearx"] =
-        json!([{"time":0,"value":0,"curve":[0.8,0,0.2,10]},{"time":1,"value":10}]);
+        json!([{"time":0,"value":0,"curve":[1.2,0,0.2,10]},{"time":1,"value":10}]);
     assert!(import_json(&unordered, "unordered handles").is_err());
 }
 
@@ -209,4 +209,18 @@ fn bone_finiteness_and_region_only_fields_keep_their_distinct_interchange_bounda
     inherited["bones"][0]["inherit"] = json!("noShear");
     assert!(!inspect(&inherited).supported);
     assert!(import_json(&inherited, "unknown inheritance mode").is_err());
+}
+
+#[test]
+fn crossed_time_handles_are_valid_spine_curves() {
+    // Shipped game exports contain them (doggy female `icing`); the runtime
+    // evaluates them like any other curve.
+    let source = fixture(
+        json!({"rotate":[{"time":0,"value":0,"curve":[0.594,0.1,0.406,0.9]},{"time":1,"value":10}]}),
+    );
+    let doc = import_json(&source, "crossed").unwrap();
+    assert_eq!(
+        import_json(&export_json(&doc).unwrap(), "crossed").unwrap(),
+        doc
+    );
 }

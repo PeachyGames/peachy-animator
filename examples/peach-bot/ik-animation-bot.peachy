@@ -1,5 +1,5 @@
 {
-  "format": 14,
+  "format": 15,
   "name": "Peach Bot IK Animation Lab",
   "fps": 30,
   "bones": [
@@ -996,6 +996,8 @@
     "required_constraints": [],
     "skins": {}
   },
+  "events": [],
+  "reference_scale": 100.0,
   "animations": [
     {
       "name": "ik mix linear",
@@ -1073,7 +1075,8 @@
       "inherit_tracks": [],
       "deform_tracks": [],
       "attachment_tracks": [],
-      "color_tracks": []
+      "color_tracks": [],
+      "events": []
     },
     {
       "name": "ik bend stepped",
@@ -1122,7 +1125,8 @@
       "inherit_tracks": [],
       "deform_tracks": [],
       "attachment_tracks": [],
-      "color_tracks": []
+      "color_tracks": [],
+      "events": []
     },
     {
       "name": "ik bezier excursion",
@@ -1208,7 +1212,8 @@
       "inherit_tracks": [],
       "deform_tracks": [],
       "attachment_tracks": [],
-      "color_tracks": []
+      "color_tracks": [],
+      "events": []
     },
     {
       "name": "ik mix signed",
@@ -1278,7 +1283,8 @@
       "inherit_tracks": [],
       "deform_tracks": [],
       "attachment_tracks": [],
-      "color_tracks": []
+      "color_tracks": [],
+      "events": []
     },
     {
       "name": "ik ratio time",
@@ -1319,7 +1325,8 @@
       "inherit_tracks": [],
       "deform_tracks": [],
       "attachment_tracks": [],
-      "color_tracks": []
+      "color_tracks": [],
+      "events": []
     },
     {
       "name": "ik disabled scale",
@@ -1395,7 +1402,8 @@
       "inherit_tracks": [],
       "deform_tracks": [],
       "attachment_tracks": [],
-      "color_tracks": []
+      "color_tracks": [],
+      "events": []
     },
     {
       "name": "ik positive",
@@ -1501,7 +1509,8 @@
       "inherit_tracks": [],
       "deform_tracks": [],
       "attachment_tracks": [],
-      "color_tracks": []
+      "color_tracks": [],
+      "events": []
     },
     {
       "name": "ik negative",
@@ -1607,7 +1616,8 @@
       "inherit_tracks": [],
       "deform_tracks": [],
       "attachment_tracks": [],
-      "color_tracks": []
+      "color_tracks": [],
+      "events": []
     },
     {
       "name": "ik reach",
@@ -1787,7 +1797,8 @@
       "inherit_tracks": [],
       "deform_tracks": [],
       "attachment_tracks": [],
-      "color_tracks": []
+      "color_tracks": [],
+      "events": []
     },
     {
       "name": "wave",
@@ -1984,7 +1995,8 @@
       "inherit_tracks": [],
       "deform_tracks": [],
       "attachment_tracks": [],
-      "color_tracks": []
+      "color_tracks": [],
+      "events": []
     },
     {
       "name": "idle",
@@ -2059,7 +2071,8 @@
       "inherit_tracks": [],
       "deform_tracks": [],
       "attachment_tracks": [],
-      "color_tracks": []
+      "color_tracks": [],
+      "events": []
     }
   ]
 }

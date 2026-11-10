@@ -2,6 +2,7 @@
 mod attachments;
 mod constraints;
 mod deform;
+mod events;
 mod ik_timelines;
 mod slot_keys;
 use attachments::{inspect_attachment, read_attachment, write_attachment};
@@ -57,15 +58,14 @@ pub fn inspect(value: &Value) -> Inspection {
     if !version.starts_with("4.3.") {
         unsupported.push(format!("Spine {version}: only 4.3.x JSON is supported"));
     }
-    // Reference scale changes distance-based physics. Until the native model
-    // stores it, only the observed default is accepted.
     if value["skeleton"]
         .get("referenceScale")
-        .is_some_and(|scale| scale.as_f64() != Some(100.0))
+        .is_some_and(|scale| !scale.as_f64().is_some_and(|s| s.is_finite() && s > 0.0))
     {
-        unsupported.push("Skeleton referenceScale other than 100 is unsupported".into());
+        unsupported.push("Skeleton referenceScale must be a positive number".into());
     }
-    for field in ["ik", "transform", "path", "physics", "events"] {
+    // Legacy (pre-4.3) root constraint arrays; root `events` is read below.
+    for field in ["ik", "transform", "path", "physics"] {
         if nonempty(&value[field]) {
             unsupported.push(format!("{field}: not supported in slice 1"));
         }
@@ -198,7 +198,7 @@ pub fn inspect(value: &Value) -> Inspection {
                     // constraints::inspect and read_document.
                     if !matches!(
                         field.as_str(),
-                        "bones" | "ik" | "physics" | "attachments" | "slots"
+                        "bones" | "ik" | "physics" | "attachments" | "slots" | "events"
                     ) && nonempty(contents)
                     {
                         unsupported.push(format!("Animation {name}: {field} timelines"));
@@ -365,9 +365,12 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
     }
     let constraints = constraints::read(value, &indices)?;
     let skin_scope = read_skin_scope(value, &indices, &constraints)?;
+    let event_defs = events::read_defs(value)?;
+    // Physics timelines name physics constraints only (names are per type).
     let constraint_indices: BTreeMap<String, usize> = constraints
         .iter()
         .enumerate()
+        .filter(|(_, constraint)| constraint.as_physics().is_some())
         .map(|(index, constraint)| (constraint.name().to_owned(), index))
         .collect();
     let ik_indices = ik_timelines::indices(&constraints);
@@ -434,6 +437,7 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
                 deform_tracks: deform::read(name, animation, &skins)?,
                 attachment_tracks,
                 color_tracks,
+                events: events::read_keys(name, animation, &event_defs)?,
             });
         }
     }
@@ -451,6 +455,10 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
         skins,
         animations,
         skin_scope,
+        events: event_defs,
+        reference_scale: value["skeleton"]["referenceScale"]
+            .as_f64()
+            .map_or(100.0, |scale| scale as f32),
     };
     doc.validate()?;
     constraints::validate_source(&doc)?;
@@ -583,6 +591,10 @@ pub fn export_json(doc: &Document) -> Result<Value, String> {
         if !physics.as_object().is_some_and(serde_json::Map::is_empty) {
             animations[&animation.name]["physics"] = physics;
         }
+        if !animation.events.is_empty() {
+            animations[&animation.name]["events"] =
+                events::write_keys(&animation.events, &doc.events);
+        }
         let slot_timelines = slot_keys::write(doc, animation)?;
         if !slot_timelines
             .as_object()
@@ -596,6 +608,12 @@ pub fn export_json(doc: &Document) -> Result<Value, String> {
         }
     }
     let mut output = json!({"skeleton":{"spine":TARGET_VERSION,"images":"./images/","fps":doc.fps},"bones":bones,"slots":slots,"skins":skins,"animations":animations});
+    if !doc.events.is_empty() {
+        output["events"] = events::write_defs(&doc.events);
+    }
+    if doc.reference_scale != 100.0 {
+        output["skeleton"]["referenceScale"] = json!(doc.reference_scale);
+    }
     if !doc.constraints.is_empty() {
         output["constraints"] = constraints::write(doc);
     }

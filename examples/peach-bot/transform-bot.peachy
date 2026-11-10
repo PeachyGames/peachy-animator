@@ -1,5 +1,5 @@
 {
-  "format": 14,
+  "format": 15,
   "constraints": [
     {
       "type": "transform",
@@ -794,6 +794,8 @@
     "required_constraints": [],
     "skins": {}
   },
+  "events": [],
+  "reference_scale": 100.0,
   "animations": [
     {
       "name": "wave",
@@ -990,7 +992,8 @@
       "inherit_tracks": [],
       "deform_tracks": [],
       "attachment_tracks": [],
-      "color_tracks": []
+      "color_tracks": [],
+      "events": []
     },
     {
       "name": "idle",
@@ -1065,7 +1068,8 @@
       "inherit_tracks": [],
       "deform_tracks": [],
       "attachment_tracks": [],
-      "color_tracks": []
+      "color_tracks": [],
+      "events": []
     }
   ]
 }

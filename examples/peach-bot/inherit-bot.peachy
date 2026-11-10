@@ -1,5 +1,5 @@
 {
-  "format": 14,
+  "format": 15,
   "constraints": [],
   "name": "Peach Bot Inherit Lab",
   "fps": 30,
@@ -643,6 +643,8 @@
     "required_constraints": [],
     "skins": {}
   },
+  "events": [],
+  "reference_scale": 100.0,
   "animations": [
     {
       "name": "wave",
@@ -972,7 +974,8 @@
       ],
       "deform_tracks": [],
       "attachment_tracks": [],
-      "color_tracks": []
+      "color_tracks": [],
+      "events": []
     },
     {
       "name": "idle",
@@ -1068,7 +1071,8 @@
       "inherit_tracks": [],
       "deform_tracks": [],
       "attachment_tracks": [],
-      "color_tracks": []
+      "color_tracks": [],
+      "events": []
     }
   ]
 }

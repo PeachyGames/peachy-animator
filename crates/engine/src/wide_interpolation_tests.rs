@@ -144,8 +144,11 @@ fn extreme_shear_sampling_and_pose_preview_preserve_original_keys_curves_and_his
             deform_tracks: vec![],
             attachment_tracks: vec![],
             color_tracks: vec![],
+            events: vec![],
         }],
         skin_scope: Default::default(),
+        events: vec![],
+        reference_scale: 100.0,
     };
     let mut session = Session::new(document.clone()).unwrap();
     session

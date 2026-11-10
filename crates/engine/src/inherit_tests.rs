@@ -180,8 +180,11 @@ fn rig(child: Inherit) -> Document {
             deform_tracks: vec![],
             attachment_tracks: vec![],
             color_tracks: vec![],
+            events: vec![],
         }],
         skin_scope: Default::default(),
+        events: vec![],
+        reference_scale: 100.0,
     }
 }
 

@@ -206,11 +206,14 @@ fn v4_weighted_raw_payload_and_original_bytes_survive_load_and_explicit_latest_s
         animation["deform_tracks"] = json!([]);
         animation["attachment_tracks"] = json!([]);
         animation["color_tracks"] = json!([]);
+        animation["events"] = json!([]);
     }
     for bone in expected["bones"].as_array_mut().unwrap() {
         bone["inherit"] = json!("normal");
     }
     expected["skin_scope"] = json!({"required_bones":[],"required_constraints":[],"skins":{}});
+    expected["events"] = json!([]);
+    expected["reference_scale"] = json!(100.0);
     assert_eq!(doc, serde_json::from_value::<Document>(expected).unwrap());
     let Attachment::Mesh(mesh) = &doc.skins["default"]["body"]["cloth"] else {
         panic!()

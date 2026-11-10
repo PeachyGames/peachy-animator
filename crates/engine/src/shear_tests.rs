@@ -36,8 +36,11 @@ fn rig() -> Document {
             deform_tracks: vec![],
             attachment_tracks: vec![],
             color_tracks: vec![],
+            events: vec![],
         }],
         skin_scope: Default::default(),
+        events: vec![],
+        reference_scale: 100.0,
     }
 }
 
@@ -1067,6 +1070,7 @@ fn shear_clipboard_and_retiming_keep_scalar_identity_curves_fractional_neighbors
         deform_tracks: vec![],
         attachment_tracks: vec![],
         color_tracks: vec![],
+        events: vec![],
     });
     let keys = vec![
         TimelineKey {

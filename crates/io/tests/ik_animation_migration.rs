@@ -140,11 +140,14 @@ fn nine_native6_migrations_and_latest_examples_preserve_full_export_bytes() {
             animation["deform_tracks"] = json!([]);
             animation["attachment_tracks"] = json!([]);
             animation["color_tracks"] = json!([]);
+            animation["events"] = json!([]);
         }
         for bone in expected["bones"].as_array_mut().unwrap() {
             bone["inherit"] = json!("normal");
         }
         expected["skin_scope"] = json!({"required_bones":[],"required_constraints":[],"skins":{}});
+        expected["events"] = json!([]);
+        expected["reference_scale"] = json!(100.0);
         for text in [
             original,
             fs::read_to_string(root.join(format!("../../examples/peach-bot/{name}.peachy")))

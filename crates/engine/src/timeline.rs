@@ -281,10 +281,9 @@ fn clipboard_sources(
                 if let Curve::Bezier(c) = entry.key.curve
                     && (!c.iter().all(|v| v.is_finite())
                         || !(0.0..=1.0).contains(&c[0])
-                        || !(0.0..=1.0).contains(&c[2])
-                        || c[0] > c[2])
+                        || !(0.0..=1.0).contains(&c[2]))
                 {
-                    return Err("Clipboard Bezier time handles must be ordered within 0–1".into());
+                    return Err("Clipboard Bezier time handles must lie within 0–1".into());
                 }
                 result.push(OwnedKey::Bone {
                     bone,

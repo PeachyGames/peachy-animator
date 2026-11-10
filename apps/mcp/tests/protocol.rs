@@ -304,7 +304,7 @@ async fn invalid_protocol_arguments_and_failed_opens_preserve_session() {
     assert_eq!(doc(&client).await, before);
     fs::write(
         root.0.join("unsupported.json"),
-        br#"{"skeleton":{"spine":"4.3.26"},"bones":[{"name":"root"}],"events":{"alarm":{}}}"#,
+        br#"{"skeleton":{"spine":"4.3.26"},"bones":[{"name":"root"}],"constraints":[{"type":"path","name":"rail","bones":["root"],"slot":"x"}]}"#,
     )
     .unwrap();
     assert_eq!(

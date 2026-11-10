@@ -29,6 +29,17 @@ pub fn load(path: &Path) -> Result<Document, String> {
 pub fn decode_project(text: &str) -> Result<Document, String> {
     let mut value: serde_json::Value = serde_json::from_str(text).map_err(|e| e.to_string())?;
     let original_format = value["format"].as_u64();
+    if matches!(original_format, Some(1..=14))
+        && (value.get("events").is_some()
+            || value.get("reference_scale").is_some()
+            || value["animations"].as_array().is_some_and(|animations| {
+                animations
+                    .iter()
+                    .any(|animation| animation.get("events").is_some())
+            }))
+    {
+        return Err("Legacy project formats cannot contain events".into());
+    }
     if matches!(original_format, Some(1..=13))
         && value["animations"].as_array().is_some_and(|animations| {
             animations.iter().any(|animation| {
@@ -152,6 +163,9 @@ pub fn decode_project(text: &str) -> Result<Document, String> {
     if value["format"].as_u64() == Some(11) {
         value["skin_scope"] =
             serde_json::json!({"required_bones":[],"required_constraints":[],"skins":{}});
+        value["events"] = serde_json::json!([]);
+        value["reference_scale"] = serde_json::json!(100.0);
+        value["reference_scale"] = serde_json::json!(100.0);
         value["format"] = 12.into();
     }
     // v12→v13 adds empty deform key lists.
@@ -180,6 +194,21 @@ pub fn decode_project(text: &str) -> Result<Document, String> {
             object.insert("color_tracks".into(), serde_json::json!([]));
         }
         value["format"] = 14.into();
+    }
+    // v14→v15 adds empty event definitions and event key lists.
+    if value["format"].as_u64() == Some(14) {
+        value["events"] = serde_json::json!([]);
+        value["reference_scale"] = serde_json::json!(100.0);
+        for animation in value["animations"]
+            .as_array_mut()
+            .ok_or("Legacy animations must be an array")?
+        {
+            animation
+                .as_object_mut()
+                .ok_or("Legacy animation must be an object")?
+                .insert("events".into(), serde_json::json!([]));
+        }
+        value["format"] = 15.into();
     }
     let mut doc: Document = serde_json::from_value(value).map_err(|e| e.to_string())?;
     // Wrapping vertices preserves their values and all surrounding fields. Decode
@@ -669,6 +698,13 @@ mod tests {
         );
         v["format"] = 1.into();
         assert!(v.as_object_mut().unwrap().remove("skin_scope").is_some());
+        assert!(v.as_object_mut().unwrap().remove("events").is_some());
+        assert!(
+            v.as_object_mut()
+                .unwrap()
+                .remove("reference_scale")
+                .is_some()
+        );
         for slot in v["slots"].as_array_mut().unwrap() {
             assert_eq!(
                 slot.as_object_mut().unwrap().remove("color"),
@@ -703,6 +739,7 @@ mod tests {
                 "deform_tracks",
                 "attachment_tracks",
                 "color_tracks",
+                "events",
             ] {
                 assert_eq!(
                     animation.as_object_mut().unwrap().remove(field),

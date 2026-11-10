@@ -450,7 +450,7 @@ pub(super) fn read_physics_timelines(
         } else {
             Some(*constraints.get(constraint_name).ok_or_else(|| {
                 format!(
-                    "{context}: physics timelines reference unknown constraint {constraint_name}"
+                    "{context}: physics timelines must reference a physics constraint; {constraint_name} is not one"
                 )
             })?)
         };

@@ -188,7 +188,7 @@ fn unsupported_or_malformed_physics_is_refused_atomically() {
         (
             "missing",
             json!({"reset":[{"time":1}]}),
-            "unknown constraint missing",
+            "missing is not one",
         ),
         (
             "limb",
@@ -226,8 +226,17 @@ fn unsupported_or_malformed_physics_is_refused_atomically() {
     legacy_root["physics"] = json!([{"name":"old","bone":"tail"}]);
     reject(&legacy_root, "physics: not supported");
     let mut scaled = fixture();
+    // Reference scale is stored (native v15) and round-trips; only invalid
+    // values are refused.
+    scaled["skeleton"]["referenceScale"] = json!(-5);
+    reject(&scaled, "referenceScale must be a positive number");
     scaled["skeleton"]["referenceScale"] = json!(92);
-    reject(&scaled, "referenceScale other than 100 is unsupported");
+    let doc = import_json(&scaled, "Scaled").unwrap();
+    assert_eq!(doc.reference_scale, 92.);
+    assert_eq!(
+        export_json(&doc).unwrap()["skeleton"]["referenceScale"],
+        json!(92.0)
+    );
     scaled["skeleton"]["referenceScale"] = json!(100);
     assert!(inspect(&scaled).supported);
 }

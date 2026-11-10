@@ -105,6 +105,7 @@ fn fixture() -> (Editor, egui::Context) {
         deform_tracks: vec![],
         attachment_tracks: vec![],
         color_tracks: vec![],
+        events: vec![],
     });
     editor.session = Session::new(doc).unwrap();
     pending(&mut editor);

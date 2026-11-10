@@ -120,7 +120,7 @@ fn invalid_legacy_duration_or_keys_are_rejected_before_materialization() {
         ("/animations/0/tracks/0/keys/1/value", json!(1e100)),
         (
             "/animations/0/tracks/0/keys/1/curve",
-            json!({"bezier":[0.8,0,0.2,1]}),
+            json!({"bezier":[1.2,0,0.2,1]}),
         ),
         (
             "/animations/0/tracks/0/keys/1/curve",

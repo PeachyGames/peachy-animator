@@ -104,6 +104,8 @@ fn version_boundaries_reject_wrong_vertex_shapes_and_stale_duration_fields() {
             );
             value["format"] = json!(4);
             value.as_object_mut().unwrap().remove("skin_scope");
+            value.as_object_mut().unwrap().remove("events");
+            value.as_object_mut().unwrap().remove("reference_scale");
             for bone in value["bones"].as_array_mut().unwrap() {
                 assert_eq!(
                     bone.as_object_mut().unwrap().remove("inherit"),

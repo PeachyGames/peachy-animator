@@ -1,5 +1,5 @@
 {
-  "format": 14,
+  "format": 15,
   "name": "Peach Bot IK Lab",
   "fps": 30,
   "bones": [
@@ -926,6 +926,8 @@
     "required_constraints": [],
     "skins": {}
   },
+  "events": [],
+  "reference_scale": 100.0,
   "animations": [
     {
       "name": "ik positive",
@@ -1031,7 +1033,8 @@
       "inherit_tracks": [],
       "deform_tracks": [],
       "attachment_tracks": [],
-      "color_tracks": []
+      "color_tracks": [],
+      "events": []
     },
     {
       "name": "ik negative",
@@ -1137,7 +1140,8 @@
       "inherit_tracks": [],
       "deform_tracks": [],
       "attachment_tracks": [],
-      "color_tracks": []
+      "color_tracks": [],
+      "events": []
     },
     {
       "name": "ik reach",
@@ -1317,7 +1321,8 @@
       "inherit_tracks": [],
       "deform_tracks": [],
       "attachment_tracks": [],
-      "color_tracks": []
+      "color_tracks": [],
+      "events": []
     },
     {
       "name": "wave",
@@ -1514,7 +1519,8 @@
       "inherit_tracks": [],
       "deform_tracks": [],
       "attachment_tracks": [],
-      "color_tracks": []
+      "color_tracks": [],
+      "events": []
     },
     {
       "name": "idle",
@@ -1589,7 +1595,8 @@
       "inherit_tracks": [],
       "deform_tracks": [],
       "attachment_tracks": [],
-      "color_tracks": []
+      "color_tracks": [],
+      "events": []
     }
   ]
 }

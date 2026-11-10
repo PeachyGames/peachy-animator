@@ -74,6 +74,10 @@ Native v13 adds `Animation.deform_tracks` with dense offsets (per vertex, or per
 weighted influence). Sampled deforms travel in `AuthoredPose`; scenes apply them
 via `deformed_mesh_world_vertices`. Keep slot renames updating deform refs.
 
+Native v15 adds `Document.events`, `Document.reference_scale` and
+`Animation.events` (data only; key overrides stay `Option`). Constraint names
+are unique per type, not globally.
+
 Native v14 adds `Animation.attachment_tracks` / `color_tracks`. Keyed slot
 attachments and colors travel in `AuthoredPose` (`slot_attachments`,
 `slot_colors`); scenes resolve and tint from them, never from Setup in Animate.
