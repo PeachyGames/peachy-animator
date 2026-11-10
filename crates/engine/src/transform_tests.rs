@@ -164,7 +164,7 @@ fn authored_locals_stay_unchanged_and_unsupported_modes_fail_explicitly() {
     assert!(
         checked_evaluate_pose(&local, None, 0.)
             .unwrap_err()
-            .contains("local, additive and clamped")
+            .contains("local and additive")
     );
     let mut inherited = doc;
     inherited.bones[3].inherit = Inherit::NoScale;
@@ -173,4 +173,30 @@ fn authored_locals_stay_unchanged_and_unsupported_modes_fail_explicitly() {
             .unwrap_err()
             .contains("must inherit normally")
     );
+}
+
+#[test]
+fn xy_mappings_offset_scale_and_clamp_like_the_runtime() {
+    // Values observed black-box with the external runtime (original probe):
+    // value = (p − from offset) × scale + to offset, clamped between the to
+    // offset and max (either order) when the constraint clamps, then mixed.
+    let doc: Document = serde_json::from_str(include_str!(
+        "../../../examples/peach-bot/transform-map-bot.peachy"
+    ))
+    .unwrap();
+    let pose = checked_evaluate_pose(&doc, Some(0), 0.6).unwrap();
+    let foot = doc.bones.iter().position(|b| b.name == "foot.L").unwrap();
+    // Source x is far below the lower bound here, so x clamps to −40 exactly.
+    assert!(
+        (pose.world()[foot].x - -40.).abs() < 1e-3,
+        "{}",
+        pose.world()[foot].x
+    );
+    let mut unclamped = doc.clone();
+    let Constraint::Transform(t) = unclamped.constraints.last_mut().unwrap() else {
+        unreachable!()
+    };
+    t.clamp = false;
+    let free = checked_evaluate_pose(&unclamped, Some(0), 0.6).unwrap();
+    assert!(free.world()[foot].x < -40.5, "{}", free.world()[foot].x);
 }

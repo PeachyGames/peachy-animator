@@ -61,7 +61,8 @@ the normal mode keeps the original f32 composition. Keyed modes travel in
 chain bones must inherit normally. See docs/slices/inherit-modes.md.
 
 Native v11 adds `Constraint::Transform` with complete 4.3 data; only the
-`TransformConstraint::supported_subset` (world, identity Rotate/X/Y) evaluates.
+`TransformConstraint::supported_subset` (world; identity Rotate; X/Y with
+offsets, scale, clamp) evaluates.
 Constraints run in list order inside `ik_solver::apply`; transform results are
 written back as applied locals (`transform_constraint::local_from_world`). IK
 chain ancestors may be transformed; constrained IK bones still need unit axes.

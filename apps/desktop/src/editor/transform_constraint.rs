@@ -1,5 +1,6 @@
 //! Transform constraint properties. Values route through shared engine commands;
-//! only the evaluated subset (world mode, identity Rotate/X/Y mappings) exists.
+//! only the evaluated subset (world mode; identity Rotate, X/Y with offsets,
+//! scale or clamping) exists.
 use super::*;
 use peachy_document::{TransformConstraint, TransformProperty};
 
@@ -133,6 +134,30 @@ impl Editor {
                     ui.end_row();
                 }
             });
+        // Imported remapping (offsets, scale, clamping) is shown, not edited yet.
+        for mapping in &transform.mappings {
+            let to = mapping.to[0];
+            if mapping.offset == 0. && to.offset == 0. && to.scale == 1. && !transform.clamp {
+                continue;
+            }
+            let clamp = if transform.clamp {
+                format!(", kept between {} and {}", to.offset, to.max)
+            } else {
+                String::new()
+            };
+            ui.label(
+                RichText::new(format!(
+                    "{} follows (source − {}) × {} + {}{clamp}",
+                    to.property.label(),
+                    mapping.offset,
+                    to.scale,
+                    to.offset
+                ))
+                .small()
+                .color(MUTED),
+            )
+            .on_hover_text("Imported mapping from Spine. Editing mappings is not supported yet; Mix and Offset still apply.");
+        }
         if transform.targets().is_empty() {
             ui.label(
                 RichText::new("No mapped properties; this constraint has no effect.")

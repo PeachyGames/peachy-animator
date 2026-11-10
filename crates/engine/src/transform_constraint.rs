@@ -5,7 +5,9 @@
 //!   plus the rotation offset (subtracted when the source frame is mirrored),
 //!   by mixRotate, one ±180° correction.
 //! - X/Y: move the bone's world origin toward the source frame applied to the
-//!   (x, y) offset, by mixX/mixY.
+//!   (x, y) offset, by mixX/mixY. A mapping turns each coordinate p into
+//!   (p − from offset) × scale + to offset, clamped between the to offset and
+//!   max when the constraint clamps.
 //!
 //! The result is written back as the bone's applied local transform relative to
 //! its parent, so children, bindings and tools see one consistent pose.
@@ -93,9 +95,29 @@ pub(crate) fn apply(
     let target_angle = source[2].atan2(source[0]) / OBSERVED_DEGREES_TO_RADIANS
         + if mirrored { -1. } else { 1. } * offset(TransformProperty::Rotate);
     let (ox, oy) = (offset(TransformProperty::X), offset(TransformProperty::Y));
+    let mapped = |property: TransformProperty, value: f64| {
+        let Some(mapping) = constraint.mappings.iter().find(|m| m.from == property) else {
+            return value;
+        };
+        let to = mapping.to[0];
+        let value =
+            (value - f64::from(mapping.offset)) * f64::from(to.scale) + f64::from(to.offset);
+        if constraint.clamp {
+            let (low, high) = (f64::from(to.offset), f64::from(to.max));
+            value.clamp(low.min(high), low.max(high))
+        } else {
+            value
+        }
+    };
     let target = [
-        source[0] * ox + source[1] * oy + source[4],
-        source[2] * ox + source[3] * oy + source[5],
+        mapped(
+            TransformProperty::X,
+            source[0] * ox + source[1] * oy + source[4],
+        ),
+        mapped(
+            TransformProperty::Y,
+            source[2] * ox + source[3] * oy + source[5],
+        ),
     ];
     for &bone in &constraint.bones {
         let [mut a, mut b, mut c, mut d, mut x, mut y] = wide(world[bone]);

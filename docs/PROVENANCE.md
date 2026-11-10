@@ -596,3 +596,10 @@ Source lookup, the `timelines` default and color came from original probes
 through the runtime's public API (`getSourceMesh`, `timelineAttachment`,
 `computeWorldVertices`), and the field layout from installed-editor round trips.
 No runtime or editor implementation source was read.
+
+
+### Transform remapping — November 10, 2026
+
+The mapping rule was fitted to black-box runtime outputs for original probe
+rigs; field names were already observed in the transform constraint slice. No
+runtime or editor implementation source was read.

@@ -167,30 +167,33 @@ impl TransformConstraint {
     }
 
     /// The bounded subset the engine evaluates and the adapter imports: world
-    /// mode, not additive or clamped, identity Rotate/X/Y mappings with neutral
-    /// offsets and scale. Everything else is refused explicitly.
+    /// mode, not additive; each mapping drives its own property. Rotate must be
+    /// an identity mapping (and is not clamped); X and Y may use offsets, scale
+    /// and clamping. Everything else is refused explicitly.
     pub fn supported_subset(&self) -> Result<(), String> {
         let context = || format!("Transform {}", self.name);
-        if self.local_source || self.local_target || self.additive || self.clamp {
+        if self.local_source || self.local_target || self.additive {
             return Err(format!(
-                "{}: local, additive and clamped transform constraints are unsupported",
+                "{}: local and additive transform constraints are unsupported",
                 context()
             ));
         }
         for mapping in &self.mappings {
-            let identity = mapping.to.len() == 1
-                && mapping.to[0].property == mapping.from
-                && mapping.offset == 0.0
-                && mapping.to[0].offset == 0.0
-                && mapping.to[0].scale == 1.0;
-            if !identity
-                || !matches!(
-                    mapping.from,
-                    TransformProperty::Rotate | TransformProperty::X | TransformProperty::Y
-                )
-            {
+            let same_property = mapping.to.len() == 1 && mapping.to[0].property == mapping.from;
+            let supported = same_property
+                && match mapping.from {
+                    TransformProperty::Rotate => {
+                        !self.clamp
+                            && mapping.offset == 0.0
+                            && mapping.to[0].offset == 0.0
+                            && mapping.to[0].scale == 1.0
+                    }
+                    TransformProperty::X | TransformProperty::Y => true,
+                    _ => false,
+                };
+            if !supported {
                 return Err(format!(
-                    "{}: only identity Rotate/X/Y mappings are supported",
+                    "{}: only X/Y mappings to the same property (with offsets, scale or clamping) and unclamped identity Rotate mappings are supported",
                     context()
                 ));
             }

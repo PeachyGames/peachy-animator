@@ -111,6 +111,13 @@ body colors (Animate, `wave`):
 cargo run -p peachy-animator -- examples/peach-bot/slot-bot.peachy
 ```
 
+The original Transform Map Lab remaps a mirrored hand with offsets and scales
+and clamps the left foot to a box (Animate, `wave`):
+
+```sh
+cargo run -p peachy-animator -- examples/peach-bot/transform-map-bot.peachy
+```
+
 The original Linked Mesh Lab swaps the right hand to linked meshes that follow
 or ignore its deform keys, and links the mint body to the peach body across
 skins (Animate, `wave`; switch skins):

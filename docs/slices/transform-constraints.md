@@ -46,3 +46,24 @@ ancestors may have any scale, shear or reflection. Our solve matched the runtime
 for uniform, nonuniform, sheared and mirrored ancestors (1,800 values per
 category, max error 2.8e-5), with IK moving bones by a median 27 units. The
 constrained bones themselves still need unit scale and zero shear.
+
+
+## Remapping — November 10, 2026
+
+The cow front maps X and Y with offsets (`"x": {"offset": 131.2, "to": {"x":
+{"offset": 284.05, "max": 384.05}}}`). Black-box probes of the external
+runtime with original rigs give, for each coordinate p of the source point:
+
+    value = (p − from offset) × scale + to offset
+
+With `clamp`, the value is kept between the to offset and `max` (either order;
+`max` defaults to 1 and is ignored without `clamp`). The mix then moves the
+bone toward the value as before, including negative mixes. Rotate keeps the
+identity-only rule (and is refused when clamped), because no shipped rig remaps
+it.
+
+The original Transform Map Lab (`transform-map-bot.peachy`) remaps the hand
+mirror with offsets and negative/fractional scales, and clamps the left foot to
+a box whose X range the source crosses. It matches the runtime at every
+sample. The properties panel shows imported mappings; editing them is not
+supported yet.

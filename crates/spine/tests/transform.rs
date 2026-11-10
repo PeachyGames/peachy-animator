@@ -59,20 +59,36 @@ fn reject(value: &Value, reason: &str) {
 
 #[test]
 fn modes_remapping_and_unsafe_domains_are_refused_explicitly() {
-    for flag in ["localSource", "localTarget", "additive", "clamp"] {
+    for flag in ["localSource", "localTarget", "additive"] {
         let mut input = fixture();
         input["constraints"][0][flag] = json!(true);
-        reject(&input, "local, additive and clamped");
+        reject(&input, "local and additive");
     }
-    for properties in [
-        json!({"x":{"offset":131.2,"to":{"x":{"offset":284.05,"max":384.05}}}}),
-        json!({"x":{"to":{"y":{}}}}),
-        json!({"x":{"to":{"x":{"scale":-1}}}}),
-        json!({"scaleX":{"to":{"scaleX":{}}}}),
+    // X/Y offsets, scale and clamping are supported (cow front pattern).
+    let mut remapped = fixture();
+    remapped["constraints"][0]["properties"] =
+        json!({"x":{"offset":131.2,"to":{"x":{"offset":284.05,"max":384.05,"scale":-1}}}});
+    remapped["constraints"][0]["clamp"] = json!(true);
+    assert!(
+        inspect(&remapped).supported,
+        "{:?}",
+        inspect(&remapped).unsupported
+    );
+    let doc = import_json(&remapped, "Remapped").unwrap();
+    assert_eq!(
+        import_json(&export_json(&doc).unwrap(), "Remapped").unwrap(),
+        doc
+    );
+    for (properties, clamp) in [
+        (json!({"x":{"to":{"y":{}}}}), false),
+        (json!({"rotate":{"offset":5,"to":{"rotate":{}}}}), false),
+        (json!({"rotate":{"to":{"rotate":{}}}}), true),
+        (json!({"scaleX":{"to":{"scaleX":{}}}}), false),
     ] {
         let mut input = fixture();
         input["constraints"][0]["properties"] = properties;
-        reject(&input, "only identity Rotate/X/Y mappings");
+        input["constraints"][0]["clamp"] = json!(clamp);
+        reject(&input, "only X/Y mappings to the same property");
     }
     let mut unmapped = fixture();
     unmapped["constraints"][1]["mixShearY"] = json!(0.4);
