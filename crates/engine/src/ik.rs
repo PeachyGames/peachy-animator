@@ -36,6 +36,10 @@ pub struct AuthoredPose {
     pub(crate) slot_colors: Vec<[f32; 4]>,
     /// Slot indices back to front (Setup or keyed draw order).
     pub(crate) draw_order: Vec<usize>,
+    /// Sampled position/spacing per constraint (Setup for non-path entries).
+    pub(crate) paths: Vec<crate::PathPose>,
+    /// Skin used to resolve path attachments.
+    pub(crate) skin: String,
 }
 
 impl AuthoredPose {
@@ -49,6 +53,7 @@ impl AuthoredPose {
     /// skin, or an unknown name, activates none of them).
     pub fn with_skin(mut self, doc: &Document, skin: &str) -> Self {
         self.active = doc.activity(skin);
+        self.skin = skin.to_owned();
         self
     }
     pub fn activity(&self) -> &Activity {
@@ -144,6 +149,28 @@ pub fn sample_authored_pose(
             doc.slots.len(),
             time,
         ),
+        paths: doc
+            .constraints
+            .iter()
+            .enumerate()
+            .map(|(index, constraint)| {
+                let setup = constraint.as_path().map(|p| p.setup).unwrap_or_default();
+                let keyed = |property, fallback: f32| {
+                    clip.and_then(|clip| {
+                        clip.path_tracks
+                            .iter()
+                            .find(|t| t.constraint == index && t.property == property)
+                    })
+                    .and_then(|track| sample_absolute(&track.keys, time))
+                    .unwrap_or(fallback)
+                };
+                crate::PathPose {
+                    position: keyed(peachy_document::PathProperty::Position, setup.position),
+                    spacing: keyed(peachy_document::PathProperty::Spacing, setup.spacing),
+                }
+            })
+            .collect(),
+        skin: "default".into(),
     })
 }
 
@@ -202,6 +229,11 @@ pub fn checked_pose_from_authored(
         &mut world,
         &authored.inherits,
         &authored.active.constraints,
+        &crate::ik_solver::PathContext {
+            poses: &authored.paths,
+            slot_attachments: &authored.slot_attachments,
+            skin: &authored.skin,
+        },
     )?;
     Ok(EvaluatedPose {
         authored_locals: authored_locals.clone(),
@@ -365,4 +397,26 @@ pub(crate) fn sample_color(track: &ColorTrack, time: f32) -> Option<[f32; 4]> {
         }
     }
     track.keys.last().map(|key| channels(key.color))
+}
+
+/// Absolute keyed value: `None` before the first key (Setup applies), the last
+/// value after the end, and curve interpolation between keys.
+pub(crate) fn sample_absolute(keys: &[peachy_document::Keyframe], time: f32) -> Option<f32> {
+    let first = keys.first()?;
+    if time < first.time {
+        return None;
+    }
+    for pair in keys.windows(2) {
+        let (left, right) = (pair[0], pair[1]);
+        if time < right.time {
+            let progress = (time - left.time) / (right.time - left.time);
+            return Some(crate::curve_value(
+                left.curve,
+                progress,
+                left.value,
+                right.value,
+            ));
+        }
+    }
+    keys.last().map(|key| key.value)
 }

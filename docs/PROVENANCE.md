@@ -613,3 +613,12 @@ renderer with original rigs (rendered area and coverage). The polygon
 decomposition is our own (ear clipping, Sutherland–Hodgman); it is compared by
 coverage, not by matching the runtime's vertices. No runtime or editor
 implementation source was read.
+
+
+### Path constraints — November 10, 2026
+
+Field names and defaults came from the public `PathConstraintData`/
+`PathAttachment` typings and the runtime's public data API. The evaluation rule
+(4-segment distances, 10-segment in-curve table, end extension, tangent
+rotation, mixes) was fitted to black-box runtime outputs on original random
+paths. No runtime or editor implementation source was read.

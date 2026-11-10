@@ -111,6 +111,13 @@ body colors (Animate, `wave`):
 cargo run -p peachy-animator -- examples/peach-bot/slot-bot.peachy
 ```
 
+The original Path Lab moves the left hand along a rail past both ends and walks
+the right leg chain along a weighted path (Animate, `wave`):
+
+```sh
+cargo run -p peachy-animator -- examples/peach-bot/path-bot.peachy
+```
+
 The original Clip Lab cuts the body, left arm and head to a concave polygon and
 the right arm to a convex hull (Animate, `wave`):
 

@@ -76,6 +76,7 @@ fn fixture() -> Document {
                 color_tracks: vec![],
                 events: vec![],
                 draw_order: vec![],
+                path_tracks: vec![],
             },
             Animation {
                 ik_tracks: vec![],
@@ -94,6 +95,7 @@ fn fixture() -> Document {
                 color_tracks: vec![],
                 events: vec![],
                 draw_order: vec![],
+                path_tracks: vec![],
             },
         ],
         skin_scope: Default::default(),

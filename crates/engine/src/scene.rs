@@ -199,6 +199,7 @@ fn scene_from_evaluated(doc: &Document, skin: &str, pose: crate::EvaluatedPose) 
             continue;
         }
         let ends_clip = clip.as_ref().is_some_and(|c| c.end == Some(slot_index));
+        let shown = shown.filter(|(_, a)| !matches!(a, Attachment::Path(_)));
         let Some((key, attachment)) = shown else {
             if ends_clip {
                 clip = None;
@@ -206,7 +207,7 @@ fn scene_from_evaluated(doc: &Document, skin: &str, pose: crate::EvaluatedPose) 
             continue;
         };
         let (vertices, uvs, triangles, hull) = match attachment {
-            Attachment::Clipping(_) => unreachable!("handled above"),
+            Attachment::Clipping(_) | Attachment::Path(_) => unreachable!("handled above"),
             Attachment::Region(r) => (
                 region_vertices(r)
                     .into_iter()

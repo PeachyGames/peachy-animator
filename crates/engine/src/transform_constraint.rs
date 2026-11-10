@@ -139,7 +139,7 @@ pub(crate) fn apply(
 /// Decompose a constrained world frame into a local transform under the bone's
 /// parent: rotation and Scale X from the X axis, Scale Y and Shear Y from the Y
 /// axis, Shear X zero. Exact for any invertible parent and child frame.
-fn local_from_world(
+pub(crate) fn local_from_world(
     doc: &Document,
     world: &[Affine],
     bone: usize,

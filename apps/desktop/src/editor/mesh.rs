@@ -153,8 +153,8 @@ impl Editor {
         let Some(attachment) = self.session.document().attachment(&key) else {
             return;
         };
-        if matches!(attachment, Attachment::Clipping(_)) {
-            ui.label("Clipping polygons are not editable yet.");
+        if matches!(attachment, Attachment::Clipping(_) | Attachment::Path(_)) {
+            ui.label("Clipping polygons and paths are not editable yet.");
             return;
         }
         match attachment {
@@ -309,7 +309,7 @@ impl Editor {
                     "Drag setup vertices to deform the image. UV editing, weights and deform keys are later slices."
                 }).small().color(MUTED));
             }
-            Attachment::Clipping(_) => unreachable!("returned above"),
+            Attachment::Clipping(_) | Attachment::Path(_) => unreachable!("returned above"),
         }
         ui.separator();
     }

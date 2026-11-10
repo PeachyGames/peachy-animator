@@ -75,6 +75,11 @@ Native v13 adds `Animation.deform_tracks` with dense offsets (per vertex, or per
 weighted influence). Sampled deforms travel in `AuthoredPose`; scenes apply them
 via `deformed_mesh_world_vertices`. Keep slot renames updating deform refs.
 
+Native v20 adds `Attachment::Path`, `Constraint::Path` and
+`Animation.path_tracks`. Path constraints run in constraint order inside
+`ik_solver::apply` (`path_constraint::apply`), resolving the slot's shown path
+under `AuthoredPose.skin`.
+
 Native v19 adds `Attachment::Clipping`. `AttachmentDraw.vertices` stay the
 attachment's own geometry (tools index them); render and pick with
 `AttachmentDraw::render_geometry()`, which is clipped while a clip is active.

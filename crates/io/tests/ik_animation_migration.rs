@@ -142,6 +142,7 @@ fn nine_native6_migrations_and_latest_examples_preserve_full_export_bytes() {
             animation["color_tracks"] = json!([]);
             animation["events"] = json!([]);
             animation["draw_order"] = json!([]);
+            animation["path_tracks"] = json!([]);
         }
         for bone in expected["bones"].as_array_mut().unwrap() {
             bone["inherit"] = json!("normal");

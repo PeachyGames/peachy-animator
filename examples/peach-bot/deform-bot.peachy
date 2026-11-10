@@ -1,5 +1,5 @@
 {
-  "format": 19,
+  "format": 20,
   "constraints": [],
   "name": "Peach Bot Deform Lab",
   "fps": 30,
@@ -1423,7 +1423,8 @@
       "attachment_tracks": [],
       "color_tracks": [],
       "events": [],
-      "draw_order": []
+      "draw_order": [],
+      "path_tracks": []
     },
     {
       "name": "idle",
@@ -1500,7 +1501,8 @@
       "attachment_tracks": [],
       "color_tracks": [],
       "events": [],
-      "draw_order": []
+      "draw_order": [],
+      "path_tracks": []
     }
   ]
 }

@@ -173,8 +173,12 @@ fn unknown_kinds_invalid_references_chains_targets_and_settings_are_atomic_impor
     }
     for (extra, reason) in [
         (
-            json!({"type":"path","name":"unsupported"}),
-            "path constraints are unsupported",
+            json!({"type":"slider","name":"unsupported"}),
+            "slider constraints are unsupported",
+        ),
+        (
+            json!({"type":"path","name":"incomplete","bones":[]}),
+            "Path constraint incomplete: unknown slot",
         ),
         (
             json!({"type":"transform","name":"incomplete"}),

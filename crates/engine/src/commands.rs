@@ -23,6 +23,10 @@ pub enum Command {
         constraint: usize,
         value: TransformConstraint,
     },
+    SetPathConstraint {
+        constraint: usize,
+        value: peachy_document::PathConstraint,
+    },
     /// Appends a constraint after all existing ones (Spine's evaluation order).
     AddPhysicsConstraint {
         constraint: PhysicsConstraint,
@@ -382,6 +386,12 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
                 return Err("Unknown transform constraint".into());
             };
             *slot = Constraint::Transform(value);
+        }
+        Command::SetPathConstraint { constraint, value } => {
+            let Some(slot @ Constraint::Path(_)) = doc.constraints.get_mut(constraint) else {
+                return Err("Unknown path constraint".into());
+            };
+            *slot = Constraint::Path(value);
         }
         Command::AddPhysicsConstraint { constraint } => {
             doc.constraints.push(Constraint::Physics(constraint))

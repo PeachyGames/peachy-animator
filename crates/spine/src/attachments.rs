@@ -21,6 +21,11 @@ pub(super) fn read_attachment(
             transform: region_transform(value),
             color,
         }),
+        "path" => Attachment::Path(super::path::read_attachment(
+            value,
+            placeholder,
+            bone_count,
+        )?),
         "mesh" => {
             let uvs = pairs(&value["uvs"], "Mesh UVs")?;
             let vertices = read_mesh_vertices(&value["vertices"], uvs.len(), bone_count)?;
@@ -207,6 +212,7 @@ pub(super) fn write_attachment(attachment: &Attachment) -> Value {
             v
         }
         Attachment::Clipping(_) => unreachable!("clipping is written by clipping::write"),
+        Attachment::Path(path) => super::path::write_attachment(path),
         Attachment::Mesh(m) => {
             let vertices = write_vertices(&m.vertices);
             let mut v = json!({"type":"mesh", "vertices":vertices, "uvs":m.uvs.iter().flatten().collect::<Vec<_>>(), "triangles":m.triangles, "hull":m.hull});
@@ -254,6 +260,13 @@ pub(super) fn inspect_attachment(
     }
     if let Err(error) = read_hex_color(region, &format!("{context}: color")) {
         issues.push(error);
+    }
+    if region["type"].as_str() == Some("path") {
+        unknown_fields(region, super::path::ATTACHMENT_FIELDS, &context, issues);
+        if let Err(error) = super::path::read_attachment(region, name, bone_count) {
+            issues.push(format!("{context}: {error}"));
+        }
+        return;
     }
     if region["type"].as_str() == Some("clipping") {
         // Fields only; vertices and the end slot are checked by read_document.

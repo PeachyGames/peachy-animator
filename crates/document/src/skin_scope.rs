@@ -65,7 +65,7 @@ impl Document {
             .enumerate()
             .map(|(index, constraint)| {
                 (!scope.required_constraints.contains(&index) || listed.contains(&index))
-                    && constraint_bones(constraint).iter().all(|&b| bones[b])
+                    && constraint_bones(self, constraint).iter().all(|&b| bones[b])
             })
             .collect();
         Activity { bones, constraints }
@@ -124,10 +124,17 @@ impl Document {
 }
 
 /// Bones a constraint reads or writes; all must be active for it to run.
-fn constraint_bones(constraint: &Constraint) -> Vec<usize> {
+fn constraint_bones(doc: &Document, constraint: &Constraint) -> Vec<usize> {
     match constraint {
         Constraint::Ik(ik) => ik.bones.iter().copied().chain([ik.target]).collect(),
         Constraint::Physics(physics) => vec![physics.bone],
         Constraint::Transform(t) => t.bones.iter().copied().chain([t.source]).collect(),
+        // The path's slot bone acts as the source.
+        Constraint::Path(p) => p
+            .bones
+            .iter()
+            .copied()
+            .chain(doc.slots.get(p.slot).map(|slot| slot.bone))
+            .collect(),
     }
 }

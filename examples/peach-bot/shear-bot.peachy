@@ -1,5 +1,5 @@
 {
-  "format": 19,
+  "format": 20,
   "constraints": [],
   "name": "Peach Bot Shear Lab",
   "fps": 30,
@@ -948,7 +948,8 @@
       "attachment_tracks": [],
       "color_tracks": [],
       "events": [],
-      "draw_order": []
+      "draw_order": [],
+      "path_tracks": []
     },
     {
       "name": "shear stepped",
@@ -1040,7 +1041,8 @@
       "attachment_tracks": [],
       "color_tracks": [],
       "events": [],
-      "draw_order": []
+      "draw_order": [],
+      "path_tracks": []
     },
     {
       "name": "shear bezier",
@@ -1180,7 +1182,8 @@
       "attachment_tracks": [],
       "color_tracks": [],
       "events": [],
-      "draw_order": []
+      "draw_order": [],
+      "path_tracks": []
     },
     {
       "name": "wave",
@@ -1379,7 +1382,8 @@
       "attachment_tracks": [],
       "color_tracks": [],
       "events": [],
-      "draw_order": []
+      "draw_order": [],
+      "path_tracks": []
     },
     {
       "name": "idle",
@@ -1456,7 +1460,8 @@
       "attachment_tracks": [],
       "color_tracks": [],
       "events": [],
-      "draw_order": []
+      "draw_order": [],
+      "path_tracks": []
     }
   ]
 }

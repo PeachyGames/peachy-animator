@@ -129,6 +129,29 @@ pub fn command_schema() -> Value {
         ("additive", json!({"type":"boolean"})),
         ("clamp", json!({"type":"boolean"})),
     ]);
+    let mode = |values: &[&str]| json!({"type":"string","enum":values});
+    let path_constraint = object(&[
+        ("name", text()),
+        ("bones", list(index())),
+        ("slot", index()),
+        ("position_mode", mode(&["fixed", "percent"])),
+        (
+            "spacing_mode",
+            mode(&["length", "fixed", "percent", "proportional"]),
+        ),
+        ("rotate_mode", mode(&["tangent", "chain", "chainScale"])),
+        ("offset_rotation", number()),
+        (
+            "setup",
+            object(&[
+                ("position", number()),
+                ("spacing", number()),
+                ("mix_rotate", number()),
+                ("mix_x", number()),
+                ("mix_y", number()),
+            ]),
+        ),
+    ]);
     let physics = object(&[
         ("name", text()),
         ("bone", index()),
@@ -221,6 +244,10 @@ pub fn command_schema() -> Value {
         command(
             "setTransformConstraint",
             &[("constraint", index()), ("value", transform_constraint)],
+        ),
+        command(
+            "setPathConstraint",
+            &[("constraint", index()), ("value", path_constraint)],
         ),
         command("addPhysicsConstraint", &[("constraint", physics.clone())]),
         command(
@@ -387,6 +414,7 @@ mod tests {
             Command::SetIkConstraint { .. } => "setIkConstraint",
             Command::AddTransformConstraint { .. } => "addTransformConstraint",
             Command::SetTransformConstraint { .. } => "setTransformConstraint",
+            Command::SetPathConstraint { .. } => "setPathConstraint",
             Command::AddPhysicsConstraint { .. } => "addPhysicsConstraint",
             Command::SetPhysicsConstraint { .. } => "setPhysicsConstraint",
             Command::SetIkKey { .. } => "setIkKey",
@@ -459,7 +487,7 @@ mod tests {
     fn every_published_shape_decodes_through_strict_engine_serde() {
         let schema = command_schema();
         let variants = schema["oneOf"].as_array().unwrap();
-        assert_eq!(variants.len(), 35);
+        assert_eq!(variants.len(), 36);
         for variant in variants {
             let payload = sample(variant);
             let command: CommandInput = serde_json::from_value(payload.clone()).unwrap();

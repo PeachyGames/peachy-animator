@@ -161,6 +161,10 @@ impl Editor {
                                 value.name = name;
                                 Command::SetTransformConstraint { constraint, value }
                             }
+                            Some(Constraint::Path(mut value)) => {
+                                value.name = name;
+                                Command::SetPathConstraint { constraint, value }
+                            }
                             None => return,
                         }
                     }

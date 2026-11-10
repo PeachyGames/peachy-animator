@@ -1,5 +1,5 @@
 //! Ordered IK data. Evaluation capabilities do not rewrite authored data.
-use crate::{Bone, PhysicsConstraint, TransformConstraint};
+use crate::{Bone, PathConstraint, PhysicsConstraint, TransformConstraint};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -8,6 +8,8 @@ pub enum Constraint {
     Ik(IkConstraint),
     Physics(PhysicsConstraint),
     Transform(TransformConstraint),
+    /// Native v20.
+    Path(PathConstraint),
 }
 
 impl Constraint {
@@ -16,6 +18,7 @@ impl Constraint {
             Self::Ik(ik) => &ik.name,
             Self::Physics(physics) => &physics.name,
             Self::Transform(transform) => &transform.name,
+            Self::Path(path) => &path.name,
         }
     }
     pub fn set_name(&mut self, name: String) {
@@ -23,24 +26,31 @@ impl Constraint {
             Self::Ik(ik) => ik.name = name,
             Self::Physics(physics) => physics.name = name,
             Self::Transform(transform) => transform.name = name,
+            Self::Path(path) => path.name = name,
         }
     }
     pub fn as_ik(&self) -> Option<&IkConstraint> {
         match self {
             Self::Ik(ik) => Some(ik),
-            Self::Physics(_) | Self::Transform(_) => None,
+            Self::Physics(_) | Self::Transform(_) | Self::Path(_) => None,
+        }
+    }
+    pub fn as_path(&self) -> Option<&PathConstraint> {
+        match self {
+            Self::Path(path) => Some(path),
+            _ => None,
         }
     }
     pub fn as_transform(&self) -> Option<&TransformConstraint> {
         match self {
             Self::Transform(transform) => Some(transform),
-            Self::Ik(_) | Self::Physics(_) => None,
+            Self::Ik(_) | Self::Physics(_) | Self::Path(_) => None,
         }
     }
     pub fn as_physics(&self) -> Option<&PhysicsConstraint> {
         match self {
             Self::Physics(physics) => Some(physics),
-            Self::Ik(_) | Self::Transform(_) => None,
+            Self::Ik(_) | Self::Transform(_) | Self::Path(_) => None,
         }
     }
     /// Spine 4.3's unified constraint `type` and Tree terminology.
@@ -49,6 +59,7 @@ impl Constraint {
             Self::Ik(_) => "IK Constraint",
             Self::Physics(_) => "Physics Constraint",
             Self::Transform(_) => "Transform Constraint",
+            Self::Path(_) => "Path Constraint",
         }
     }
     pub fn validate(&self, bones: &[Bone]) -> Result<(), String> {
@@ -56,6 +67,8 @@ impl Constraint {
             Self::Ik(ik) => ik.validate(bones),
             Self::Physics(physics) => physics.validate(bones),
             Self::Transform(transform) => transform.validate(bones),
+            // Slot context: checked again in Document::validate.
+            Self::Path(path) => path.validate(bones, usize::MAX),
         }
     }
 }

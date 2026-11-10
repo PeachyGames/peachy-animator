@@ -10,6 +10,14 @@ use peachy_document::{Document, IkConstraint, Inherit, Transform};
 /// within this absolute bound. There is no relative or large-coordinate exception.
 pub(crate) const IK_WORLD_COORDINATE_TOLERANCE: f64 = 0.001;
 
+/// What path constraints need beyond bone data: sampled position/spacing and
+/// the attachment each slot shows under the evaluated skin.
+pub(crate) struct PathContext<'a> {
+    pub poses: &'a [crate::PathPose],
+    pub slot_attachments: &'a [Option<String>],
+    pub skin: &'a str,
+}
+
 pub(crate) fn apply(
     doc: &Document,
     poses: &[IkPose],
@@ -17,6 +25,7 @@ pub(crate) fn apply(
     world: &mut Vec<Affine>,
     inherits: &[Inherit],
     enabled: &[bool],
+    paths: &PathContext,
 ) -> Result<(), String> {
     // Skin-inactive constraints neither run nor take part in domain checks.
     let active: Vec<_> = doc
@@ -72,6 +81,25 @@ pub(crate) fn apply(
             peachy_document::Constraint::Transform(transform) => {
                 crate::transform_constraint::apply(doc, transform, locals, world, inherits)
                     .map_err(|error| format!("Transform {}: {error}", transform.name))?;
+            }
+            peachy_document::Constraint::Path(path) => {
+                // Like the runtime, a slot not showing a path attachment leaves
+                // the bones alone.
+                let shown = paths.slot_attachments[path.slot]
+                    .as_deref()
+                    .and_then(|name| doc.resolve_attachment(paths.skin, path.slot, name));
+                if let Some((_, peachy_document::Attachment::Path(curve))) = shown {
+                    crate::path_constraint::apply(
+                        doc,
+                        path,
+                        paths.poses[index],
+                        curve,
+                        locals,
+                        world,
+                        inherits,
+                    )
+                    .map_err(|error| format!("Path {}: {error}", path.name))?;
+                }
             }
             _ => {}
         }

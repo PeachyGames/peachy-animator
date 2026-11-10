@@ -188,7 +188,7 @@ for (const animation of data.animations) {
       const actualDraws = new Map(ours.attachments.map(a=>[a.slot,a]));
       // Draw order: our draws come back to front in the runtime's applied order.
       const runtimeOrder = (Array.isArray(skeleton.drawOrder) ? skeleton.drawOrder : skeleton.drawOrder.appliedPose)
-        .filter(slot => slot.bone.active && slot.appliedPose.attachment && !(slot.appliedPose.attachment instanceof ClippingAttachment))
+        .filter(slot => slot.bone.active && (slot.appliedPose.attachment instanceof RegionAttachment || slot.appliedPose.attachment instanceof MeshAttachment))
         .map(slot => skeleton.slots.indexOf(slot));
       assert.deepEqual(ours.attachments.map(a => a.slot), runtimeOrder, `${animation.name} t=${time} draw order`);
       report.drawOrderChecks = (report.drawOrderChecks ?? 0) + 1;
@@ -223,7 +223,8 @@ for (const animation of data.animations) {
         const slot=skeleton.slots[slotIndex];
         if (!slot.bone.active) { assert.ok(!actualDraws.has(slotIndex), 'Inactive slots are not drawn'); continue; }
         // Shown attachment (incl. keyed swaps/hides) and slot color agree.
-        const drawn = !!slot.appliedPose.attachment && !(slot.appliedPose.attachment instanceof ClippingAttachment);
+        // Clipping, path and other non-image attachments draw nothing.
+        const drawn = slot.appliedPose.attachment instanceof RegionAttachment || slot.appliedPose.attachment instanceof MeshAttachment;
         assert.equal(actualDraws.has(slotIndex), drawn, `${animation.name} t=${time} slot ${slot.data.name} visibility`);
         const draw = actualDraws.get(slotIndex);
         if (draw) {

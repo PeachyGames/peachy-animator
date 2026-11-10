@@ -1,5 +1,5 @@
 {
-  "format": 19,
+  "format": 20,
   "constraints": [],
   "name": "Mesh Transform Contract",
   "fps": 30,
@@ -902,7 +902,8 @@
       "attachment_tracks": [],
       "color_tracks": [],
       "events": [],
-      "draw_order": []
+      "draw_order": [],
+      "path_tracks": []
     }
   ]
 }

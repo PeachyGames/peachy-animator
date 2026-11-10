@@ -208,6 +208,7 @@ fn v4_weighted_raw_payload_and_original_bytes_survive_load_and_explicit_latest_s
         animation["color_tracks"] = json!([]);
         animation["events"] = json!([]);
         animation["draw_order"] = json!([]);
+        animation["path_tracks"] = json!([]);
     }
     for bone in expected["bones"].as_array_mut().unwrap() {
         bone["inherit"] = json!("normal");

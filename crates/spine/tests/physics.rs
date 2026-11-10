@@ -247,7 +247,7 @@ fn inspection_names_each_constraint_kind_instead_of_calling_it_ik() {
     input["constraints"].as_array_mut().unwrap().extend([
         json!({"type":"transform","name":"copy","bones":["tip"],"source":"root","localTarget":true,
             "properties":{"x":{"to":{"x":{}}}}}),
-        json!({"type":"path","name":"rail","bones":["tip"],"slot":"x"}),
+        json!({"type":"slider","name":"rail","bone":"tip"}),
     ]);
     let report = inspect(&input);
     assert!(!report.supported);
@@ -255,7 +255,7 @@ fn inspection_names_each_constraint_kind_instead_of_calling_it_ik() {
     assert!(
         joined.contains("Transform copy: local and additive transform constraints are unsupported")
     );
-    assert!(joined.contains("Path constraint rail: path constraints are unsupported"));
+    assert!(joined.contains("Slider constraint rail: slider constraints are unsupported"));
     assert!(!joined.contains("IK constraint"), "{joined}");
 }
 

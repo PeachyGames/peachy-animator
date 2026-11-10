@@ -10,6 +10,7 @@ mod mesh;
 mod mesh_binding;
 mod mesh_soft_selection;
 mod names;
+mod path_constraint;
 mod picking;
 mod playback;
 mod pose;
@@ -37,6 +38,7 @@ pub use mesh::{
 };
 pub use mesh_binding::MeshBindPose;
 pub use mesh_soft_selection::{MeshSoftSelection, MeshTranslation};
+pub use path_constraint::PathPose;
 pub use picking::{attachment_bounds, pick_attachment};
 pub use playback::{
     PlayDirection, PlaybackStep, adjacent_key_time, advance_playback, last_key_time,
@@ -84,6 +86,8 @@ mod inherit_tests;
 mod linked_mesh_tests;
 #[cfg(test)]
 mod mesh_soft_selection_tests;
+#[cfg(test)]
+mod path_tests;
 #[cfg(test)]
 mod physics_tests;
 #[cfg(test)]

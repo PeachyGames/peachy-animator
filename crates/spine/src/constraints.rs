@@ -47,6 +47,11 @@ pub(super) fn read(
         return Ok(vec![]);
     };
     let entries = entries.as_array().ok_or("constraints must be an array")?;
+    let slots: BTreeMap<String, usize> = array(&root["slots"])
+        .iter()
+        .enumerate()
+        .filter_map(|(i, slot)| slot["name"].as_str().map(|name| (name.to_owned(), i)))
+        .collect();
     let mut constraints = vec![];
     let mut errors = vec![];
     for entry in entries {
@@ -58,7 +63,10 @@ pub(super) fn read(
             Some("ik") => read_ik(entry, indices).map(Constraint::Ik),
             Some("physics") => read_physics(entry, indices).map(Constraint::Physics),
             Some("transform") => read_transform(entry, indices).map(Constraint::Transform),
-            Some(kind @ ("path" | "slider")) => Err(format!(
+            Some("path") => {
+                super::path::read_constraint(entry, indices, &slots).map(Constraint::Path)
+            }
+            Some(kind @ "slider") => Err(format!(
                 "{} constraint {}: {kind} constraints are unsupported",
                 capitalized(kind),
                 entry["name"].as_str().unwrap_or("?")
@@ -550,6 +558,24 @@ fn inside(doc: &Document, mut bone: usize, root: usize) -> bool {
 /// validates the native graph first. There is deliberately no sampled solver or
 /// claim that all intermediate target poses are numerically evaluable.
 pub(super) fn validate_source(doc: &Document) -> Result<(), String> {
+    // Path constraints and the paths they can follow must be in the evaluated
+    // subset (see docs/slices/path-constraints.md).
+    for path in doc.constraints.iter().filter_map(Constraint::as_path) {
+        path.supported_subset()?;
+    }
+    for (skin, slots) in &doc.skins {
+        for (slot, attachments) in slots {
+            for (name, attachment) in attachments {
+                if let peachy_document::Attachment::Path(path) = attachment
+                    && (path.closed || !path.constant_speed)
+                {
+                    return Err(format!(
+                        "Path {skin}/{slot}/{name}: closed paths and paths without constant speed are unsupported"
+                    ));
+                }
+            }
+        }
+    }
     for transform in doc.constraints.iter().filter_map(Constraint::as_transform) {
         let context = format!("Transform {}", transform.name);
         transform.supported_subset()?;
@@ -761,6 +787,7 @@ pub(super) fn write(doc: &Document) -> Value {
                     value["properties"] = properties;
                     value
                 }
+                Constraint::Path(path) => super::path::write_constraint(path, doc),
                 Constraint::Physics(physics) => {
                     // Every value is explicit, so consumers never depend on defaults.
                     let mut value = json!({

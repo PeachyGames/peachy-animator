@@ -24,11 +24,11 @@ Input-only obsolete integer `order` is validated and omitted, never used to sort
 | Attachments | Regions, unweighted meshes and weighted meshes with explicit UVs/topology and bone-local influences; attachment tint (RGB/RGBA); linked meshes (any source skin, own image and tint, `timelines`); clipping polygons (end slot, convex hull, concave) | Linked-mesh chains, inverse clipping, deform keys on clipping polygons, paths, sequences, other attachment types |
 | Slots | Setup attachment, exact RGBA tint and normal blending in fixed draw order | Dark/two-color tint, other blend modes |
 | Skins | Region/mesh maps, explicit attachment names, default-skin fallback; skin-required bones and IK/transform/physics constraints with per-skin activation | Skin path-constraint lists, a unified skin `constraints` list, non-required bones under required parents |
-| Animation | Draw order keys (offsets as written); event keys with per-key overrides; slot attachment and RGBA color keys; mesh deform keys (unweighted and weighted); bone rotation, translation, scale and shear; combined or scalar input timelines; grouped IK Mix/Positive timelines; physics setting and reset timelines, including global (`""`) timelines | Draw order folders; transform, path and other slot (rgb, alpha, dark tint, sequence) timelines |
+| Animation | Path position and spacing keys; draw order keys (offsets as written); event keys with per-key overrides; slot attachment and RGBA color keys; mesh deform keys (unweighted and weighted); bone rotation, translation, scale and shear; combined or scalar input timelines; grouped IK Mix/Positive timelines; physics setting and reset timelines, including global (`""`) timelines | Draw order folders; transform, path and other slot (rgb, alpha, dark tint, sequence) timelines |
 | Curves | Linear, stepped, normalized cubic handles (time handles may cross or leave the key interval); overshoot between equal values as offset handles | Nonfinite controls; overshooting curves between equal values |
 | Constraints | One-/two-bone normal IK with keyed Mix/Positive, two-bone Positive, nested chains in list order, off-axis child offsets; animated targets. Physics constraints as data: every setting, Scale Y mode and Global flag, in unified constraint order. World transform constraints: identity Rotate, X/Y mappings with offsets, scale and clamping; IK under any transformed ancestors | Advanced IK settings, shared-bone or cross-target chains, transformed chains; skin-required physics; transform, path, slider and other constraints |
 | Images | Loose PNGs for editing; one untrimmed atlas page for desktop export | Packed-atlas import, rotated/trimmed atlas regions, multipage export |
-| Files | `.peachy` v19; in-memory v1–v18 migration; Spine JSON adapter; event definitions and `skeleton.referenceScale` stored as data | Native `.spine` projects and binary `.skel` |
+| Files | `.peachy` v20; in-memory v1–v19 migration; Spine JSON adapter; event definitions and `skeleton.referenceScale` stored as data | Native `.spine` projects and binary `.skel` |
 
 Our own project format is JSON and holds the editable rig, skin references and clips.
 It is distinct from a runtime export. The importer ignores documented editor-only
@@ -507,3 +507,13 @@ See [the slice](slices/transform-constraints.md#remapping--november-10-2026).
 renderer does; inverse clipping and deform keys on clipping polygons are
 refused. Native v19 adds `Attachment::Clipping`; v18 and earlier migrate
 unchanged and cannot contain clipping. See [the slice](slices/clipping.md).
+
+## Path constraints, native v20 — November 10, 2026
+
+Open, constant-speed path attachments (plain or weighted), path constraints with
+percent or fixed position, length/fixed/percent spacing and tangent rotation,
+and position/spacing timelines import, export and evaluate as the external
+runtime does. Closed paths, other modes, mix timelines and path deform keys are
+refused. Native v20 adds `Attachment::Path`, `Constraint::Path` and
+`Animation.path_tracks`; v19 and earlier migrate with empty tracks. See
+[the slice](slices/path-constraints.md).

@@ -8,6 +8,7 @@ mod events;
 mod ik;
 mod inherit;
 mod linked_mesh;
+mod path;
 mod physics;
 mod skin_scope;
 mod slot_keys;
@@ -19,6 +20,9 @@ pub use events::{EventDef, EventKey};
 pub use ik::{Constraint, IkConstraint, IkCurve, IkKeyframe, IkSetup, IkTrack};
 pub use inherit::{Inherit, InheritKey, InheritTrack};
 pub use linked_mesh::MeshLink;
+pub use path::{
+    Path, PathConstraint, PathProperty, PathSetup, PathTrack, PositionMode, RotateMode, SpacingMode,
+};
 pub use physics::{
     PHYSICS_DEFAULT_FPS, PHYSICS_DEFAULT_LIMIT, PHYSICS_DEFAULT_SETUP, PhysicsConstraint,
     PhysicsGlobal, PhysicsInfluence, PhysicsProperty, PhysicsReset, PhysicsSetup, PhysicsTrack,
@@ -30,7 +34,7 @@ pub use transform::{
     TransformConstraint, TransformMapping, TransformProperty, TransformTarget, TransformValues,
 };
 
-pub const FORMAT_VERSION: u32 = 19;
+pub const FORMAT_VERSION: u32 = 20;
 pub const KEY_TIME_EPSILON: f32 = 0.00001;
 pub fn same_key_time(a: f32, b: f32) -> bool {
     (a - b).abs() < KEY_TIME_EPSILON
@@ -171,6 +175,8 @@ pub enum Attachment {
     Mesh(Mesh),
     /// Cuts later attachments to a polygon; draws nothing itself. Native v19.
     Clipping(Clipping),
+    /// A curve that path constraints follow; draws nothing. Native v20.
+    Path(Path),
 }
 
 impl Attachment {
@@ -179,7 +185,7 @@ impl Attachment {
         match self {
             Self::Region(region) => region.color,
             Self::Mesh(mesh) => mesh.color,
-            Self::Clipping(_) => WHITE,
+            Self::Clipping(_) | Self::Path(_) => WHITE,
         }
     }
     pub fn name(&self) -> Option<&str> {
@@ -187,6 +193,7 @@ impl Attachment {
             Self::Region(r) => r.name.as_deref(),
             Self::Mesh(m) => m.name.as_deref(),
             Self::Clipping(c) => c.name.as_deref(),
+            Self::Path(p) => p.name.as_deref(),
         }
     }
     /// Image path; clipping attachments draw no image.
@@ -194,7 +201,7 @@ impl Attachment {
         match self {
             Self::Region(r) => Some(&r.path),
             Self::Mesh(m) => Some(&m.path),
-            Self::Clipping(_) => None,
+            Self::Clipping(_) | Self::Path(_) => None,
         }
     }
     pub fn validate(&self) -> Result<(), String> {
@@ -217,7 +224,7 @@ impl Attachment {
             }
             Self::Mesh(m) => m.validate(),
             // Needs slot/bone context: checked in Document::validate.
-            Self::Clipping(_) => Ok(()),
+            Self::Clipping(_) | Self::Path(_) => Ok(()),
         }
     }
 }
@@ -429,6 +436,8 @@ pub struct Animation {
     pub events: Vec<EventKey>,
     /// Draw order keys. Required in native v16.
     pub draw_order: Vec<DrawOrderKey>,
+    /// Keyed path constraint position/spacing. Required in native v20.
+    pub path_tracks: Vec<PathTrack>,
 }
 
 impl Animation {
@@ -445,6 +454,7 @@ impl Animation {
             color_tracks: vec![],
             events: vec![],
             draw_order: vec![],
+            path_tracks: vec![],
         }
     }
     /// The highest authored key time across validated, ordered timelines, or zero.
@@ -486,6 +496,11 @@ impl Animation {
             )
             .chain(self.events.iter().map(|key| key.time))
             .chain(self.draw_order.iter().map(|key| key.time))
+            .chain(
+                self.path_tracks
+                    .iter()
+                    .filter_map(|track| track.keys.last().map(|key| key.time)),
+            )
             .fold(0.0, f32::max)
     }
     /// Every authored key time across bone, IK, physics and reset timelines.
@@ -530,6 +545,11 @@ impl Animation {
             )
             .chain(self.events.iter().map(|key| key.time))
             .chain(self.draw_order.iter().map(|key| key.time))
+            .chain(
+                self.path_tracks
+                    .iter()
+                    .flat_map(|track| track.keys.iter().map(|key| key.time)),
+            )
     }
     /// Whether any timeline other than bone transforms has keys.
     pub fn has_constraint_keys(&self) -> bool {
@@ -678,6 +698,9 @@ impl Document {
                 return Err("Constraint names must be unique within each type".into());
             }
             constraint.validate(&self.bones)?;
+            if let Constraint::Path(path) = constraint {
+                path.validate(&self.bones, self.slots.len())?;
+            }
         }
         names.clear();
         for s in &self.slots {
@@ -705,6 +728,9 @@ impl Document {
                     if let Attachment::Clipping(clip) = attachment {
                         clip.validate(self.slots.len(), self.bones.len())?;
                     }
+                    if let Attachment::Path(path) = attachment {
+                        path.validate(self.bones.len())?;
+                    }
                 }
             }
         }
@@ -730,6 +756,20 @@ impl Document {
                     )),
                 },
             };
+            let mut paths = BTreeSet::new();
+            for t in &a.path_tracks {
+                if !matches!(
+                    self.constraints.get(t.constraint),
+                    Some(Constraint::Path(_))
+                ) || !paths.insert((t.constraint, t.property))
+                {
+                    return Err(format!(
+                        "Animation {}: path tracks need a path constraint, once per property",
+                        a.name
+                    ));
+                }
+                physics::validate_keys(&t.keys)?;
+            }
             let mut physics = BTreeSet::new();
             for t in &a.physics {
                 physics_target(t.constraint)?;

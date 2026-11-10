@@ -105,6 +105,14 @@ impl Editor {
                         ui.label(format!("Image: {path}"));
                     }
                     match value {
+                        Attachment::Path(path) => {
+                            ui.label(format!(
+                                "Path · {} curves{}",
+                                path.vertex_count() / 3 - usize::from(!path.closed),
+                                if path.closed { " · closed" } else { "" }
+                            ))
+                            .on_hover_text("Path constraints move bones along this curve. Editing paths is not supported yet.");
+                        }
                         Attachment::Clipping(clip) => {
                             let end = clip.end.map_or("the last slot".to_owned(), |end| {
                                 self.session.document().slots[end].name.clone()

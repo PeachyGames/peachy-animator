@@ -146,6 +146,7 @@ fn extreme_shear_sampling_and_pose_preview_preserve_original_keys_curves_and_his
             color_tracks: vec![],
             events: vec![],
             draw_order: vec![],
+            path_tracks: vec![],
         }],
         skin_scope: Default::default(),
         events: vec![],

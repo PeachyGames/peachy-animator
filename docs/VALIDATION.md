@@ -1562,3 +1562,13 @@ Animated IK (native9) was merged into `main` first; inheritance became native10.
 | Desktop capture | The Clip Lab renders with the concave notch through head and body and the arm trimmed to the hull |
 | Game audit | **15 of 21** skeletons import fully (female pose added) |
 | Rust suite | fmt, clippy `-D warnings`, architecture and build pass; **538** tests pass |
+
+
+## Path constraints, native v20 — November 10, 2026
+
+| Check | Result |
+| --- | --- |
+| Black-box fits (original random paths, external 4.3.13) | 25 single curves: 10-segment table, max 7e-6. Fixed mode: implied curve length = 4-segment polyline (within 0.003). Combined model over multi-curve paths, percent/fixed position, offset rotation, length/fixed/percent spacing for siblings and chains: positions within 1e-5, rotations within 3e-4°. Out-of-range positions follow the end handles exactly |
+| Original Path Lab (`path-bot.peachy`): unweighted rail with keyed position past both ends (Bezier key), offset rotation and partial mixes; three-bone leg chain on a weighted path with keyed negative spacing | 28,080 world values (max 0.00003) and 33,280 region coordinates against the runtime; the constraints move the bones by up to ~120 units vs unconstrained. Editor round trip keeps both constraints, both timelines and the path vertices (it recomputes setup `lengths`) |
+| Game audit | Path constraints themselves now import; the five path rigs remain blocked by deform keys on path/clipping attachments (next) or IK stretch (cow back). Still **15 of 21** |
+| Rust suite | fmt, clippy `-D warnings`, architecture and build pass; **543** tests pass |
