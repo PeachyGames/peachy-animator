@@ -3,7 +3,8 @@
 //! - Distances along the path use a 4-segment polyline length per curve; inside
 //!   a curve, the fraction travelled maps to the curve parameter through a
 //!   10-segment arc-length table (linear in the parameter within a segment).
-//! - Percent position and spacing scale the summed 4-segment length.
+//! - Percent position and spacing scale the summed 4-segment length; length
+//!   and fixed spacing scale with the previous bone's world X scale.
 //! - Beyond either end, bones continue in a straight line along the end handle.
 //! - The tangent is the curve derivative, except below t = 0.001 where the
 //!   curve's start direction is used.
@@ -210,11 +211,13 @@ pub(crate) fn apply(
     };
     for (i, &bone) in constraint.bones.iter().enumerate() {
         if i > 0 {
+            // Observed: length and fixed spacing scale with the previous bone's
+            // world X scale; percent spacing does not.
+            let previous = constraint.bones[i - 1];
+            let scale = f64::from(world[previous].a).hypot(f64::from(world[previous].c));
             s += match constraint.spacing_mode {
-                SpacingMode::Length => {
-                    f64::from(doc.bones[constraint.bones[i - 1]].length) + spacing
-                }
-                SpacingMode::Fixed => spacing,
+                SpacingMode::Length => (f64::from(doc.bones[previous].length) + spacing) * scale,
+                SpacingMode::Fixed => spacing * scale,
                 SpacingMode::Percent => spacing * curves.total,
                 SpacingMode::Proportional => unreachable!("refused by supported_subset"),
             };

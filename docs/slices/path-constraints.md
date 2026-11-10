@@ -22,8 +22,10 @@ Evaluation was fitted black-box against the runtime with original random paths
   tested; the combined rule matches to 1e-5.
 - With constant speed the setup `lengths` are not used.
 - Position: percent of the total, or fixed units. Spacing for each later bone:
-  the previous bone's length plus spacing (length), spacing (fixed), or spacing
-  times the total (percent).
+  (previous bone's length + spacing) × the previous bone's world X scale
+  (length), spacing × that scale (fixed), or spacing × the total (percent,
+  unscaled). The scale factor surfaced on the oral male, whose path bones sit
+  under a 1.016-scaled parent.
 - Beyond either end, bones continue in a straight line along the end handle
   (`out₀ − p₀` before the start, `p_last − in_last` after the end), at that
   handle's angle.

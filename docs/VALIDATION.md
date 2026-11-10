@@ -1583,3 +1583,15 @@ Animated IK (native9) was merged into `main` first; inheritance became native10.
 | Clip Lab with deform keys on the concave polygon | 312 samples, 179,712 coverage points, 0 mismatches; the deform changes the clipped area (29,793 vs 34,216 at t = 1.2) |
 | Game audit | **16 of 21** skeletons import fully (oral male added) |
 | Rust suite | fmt, clippy `-D warnings`, architecture and build pass; **545** tests pass |
+
+
+## Path spacing and bone scale — November 10, 2026
+
+| Check | Result |
+| --- | --- |
+| Black-box fit (original sibling bones scaled 1.0/1.5/0.6) | Length gaps = (previous length + spacing) × previous world X scale; fixed gaps = spacing × that scale; percent unscaled |
+| Oral male path chain at setup | All four `icing_path` bones match the runtime to 0.001 (were up to 5.4 off) |
+| Oral male (game asset, local only; SHA-256 unchanged; 1 path constraint, 4 deform tracks incl. the path) | 31 skins: 107,136 world values (max 0.0004) and 31,904 mesh values (max 0.0005) |
+| Runtime check script | Its native clip end now counts every keyed kind (deform, slot, path, draw order, events), as `Animation::duration` does; all twelve labs pass |
+| Path Lab with a 1.3-scaled chain bone | 28,080 world values (max 0.00006) and 33,280 region coordinates (max 0.0001) |
+| Female pose (game asset, local only; SHA-256 unchanged) | 85 skins: 1,085,280 bone-activity checks, 3,560,256 world values (max 0.0005), 1,355,542 mesh values (max 0.0007); original vs re-export with physics: 489,600 frames, max bone difference 0.00014, 33 physics constraints |
