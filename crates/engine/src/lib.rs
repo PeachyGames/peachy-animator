@@ -39,8 +39,8 @@ pub use playback::{
     PlayDirection, PlaybackStep, adjacent_key_time, advance_playback, last_key_time,
 };
 pub use pose::{
-    Affine, INHERIT_MIN_PARENT_AXIS_SQUARED, curve_progress, evaluate, inherit_pose, local_pose,
-    sample, world_pose, world_pose_with,
+    Affine, INHERIT_MIN_PARENT_AXIS_SQUARED, curve_progress, curve_value, evaluate, inherit_pose,
+    local_pose, sample, world_pose, world_pose_with,
 };
 pub use scene::{
     AttachmentDraw, Bounds, Scene, checked_evaluate_scene, checked_scene_from_authored,
@@ -95,6 +95,8 @@ mod slot_keys_tests;
 mod tests;
 #[cfg(test)]
 mod timeline_tests;
+#[cfg(test)]
+mod tint_tests;
 #[cfg(test)]
 mod transform_tests;
 #[cfg(test)]

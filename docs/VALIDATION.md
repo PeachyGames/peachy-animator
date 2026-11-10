@@ -1514,3 +1514,17 @@ Animated IK (native9) was merged into `main` first; inheritance became native10.
 | Original Draw Order Lab (`draw-order-bot.peachy`): arm to the front, head to the back with a zero offset, reset key, first key after 0 | Our draw sequence equals the runtime's applied draw order at all 312 samples; 28,080 world values, max error 0.00003; editor round trip keeps every order |
 | Game audit | Draw order no longer blocks any skeleton; still **9 of 21** (the draw order rigs have other blockers) |
 | Rust suite | fmt, clippy `-D warnings`, architecture and build pass; **522** tests pass |
+
+
+## Attachment tint and curve edge cases, native v17 — November 10, 2026
+
+| Check | Result |
+| --- | --- |
+| Editor and runtime probes (original) | Attachment colors follow the slot color contract (6 digits opaque, omitted white) |
+| Original Tint Lab (`tint-bot.peachy`): tinted region, half-alpha tint under keyed slot colors, tinted swap image, flat overshoot bone key and color channel | 16,496 color channels (slot × attachment) within half a byte, draw order at 312 samples and 28,080 world values (max 0.00003) against external 4.3.13; editor round trip keeps colors and both overshoot curves |
+| Out-of-interval time handles (original variant, −0.9 to 1.9) | 28,080 world values, max 0.00003 |
+| Oral-artist back (game asset, local only; SHA-256 unchanged) | 30 skins: 106,920 world values (max 0.0002) and 42,024 mesh values (max 0.0002); original vs re-export with physics: 16,200 frames, max bone difference 0.00006, 29 physics constraints |
+| Idle female (game asset, local only; SHA-256 unchanged) | 5 offset curves, 10 draw order keys, 1 tint. 106 skins: 431,844 bone-activity checks, 2,591,064 world values (max 0.0004) and 1,043,812 mesh values (max 0.0005); original vs re-export with physics: 267,120 frames, max bone difference 0.00015, 46 physics constraints |
+| Runtime check script | Now also runs on packed game atlases: rotated regions are matched by position and packed UVs are compared only on untrimmed, unrotated regions |
+| Game audit | **11 of 21** skeletons import fully |
+| Rust suite | fmt, clippy `-D warnings`, architecture and build pass; **527** tests pass |

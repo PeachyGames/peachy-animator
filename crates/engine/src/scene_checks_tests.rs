@@ -39,6 +39,7 @@ fn fixture() -> Document {
                         edges: vec![],
                         width: 0.,
                         height: 0.,
+                        color: peachy_document::WHITE,
                     }),
                 )]),
             )]),

@@ -11,6 +11,7 @@ pub(super) fn read_attachment(
         .or(name.as_deref())
         .unwrap_or(placeholder)
         .into();
+    let color = read_hex_color(value, &format!("Attachment {placeholder} color"))?;
     let attachment = match value["type"].as_str().unwrap_or("region") {
         "region" => Attachment::Region(Region {
             name,
@@ -18,6 +19,7 @@ pub(super) fn read_attachment(
             width: number(value, "width", 0.0),
             height: number(value, "height", 0.0),
             transform: region_transform(value),
+            color,
         }),
         "mesh" => {
             let uvs = pairs(&value["uvs"], "Mesh UVs")?;
@@ -39,6 +41,7 @@ pub(super) fn read_attachment(
                     .unwrap_or_default(),
                 width: number(value, "width", 0.0),
                 height: number(value, "height", 0.0),
+                color,
             })
         }
         kind => return Err(format!("Unsupported attachment type {kind}")),
@@ -208,6 +211,10 @@ pub(super) fn write_attachment(attachment: &Attachment) -> Value {
             v
         }
     };
+    let [r, g, b, a] = attachment.color();
+    if attachment.color() != peachy_document::WHITE {
+        value["color"] = json!(format!("{r:02x}{g:02x}{b:02x}{a:02x}"));
+    }
     value["path"] = json!(attachment.path());
     if let Some(name) = attachment.name() {
         value["name"] = json!(name);
@@ -232,11 +239,8 @@ pub(super) fn inspect_attachment(
     if region.get("sequence").is_some() {
         issues.push(format!("{context}: image sequence"));
     }
-    if region.get("color").is_some_and(|v| {
-        !v.as_str()
-            .is_some_and(|s| s.eq_ignore_ascii_case("ffffffff"))
-    }) {
-        issues.push(format!("{context}: tint"));
+    if let Err(error) = read_hex_color(region, &format!("{context}: color")) {
+        issues.push(error);
     }
     let fields: &[&str] = match region["type"].as_str().unwrap_or("region") {
         "region" => &[

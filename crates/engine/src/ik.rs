@@ -358,8 +358,8 @@ pub(crate) fn sample_color(track: &ColorTrack, time: f32) -> Option<[f32; 4]> {
             let (a, b) = (channels(left.color), channels(right.color));
             let mut out = [0.; 4];
             for channel in 0..4 {
-                let t = crate::curve_progress(left.curves[channel], progress);
-                out[channel] = a[channel] + (b[channel] - a[channel]) * t;
+                out[channel] =
+                    crate::curve_value(left.curves[channel], progress, a[channel], b[channel]);
             }
             return Some(out);
         }

@@ -577,3 +577,13 @@ but not how unlisted slots are placed. That rule, and the malformed cases, were
 established by black-box comparison of original random probes against the
 runtime's public `Skeleton.drawOrder` and through installed-editor round trips.
 No runtime or editor implementation source was read.
+
+
+### Attachment tint and curve edge cases — November 10, 2026
+
+The attachment color contract came from an original probe through the installed
+editor CLI and the runtime's public attachment `color`. Offset and
+out-of-interval curves were compared black-box against the runtime with original
+fixtures; the shipped game export only showed that they occur. No runtime or
+editor implementation source was read. Reading egui's own (MIT) source to
+confirm `SliderClamping` defaults is ordinary dependency inspection.

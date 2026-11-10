@@ -663,6 +663,7 @@ fn partial_mix_weight_binding_add_and_unbind_use_applied_snapshot_once_with_pend
                     edges: vec![],
                     width: 0.,
                     height: 0.,
+                    color: peachy_document::WHITE,
                 }),
             )]),
         )]),

@@ -679,6 +679,7 @@ fn exact_attachment_identity_and_strict_serialization_preserve_other_skins_and_r
                 width: 10.,
                 height: 20.,
                 transform: RegionTransform::default(),
+                color: peachy_document::WHITE,
             }),
         );
     let region = AttachmentRef {

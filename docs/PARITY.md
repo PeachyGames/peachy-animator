@@ -41,6 +41,7 @@ comparison. The native `.peachy` format is our own editable model.
 | Path constraints | Pending | Needs controlled inputs, public behavior specification and runtime boundary checks |
 | Slot animation | Attachment swaps (incl. hide) and RGBA keys with per-channel curves import/export and evaluate | Slot Lab matches the runtime incl. visibility and color per sample; authoring UI, rgb/alpha/dark tint and sequences remain. See [slot keys](slices/slot-keys.md) |
 | Events | Definitions and timed keys (with per-key overrides) import, export and migrate; reference scale stored | The doggy-scene female opens and matches the runtime; no Events view or event authoring yet. See [events](slices/events.md) |
+| Attachment tint | Region/mesh color imports, exports and tints draws (slot × attachment) | Tint Lab matches the runtime color per sample; no editor control yet. See [attachment tint](slices/attachment-tint.md) |
 | Draw order | Keyed draw order imports, exports, migrates and reorders every scene (drawing and picking) | Draw Order Lab matches the runtime order at every sample; no draw order authoring, Dopesheet rows or folders yet. See [draw order](slices/draw-order.md) |
 | Clipping, sequences | Pending | Unsupported imports are refused; no silent approximation |
 | Engine integration | Versioned Spine JSON plus single-page atlas export | Separate licensed runtime is an external consumer/oracle; native `.spine` and binary `.skel` decoding remain unsupported |

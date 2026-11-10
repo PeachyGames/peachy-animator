@@ -74,6 +74,11 @@ Native v13 adds `Animation.deform_tracks` with dense offsets (per vertex, or per
 weighted influence). Sampled deforms travel in `AuthoredPose`; scenes apply them
 via `deformed_mesh_world_vertices`. Keep slot renames updating deform refs.
 
+Native v17 adds `Region.color`/`Mesh.color` (draws use slot × attachment color)
+and `Curve::BezierOffset` (value handles as offsets; sample values with
+`curve_value`, not `curve_progress`). Bezier handles only need to be finite.
+Data sliders must use `SliderClamping::Edits` so viewing never rewrites data.
+
 Native v16 adds `Animation.draw_order` (Spine offsets as written; scenes draw
 in `EvaluatedPose.draw_order`, never slot-list order, in Animate).
 

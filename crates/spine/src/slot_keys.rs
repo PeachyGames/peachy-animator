@@ -93,12 +93,12 @@ pub(super) fn read(
                                         f32::from(next_color[channel]) / 255.,
                                     );
                                     curves[channel] = if (v1 - v0).abs() < 1e-8 {
-                                        if (c[1] - v0).abs() > 1e-5 || (c[3] - v0).abs() > 1e-5 {
-                                            return Err(format!(
-                                                "{context}: color curve overshoot between equal values is unsupported"
-                                            ));
-                                        }
-                                        Curve::Linear
+                                        super::flat_curve(
+                                            time,
+                                            next_time,
+                                            v0,
+                                            [c[0], c[1], c[2], c[3]],
+                                        )?
                                     } else {
                                         Curve::Bezier([
                                             normalized_control(time, next_time, c[0])?,
@@ -176,7 +176,7 @@ pub(super) fn write(
             if key.curves.iter().all(|c| *c == Curve::Stepped) {
                 k["curve"] = json!("stepped");
             } else if let Some(next) = track.keys.get(i + 1)
-                && key.curves.iter().any(|c| matches!(c, Curve::Bezier(_)))
+                && key.curves.iter().any(|c| c.is_bezier())
             {
                 let mut handles = vec![];
                 for channel in 0..4 {
@@ -184,6 +184,12 @@ pub(super) fn write(
                         f32::from(key.color[channel]) / 255.,
                         f32::from(next.color[channel]) / 255.,
                     );
+                    if let Curve::BezierOffset(offsets) = key.curves[channel] {
+                        handles.extend(super::offset_curve_handles(
+                            key.time, next.time, v0, offsets,
+                        )?);
+                        continue;
+                    }
                     // A linear channel is the Bezier with handles at thirds.
                     let [x1, y1, x2, y2] = match key.curves[channel] {
                         Curve::Bezier(c) => c,

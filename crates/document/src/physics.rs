@@ -4,7 +4,7 @@
 //! Defaults and field names were observed from installed Spine 4.3.26 JSON
 //! import/re-export and the separately licensed 4.3.13 runtime's public data API,
 //! using original probe files. See docs/PROVENANCE.md.
-use crate::{Bone, Curve, Keyframe};
+use crate::{Bone, Keyframe};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -287,12 +287,8 @@ pub(crate) fn validate_keys(keys: &[Keyframe]) -> Result<(), String> {
         if !k.time.is_finite() || !k.value.is_finite() || k.time < 0.0 || k.time <= previous {
             return Err("Keys must be finite, nonnegative and ordered".into());
         }
-        if let Curve::Bezier(c) = k.curve
-            && (!c.iter().all(|v| v.is_finite())
-                || !(0.0..=1.0).contains(&c[0])
-                || !(0.0..=1.0).contains(&c[2]))
-        {
-            return Err("Bezier time handles must lie within the key interval (0–1)".into());
+        if !k.curve.handles_valid() {
+            return Err("Bezier handles must be finite".into());
         }
         previous = k.time;
     }

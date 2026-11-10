@@ -635,15 +635,23 @@ pub fn export_json(doc: &Document) -> Result<Value, String> {
 /// Independent strict parser for the public setup-slot RGB/RGBA contract.
 /// Six ASCII hex digits imply opaque alpha; native storage always has four bytes.
 fn read_slot_color(slot: &Value) -> Result<[u8; 4], String> {
-    let Some(value) = slot.get("color") else {
+    read_hex_color(slot, "Setup slot color")
+}
+
+/// The same contract applies to attachment colors (observed with installed
+/// 4.3.26 and the external 4.3.13 runtime): omitted is white.
+pub(crate) fn read_hex_color(entry: &Value, what: &str) -> Result<[u8; 4], String> {
+    let Some(value) = entry.get("color") else {
         return Ok([255; 4]);
     };
     let text = value
         .as_str()
-        .ok_or("Setup slot color must be a hexadecimal string")?;
+        .ok_or_else(|| format!("{what} must be a hexadecimal string"))?;
     let bytes = text.as_bytes();
     if !matches!(bytes.len(), 6 | 8) || !bytes.iter().all(u8::is_ascii_hexdigit) {
-        return Err("Setup slot color must contain 6 RGB or 8 RGBA ASCII hex digits".into());
+        return Err(format!(
+            "{what} must contain 6 RGB or 8 RGBA ASCII hex digits"
+        ));
     }
     let hex = |byte: u8| match byte {
         b'0'..=b'9' => byte - b'0',
@@ -750,10 +758,7 @@ pub(crate) fn read_keys(
                 }
                 let delta = next_value - value;
                 if delta.abs() < 1e-8 {
-                    if (h[1] - value).abs() > 1e-5 || (h[3] - value).abs() > 1e-5 {
-                        return Err("Bezier overshoot between equal values is not supported".into());
-                    }
-                    Curve::Linear
+                    flat_curve(time, next_time, value, [h[0], h[1], h[2], h[3]])?
                 } else {
                     Curve::Bezier([
                         normalized_control(time, next_time, h[0])?,
@@ -786,6 +791,14 @@ pub(crate) fn write_keys(keys: &[Keyframe]) -> Result<Vec<Value>, String> {
                     absolute_control(key.value, next.value, y2)?
                 ]);
             }
+            Curve::BezierOffset(handles) if i + 1 < keys.len() => {
+                k["curve"] = json!(offset_curve_handles(
+                    key.time,
+                    keys[i + 1].time,
+                    key.value,
+                    handles
+                )?);
+            }
             _ => {}
         }
         written.push(k);
@@ -801,6 +814,56 @@ fn checked_curve_coordinate(value: f64, context: &str) -> Result<f32, String> {
         ));
     }
     Ok(native)
+}
+
+/// A curve between equal values: linear when its value handles sit on the
+/// value, otherwise an offset Bezier (normalized time, absolute value offsets).
+pub(crate) fn flat_curve(
+    time: f32,
+    next_time: f32,
+    value: f32,
+    handles: [f32; 4],
+) -> Result<Curve, String> {
+    if (handles[1] - value).abs() <= 1e-5 && (handles[3] - value).abs() <= 1e-5 {
+        return Ok(Curve::Linear);
+    }
+    let offset = |handle: f32| {
+        let offset = handle - value;
+        if offset.is_finite() {
+            Ok(offset)
+        } else {
+            checked_curve_coordinate(f64::from(handle) - f64::from(value), "offset")
+        }
+    };
+    Ok(Curve::BezierOffset([
+        normalized_control(time, next_time, handles[0])?,
+        offset(handles[1])?,
+        normalized_control(time, next_time, handles[2])?,
+        offset(handles[3])?,
+    ]))
+}
+
+/// Absolute Spine handles for an offset Bezier starting at `value`.
+pub(crate) fn offset_curve_handles(
+    time: f32,
+    next_time: f32,
+    value: f32,
+    [x1, h1, x2, h2]: [f32; 4],
+) -> Result<[f32; 4], String> {
+    let absolute = |offset: f32| {
+        let handle = value + offset;
+        if handle.is_finite() {
+            Ok(handle)
+        } else {
+            checked_curve_coordinate(f64::from(value) + f64::from(offset), "export handle")
+        }
+    };
+    Ok([
+        absolute_control(time, next_time, x1)?,
+        absolute(h1)?,
+        absolute_control(time, next_time, x2)?,
+        absolute(h2)?,
+    ])
 }
 
 fn normalized_control(start: f32, end: f32, handle: f32) -> Result<f32, String> {
@@ -1101,7 +1164,8 @@ mod tests {
             ("hull", json!(99)),
             ("uvs", json!([0, 0, 1, 0, 1, 1, 0, 1, "bad", 0.5])),
             ("edges", json!([0, 3])),
-            ("color", json!("ff0000ff")),
+            // Attachment tint is supported (native v17); malformed hex is not.
+            ("color", json!("ff00")),
             ("type", json!("linkedmesh")),
             ("sequence", json!({"count":2})),
         ] {
@@ -1277,6 +1341,7 @@ mod tests {
             width: 10.0,
             height: 10.0,
             transform: RegionTransform::default(),
+            color: peachy_document::WHITE,
         };
         let skin = BTreeMap::from([(
             "body".into(),

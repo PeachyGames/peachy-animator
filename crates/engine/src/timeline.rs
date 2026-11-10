@@ -1,5 +1,5 @@
 //! Exact typed key identities and shared timing transitions for bone/IK tracks.
-use peachy_document::{Curve, Document, IkKeyframe, IkTrack, Keyframe, Property, Track};
+use peachy_document::{Document, IkKeyframe, IkTrack, Keyframe, Property, Track};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 
@@ -278,12 +278,8 @@ fn clipboard_sources(
                 if !entry.key.value.is_finite() {
                     return Err("Clipboard values must be finite".into());
                 }
-                if let Curve::Bezier(c) = entry.key.curve
-                    && (!c.iter().all(|v| v.is_finite())
-                        || !(0.0..=1.0).contains(&c[0])
-                        || !(0.0..=1.0).contains(&c[2]))
-                {
-                    return Err("Clipboard Bezier time handles must lie within 0–1".into());
+                if !entry.key.curve.handles_valid() {
+                    return Err("Clipboard Bezier handles must be finite".into());
                 }
                 result.push(OwnedKey::Bone {
                     bone,

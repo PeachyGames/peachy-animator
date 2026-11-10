@@ -94,8 +94,7 @@ pub fn sample(track: &Track, time: f32) -> f32 {
         let (left, right) = (pair[0], pair[1]);
         if time < right.time {
             let progress = (time - left.time) / (right.time - left.time);
-            let t = curve_progress(left.curve, progress);
-            return interpolate(left.value, right.value, t);
+            return curve_value(left.curve, progress, left.value, right.value);
         }
     }
     track
@@ -104,12 +103,45 @@ pub fn sample(track: &Track, time: f32) -> f32 {
         .map_or(track.property.neutral(), |k| k.value)
 }
 
+/// Value between two keys. Offset Beziers are evaluated in the value domain
+/// (their handles are offsets from `left`); other curves through
+/// [`curve_progress`].
+pub fn curve_value(curve: Curve, progress: f32, left: f32, right: f32) -> f32 {
+    let Curve::BezierOffset([x1, h1, x2, h2]) = curve else {
+        return interpolate(left, right, curve_progress(curve, progress));
+    };
+    let t = progress.clamp(0.0, 1.0);
+    let span = right - left;
+    let x_at = |u: f32| 3.0 * (1.0 - u).powi(2) * u * x1 + 3.0 * (1.0 - u) * u * u * x2 + u * u * u;
+    let y_at =
+        |u: f32| 3.0 * (1.0 - u).powi(2) * u * h1 + 3.0 * (1.0 - u) * u * u * h2 + u * u * u * span;
+    // The same ten-segment polyline as normalized curves (docs/PROVENANCE.md).
+    let (mut previous_x, mut previous_y) = (0.0, 0.0);
+    for segment in 1..=10 {
+        let u = segment as f32 / 10.0;
+        let (x, y) = (x_at(u), y_at(u));
+        if t <= x {
+            let fraction = if x > previous_x {
+                (t - previous_x) / (x - previous_x)
+            } else {
+                0.0
+            };
+            return left + interpolate(previous_y, y, fraction);
+        }
+        previous_x = x;
+        previous_y = y;
+    }
+    right
+}
+
+/// Normalized progress (0 at the left key, 1 at the right). An offset Bezier
+/// is read as spanning one unit, as for fraction-valued deform keys.
 pub fn curve_progress(curve: Curve, progress: f32) -> f32 {
     let t = progress.clamp(0.0, 1.0);
     match curve {
         Curve::Linear => t,
         Curve::Stepped => 0.0,
-        Curve::Bezier([x1, y1, x2, y2]) => {
+        Curve::Bezier([x1, y1, x2, y2]) | Curve::BezierOffset([x1, y1, x2, y2]) => {
             let cubic = |p1: f32, p2: f32, u: f32| {
                 3.0 * (1.0 - u).powi(2) * u * p1 + 3.0 * (1.0 - u) * u * u * p2 + u * u * u
             };

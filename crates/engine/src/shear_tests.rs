@@ -845,6 +845,7 @@ fn sheared_weighted_and_region_scene_matches_original_external_observation_point
         edges: vec![],
         width: 0.,
         height: 0.,
+        color: peachy_document::WHITE,
     };
     document.slots = vec![
         Slot {
@@ -877,6 +878,7 @@ fn sheared_weighted_and_region_scene_matches_original_external_observation_point
                         width: 2.,
                         height: 4.,
                         transform: RegionTransform::default(),
+                        color: peachy_document::WHITE,
                     }),
                 )]),
             ),

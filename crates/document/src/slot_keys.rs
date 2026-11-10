@@ -100,14 +100,8 @@ impl Document {
                     ));
                 }
                 for curve in key.curves {
-                    if let Curve::Bezier(c) = curve
-                        && (!c.iter().all(|v| v.is_finite())
-                            || !(0.0..=1.0).contains(&c[0])
-                            || !(0.0..=1.0).contains(&c[2]))
-                    {
-                        return Err(
-                            "Bezier time handles must lie within the key interval (0–1)".into()
-                        );
+                    if !curve.handles_valid() {
+                        return Err("Bezier handles must be finite".into());
                     }
                 }
             }

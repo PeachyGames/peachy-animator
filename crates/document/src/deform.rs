@@ -66,12 +66,8 @@ impl Document {
                         key.placeholder
                     ));
                 }
-                if let Curve::Bezier(c) = deform.curve
-                    && (!c.iter().all(|v| v.is_finite())
-                        || !(0.0..=1.0).contains(&c[0])
-                        || !(0.0..=1.0).contains(&c[2]))
-                {
-                    return Err("Bezier time handles must lie within the key interval (0–1)".into());
+                if !deform.curve.handles_valid() {
+                    return Err("Bezier handles must be finite".into());
                 }
             }
         }

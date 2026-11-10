@@ -166,7 +166,10 @@ pub(super) fn write(tracks: &[DeformTrack]) -> Result<Value, String> {
             }
             match key.curve {
                 Curve::Stepped => k["curve"] = json!("stepped"),
-                Curve::Bezier([x1, y1, x2, y2]) if i + 1 < track.keys.len() => {
+                // Deform progress spans one unit, so offsets equal normalized values.
+                Curve::Bezier([x1, y1, x2, y2]) | Curve::BezierOffset([x1, y1, x2, y2])
+                    if i + 1 < track.keys.len() =>
+                {
                     let next = track.keys[i + 1].time;
                     k["curve"] = json!([
                         absolute_control(key.time, next, x1)?,

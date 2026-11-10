@@ -178,13 +178,22 @@ fn malformed_or_conflicting_shear_channels_never_silently_default_or_discard_dat
             assert!(import_json(&source, "truncated/extra curve").is_err());
         }
     }
+    // Overshoot between equal values imports as an offset Bezier (native v17).
     let equal_overshoot =
         fixture(json!({"shearx":[{"value":0,"curve":[0.2,40,0.8,40]},{"time":1,"value":0}]}));
-    assert!(import_json(&equal_overshoot, "unsupported equal-value overshoot").is_err());
+    let doc = import_json(&equal_overshoot, "equal-value overshoot").unwrap();
+    let key = doc.animations[0].tracks[0].keys[0];
+    assert_eq!(key.curve, Curve::BezierOffset([0.2, 40., 0.8, 40.]));
+    let output = export_json(&doc).unwrap();
+    assert_eq!(
+        output["animations"]["test"]["bones"]["root"]["shearx"][0]["curve"],
+        json!([0.2f32, 40.0, 0.8f32, 40.0])
+    );
+    assert_eq!(import_json(&output, "equal-value overshoot").unwrap(), doc);
     let mut unordered = fixture(json!({"shearx":[{"time":1,"value":0},{"time":0,"value":10}]}));
     assert!(import_json(&unordered, "unordered").is_err());
     unordered["animations"]["test"]["bones"]["root"]["shearx"] =
-        json!([{"time":0,"value":0,"curve":[1.2,0,0.2,10]},{"time":1,"value":10}]);
+        json!([{"time":0,"value":0,"curve":[1e39,0,0.2,10]},{"time":1,"value":10}]);
     assert!(import_json(&unordered, "unordered handles").is_err());
 }
 

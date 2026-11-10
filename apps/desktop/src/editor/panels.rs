@@ -372,13 +372,40 @@ impl Editor {
                     curve = Curve::Bezier([0.42, 0.0, 0.58, 1.0]);
                 }
             });
-            if let Curve::Bezier(ref mut handles) = curve {
-                for (i, label) in ["Time 1", "Value 1", "Time 2", "Value 2"]
-                    .iter()
-                    .enumerate()
-                {
-                    let range = if i % 2 == 0 { 0.0..=1.0 } else { -1.0..=2.0 };
-                    let response = ui.add(egui::Slider::new(&mut handles[i], range).text(*label));
+            // Offset Beziers come from Spine curves that overshoot between equal
+            // values; their value handles are offsets in the property's units.
+            let offset = matches!(curve, Curve::BezierOffset(_));
+            if offset {
+                ui.label("Overshoot curve between equal values (value handles are offsets)");
+            }
+            if let Curve::Bezier(ref mut handles) | Curve::BezierOffset(ref mut handles) = curve {
+                let labels = if offset {
+                    ["Time 1", "Offset 1", "Time 2", "Offset 2"]
+                } else {
+                    ["Time 1", "Value 1", "Time 2", "Value 2"]
+                };
+                for (i, label) in labels.iter().enumerate() {
+                    let response = if i % 2 == 0 {
+                        // `Edits`: imported handles outside the range stay intact
+                        // until the user drags them (viewing must not rewrite data).
+                        ui.add(
+                            egui::Slider::new(&mut handles[i], 0.0..=1.0)
+                                .clamping(egui::SliderClamping::Edits)
+                                .text(*label),
+                        )
+                    } else if offset {
+                        ui.add(
+                            egui::DragValue::new(&mut handles[i])
+                                .speed(0.1)
+                                .prefix(format!("{label}: ")),
+                        )
+                    } else {
+                        ui.add(
+                            egui::Slider::new(&mut handles[i], -1.0..=2.0)
+                                .clamping(egui::SliderClamping::Edits)
+                                .text(*label),
+                        )
+                    };
                     if response.gained_focus() {
                         self.cancel_transform_edit();
                     }
@@ -388,9 +415,8 @@ impl Editor {
                         self.session.begin_transaction();
                     }
                 }
-                if handles[0] > handles[2] {
-                    handles.swap(0, 2);
-                }
+                // Crossed time handles are valid Spine curves; never reorder them
+                // here, or merely inspecting a key would rewrite it.
                 let (r, _) =
                     ui.allocate_exact_size(vec2(ui.available_width(), 66.0), Sense::hover());
                 let points: Vec<_> = (0..=40)

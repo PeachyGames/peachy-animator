@@ -201,8 +201,18 @@ fn scene_from_evaluated(doc: &Document, skin: &str, pose: crate::EvaluatedPose) 
             slot: slot_index,
             attachment: key,
             image: attachment.path().into(),
-            color: slot_colors[slot_index]
-                .map(|channel| (channel.clamp(0., 1.) * 255.).round() as u8),
+            // Slot color times attachment color, as Spine renderers tint.
+            color: {
+                let tint = attachment.color();
+                let mut color = [0; 4];
+                for (channel, out) in color.iter_mut().enumerate() {
+                    let value = slot_colors[slot_index][channel].clamp(0., 1.)
+                        * f32::from(tint[channel])
+                        / 255.;
+                    *out = (value * 255.).round() as u8;
+                }
+                color
+            },
             vertices,
             uvs,
             triangles,

@@ -21,6 +21,7 @@ fn mesh(influences: Vec<Vec<BoneInfluence>>) -> Mesh {
         width: 10.,
         height: 10.,
         edges: vec![0, 2, 2, 4, 4, 0],
+        color: peachy_document::WHITE,
     }
 }
 
@@ -341,6 +342,7 @@ fn region_and_slot_local_mesh_paths_apply_the_slot_transform_once_and_keep_draw_
             y: 24.,
             ..Default::default()
         },
+        color: peachy_document::WHITE,
     };
     doc.skins.get_mut("default").unwrap().insert(
         "overlay".into(),

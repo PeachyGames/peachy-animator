@@ -190,7 +190,7 @@ impl Editor {
                 selected_bone == Some(i)
             };
             let bound = self.tool == Tool::Weights && self.weights.mesh.as_ref().is_some_and(|key|
-                matches!(doc.attachment(key),Some(Attachment::Mesh(Mesh {vertices:MeshVertices::Weighted {influences},..})) if influences.iter().flatten().any(|influence|influence.bone == i)));
+                matches!(doc.attachment(key),Some(Attachment::Mesh(Mesh {vertices:MeshVertices::Weighted {influences},.. })) if influences.iter().flatten().any(|influence|influence.bone == i)));
             let color = if bound {
                 weights::bone_color(i)
             } else if selected {

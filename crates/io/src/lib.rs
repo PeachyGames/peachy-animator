@@ -29,6 +29,25 @@ pub fn load(path: &Path) -> Result<Document, String> {
 pub fn decode_project(text: &str) -> Result<Document, String> {
     let mut value: serde_json::Value = serde_json::from_str(text).map_err(|e| e.to_string())?;
     let original_format = value["format"].as_u64();
+    if matches!(original_format, Some(1..=16))
+        && value["skins"].as_object().is_some_and(|skins| {
+            skins
+                .values()
+                .filter_map(serde_json::Value::as_object)
+                .any(|slots| {
+                    slots
+                        .values()
+                        .filter_map(serde_json::Value::as_object)
+                        .any(|attachments| {
+                            attachments
+                                .values()
+                                .any(|attachment| attachment.get("color").is_some())
+                        })
+                })
+        })
+    {
+        return Err("Legacy project formats cannot contain attachment colors".into());
+    }
     if matches!(original_format, Some(1..=15))
         && value["animations"].as_array().is_some_and(|animations| {
             animations
@@ -231,6 +250,10 @@ pub fn decode_project(text: &str) -> Result<Document, String> {
                 .insert("draw_order".into(), serde_json::json!([]));
         }
         value["format"] = 16.into();
+    }
+    // v16→v17: attachment colors default to white; nothing to add.
+    if value["format"].as_u64() == Some(16) {
+        value["format"] = 17.into();
     }
     let mut doc: Document = serde_json::from_value(value).map_err(|e| e.to_string())?;
     // Wrapping vertices preserves their values and all surrounding fields. Decode
@@ -502,7 +525,7 @@ fn materialize_v2_holds(doc: &mut Document, durations: Vec<f32>) -> Result<(), S
                 {
                     // The old exporter omitted a final Bezier without a next key.
                     // Do not activate that formerly unused curve by appending a hold.
-                    if matches!(last.curve, Curve::Bezier(_)) {
+                    if last.curve.is_bezier() {
                         last.curve = Curve::Linear;
                     }
                     let value = last.value;

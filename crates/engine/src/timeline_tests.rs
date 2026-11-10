@@ -373,8 +373,8 @@ fn malformed_clipboards_and_target_overflow_fail_without_changing_data_or_redo()
         |v: &mut KeyClipboard| v.keys[0].key.time = 0.1,
         |v: &mut KeyClipboard| v.keys[0].key.value = f32::NAN,
         |v: &mut KeyClipboard| v.keys[0].key.time = f32::INFINITY,
-        // Crossed time handles are valid Spine data; out-of-interval ones are not.
-        |v: &mut KeyClipboard| v.keys[0].key.curve = Curve::Bezier([1.2, 0., 0.2, 1.]),
+        // Crossed or out-of-interval time handles are valid Spine data.
+        |v: &mut KeyClipboard| v.keys[0].key.curve = Curve::Bezier([f32::INFINITY, 0., 0.2, 1.]),
         |v: &mut KeyClipboard| v.keys.push(v.keys[0]),
     ] {
         let mut payload = good.clone();

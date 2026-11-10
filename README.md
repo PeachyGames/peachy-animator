@@ -111,6 +111,13 @@ body colors (Animate, `wave`):
 cargo run -p peachy-animator -- examples/peach-bot/slot-bot.peachy
 ```
 
+The original Tint Lab tints attachments on top of keyed slot colors and keys a
+curve that overshoots between equal values (Animate, `wave`):
+
+```sh
+cargo run -p peachy-animator -- examples/peach-bot/tint-bot.peachy
+```
+
 The original Draw Order Lab moves the left arm in front, sends the head to the
 back and then restores setup order (Animate, `wave`):
 

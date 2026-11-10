@@ -177,8 +177,9 @@ for (const animation of data.animations) {
         assert.equal(actualDraws.has(slotIndex), !!slot.appliedPose.attachment, `${animation.name} t=${time} slot ${slot.data.name} visibility`);
         const draw = actualDraws.get(slotIndex);
         if (draw) {
-          const c = slot.appliedPose.color;
-          [c.r, c.g, c.b, c.a].forEach((channel, i) => {
+          // Renderers tint with slot color times attachment color.
+          const c = slot.appliedPose.color, t = slot.appliedPose.attachment.color;
+          [c.r * t.r, c.g * t.g, c.b * t.b, c.a * t.a].forEach((channel, i) => {
             const error = Math.abs(draw.color[i] / 255 - channel);
             assert.ok(error <= 0.5 / 255 + 1e-6, `${animation.name} t=${time} slot ${slot.data.name} color ${i}: ours ${draw.color[i]} vs ${channel}`);
             report.colorComparisons = (report.colorComparisons ?? 0) + 1;
@@ -191,7 +192,17 @@ for (const animation of data.animations) {
           const vertices=new Float32Array(8);
           attachment.computeWorldVertices(slot,attachment.getOffsets(slot.appliedPose),vertices,0,2);
           const uvs=attachment.sequence.getUVs(0),region=attachment.sequence.regions[0];
-          assert.ok(region);assert.equal(region.degrees ?? 0,0,'Unrotated region fixture');
+          assert.ok(region);
+          if ((region.degrees ?? 0) !== 0) {
+            // Packed game atlases rotate regions: match corners by position.
+            report.rotatedRegions = (report.rotatedRegions ?? 0) + 1;
+            for (let i=0;i<4;i++) {
+              const error=Math.min(...actual.vertices.map(v=>Math.max(Math.abs(v[0]-vertices[i*2]),Math.abs(v[1]-vertices[i*2+1]))));
+              assert.ok(Number.isFinite(error) && error<=report.tolerance,`${animation.name} skin=${skin?.name} region=${slotIndex} error=${error}`);
+              report.regionComparisons+=2;report.maxRegionError=Math.max(report.maxRegionError,error);
+            }
+            continue;
+          }
           for (let i=0;i<4;i++) {
             const local=[(uvs[i*2]-region.u)/(region.u2-region.u),(uvs[i*2+1]-region.v)/(region.v2-region.v)];
             const ours=actual.uvs.findIndex(uv=>Math.abs(uv[0]-local[0])<1e-6 && Math.abs(uv[1]-local[1])<1e-6);
@@ -224,13 +235,19 @@ for (const animation of data.animations) {
         const localUVs=actual.uvs.flat();
         const packedUVs=attachment.sequence.getUVs(0);
         const region=attachment.sequence.regions[0];
-        assert.ok(region,'Mesh texture region'); assert.equal(region.degrees ?? 0,0,'Fixture atlas is unrotated');
+        assert.ok(region,'Mesh texture region');
+        // Packed game atlases rotate and trim regions; the plain packed-UV
+        // formula only holds for untrimmed, unrotated (fixture) regions.
+        const rotated=(region.degrees ?? 0) !== 0 || region.offsetX !== 0 || region.offsetY !== 0
+          || region.originalWidth !== region.width || region.originalHeight !== region.height;
+        if (rotated) report.packedRegionsSkipped = (report.packedRegionsSkipped ?? 0) + 1;
         assert.equal(localUVs.length,attachment.regionUVs.length);
         for (let i=0;i<localUVs.length;i++) {
           const error=Math.abs(localUVs[i]-attachment.regionUVs[i]);
           assert.ok(Number.isFinite(error) && error<=1e-6,'Local UV agreement');
+          // Packed UVs are only compared on unrotated (fixture) atlas regions.
           const expected=i%2===0 ? region.u+localUVs[i]*(region.u2-region.u) : region.v+localUVs[i]*(region.v2-region.v);
-          const packedError=Math.abs(expected-packedUVs[i]);
+          const packedError=rotated ? 0 : Math.abs(expected-packedUVs[i]);
           assert.ok(Number.isFinite(packedError) && packedError<=1e-6,'Packed UV agreement');
           report.uvComparisons+=2; report.maxUVError=Math.max(report.maxUVError,error,packedError);
         }

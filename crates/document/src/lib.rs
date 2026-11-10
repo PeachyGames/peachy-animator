@@ -26,7 +26,7 @@ pub use transform::{
     TransformConstraint, TransformMapping, TransformProperty, TransformTarget, TransformValues,
 };
 
-pub const FORMAT_VERSION: u32 = 16;
+pub const FORMAT_VERSION: u32 = 17;
 pub const KEY_TIME_EPSILON: f32 = 0.00001;
 pub fn same_key_time(a: f32, b: f32) -> bool {
     (a - b).abs() < KEY_TIME_EPSILON
@@ -168,6 +168,13 @@ pub enum Attachment {
 }
 
 impl Attachment {
+    /// Attachment tint (RGBA bytes), multiplied with the slot color when drawn.
+    pub fn color(&self) -> [u8; 4] {
+        match self {
+            Self::Region(region) => region.color,
+            Self::Mesh(mesh) => mesh.color,
+        }
+    }
     pub fn name(&self) -> Option<&str> {
         match self {
             Self::Region(r) => r.name.as_deref(),
@@ -236,6 +243,18 @@ pub struct Mesh {
     /// Nonessential Spine edge data, in pairs of coordinate offsets (2 * vertex index).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub edges: Vec<u32>,
+    /// Attachment tint in exact RGBA bytes, multiplied with the slot color.
+    /// Omitted when white. Native v17.
+    #[serde(default = "white", skip_serializing_if = "is_white")]
+    pub color: [u8; 4],
+}
+
+pub const WHITE: [u8; 4] = [255; 4];
+fn white() -> [u8; 4] {
+    WHITE
+}
+fn is_white(color: &[u8; 4]) -> bool {
+    *color == WHITE
 }
 
 impl Mesh {
@@ -364,6 +383,10 @@ pub struct Region {
     pub width: f32,
     pub height: f32,
     pub transform: RegionTransform,
+    /// Attachment tint in exact RGBA bytes, multiplied with the slot color.
+    /// Omitted when white. Native v17.
+    #[serde(default = "white", skip_serializing_if = "is_white")]
+    pub color: [u8; 4],
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -587,6 +610,24 @@ pub enum Curve {
     Stepped,
     /// Normalized time/value control points.
     Bezier([f32; 4]),
+    /// Normalized time handles; value handles as absolute offsets from the
+    /// start key's value. Spine allows a curve to overshoot between keys with
+    /// equal values, which normalized handles cannot express. Native v17.
+    BezierOffset([f32; 4]),
+}
+
+impl Curve {
+    /// Finite handles. Time handles may cross or leave the key interval: shipped
+    /// game exports do both, and the external runtime evaluates them normally.
+    pub fn handles_valid(self) -> bool {
+        match self {
+            Self::Bezier(c) | Self::BezierOffset(c) => c.iter().all(|v| v.is_finite()),
+            Self::Linear | Self::Stepped => true,
+        }
+    }
+    pub fn is_bezier(self) -> bool {
+        matches!(self, Self::Bezier(_) | Self::BezierOffset(_))
+    }
 }
 
 impl Document {
