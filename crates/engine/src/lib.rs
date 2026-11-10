@@ -3,6 +3,7 @@ mod authoring;
 mod commands;
 mod ghosting;
 mod ik;
+mod ik_sampling;
 mod ik_solver;
 mod mesh;
 mod mesh_binding;
@@ -16,15 +17,17 @@ mod session;
 mod timeline;
 mod tools;
 
-pub use authoring::{KeyState, PoseEdits, transform_group};
-pub use commands::{Command, EditTarget, apply_command, keyframe_at};
+pub use authoring::{IkPoseEdit, KeyState, PoseEdits, transform_group};
+pub use commands::{Command, EditTarget, apply_command, ik_keyframe_at, keyframe_at};
 pub use ghosting::{
     GhostRange, GhostSample, GhostSampling, GhostSide, GhostSource, MAX_GHOST_SAMPLES,
     ghost_samples,
 };
 pub use ik::{
-    EvaluatedPose, checked_evaluate_pose, checked_pose_from_locals, checked_pose_from_locals_with,
+    AuthoredPose, EvaluatedPose, checked_evaluate_pose, checked_pose_from_authored,
+    checked_setup_pose_from_locals, sample_authored_pose,
 };
+pub use ik_sampling::{IkPose, sample_ik};
 pub use mesh::{mesh_world_vertices, region_to_mesh, region_vertices};
 pub use mesh_binding::MeshBindPose;
 pub use mesh_soft_selection::{MeshSoftSelection, MeshTranslation};
@@ -37,11 +40,14 @@ pub use pose::{
     sample, world_pose, world_pose_with,
 };
 pub use scene::{
-    AttachmentDraw, Bounds, Scene, checked_evaluate_scene, checked_scene_from_locals,
-    checked_scene_from_locals_with, evaluate_scene, scene_from_locals,
+    AttachmentDraw, Bounds, Scene, checked_evaluate_scene, checked_scene_from_authored,
+    checked_setup_scene_from_locals, evaluate_scene,
 };
 pub use session::Session;
-pub use timeline::{ClipboardKey, KeyClipboard, TimelineKey, copy_keys};
+pub use timeline::{
+    AnimationKey, AnimationKeyClipboard, ClipboardKey, KeyClipboard, KeyOwner, TimelineKey,
+    copy_animation_keys, copy_keys,
+};
 pub use tools::{
     Axes, TransformGesture, TransformTool, drag_transform, drag_transform_in_frame,
     parse_transform_input, set_transform_value, transform_axes, transform_axes_from_world,
@@ -56,6 +62,8 @@ mod binding_tests;
 mod direct_weight_tests;
 #[cfg(test)]
 mod duration_tests;
+#[cfg(test)]
+mod ik_animation_tests;
 #[cfg(test)]
 mod ik_tests;
 #[cfg(test)]

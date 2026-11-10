@@ -1,17 +1,18 @@
 //! Bounded normal IK from elementary link geometry and original public pose
 //! observations. No external implementation or runtime constant was inspected.
 use crate::{
-    Affine, ik::check_world, pose::OBSERVED_DEGREES_TO_RADIANS, pose::inherit_linear,
+    Affine, IkPose, ik::check_world, pose::OBSERVED_DEGREES_TO_RADIANS, pose::inherit_linear,
     world_pose_with,
 };
-use peachy_document::{Constraint, Document, IkConstraint, Inherit, Transform};
+use peachy_document::{Document, IkConstraint, Inherit, Transform};
 
 /// Applied f32 frames and bone endpoints must retain their solved f64 reference
 /// within this absolute bound. There is no relative or large-coordinate exception.
-const IK_WORLD_COORDINATE_TOLERANCE: f64 = 0.001;
+pub(crate) const IK_WORLD_COORDINATE_TOLERANCE: f64 = 0.001;
 
 pub(crate) fn apply(
     doc: &Document,
+    poses: &[IkPose],
     locals: &mut [Transform],
     world: &mut Vec<Affine>,
     inherits: &[Inherit],
@@ -19,10 +20,13 @@ pub(crate) fn apply(
     let active: Vec<_> = doc
         .constraints
         .iter()
-        .filter_map(Constraint::as_ik)
-        .filter(|ik| ik.setup.mix > 0.0)
+        .zip(poses)
+        .filter_map(|(constraint, pose)| {
+            let ik = constraint.as_ik()?;
+            (pose.mix != 0.0).then_some((ik, *pose))
+        })
         .collect();
-    for (index, ik) in active.iter().enumerate() {
+    for (index, (ik, _)) in active.iter().enumerate() {
         validate_domain(doc, locals, ik)?;
         // Spine: bones affected by IK cannot disable transform inheritance.
         if let Some(&bone) = ik
@@ -35,7 +39,7 @@ pub(crate) fn apply(
                 ik.name, doc.bones[bone].name
             ));
         }
-        for other in &active[..index] {
+        for (other, _) in &active[..index] {
             // Nested chains (a toe inside a leg) solve sequentially in constraint
             // order: each solve writes applied locals and rebuilds world frames
             // before the next. Shared bones and targets inside another chain's
@@ -51,8 +55,8 @@ pub(crate) fn apply(
             }
         }
     }
-    for ik in active {
-        solve(doc, locals, world, ik, inherits)
+    for (ik, pose) in active {
+        solve(doc, locals, world, ik, pose, inherits)
             .map_err(|error| format!("IK {}: {error}", ik.name))?;
     }
     Ok(())
@@ -115,6 +119,7 @@ fn solve(
     locals: &mut [Transform],
     world: &mut Vec<Affine>,
     ik: &IkConstraint,
+    pose: IkPose,
     inherits: &[Inherit],
 ) -> Result<(), String> {
     let first = ik.bones[0];
@@ -159,7 +164,7 @@ fn solve(
         } else {
             ((distance * distance - a * a - b * b) / (2. * a * b)).clamp(-1., 1.)
         };
-        let bend = cosine.acos() * if ik.setup.bend_positive { 1. } else { -1. };
+        let bend = cosine.acos() * if pose.bend_positive { 1. } else { -1. };
         let parent_angle = dy.atan2(dx) - (b * bend.sin()).atan2(a + b * bend.cos()) - offset;
         desired[0].1 = parent_angle / OBSERVED_DEGREES_TO_RADIANS;
         desired.push((child, (bend + offset) / OBSERVED_DEGREES_TO_RADIANS));
@@ -175,7 +180,7 @@ fn solve(
         } else if delta > 180. {
             delta -= 360.;
         }
-        let rotation = authored + delta * f64::from(ik.setup.mix);
+        let rotation = authored + delta * pose.mix;
         if !rotation.is_finite() || !(rotation as f32).is_finite() {
             return Err("applied rotation is outside the finite coordinate range".into());
         }
@@ -278,17 +283,19 @@ fn wide_pose(doc: &Document, locals: &[Transform], inherits: &[Inherit]) -> Vec<
         world.push(match bone.parent {
             None => matrix,
             Some(parent) if inherits[index] == Inherit::Normal => world[parent].then(matrix),
-            Some(parent) => {
-                let p = world[parent];
-                // Degenerate frames already failed the checked f32 evaluation.
-                let [a, b, c, d] = inherit_linear(inherits[index], [p.a, p.b, p.c, p.d], *local)
-                    .unwrap_or([f64::NAN; 4]);
-                let [x, y] = p.point([f64::from(local.x), f64::from(local.y)]);
-                WideAffine { a, b, c, d, x, y }
-            }
+            Some(parent) => inherited_wide(world[parent], *local, inherits[index]),
         });
     }
     world
+}
+
+/// f64 reference frame for a non-normal child. Degenerate frames already failed
+/// the checked f32 evaluation, so NaN here can only fail a precision check.
+fn inherited_wide(parent: WideAffine, local: Transform, mode: Inherit) -> WideAffine {
+    let [a, b, c, d] = inherit_linear(mode, [parent.a, parent.b, parent.c, parent.d], local)
+        .unwrap_or([f64::NAN; 4]);
+    let [x, y] = parent.point([f64::from(local.x), f64::from(local.y)]);
+    WideAffine { a, b, c, d, x, y }
 }
 
 fn check_input_precision(
@@ -344,13 +351,9 @@ fn check_reconstruction(
         let expected = if inherits[index] == Inherit::Normal {
             parent_world.then(local)
         } else {
-            let p = parent_world;
             let mut posed = locals[index];
             posed.rotation = rotation as f32;
-            let [a, b, c, d] = inherit_linear(inherits[index], [p.a, p.b, p.c, p.d], posed)
-                .ok_or_else(|| format!("bone {}: degenerate inherited frame", bone.name))?;
-            let [x, y] = p.point([f64::from(posed.x), f64::from(posed.y)]);
-            WideAffine { a, b, c, d, x, y }
+            inherited_wide(parent_world, posed, inherits[index])
         };
         reference[index] = Some(expected);
         let actual = candidate[index];

@@ -29,8 +29,17 @@ pub fn load(path: &Path) -> Result<Document, String> {
 pub fn decode_project(text: &str) -> Result<Document, String> {
     let mut value: serde_json::Value = serde_json::from_str(text).map_err(|e| e.to_string())?;
     let original_format = value["format"].as_u64();
-    if matches!(original_format, Some(1..=8)) {
+    if matches!(original_format, Some(1..=9)) {
         reject_legacy_inherit(&value)?;
+    }
+    if matches!(original_format, Some(1..=8))
+        && value["animations"].as_array().is_some_and(|animations| {
+            animations
+                .iter()
+                .any(|animation| animation.get("ik_tracks").is_some())
+        })
+    {
+        return Err("Legacy project formats cannot contain IK animation tracks".into());
     }
     if matches!(original_format, Some(1..=7)) {
         reject_legacy_physics(&value)?;
@@ -97,8 +106,12 @@ pub fn decode_project(text: &str) -> Result<Document, String> {
         value["format"] = 8.into();
     }
     if value["format"].as_u64() == Some(8) {
-        add_v8_inherit(&mut value)?;
+        add_v8_ik_tracks(&mut value)?;
         value["format"] = 9.into();
+    }
+    if value["format"].as_u64() == Some(9) {
+        add_v9_inherit(&mut value)?;
+        value["format"] = 10.into();
     }
     let mut doc: Document = serde_json::from_value(value).map_err(|e| e.to_string())?;
     // Wrapping vertices preserves their values and all surrounding fields. Decode
@@ -110,7 +123,7 @@ pub fn decode_project(text: &str) -> Result<Document, String> {
     Ok(doc)
 }
 
-/// Formats 1–8 had normal inheritance only; any inherit field there is malformed.
+/// Formats 1–9 had normal inheritance only; any inherit field there is malformed.
 fn reject_legacy_inherit(value: &serde_json::Value) -> Result<(), String> {
     if value["bones"]
         .as_array()
@@ -126,8 +139,8 @@ fn reject_legacy_inherit(value: &serde_json::Value) -> Result<(), String> {
     Ok(())
 }
 
-/// v8→v9 makes every bone inherit normally and adds empty inherit key lists.
-fn add_v8_inherit(value: &mut serde_json::Value) -> Result<(), String> {
+/// v9→v10 makes every bone inherit normally and adds empty inherit key lists.
+fn add_v9_inherit(value: &mut serde_json::Value) -> Result<(), String> {
     for bone in value["bones"]
         .as_array_mut()
         .ok_or("Legacy bones must be an array")?
@@ -164,6 +177,34 @@ fn reject_legacy_physics(value: &serde_json::Value) -> Result<(), String> {
         })
     }) {
         return Err("Legacy project formats cannot contain physics timelines".into());
+    }
+    Ok(())
+}
+
+/// v8→v9 adds required, empty IK animation tracks. Formats 6–8 kept static IK
+/// Mix in [0,1]; enforce that typed-f32 contract before latest validation
+/// deliberately accepts finite negative/overshooting Mix values.
+fn add_v8_ik_tracks(value: &mut serde_json::Value) -> Result<(), String> {
+    if let Some(constraints) = value["constraints"].as_array() {
+        for constraint in constraints {
+            if constraint["type"].as_str() == Some("ik")
+                && let Some(mix) = constraint["setup"].get("mix")
+            {
+                let mix: f32 = serde_json::from_value(mix.clone()).map_err(|e| e.to_string())?;
+                if !mix.is_finite() || !(0.0..=1.0).contains(&mix) {
+                    return Err("Legacy IK Mix must be finite and within 0–1".into());
+                }
+            }
+        }
+    }
+    let animations = value["animations"]
+        .as_array_mut()
+        .ok_or("Legacy animations must be an array")?;
+    for animation in animations {
+        animation
+            .as_object_mut()
+            .ok_or("Legacy animation must be an object")?
+            .insert("ik_tracks".into(), serde_json::json!([]));
     }
     Ok(())
 }
@@ -581,6 +622,10 @@ mod tests {
             .iter_mut()
             .zip(&doc.animations)
         {
+            assert_eq!(
+                animation.as_object_mut().unwrap().remove("ik_tracks"),
+                Some(serde_json::json!([]))
+            );
             animation["duration"] = serde_json::json!(source.duration());
             for field in ["physics", "physics_resets", "inherit_tracks"] {
                 assert_eq!(

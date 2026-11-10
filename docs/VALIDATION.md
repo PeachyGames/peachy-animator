@@ -1418,3 +1418,17 @@ Region corners are not compared for that rig because its atlas trims whitespace.
 | Rust suite | fmt, clippy `-D warnings`, architecture and build pass; **420** tests pass |
 
 Artist inputs and reports stay under `.local/`; only counts are recorded here.
+
+
+## Animated IK integrated as native9 — November 9, 2026
+
+| Check | Result |
+| --- | --- |
+| Merge | 16 review commits (`71339e7`…`5002278`) merged onto `a89637b`; format renumbered to native9 |
+| Rust suite | fmt, clippy `-D warnings`, build and architecture pass; **480** tests pass, 1 ignored (two threads) |
+| External 4.3.13 runtime, 12 original examples | All pass. Animation Lab: 175,032 bone values (max 0.000036), 3,432 IK pose groups (max Mix error 8.3e-17), 160,160 region and 28,600 mesh coordinates. IK Chain Lab 3,900 IK groups; Physics Lab 3 constraints and 16 frames |
+| Game audit | 2/19 fully supported, inputs unchanged |
+| Not run | Native OS input acceptance; the user's interactive review |
+
+The raw IK-curve import precision correction remains open (see
+[ik-raw-precision.md](slices/ik-raw-precision.md)).

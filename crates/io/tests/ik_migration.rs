@@ -150,6 +150,7 @@ fn v5_load_is_read_only_and_explicit_latest_save_backs_up_original_bytes() {
         slot["color"] = json!([255, 255, 255, 255]);
     }
     for animation in expected["animations"].as_array_mut().unwrap() {
+        animation["ik_tracks"] = json!([]);
         animation["physics"] = json!([]);
         animation["physics_resets"] = json!([]);
         animation["inherit_tracks"] = json!([]);

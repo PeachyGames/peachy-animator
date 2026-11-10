@@ -50,30 +50,22 @@ impl Editor {
         if !self.setup_mode
             && let Some(bone) = self.selected_bone()
         {
-            self.cancel_gesture();
-            self.playing = false;
-            if let Err(error) = self
-                .session
-                .key_pose(self.animation, self.time, bone, properties)
-            {
-                self.error = Some(error);
-            }
+            self.request_pose_key(pose_key::PoseKeyAction::Transform {
+                bone,
+                properties: properties.to_vec(),
+            });
         }
     }
     pub(super) fn key_edited(&mut self, bone: Option<usize>) {
         if !self.setup_mode {
-            self.cancel_gesture();
-            self.playing = false;
-            if let Err(error) = self.session.key_edited(self.animation, self.time, bone) {
-                self.error = Some(error);
-            }
+            self.request_pose_key(pose_key::PoseKeyAction::Edited { bone });
         }
     }
     pub(super) fn key_state(&self, bone: usize, properties: &[Property]) -> KeyState {
         self.session.pose_edits().key_state(
             self.session.document(),
             self.animation,
-            self.snapped_time(),
+            self.time,
             bone,
             properties,
         )
@@ -171,8 +163,8 @@ mod tests {
         };
         let drag = KeyDrag::new(
             0,
-            8,
-            KeyId {
+            KeyId::Bone {
+                bone: 8,
                 property: Property::Rotation,
                 time: 0.,
             },
@@ -234,7 +226,8 @@ mod tests {
         let mut editor = empty_editor();
         editor.set_time(2.);
         editor.key_transform(&[Property::Rotation]);
-        let end_key = KeyId {
+        let end_key = KeyId::Bone {
+            bone: 8,
             property: Property::Rotation,
             time: 2.,
         };
@@ -248,7 +241,6 @@ mod tests {
         };
         editor.key_drag = KeyDrag::new(
             0,
-            8,
             end_key,
             &[end_key],
             geometry,

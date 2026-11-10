@@ -46,7 +46,7 @@ fn unbind(pose: MeshBindPose) -> Command {
 }
 
 fn vertices(doc: &Document, locals: Vec<Transform>) -> Vec<[f32; 2]> {
-    scene_from_locals(doc, "default", locals)
+    checked_setup_scene_from_locals(doc, "default", locals)
         .unwrap()
         .attachments[0]
         .vertices

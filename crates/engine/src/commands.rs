@@ -1,4 +1,6 @@
-use crate::{KeyClipboard, MeshBindPose, TimelineKey};
+use crate::{
+    AnimationKey, AnimationKeyClipboard, KeyClipboard, KeyOwner, MeshBindPose, TimelineKey,
+};
 use peachy_document::*;
 use serde::{Deserialize, Serialize};
 
@@ -20,6 +22,32 @@ pub enum Command {
     SetPhysicsConstraint {
         constraint: usize,
         value: PhysicsConstraint,
+    },
+    SetIkKey {
+        animation: usize,
+        constraint: usize,
+        key: IkKeyframe,
+    },
+    DeleteIkKey {
+        animation: usize,
+        constraint: usize,
+        time: f32,
+    },
+    MoveAnimationKeys {
+        animation: usize,
+        keys: Vec<AnimationKey>,
+        delta: f32,
+        copy: bool,
+    },
+    DeleteAnimationKeys {
+        animation: usize,
+        keys: Vec<AnimationKey>,
+    },
+    PasteAnimationKeys {
+        animation: usize,
+        target: KeyOwner,
+        time: f32,
+        clipboard: AnimationKeyClipboard,
     },
     SetPose {
         bone: usize,
@@ -137,11 +165,29 @@ pub enum Command {
     },
 }
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
-#[serde(tag = "mode", rename_all = "camelCase", deny_unknown_fields)]
+#[derive(Clone, Copy, Debug, Serialize)]
+#[serde(tag = "mode", rename_all = "camelCase")]
 pub enum EditTarget {
     Setup,
     Animate { animation: usize, time: f32 },
+}
+
+impl<'de> Deserialize<'de> for EditTarget {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        #[derive(Deserialize)]
+        #[serde(deny_unknown_fields)]
+        struct Empty {}
+        #[derive(Deserialize)]
+        #[serde(tag = "mode", rename_all = "camelCase", deny_unknown_fields)]
+        enum Wire {
+            Setup(Empty),
+            Animate { animation: usize, time: f32 },
+        }
+        Ok(match Wire::deserialize(deserializer)? {
+            Wire::Setup(_) => Self::Setup,
+            Wire::Animate { animation, time } => Self::Animate { animation, time },
+        })
+    }
 }
 
 /// Pure document transition. Neither the input nor history changes on failure.
@@ -174,8 +220,7 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
                     }
                     // Wider intermediates keep every finite authoring time valid,
                     // even when its frame number exceeds the f32 range.
-                    let time = ((f64::from(time) * f64::from(doc.fps)).round() / f64::from(doc.fps))
-                        as f32;
+                    let time = snapped_time(doc.fps, time)?;
                     let commands: Result<Vec<_>, String> = properties
                         .into_iter()
                         .map(|property| {
@@ -397,6 +442,82 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
             }
             keys.sort_by(|a, b| a.time.total_cmp(&b.time));
         }
+        Command::SetIkKey {
+            animation,
+            constraint,
+            key,
+        } => {
+            if doc
+                .constraints
+                .get(constraint)
+                .and_then(Constraint::as_ik)
+                .is_none()
+            {
+                return Err("Unknown IK constraint".into());
+            }
+            key.validate()?;
+            let clip = doc
+                .animations
+                .get_mut(animation)
+                .ok_or("Unknown animation")?;
+            let index = clip
+                .ik_tracks
+                .iter()
+                .position(|t| t.constraint == constraint)
+                .unwrap_or_else(|| {
+                    clip.ik_tracks.push(IkTrack {
+                        constraint,
+                        keys: vec![],
+                    });
+                    clip.ik_tracks.len() - 1
+                });
+            let keys = &mut clip.ik_tracks[index].keys;
+            if let Some(index) = keys.iter().position(|existing| existing.time == key.time) {
+                keys[index] = key;
+            } else {
+                keys.push(key);
+            }
+            keys.sort_by(|a, b| a.time.total_cmp(&b.time));
+        }
+        Command::DeleteIkKey {
+            animation,
+            constraint,
+            time,
+        } => {
+            if constraint >= doc.constraints.len() {
+                return Err("Unknown IK constraint".into());
+            }
+            let clip = doc
+                .animations
+                .get_mut(animation)
+                .ok_or("Unknown animation")?;
+            if !time.is_finite() || time < 0. || time > clip.duration() {
+                return Err("Delete time must be finite and inside the animation".into());
+            }
+            for track in &mut clip.ik_tracks {
+                if track.constraint == constraint
+                    && let Some(index) = key_index_by_time(&track.keys, time, |k| k.time)?
+                {
+                    track.keys.remove(index);
+                }
+            }
+            clip.ik_tracks.retain(|t| !t.keys.is_empty());
+        }
+        Command::MoveAnimationKeys {
+            animation,
+            keys,
+            delta,
+            copy,
+        } => crate::timeline::move_animation_keys(doc, animation, &keys, delta, copy)?,
+        Command::DeleteAnimationKeys { animation, keys } => {
+            crate::timeline::delete_animation_keys(doc, animation, &keys)?
+        }
+        Command::PasteAnimationKeys {
+            animation,
+            target,
+            time,
+            clipboard,
+        } => crate::timeline::paste_animation_keys(doc, animation, target, time, &clipboard)?,
         Command::DeleteKey {
             animation,
             bone,
@@ -460,13 +581,35 @@ pub fn keyframe_at(keys: &[Keyframe], time: f32) -> Result<Option<Keyframe>, Str
 
 /// Exact identities win; tolerance is only safe for one unambiguous nearby key.
 fn key_index(keys: &[Keyframe], time: f32) -> Result<Option<usize>, String> {
-    if let Some(index) = keys.iter().position(|key| key.time == time) {
+    key_index_by_time(keys, time, |key| key.time)
+}
+
+pub fn ik_keyframe_at(keys: &[IkKeyframe], time: f32) -> Result<Option<IkKeyframe>, String> {
+    if !time.is_finite() || time < 0. {
+        return Err("Key time must be finite and nonnegative".into());
+    }
+    key_index_by_time(keys, time, |key| key.time).map(|index| index.map(|index| keys[index]))
+}
+
+pub(crate) fn snapped_time(fps: u32, time: f32) -> Result<f32, String> {
+    if !time.is_finite() || time < 0. {
+        return Err("Key time must be finite and nonnegative".into());
+    }
+    Ok(((f64::from(time) * f64::from(fps)).round() / f64::from(fps)) as f32)
+}
+
+fn key_index_by_time<T>(
+    keys: &[T],
+    time: f32,
+    read: fn(&T) -> f32,
+) -> Result<Option<usize>, String> {
+    if let Some(index) = keys.iter().position(|key| read(key) == time) {
         return Ok(Some(index));
     }
     let mut nearby = keys
         .iter()
         .enumerate()
-        .filter(|(_, key)| same_key_time(key.time, time));
+        .filter(|(_, key)| same_key_time(read(key), time));
     let index = nearby.next().map(|(index, _)| index);
     if nearby.next().is_some() {
         return Err("Ambiguous key time; select an exact source key".into());

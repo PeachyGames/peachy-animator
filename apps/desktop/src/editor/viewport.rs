@@ -204,8 +204,12 @@ impl Editor {
             if doc
                 .constraints
                 .iter()
-                .filter_map(Constraint::as_ik)
-                .any(|ik| ik.setup.mix > 0. && ik.bones.contains(&i))
+                .enumerate()
+                .any(|(index, constraint)| {
+                    constraint
+                        .as_ik()
+                        .is_some_and(|ik| scene.ik_poses[index].mix != 0. && ik.bones.contains(&i))
+                })
             {
                 painter.circle_stroke(
                     start,

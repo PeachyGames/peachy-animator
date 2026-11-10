@@ -135,6 +135,7 @@ fn extreme_shear_sampling_and_pose_preview_preserve_original_keys_curves_and_his
         slots: vec![],
         skins: Default::default(),
         animations: vec![Animation {
+            ik_tracks: vec![],
             name: "extreme".into(),
             tracks: vec![track(Property::ShearX, -2e38, 2e38, curve)],
             physics: vec![],

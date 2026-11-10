@@ -1,5 +1,5 @@
 {
-  "format": 9,
+  "format": 10,
   "constraints": [],
   "name": "Peach Bot Weighted Lab",
   "fps": 30,
@@ -1055,6 +1055,7 @@
           ]
         }
       ],
+      "ik_tracks": [],
       "physics": [],
       "physics_resets": [],
       "inherit_tracks": []
@@ -1126,6 +1127,7 @@
           ]
         }
       ],
+      "ik_tracks": [],
       "physics": [],
       "physics_resets": [],
       "inherit_tracks": []

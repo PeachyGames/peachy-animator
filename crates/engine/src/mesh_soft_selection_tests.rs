@@ -72,6 +72,7 @@ fn rig(mesh: Mesh) -> Document {
             tracks: vec![],
             physics: vec![],
             physics_resets: vec![],
+            ik_tracks: vec![],
             inherit_tracks: vec![],
         }],
     };

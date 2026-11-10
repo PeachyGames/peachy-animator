@@ -8,6 +8,8 @@ mod ghosting;
 mod graph;
 mod icons;
 mod ik;
+#[cfg(test)]
+mod ik_animation_tests;
 mod key_drag;
 mod layout;
 mod mesh;
@@ -15,6 +17,7 @@ mod mesh_tools;
 mod panels;
 mod physics;
 mod playback;
+mod pose_key;
 mod preview;
 mod properties;
 mod rename;
@@ -42,8 +45,6 @@ mod weight_direct;
 mod weights;
 use eframe::egui::{self, Color32, FontId, Pos2, RichText, Sense, Stroke, Vec2, pos2, vec2};
 use peachy_document::*;
-#[cfg(test)]
-use peachy_engine::scene_from_locals;
 use peachy_engine::{
     Affine, Axes, Command, EditTarget, KeyState, PlayDirection, Session, TransformTool,
 };
@@ -93,7 +94,7 @@ pub(crate) struct Editor {
     selection_history: selection_history::SelectionHistory,
     key_selection: dopesheet_selection::KeySelection,
     key_drag: Option<key_drag::KeyDrag>,
-    timeline_clipboard: Option<peachy_engine::KeyClipboard>,
+    timeline_clipboard: Option<peachy_engine::AnimationKeyClipboard>,
     timeline_input: timeline_clipboard::TimelineInput,
     tree: TreeState,
     hidden_bones: BTreeSet<usize>,
@@ -136,6 +137,8 @@ pub(crate) struct Editor {
     ik_edit: Option<ik::IkEdit>,
     ik_blocked: Option<egui::Id>,
     ik_target: Option<ik::IkTargetPicker>,
+    ik_bend_request: Option<ik::IkBendRequest>,
+    pose_key_request: Option<pose_key::PoseKeyRequest>,
     drag: Option<TransformEdit>,
     transform_blocked: bool,
     transform_blocked_control: Option<egui::Id>,
@@ -253,6 +256,8 @@ impl Editor {
             ik_edit: None,
             ik_blocked: None,
             ik_target: None,
+            ik_bend_request: None,
+            pose_key_request: None,
             hidden_views: None,
             view_tabs: Default::default(),
             ghosting: Default::default(),
@@ -545,7 +550,7 @@ impl Editor {
             self.setup_mode
                 || !self.show_dopesheet
                 || self.animation != drag.animation
-                || self.selected_bone() != Some(drag.bone)
+                || self.timeline_owner() != Some(drag.owner)
         }) {
             self.cancel_dopesheet_drag();
         }
@@ -989,7 +994,7 @@ impl Editor {
                     "selectedKeys":self.key_selection.diagnostic(),"dopesheetFocused":self.dopesheet_has_focus(&ctx),
                     "windowFocused":ctx.input(|input|input.focused),
                     "keyDrag":self.key_drag.as_ref().map(key_drag::KeyDrag::diagnostic),
-                    "clipboardKeys":self.timeline_clipboard.as_ref().map_or(0, |clipboard| clipboard.keys.len()),
+                    "clipboardKeys":self.timeline_clipboard.as_ref().map_or(0, timeline_clipboard::clipboard_len),
                     "selectAllHeld":self.timeline_input.select_all_held(),
                     "selectedAttachment":self.selected_attachment(),"selectedVertex":self.mesh_vertex,"hiddenSlots":self.hidden_slots,
                     "pointer":ctx.input(|i|i.pointer.hover_pos().map(|p|[p.x,p.y])),
@@ -1003,6 +1008,8 @@ impl Editor {
                 report["graph"] = self.graph_diagnostic();
                 report["slotColor"] = self.slot_color_diagnostic();
                 report["playbackSpeed"] = self.playback_speed.into();
+                report["status"] = self.status.clone().into();
+                report["timelineOwner"] = serde_json::json!(self.timeline_owner());
                 report["animationEnd"] = self.animation_end().into();
                 report["weightedMeshCount"] = self.weighted_mesh_count().into();
                 report["weightsContext"] = self.weights_diagnostic();
@@ -1013,7 +1020,7 @@ impl Editor {
                     .evaluated_pose(self.weights_edit_target())
                 {
                     Ok(pose) => {
-                        serde_json::json!({"authoredLocals":pose.authored_locals(),"appliedLocals":pose.applied_locals(),"world":pose.world()})
+                        serde_json::json!({"authoredLocals":pose.authored_locals(),"appliedLocals":pose.applied_locals(),"ikPoses":pose.ik_poses(),"world":pose.world()})
                     }
                     Err(error) => serde_json::json!({"error":error}),
                 };

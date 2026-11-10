@@ -192,6 +192,9 @@ fn v4_weighted_raw_payload_and_original_bytes_survive_load_and_explicit_latest_s
     for slot in expected["slots"].as_array_mut().unwrap() {
         slot["color"] = json!([255, 255, 255, 255]);
     }
+    for animation in expected["animations"].as_array_mut().unwrap() {
+        animation["ik_tracks"] = json!([]);
+    }
     for bone in expected["bones"].as_array_mut().unwrap() {
         bone["setup"]["shear_x"] = json!(0);
         bone["setup"]["shear_y"] = json!(0);

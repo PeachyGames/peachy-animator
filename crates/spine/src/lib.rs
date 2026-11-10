@@ -1,6 +1,7 @@
 //! Independently written Spine 4.3 JSON adapter. No runtime implementation dependency.
 mod attachments;
 mod constraints;
+mod ik_timelines;
 use attachments::{inspect_attachment, read_attachment, write_attachment};
 use peachy_document::*;
 use serde::Serialize;
@@ -181,8 +182,9 @@ pub fn inspect(value: &Value) -> Inspection {
         for (name, animation) in animations {
             if let Some(fields) = animation.as_object() {
                 for (field, contents) in fields {
-                    // Physics timelines are decoded and checked by read_document below.
-                    if !matches!(field.as_str(), "bones" | "physics") && nonempty(contents) {
+                    // IK and physics timelines are decoded and checked by
+                    // constraints::inspect and read_document.
+                    if !matches!(field.as_str(), "bones" | "ik" | "physics") && nonempty(contents) {
                         unsupported.push(format!("Animation {name}: {field} timelines"));
                     }
                 }
@@ -351,6 +353,7 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
         .enumerate()
         .map(|(index, constraint)| (constraint.name().to_owned(), index))
         .collect();
+    let ik_indices = ik_timelines::indices(&constraints);
     let mut animations = vec![];
     if let Some(entries) = value["animations"].as_object() {
         for (name, animation) in entries {
@@ -400,6 +403,7 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
             animations.push(Animation {
                 name: name.clone(),
                 tracks,
+                ik_tracks: ik_timelines::read(animation, &ik_indices)?,
                 physics,
                 physics_resets,
                 inherit_tracks,
@@ -426,6 +430,7 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
 }
 
 pub fn export_json(doc: &Document) -> Result<Value, String> {
+    doc.validate()?;
     constraints::validate_source(doc)?;
     validate_export_names(doc)?;
     let bones: Vec<_> = doc
@@ -514,6 +519,10 @@ pub fn export_json(doc: &Document) -> Result<Value, String> {
             );
         }
         animations[&animation.name] = json!({"bones":bone_timelines});
+        let ik = ik_timelines::write(doc, animation)?;
+        if !ik.as_object().is_some_and(serde_json::Map::is_empty) {
+            animations[&animation.name]["ik"] = ik;
+        }
         let physics = constraints::write_physics_timelines(doc, animation)?;
         if !physics.as_object().is_some_and(serde_json::Map::is_empty) {
             animations[&animation.name]["physics"] = physics;

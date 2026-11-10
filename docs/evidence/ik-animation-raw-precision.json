@@ -1,0 +1,159 @@
+{
+  "scope": "Original raw value precision investigation; implementation correction remains pending",
+  "inputs": 48,
+  "samples": 528,
+  "allSourcesUnchanged": true,
+  "modelScores": [
+    {
+      "mask": 0,
+      "rawCPX": false,
+      "rawCPY": false,
+      "rawKeyTime": false,
+      "rawKeyMix": false,
+      "exact": 335,
+      "max": 1490.1226566806436
+    },
+    {
+      "mask": 1,
+      "rawCPX": true,
+      "rawCPY": false,
+      "rawKeyTime": false,
+      "rawKeyMix": false,
+      "exact": 397,
+      "max": 1246.814841836691
+    },
+    {
+      "mask": 2,
+      "rawCPX": false,
+      "rawCPY": true,
+      "rawKeyTime": false,
+      "rawKeyMix": false,
+      "exact": 354,
+      "max": 1490.1226566806436
+    },
+    {
+      "mask": 3,
+      "rawCPX": true,
+      "rawCPY": true,
+      "rawKeyTime": false,
+      "rawKeyMix": false,
+      "exact": 423,
+      "max": 1246.814841836691
+    },
+    {
+      "mask": 4,
+      "rawCPX": false,
+      "rawCPY": false,
+      "rawKeyTime": true,
+      "rawKeyMix": false,
+      "exact": 405,
+      "max": 1490.1226566806436
+    },
+    {
+      "mask": 5,
+      "rawCPX": true,
+      "rawCPY": false,
+      "rawKeyTime": true,
+      "rawKeyMix": false,
+      "exact": 452,
+      "max": 0.2500000149011612
+    },
+    {
+      "mask": 6,
+      "rawCPX": false,
+      "rawCPY": true,
+      "rawKeyTime": true,
+      "rawKeyMix": false,
+      "exact": 426,
+      "max": 1490.1226566806436
+    },
+    {
+      "mask": 7,
+      "rawCPX": true,
+      "rawCPY": true,
+      "rawKeyTime": true,
+      "rawKeyMix": false,
+      "exact": 480,
+      "max": 0.25
+    },
+    {
+      "mask": 8,
+      "rawCPX": false,
+      "rawCPY": false,
+      "rawKeyTime": false,
+      "rawKeyMix": true,
+      "exact": 335,
+      "max": 1490.1226566806436
+    },
+    {
+      "mask": 9,
+      "rawCPX": true,
+      "rawCPY": false,
+      "rawKeyTime": false,
+      "rawKeyMix": true,
+      "exact": 397,
+      "max": 1246.814841836691
+    },
+    {
+      "mask": 10,
+      "rawCPX": false,
+      "rawCPY": true,
+      "rawKeyTime": false,
+      "rawKeyMix": true,
+      "exact": 399,
+      "max": 1490.1226566806436
+    },
+    {
+      "mask": 11,
+      "rawCPX": true,
+      "rawCPY": true,
+      "rawKeyTime": false,
+      "rawKeyMix": true,
+      "exact": 471,
+      "max": 1246.814841836691
+    },
+    {
+      "mask": 12,
+      "rawCPX": false,
+      "rawCPY": false,
+      "rawKeyTime": true,
+      "rawKeyMix": true,
+      "exact": 405,
+      "max": 1490.1226566806436
+    },
+    {
+      "mask": 13,
+      "rawCPX": true,
+      "rawCPY": false,
+      "rawKeyTime": true,
+      "rawKeyMix": true,
+      "exact": 452,
+      "max": 0.04490740748587996
+    },
+    {
+      "mask": 14,
+      "rawCPX": false,
+      "rawCPY": true,
+      "rawKeyTime": true,
+      "rawKeyMix": true,
+      "exact": 471,
+      "max": 1490.1226566806436
+    },
+    {
+      "mask": 15,
+      "rawCPX": true,
+      "rawCPY": true,
+      "rawKeyTime": true,
+      "rawKeyMix": true,
+      "exact": 528,
+      "max": 0
+    }
+  ],
+  "conclusion": "Setup is f64; cubic construction uses raw f64 key times, key Mix and controls, while timeline frames and stored interior points are f32. Only the all-raw construction with f32 segment endpoints matches all 528 observations.",
+  "knownCurrentImportMismatches": {
+    "rawControlXMaxWorldError": 0.1935414675085237,
+    "rawControlYExampleWorldError": 0.291494,
+    "rawKeyMixExampleWorldError": 0.09812
+  },
+  "nativeExportTimeFix": "Eight existing native/retimed cases match public API after f64 absolute time export; the broader raw import model is not yet corrected."
+}

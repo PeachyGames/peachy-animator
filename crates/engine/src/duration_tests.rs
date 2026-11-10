@@ -26,6 +26,7 @@ fn document() -> Document {
         slots: vec![],
         skins: Default::default(),
         animations: vec![Animation {
+            ik_tracks: vec![],
             name: "empty".into(),
             tracks: vec![],
             physics: vec![],

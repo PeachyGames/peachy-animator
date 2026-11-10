@@ -105,6 +105,7 @@ pub(super) fn rig() -> Document {
             )]),
         )]),
         animations: vec![Animation {
+            ik_tracks: vec![],
             name: "turn".into(),
             tracks: vec![Track {
                 bone: 1,
@@ -269,7 +270,7 @@ fn scene_uses_transient_posed_locals_and_the_same_weighted_geometry_for_bounds_a
             false,
         )
         .unwrap();
-    let scene = scene_from_locals(
+    let scene = checked_setup_scene_from_locals(
         session.document(),
         "default",
         session.local_pose(Some(0), 0.),
@@ -290,7 +291,7 @@ fn scene_uses_transient_posed_locals_and_the_same_weighted_geometry_for_bounds_a
     assert!(!session.is_dirty());
     session.undo();
     assert!(session.pose_edits().is_empty());
-    let restored = scene_from_locals(
+    let restored = checked_setup_scene_from_locals(
         session.document(),
         "default",
         session.local_pose(Some(0), 0.),
@@ -301,7 +302,7 @@ fn scene_uses_transient_posed_locals_and_the_same_weighted_geometry_for_bounds_a
         &[[7., 30.], [10., 30.], [7., 22.]],
     );
     session.redo();
-    let restored = scene_from_locals(
+    let restored = checked_setup_scene_from_locals(
         session.document(),
         "default",
         session.local_pose(Some(0), 0.),

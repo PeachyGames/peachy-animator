@@ -3,6 +3,7 @@ use tree_model::{Entry, Filters, project, row_visible};
 
 enum Action {
     Key(usize),
+    KeyIk(usize),
     Select(TreeItem),
     Rename(TreeItem),
     Dot(TreeItem, bool),
@@ -170,7 +171,7 @@ impl Editor {
                             .item
                             .attachment()
                             .is_some_and(|k| !self.attachment_editable(k))
-                            || matches!(e.item, TreeItem::Constraint(index) if self.ik_constraint(index).is_some_and(|ik|ik.setup.mix == 0.) || self.physics_constraint(index).is_some_and(|physics|physics.setup.mix == 0.));
+                            || matches!(e.item, TreeItem::Constraint(index) if self.current_ik_pose(index).is_ok_and(|ik|ik.mix == 0.) || self.physics_constraint(index).is_some_and(|physics|physics.setup.mix == 0.));
                         let row = ui.selectable_label(
                             selected,
                             RichText::new(format!("    {}", e.label)).color(if selected {
@@ -217,6 +218,17 @@ impl Editor {
                                 actions.push(Action::Key(bone));
                             }
                         }
+                        if !self.setup_mode && let TreeItem::Constraint(index)=e.item {
+                            match self.ik_group_state(index) {
+                                Ok(state)=>{
+                                    let key=super::animation::pose_key_button(ui,state);
+                                    self.record_target(&format!("keyConstraint:{index}"),key.rect);
+                                    if selected {self.record_target("ikKey",key.rect);}
+                                    if key.on_hover_text("Key IK Mix and Positive together").clicked() {actions.push(Action::KeyIk(index));}
+                                }
+                                Err(error)=>{ui.colored_label(ACCENT,"Key timing error").on_hover_text(error);}
+                            }
+                        }
                         if let Some(k) = e.item.attachment() {
                             row.on_hover_text(format!(
                                 "Skin: {}\nSlot: {}\nPlaceholder: {}",
@@ -244,6 +256,7 @@ impl Editor {
         for action in actions {
             match action {
                 Action::Key(bone) => self.key_edited(Some(bone)),
+                Action::KeyIk(index) => self.key_ik(index),
                 Action::Select(item) => {
                     self.select(item);
                     // A clicked row is already visible. Scrolling it here can move

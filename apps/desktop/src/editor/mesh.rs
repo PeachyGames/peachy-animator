@@ -493,14 +493,7 @@ mod tests {
         assert_eq!(editor.mesh_vertex, 3);
         frame(&mut editor, &ctx, vec![], true);
         assert_ne!(editor.mesh_handles, before);
-        let scene = scene_from_locals(
-            editor.session.document(),
-            &editor.skin,
-            editor
-                .session
-                .local_pose(editor.active_animation(), editor.time),
-        )
-        .unwrap();
+        let scene = editor.scene_for_view().unwrap();
         let draw = scene
             .attachments
             .iter()

@@ -92,6 +92,8 @@ pub(super) fn editor_fixture() -> Editor {
         ik_edit: None,
         ik_blocked: None,
         ik_target: None,
+        ik_bend_request: None,
+        pose_key_request: None,
         hidden_views: None,
         view_tabs: Default::default(),
         ghosting: Default::default(),
@@ -126,12 +128,43 @@ pub(super) fn editor_fixture() -> Editor {
 
 pub(super) fn select_rotation(editor: &mut Editor) {
     editor.key_selection.select(
-        KeyId {
+        KeyId::Bone {
+            bone: 8,
             property: Property::Rotation,
             time: 0.3,
         },
         false,
     );
+}
+
+pub(super) fn animated_ik_editor() -> Editor {
+    let mut editor = editor_fixture();
+    let mut document: Document =
+        serde_json::from_str(include_str!("../../../../examples/peach-bot/ik-bot.peachy")).unwrap();
+    document.animations[0].tracks.clear();
+    document.animations[0].ik_tracks = vec![IkTrack {
+        constraint: 1,
+        keys: vec![
+            IkKeyframe {
+                time: 0.,
+                mix: 0.25,
+                bend_positive: true,
+                curve: IkCurve::Linear,
+            },
+            IkKeyframe {
+                time: 1.,
+                mix: 0.75,
+                bend_positive: false,
+                curve: IkCurve::Stepped,
+            },
+        ],
+    }];
+    editor.session = Session::new(document).unwrap();
+    editor.time = 0.25;
+    editor.selection = Some(TreeItem::Constraint(1));
+    editor.key_selection.clear();
+    editor.reconcile_selection();
+    editor
 }
 
 pub(super) fn mesh_editor(weighted: bool) -> (Editor, AttachmentRef) {

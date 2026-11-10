@@ -33,7 +33,7 @@ The engine supports a deliberately bounded active domain: rooted normal unit axe
 zero ancestor/constrained shear, a constant positive child X/zero Y with a positive
 second length, noncoincident targets, and independent affected subtrees. Unsupported
 queries return errors, preserving raw native data and pending/history. Mix zero is
-exact FK. This is not full Spine IK, transformed-chain or constraint-timeline parity.
+exact FK. This is not full Spine IK or transformed-chain parity.
 
 Precision checks cover both relevant incoming frames/target origins and solved
 f32 frames/tips at an absolute0.001 bound. A retained before-fix original case at
@@ -51,3 +51,31 @@ axis projection, applied pivot angles and evaluated scale ratios stay in the
 engine. This is a coherent inferred interaction rule, not an observation of every
 Spine partial-mix convention. The existing FK entry point delegates using equal
 authored/applied locals and retains its original arithmetic order where possible.
+
+## IK animation sampling
+
+Original Phase B evidence is retained at
+`.local-backups/ik-animation-design-20261106T102719Z-47b79c/`. All61 original input
+hashes are unchanged; no private artwork or runtime implementation was read.
+Setup/default-reset and discrete bend observations, negative/overshooting Mix,
+equal-endpoint excursions and eight-control curves establish the separate native
+IK curve. Bone curves remain unchanged. Mix settings/controls are finite f32;
+sampled Mix stays f64 until the checked solve. Zero alone disables solving.
+
+An independent mathematical experiment compared direct cubic, polynomial,
+Taylor/finite-difference constructions, arithmetic precision, update grouping and
+point storage. The first idealized prototypes failed retained large cancellation
+cases. A coefficient inferred from one original midpoint, rounded to8 decimals
+(.16666667), selects a standard finite-difference model with f64 updates and f32
+interior points. Absolute-time construction distinguishes shifted-time inputs;
+normalized-time construction fails by up to.0168932. This is observed calibration,
+not an inspected implementation or a claim of universal model uniqueness.
+
+The selected model's98 calibration samples have93 exact matches and maximum
+remaining difference1.11e-16. Separate116 samples from16 held-out amplitude/time
+inputs match exactly, as do102 subsequent ratio-control samples across6 originals.
+The latter require f64 normalized-time storage to reconstruct canonical absolute
+f32 controls. `frozen-evidence.json` and the local REPORT retain exact input hashes,
+fit/held-out distinctions and all failed candidates. Compiled tests use original
+expected values, including the nonzero huge cancellation, rather than idealized
+zero or a magnitude ban. Native7 integration/editor/UI acceptance is separate.

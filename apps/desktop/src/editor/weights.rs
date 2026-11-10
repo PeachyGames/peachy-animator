@@ -408,19 +408,14 @@ mod tests {
     use super::*;
 
     fn world(editor: &Editor, key: &AttachmentRef) -> Vec<[f32; 2]> {
-        scene_from_locals(
-            editor.session.document(),
-            &editor.skin,
-            editor
-                .session
-                .local_pose(editor.active_animation(), editor.time),
-        )
-        .unwrap()
-        .attachments
-        .into_iter()
-        .find(|draw| draw.attachment == *key)
-        .unwrap()
-        .vertices
+        editor
+            .scene_for_view()
+            .unwrap()
+            .attachments
+            .into_iter()
+            .find(|draw| draw.attachment == *key)
+            .unwrap()
+            .vertices
     }
     fn same_shape(a: &[[f32; 2]], b: &[[f32; 2]]) {
         assert_eq!(a.len(), b.len());
