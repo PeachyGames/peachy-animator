@@ -440,6 +440,7 @@ mod tests {
                 physics_resets: vec![],
                 ik_tracks: vec![],
                 inherit_tracks: vec![],
+                deform_tracks: vec![],
             }],
             skin_scope: Default::default(),
         }

@@ -1,5 +1,5 @@
 {
-  "format": 12,
+  "format": 13,
   "constraints": [],
   "name": "Peach Bot Shear Lab",
   "fps": 30,
@@ -941,7 +941,8 @@
       "ik_tracks": [],
       "physics": [],
       "physics_resets": [],
-      "inherit_tracks": []
+      "inherit_tracks": [],
+      "deform_tracks": []
     },
     {
       "name": "shear stepped",
@@ -1028,7 +1029,8 @@
       "ik_tracks": [],
       "physics": [],
       "physics_resets": [],
-      "inherit_tracks": []
+      "inherit_tracks": [],
+      "deform_tracks": []
     },
     {
       "name": "shear bezier",
@@ -1163,7 +1165,8 @@
       "ik_tracks": [],
       "physics": [],
       "physics_resets": [],
-      "inherit_tracks": []
+      "inherit_tracks": [],
+      "deform_tracks": []
     },
     {
       "name": "wave",
@@ -1357,7 +1360,8 @@
       "ik_tracks": [],
       "physics": [],
       "physics_resets": [],
-      "inherit_tracks": []
+      "inherit_tracks": [],
+      "deform_tracks": []
     },
     {
       "name": "idle",
@@ -1429,7 +1433,8 @@
       "ik_tracks": [],
       "physics": [],
       "physics_resets": [],
-      "inherit_tracks": []
+      "inherit_tracks": [],
+      "deform_tracks": []
     }
   ]
 }

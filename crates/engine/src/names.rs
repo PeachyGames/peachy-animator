@@ -21,9 +21,18 @@ pub(super) fn rename_slot(doc: &mut Document, slot: usize, name: String) -> Resu
     if name.trim().is_empty() || doc.slots.iter().any(|s| s.name == name) {
         return Err("Slot names must be nonempty and unique".into());
     }
+    let old_name = old_name.clone();
     for skin in doc.skins.values_mut() {
-        if let Some(attachments) = skin.remove(old_name) {
+        if let Some(attachments) = skin.remove(&old_name) {
             skin.insert(name.clone(), attachments);
+        }
+    }
+    // Deform keys address attachments by slot name; keep them attached.
+    for animation in &mut doc.animations {
+        for track in &mut animation.deform_tracks {
+            if track.attachment.slot == old_name {
+                track.attachment.slot = name.clone();
+            }
         }
     }
     doc.slots[slot].name = name;

@@ -150,7 +150,13 @@ fn all_nine_current_examples_equal_their_white_v6_migration() {
         old["format"] = json!(6);
         assert!(old.as_object_mut().unwrap().remove("skin_scope").is_some());
         for animation in old["animations"].as_array_mut().unwrap() {
-            for field in ["ik_tracks", "physics", "physics_resets", "inherit_tracks"] {
+            for field in [
+                "ik_tracks",
+                "physics",
+                "physics_resets",
+                "inherit_tracks",
+                "deform_tracks",
+            ] {
                 assert_eq!(
                     animation.as_object_mut().unwrap().remove(field),
                     Some(json!([]))

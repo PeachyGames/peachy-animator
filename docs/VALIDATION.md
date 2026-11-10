@@ -1470,3 +1470,15 @@ Animated IK (native9) was merged into `main` first; inheritance became native10.
 | Side-view head (game, 52 skins, 19 skin-required bones, 12 physics) | 26,000 activity checks agree; 95,850 active-bone comparisons, max 0.00004; with `Physics.update` re-export matches the original within 0.00005 |
 | Game audit | **7 of 21** fully supported; inputs unchanged |
 | Rust suite | fmt, clippy `-D warnings`, architecture and build pass; **504** tests pass |
+
+
+## Mesh deform keys, native v13 — November 9, 2026
+
+| Check | Result |
+| --- | --- |
+| Runtime and editor format probes | Unweighted offsets add to setup positions; weighted offsets add per influence; sparse `offset`/`vertices`; absolute-time Bezier with fraction values |
+| Original Deform Lab (`deform-bot.peachy`): weighted hand and unweighted body, linear/Bezier/stepped | 5,200 mesh coordinates (3,120 weighted), max 0.000031, plus 28,080 bone values against external 4.3.13; deform moves vertices by up to 8.2 units |
+| Installed 4.3.26 round trip | Reimported; deformed geometry within 0.0016 (editor drops a zero-weight influence, reorders influences and their deform values consistently) |
+| Front-view unified head (game, 119 skins, 56 bones, 37 constraints, deform keys) | 99,960 activity checks agree; 135,090 bone values max 0.00004; 61,410 deformed mesh coordinates max 0.00006; physics-on re-export within 0.00005 |
+| Game audit | **8 of 21** fully supported; inputs unchanged |
+| Rust suite | fmt, clippy `-D warnings`, architecture and build pass; **509** tests pass |

@@ -203,6 +203,7 @@ fn v4_weighted_raw_payload_and_original_bytes_survive_load_and_explicit_latest_s
         animation["physics"] = json!([]);
         animation["physics_resets"] = json!([]);
         animation["inherit_tracks"] = json!([]);
+        animation["deform_tracks"] = json!([]);
     }
     for bone in expected["bones"].as_array_mut().unwrap() {
         bone["inherit"] = json!("normal");

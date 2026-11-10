@@ -670,6 +670,7 @@ mod tests {
             physics: vec![],
             physics_resets: vec![],
             inherit_tracks: vec![],
+            deform_tracks: vec![],
         }];
         document.constraints = vec![Constraint::Ik(IkConstraint {
             name: "arm IK".into(),

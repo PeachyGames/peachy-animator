@@ -1,6 +1,7 @@
 //! Independently written Spine 4.3 JSON adapter. No runtime implementation dependency.
 mod attachments;
 mod constraints;
+mod deform;
 mod ik_timelines;
 use attachments::{inspect_attachment, read_attachment, write_attachment};
 use peachy_document::*;
@@ -194,7 +195,9 @@ pub fn inspect(value: &Value) -> Inspection {
                 for (field, contents) in fields {
                     // IK and physics timelines are decoded and checked by
                     // constraints::inspect and read_document.
-                    if !matches!(field.as_str(), "bones" | "ik" | "physics") && nonempty(contents) {
+                    if !matches!(field.as_str(), "bones" | "ik" | "physics" | "attachments")
+                        && nonempty(contents)
+                    {
                         unsupported.push(format!("Animation {name}: {field} timelines"));
                     }
                 }
@@ -418,6 +421,7 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
                 physics,
                 physics_resets,
                 inherit_tracks,
+                deform_tracks: deform::read(name, animation, &skins)?,
             });
         }
     }
@@ -566,6 +570,10 @@ pub fn export_json(doc: &Document) -> Result<Value, String> {
         let physics = constraints::write_physics_timelines(doc, animation)?;
         if !physics.as_object().is_some_and(serde_json::Map::is_empty) {
             animations[&animation.name]["physics"] = physics;
+        }
+        let deform = deform::write(&animation.deform_tracks)?;
+        if !deform.as_object().is_some_and(serde_json::Map::is_empty) {
+            animations[&animation.name]["attachments"] = deform;
         }
     }
     let mut output = json!({"skeleton":{"spine":TARGET_VERSION,"images":"./images/","fps":doc.fps},"bones":bones,"slots":slots,"skins":skins,"animations":animations});
@@ -1054,8 +1062,10 @@ mod tests {
             assert!(import_json(&v, "bad").is_err(), "{field}");
         }
         let mut v = fixture;
-        v["animations"]["wave"]["attachments"] = json!({"default":{}});
-        assert!(import_json(&v, "deform").is_err());
+        // Deform keys are supported; sequence timelines are not (yet).
+        v["animations"]["wave"]["attachments"] =
+            json!({"default":{"hand.R":{"hand.R":{"sequence":[{"time":0}]}}}});
+        assert!(import_json(&v, "sequence").is_err());
     }
     fn fixture() -> Value {
         json!({"skeleton":{"spine":"4.3.26"},"bones":[{"name":"root"}],"slots":[],"skins":[],"animations":{"test":{"bones":{"root":{"rotate":[{"time":0,"value":0,"curve":[0.1,0,0.4,90]},{"time":0.5,"value":90}]}}}}})

@@ -29,7 +29,9 @@ pub use ik::{
     checked_setup_pose_from_locals, sample_authored_pose,
 };
 pub use ik_sampling::{IkPose, sample_ik};
-pub use mesh::{mesh_world_vertices, region_to_mesh, region_vertices};
+pub use mesh::{
+    deformed_mesh_world_vertices, mesh_world_vertices, region_to_mesh, region_vertices,
+};
 pub use mesh_binding::MeshBindPose;
 pub use mesh_soft_selection::{MeshSoftSelection, MeshTranslation};
 pub use picking::{attachment_bounds, pick_attachment};
@@ -59,6 +61,8 @@ pub use tools::{
 mod animation_tests;
 #[cfg(test)]
 mod binding_tests;
+#[cfg(test)]
+mod deform_tests;
 #[cfg(test)]
 mod direct_weight_tests;
 #[cfg(test)]

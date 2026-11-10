@@ -1,6 +1,9 @@
 //! Authored and applied poses are separate. FK reconstruction never solves IK.
 use crate::{Affine, IkPose, inherit_pose, local_pose, sample_ik, world_pose_with};
-use peachy_document::{Activity, Constraint, Document, Inherit, Transform, finite_transform};
+use peachy_document::{
+    Activity, AttachmentRef, Constraint, DeformTrack, Document, Inherit, Transform,
+    finite_transform,
+};
 
 #[derive(Clone, Debug)]
 pub struct EvaluatedPose {
@@ -10,6 +13,7 @@ pub struct EvaluatedPose {
     pub(crate) authored_ik: Vec<IkPose>,
     /// Bones active under the evaluated skin (skin-required bones may be off).
     pub(crate) active_bones: Vec<bool>,
+    pub(crate) deforms: Vec<(AttachmentRef, Vec<f32>)>,
 }
 
 /// Complete authored state. Bone-only input cannot silently select setup IK.
@@ -21,6 +25,8 @@ pub struct AuthoredPose {
     pub(crate) inherits: Vec<Inherit>,
     /// Bones and constraints active under the evaluated skin.
     pub(crate) active: Activity,
+    /// Sampled deform offsets for keyed meshes (absent = setup vertices).
+    pub(crate) deforms: Vec<(AttachmentRef, Vec<f32>)>,
 }
 
 impl AuthoredPose {
@@ -94,6 +100,16 @@ pub fn sample_authored_pose(
         ik,
         inherits: inherit_pose(doc, animation, time),
         active: doc.activity("default"),
+        deforms: clip
+            .map(|clip| {
+                clip.deform_tracks
+                    .iter()
+                    .filter_map(|track| {
+                        Some((track.attachment.clone(), sample_deform(track, time)?))
+                    })
+                    .collect()
+            })
+            .unwrap_or_default(),
     })
 }
 
@@ -159,6 +175,7 @@ pub fn checked_pose_from_authored(
         world,
         authored_ik: authored.ik.clone(),
         active_bones: authored.active.bones.clone(),
+        deforms: authored.deforms.clone(),
     })
 }
 
@@ -263,4 +280,28 @@ fn check_inherit_domain(
         }
     }
     Ok(())
+}
+
+/// Deform offsets at `time`: none before the first key (setup vertices), the
+/// last key after the end, and curve-weighted interpolation between keys.
+pub(crate) fn sample_deform(track: &DeformTrack, time: f32) -> Option<Vec<f32>> {
+    let first = track.keys.first()?;
+    if time < first.time {
+        return None;
+    }
+    for pair in track.keys.windows(2) {
+        let (left, right) = (&pair[0], &pair[1]);
+        if time < right.time {
+            let t =
+                crate::curve_progress(left.curve, (time - left.time) / (right.time - left.time));
+            return Some(
+                left.offsets
+                    .iter()
+                    .zip(&right.offsets)
+                    .map(|(a, b)| a + (b - a) * t)
+                    .collect(),
+            );
+        }
+    }
+    track.keys.last().map(|key| key.offsets.clone())
 }

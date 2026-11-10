@@ -141,6 +141,7 @@ fn extreme_shear_sampling_and_pose_preview_preserve_original_keys_curves_and_his
             physics: vec![],
             physics_resets: vec![],
             inherit_tracks: vec![],
+            deform_tracks: vec![],
         }],
         skin_scope: Default::default(),
     };

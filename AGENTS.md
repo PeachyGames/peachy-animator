@@ -70,6 +70,10 @@ Native v12 adds `Document.skin_scope`. Evaluate through `AuthoredPose::with_skin
 (Session holds the active skin as view state; the shell syncs it every frame).
 Inactive constraints never run; inactive bones' slots are not drawn.
 
+Native v13 adds `Animation.deform_tracks` with dense offsets (per vertex, or per
+weighted influence). Sampled deforms travel in `AuthoredPose`; scenes apply them
+via `deformed_mesh_world_vertices`. Keep slot renames updating deform refs.
+
 IK evaluation uses one checked engine solve. `EvaluatedPose` distinguishes authored
 locals, applied locals and world transforms; `Session::local_pose` stays authored.
 Rendering, picking, bounds and tools use the evaluated frame. The old evaluation

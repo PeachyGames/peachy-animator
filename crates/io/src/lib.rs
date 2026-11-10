@@ -29,6 +29,15 @@ pub fn load(path: &Path) -> Result<Document, String> {
 pub fn decode_project(text: &str) -> Result<Document, String> {
     let mut value: serde_json::Value = serde_json::from_str(text).map_err(|e| e.to_string())?;
     let original_format = value["format"].as_u64();
+    if matches!(original_format, Some(1..=12))
+        && value["animations"].as_array().is_some_and(|animations| {
+            animations
+                .iter()
+                .any(|animation| animation.get("deform_tracks").is_some())
+        })
+    {
+        return Err("Legacy project formats cannot contain deform keys".into());
+    }
     if matches!(original_format, Some(1..=11)) && value.get("skin_scope").is_some() {
         return Err("Legacy project formats cannot contain skin scope data".into());
     }
@@ -134,6 +143,19 @@ pub fn decode_project(text: &str) -> Result<Document, String> {
         value["skin_scope"] =
             serde_json::json!({"required_bones":[],"required_constraints":[],"skins":{}});
         value["format"] = 12.into();
+    }
+    // v12→v13 adds empty deform key lists.
+    if value["format"].as_u64() == Some(12) {
+        for animation in value["animations"]
+            .as_array_mut()
+            .ok_or("Legacy animations must be an array")?
+        {
+            animation
+                .as_object_mut()
+                .ok_or("Legacy animation must be an object")?
+                .insert("deform_tracks".into(), serde_json::json!([]));
+        }
+        value["format"] = 13.into();
     }
     let mut doc: Document = serde_json::from_value(value).map_err(|e| e.to_string())?;
     // Wrapping vertices preserves their values and all surrounding fields. Decode
@@ -650,7 +672,12 @@ mod tests {
                 Some(serde_json::json!([]))
             );
             animation["duration"] = serde_json::json!(source.duration());
-            for field in ["physics", "physics_resets", "inherit_tracks"] {
+            for field in [
+                "physics",
+                "physics_resets",
+                "inherit_tracks",
+                "deform_tracks",
+            ] {
                 assert_eq!(
                     animation.as_object_mut().unwrap().remove(field),
                     Some(serde_json::json!([]))

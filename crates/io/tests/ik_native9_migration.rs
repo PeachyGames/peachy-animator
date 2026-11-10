@@ -18,7 +18,7 @@ fn v8() -> Value {
             .is_some()
     );
     for animation in value["animations"].as_array_mut().unwrap() {
-        for field in ["ik_tracks", "inherit_tracks"] {
+        for field in ["ik_tracks", "inherit_tracks", "deform_tracks"] {
             assert_eq!(
                 animation.as_object_mut().unwrap().remove(field),
                 Some(json!([]))

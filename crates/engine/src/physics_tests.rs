@@ -54,6 +54,7 @@ fn document() -> Document {
             }],
             ik_tracks: vec![],
             inherit_tracks: vec![],
+            deform_tracks: vec![],
         }],
         skin_scope: Default::default(),
     }

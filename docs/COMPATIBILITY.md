@@ -24,11 +24,11 @@ Input-only obsolete integer `order` is validated and omitted, never used to sort
 | Attachments | Regions, unweighted meshes and weighted meshes with explicit UVs/topology and bone-local influences | Linked meshes, clipping, paths, sequences, other attachment types |
 | Slots | Setup attachment, exact RGBA tint and normal blending in fixed draw order | Dark/two-color tint, other blend modes |
 | Skins | Region/mesh maps, explicit attachment names, default-skin fallback; skin-required bones and IK/transform/physics constraints with per-skin activation | Skin path-constraint lists, a unified skin `constraints` list, non-required bones under required parents |
-| Animation | Bone rotation, translation, scale and shear; combined or scalar input timelines; grouped IK Mix/Positive timelines; physics setting and reset timelines, including global (`""`) timelines | Slot, attachment, draw-order, event, transform and path timelines |
+| Animation | Mesh deform keys (unweighted and weighted); bone rotation, translation, scale and shear; combined or scalar input timelines; grouped IK Mix/Positive timelines; physics setting and reset timelines, including global (`""`) timelines | Slot, attachment, draw-order, event, transform and path timelines |
 | Curves | Linear, stepped, normalized monotone-time cubic handles | Nonfinite or unordered controls; overshooting curves between equal values |
 | Constraints | One-/two-bone normal IK with keyed Mix/Positive, two-bone Positive, nested chains in list order, off-axis child offsets; animated targets. Physics constraints as data: every setting, Scale Y mode and Global flag, in unified constraint order. World transform constraints with identity Rotate/X/Y mappings; IK under any transformed ancestors | Advanced IK settings, shared-bone or cross-target chains, transformed chains; skin-required physics; transform, path, slider and other constraints |
 | Images | Loose PNGs for editing; one untrimmed atlas page for desktop export | Packed-atlas import, rotated/trimmed atlas regions, multipage export |
-| Files | `.peachy` v12; in-memory v1–v11 migration; Spine JSON adapter | Native `.spine` projects and binary `.skel`; `skeleton.referenceScale` other than 100 |
+| Files | `.peachy` v13; in-memory v1–v12 migration; Spine JSON adapter | Native `.spine` projects and binary `.skel`; `skeleton.referenceScale` other than 100 |
 
 Our own project format is JSON and holds the editable rig, skin references and clips.
 It is distinct from a runtime export. The importer ignores documented editor-only
@@ -446,3 +446,11 @@ Bones and constraints marked `skin: true`, and named skins' `bones`, `ik`,
 `Document.skin_scope`; v11 and earlier migrate with an empty scope and refuse
 one. Activity follows the observed runtime rules in
 [the slice](slices/skin-scope.md).
+
+## Mesh deform keys, native v13 — November 9, 2026
+
+Deform timelines on unweighted and weighted meshes round-trip and evaluate as
+the external runtime does. Native v13 adds `Animation.deform_tracks` (dense
+offsets); v12 and earlier migrate with empty lists and refuse them. Sequence
+timelines and deform keys on non-mesh attachments are refused. See
+[the slice](slices/deform-keys.md).

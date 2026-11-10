@@ -97,6 +97,13 @@ mint skin; switch skins in the Tree to see them appear:
 cargo run -p peachy-animator -- examples/peach-bot/skin-bot.peachy
 ```
 
+The original Deform Lab keys the shapes of the weighted hand and the peach
+body mesh (Animate, `wave`):
+
+```sh
+cargo run -p peachy-animator -- examples/peach-bot/deform-bot.peachy
+```
+
 For either mesh fixture, select its hand.R attachment and **Vertices** to inspect the selected
 vertex's bone influences. Weighted inspection works in Setup and Animate, including
 an unkeyed pose. It stops playback and preserves the current pose and mode. Bone

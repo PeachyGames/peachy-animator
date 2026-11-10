@@ -158,6 +158,7 @@ fn scene_from_evaluated(doc: &Document, skin: &str, pose: crate::EvaluatedPose) 
         world,
         authored_ik: ik_poses,
         active_bones,
+        deforms,
     } = pose;
     let mut attachments = vec![];
     for (slot_index, slot) in doc.slots.iter().enumerate() {
@@ -178,7 +179,12 @@ fn scene_from_evaluated(doc: &Document, skin: &str, pose: crate::EvaluatedPose) 
                 4,
             ),
             Attachment::Mesh(m) => (
-                mesh_world_vertices(m, slot.bone, &world),
+                match deforms.iter().find(|(target, _)| *target == key) {
+                    Some((_, offsets)) => {
+                        crate::deformed_mesh_world_vertices(m, slot.bone, &world, offsets)
+                    }
+                    None => mesh_world_vertices(m, slot.bone, &world),
+                },
                 m.uvs.clone(),
                 m.triangles.clone(),
                 m.hull,

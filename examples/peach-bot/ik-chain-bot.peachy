@@ -1,5 +1,5 @@
 {
-  "format": 12,
+  "format": 13,
   "name": "Peach Bot IK Chain Lab",
   "fps": 30,
   "bones": [
@@ -1180,7 +1180,8 @@
       "ik_tracks": [],
       "physics": [],
       "physics_resets": [],
-      "inherit_tracks": []
+      "inherit_tracks": [],
+      "deform_tracks": []
     },
     {
       "name": "ik negative",
@@ -1283,7 +1284,8 @@
       "ik_tracks": [],
       "physics": [],
       "physics_resets": [],
-      "inherit_tracks": []
+      "inherit_tracks": [],
+      "deform_tracks": []
     },
     {
       "name": "ik reach",
@@ -1460,7 +1462,8 @@
       "ik_tracks": [],
       "physics": [],
       "physics_resets": [],
-      "inherit_tracks": []
+      "inherit_tracks": [],
+      "deform_tracks": []
     },
     {
       "name": "wave",
@@ -1738,7 +1741,8 @@
       "ik_tracks": [],
       "physics": [],
       "physics_resets": [],
-      "inherit_tracks": []
+      "inherit_tracks": [],
+      "deform_tracks": []
     },
     {
       "name": "idle",
@@ -1810,7 +1814,8 @@
       "ik_tracks": [],
       "physics": [],
       "physics_resets": [],
-      "inherit_tracks": []
+      "inherit_tracks": [],
+      "deform_tracks": []
     }
   ]
 }

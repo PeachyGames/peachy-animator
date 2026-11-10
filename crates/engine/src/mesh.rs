@@ -42,6 +42,44 @@ pub fn mesh_world_vertices(mesh: &Mesh, slot_bone: usize, world: &[Affine]) -> V
     }
 }
 
+/// World vertices with deform offsets: per vertex for unweighted meshes, per
+/// influence (added to its bone-local position) for weighted meshes.
+pub fn deformed_mesh_world_vertices(
+    mesh: &Mesh,
+    slot_bone: usize,
+    world: &[Affine],
+    offsets: &[f32],
+) -> Vec<[f32; 2]> {
+    if offsets.len() != mesh.deform_len() {
+        return mesh_world_vertices(mesh, slot_bone, world);
+    }
+    match &mesh.vertices {
+        MeshVertices::SlotLocal { positions } => positions
+            .iter()
+            .zip(offsets.as_chunks::<2>().0)
+            .map(|(p, d)| world[slot_bone].point(p[0] + d[0], p[1] + d[1]))
+            .collect(),
+        MeshVertices::Weighted { influences } => {
+            let mut values = offsets.as_chunks::<2>().0.iter();
+            influences
+                .iter()
+                .map(|vertex| {
+                    let mut point = [0.0, 0.0];
+                    for influence in vertex {
+                        let d = values.next().unwrap_or(&[0.0, 0.0]);
+                        let transformed = world[influence.bone]
+                            .point(influence.position[0] + d[0], influence.position[1] + d[1]);
+                        for axis in 0..2 {
+                            point[axis] += influence.weight * transformed[axis];
+                        }
+                    }
+                    point
+                })
+                .collect()
+        }
+    }
+}
+
 /// The same f32 evaluation is used for rendering and candidate weight validation.
 pub(super) fn weighted_world_vertex(vertex: &[BoneInfluence], world: &[Affine]) -> [f32; 2] {
     let mut point = [0.0, 0.0];

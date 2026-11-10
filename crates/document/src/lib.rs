@@ -1,11 +1,13 @@
 //! Editable animation data. This crate knows nothing about files, windows or GPUs.
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
+mod deform;
 mod ik;
 mod inherit;
 mod physics;
 mod skin_scope;
 mod transform;
+pub use deform::{DeformKey, DeformTrack};
 pub use ik::{Constraint, IkConstraint, IkCurve, IkKeyframe, IkSetup, IkTrack};
 pub use inherit::{Inherit, InheritKey, InheritTrack};
 pub use physics::{
@@ -18,7 +20,7 @@ pub use transform::{
     TransformConstraint, TransformMapping, TransformProperty, TransformTarget, TransformValues,
 };
 
-pub const FORMAT_VERSION: u32 = 12;
+pub const FORMAT_VERSION: u32 = 13;
 pub const KEY_TIME_EPSILON: f32 = 0.00001;
 pub fn same_key_time(a: f32, b: f32) -> bool {
     (a - b).abs() < KEY_TIME_EPSILON
@@ -366,6 +368,8 @@ pub struct Animation {
     pub physics_resets: Vec<PhysicsReset>,
     /// Stepped bone inheritance keys. Required in native v10.
     pub inherit_tracks: Vec<InheritTrack>,
+    /// Mesh deform keys. Required in native v13.
+    pub deform_tracks: Vec<DeformTrack>,
 }
 
 impl Animation {
@@ -377,6 +381,7 @@ impl Animation {
             physics: vec![],
             physics_resets: vec![],
             inherit_tracks: vec![],
+            deform_tracks: vec![],
         }
     }
     /// The highest authored key time across validated, ordered timelines, or zero.
@@ -398,6 +403,11 @@ impl Animation {
             )
             .chain(
                 self.inherit_tracks
+                    .iter()
+                    .filter_map(|track| track.keys.last().map(|key| key.time)),
+            )
+            .chain(
+                self.deform_tracks
                     .iter()
                     .filter_map(|track| track.keys.last().map(|key| key.time)),
             )
@@ -425,6 +435,11 @@ impl Animation {
             )
             .chain(
                 self.inherit_tracks
+                    .iter()
+                    .flat_map(|track| track.keys.iter().map(|key| key.time)),
+            )
+            .chain(
+                self.deform_tracks
                     .iter()
                     .flat_map(|track| track.keys.iter().map(|key| key.time)),
             )
@@ -648,6 +663,7 @@ impl Document {
                     previous = key.time;
                 }
             }
+            self.validate_deform(a)?;
             let mut inherit_bones = BTreeSet::new();
             for track in &a.inherit_tracks {
                 if track.bone >= self.bones.len() || !inherit_bones.insert(track.bone) {

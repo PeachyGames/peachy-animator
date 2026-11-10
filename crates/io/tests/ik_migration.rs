@@ -154,6 +154,7 @@ fn v5_load_is_read_only_and_explicit_latest_save_backs_up_original_bytes() {
         animation["physics"] = json!([]);
         animation["physics_resets"] = json!([]);
         animation["inherit_tracks"] = json!([]);
+        animation["deform_tracks"] = json!([]);
     }
     for bone in expected["bones"].as_array_mut().unwrap() {
         bone["inherit"] = json!("normal");

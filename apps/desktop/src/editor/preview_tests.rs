@@ -102,6 +102,7 @@ fn fixture() -> (Editor, egui::Context) {
         physics_resets: vec![],
         ik_tracks: vec![],
         inherit_tracks: vec![],
+        deform_tracks: vec![],
     });
     editor.session = Session::new(doc).unwrap();
     pending(&mut editor);

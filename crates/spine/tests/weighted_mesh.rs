@@ -149,7 +149,7 @@ fn weighted_inspection_validates_inactive_skin_influences_and_keeps_other_featur
         ("/skins/0/attachments/body/cloth/future", json!(1)),
         (
             "/animations/bend/attachments",
-            json!({"default":{"body":{"cloth":{}}}}),
+            json!({"default":{"body":{"cloth":{"sequence":[{"time":0}]}}}}),
         ),
         ("/constraints", json!([{"type":"ik"}])),
     ] {

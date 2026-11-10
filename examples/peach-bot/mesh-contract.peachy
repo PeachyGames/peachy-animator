@@ -1,5 +1,5 @@
 {
-  "format": 12,
+  "format": 13,
   "constraints": [],
   "name": "Mesh Transform Contract",
   "fps": 30,
@@ -895,7 +895,8 @@
       "ik_tracks": [],
       "physics": [],
       "physics_resets": [],
-      "inherit_tracks": []
+      "inherit_tracks": [],
+      "deform_tracks": []
     }
   ]
 }
