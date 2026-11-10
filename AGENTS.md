@@ -54,6 +54,12 @@ until a calibrated simulation slice lands. Keep observed Spine defaults
 writes every field explicitly. Never let an IK command replace a physics
 constraint or the reverse.
 
+Native v10 adds required `Bone.inherit` and `Animation.inherit_tracks` (after
+native9 IK tracks). Inheritance math lives in `engine::pose::inherit_linear`;
+the normal mode keeps the original f32 composition. Keyed modes travel in
+`AuthoredPose.inherits`; never evaluate Animate poses with Setup modes. IK
+chain bones must inherit normally. See docs/slices/inherit-modes.md.
+
 IK evaluation uses one checked engine solve. `EvaluatedPose` distinguishes authored
 locals, applied locals and world transforms; `Session::local_pose` stays authored.
 Rendering, picking, bounds and tools use the evaluated frame. The old evaluation

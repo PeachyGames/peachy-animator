@@ -20,7 +20,7 @@ Input-only obsolete integer `order` is validated and omitted, never used to sort
 
 | Area | Supported | Import refuses |
 | --- | --- | --- |
-| Bones | Normal inheritance; X/Y, rotation, scale X/Y, shear X/Y, length | Other inheritance modes, skin-required bones |
+| Bones | All five inheritance modes (normal, onlyTranslation, noRotationOrReflection, noScale, noScaleOrReflection) and stepped `inherit` keys; X/Y, rotation, scale X/Y, shear X/Y, length | Legacy `transform` alias, inheritance changes on IK-constrained bones, degenerate zero-scale parents, skin-required bones |
 | Attachments | Regions, unweighted meshes and weighted meshes with explicit UVs/topology and bone-local influences | Linked meshes, clipping, paths, sequences, other attachment types |
 | Slots | Setup attachment, exact RGBA tint and normal blending in fixed draw order | Dark/two-color tint, other blend modes |
 | Skins | Region/mesh maps, explicit attachment names and default-skin fallback | Skin-required bones or constraints |
@@ -28,7 +28,7 @@ Input-only obsolete integer `order` is validated and omitted, never used to sort
 | Curves | Linear, stepped, normalized monotone-time cubic handles | Nonfinite or unordered controls; overshooting curves between equal values |
 | Constraints | One-/two-bone normal IK with keyed Mix/Positive, two-bone Positive, nested chains in list order, off-axis child offsets; animated targets. Physics constraints as data: every setting, Scale Y mode and Global flag, in unified constraint order | Advanced IK settings, shared-bone or cross-target chains, transformed chains; skin-required physics; transform, path, slider and other constraints |
 | Images | Loose PNGs for editing; one untrimmed atlas page for desktop export | Packed-atlas import, rotated/trimmed atlas regions, multipage export |
-| Files | `.peachy` v9; in-memory v1–v8 migration; Spine JSON adapter | Native `.spine` projects and binary `.skel`; `skeleton.referenceScale` other than 100 |
+| Files | `.peachy` v10; in-memory v1–v9 migration; Spine JSON adapter | Native `.spine` projects and binary `.skel`; `skeleton.referenceScale` other than 100 |
 
 Our own project format is JSON and holds the editable rig, skin references and clips.
 It is distinct from a runtime export. The importer ignores documented editor-only
@@ -422,3 +422,11 @@ a physics constraint; each constraint/setting and reset list appears once.
 Native v8 adds required `physics` and `physics_resets` lists to every animation.
 v7 and earlier migrate in memory with empty lists and refuse any physics
 constraint or physics field. `.peachy` files are rewritten only by an explicit save.
+
+## Bone inheritance modes and native v10 — November 9, 2026
+
+Bone `inherit` and animation bone `inherit` keys (`{time, inherit}`, stepped,
+omitted value normal) round-trip. Native v10 adds required `Bone.inherit` and
+`Animation.inherit_tracks`; v9 and earlier migrate with normal modes and empty
+lists and refuse inheritance fields. Evaluation matches the external runtime;
+see [the slice](slices/inherit-modes.md).

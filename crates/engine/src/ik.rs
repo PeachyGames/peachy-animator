@@ -220,7 +220,8 @@ fn check_inherit_domain(
         let [a, b, c, d] = [p.a, p.b, p.c, p.d].map(f64::from);
         let degenerate = match mode {
             Inherit::NoRotationOrReflection => {
-                !(a * a + c * c >= crate::INHERIT_MIN_PARENT_AXIS_SQUARED)
+                let axis_squared = a * a + c * c;
+                axis_squared.is_nan() || axis_squared < crate::INHERIT_MIN_PARENT_AXIS_SQUARED
             }
             _ => {
                 let r =

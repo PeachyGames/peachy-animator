@@ -259,7 +259,7 @@ pub(crate) fn inherit_linear(mode: Inherit, p: [f64; 4], local: Transform) -> Op
         Inherit::OnlyTranslation => local_linear(local, rotation),
         Inherit::NoRotationOrReflection => {
             let axis_squared = p[0] * p[0] + p[2] * p[2];
-            if !(axis_squared >= INHERIT_MIN_PARENT_AXIS_SQUARED) {
+            if axis_squared.is_nan() || axis_squared < INHERIT_MIN_PARENT_AXIS_SQUARED {
                 return None;
             }
             let length = axis_squared.sqrt();

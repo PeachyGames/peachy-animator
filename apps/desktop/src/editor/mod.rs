@@ -10,6 +10,8 @@ mod icons;
 mod ik;
 #[cfg(test)]
 mod ik_animation_tests;
+#[cfg(test)]
+mod inherit_ui_tests;
 mod key_drag;
 mod layout;
 mod mesh;

@@ -74,6 +74,15 @@ Setup settings and Global flags. Physics is saved and exported for the game
 runtime, but the editor preview does not simulate it yet. See
 [physics data](docs/slices/physics-data.md).
 
+The original Inherit Lab sets every bone inheritance mode, scales, shears and
+mirrors the body, and keys mode changes:
+
+```sh
+cargo run -p peachy-animator -- examples/peach-bot/inherit-bot.peachy
+```
+
+Select a bone to see its **Inherit** Rotation/Scale/Reflection checkboxes.
+
 For either mesh fixture, select its hand.R attachment and **Vertices** to inspect the selected
 vertex's bone influences. Weighted inspection works in Setup and Animate, including
 an unkeyed pose. It stops playback and preserves the current pose and mode. Bone

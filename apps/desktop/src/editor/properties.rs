@@ -198,6 +198,7 @@ impl Editor {
                 }
             });
         });
+        self.bone_inherit_controls(ui, bone);
         if self.setup_mode {
             ui.collapsing("New bone", |ui| {
                 ui.text_edit_singleline(&mut self.new_bone);
@@ -275,6 +276,68 @@ impl Editor {
                     .small()
                     .color(MUTED),
             );
+        }
+    }
+
+    /// Spine's Inherit Rotation / Scale / Reflection checkboxes. Setup edits the
+    /// bone's mode through one command; Animate shows the active (possibly keyed)
+    /// mode read-only. Reflection only distinguishes the two no-scale modes.
+    fn bone_inherit_controls(&mut self, ui: &mut egui::Ui, bone: usize) {
+        let doc = self.session.document();
+        let setup = doc.bones[bone].inherit;
+        let active = peachy_engine::inherit_pose(doc, self.active_animation(), self.time)
+            .get(bone)
+            .copied()
+            .unwrap_or(setup);
+        let shown = if self.setup_mode { setup } else { active };
+        let (mut rotation, mut scale, mut reflection) = shown.flags();
+        let mut changed = None;
+        ui.horizontal(|ui| {
+            ui.label("Inherit");
+            ui.add_enabled_ui(self.setup_mode, |ui| {
+                let r = ui.checkbox(&mut rotation, "Rotation");
+                self.record_target("boneInheritRotation", r.rect);
+                let s = ui.checkbox(&mut scale, "Scale");
+                self.record_target("boneInheritScale", s.rect);
+                let reflection_enabled = rotation && !scale;
+                let f = ui
+                    .add_enabled(
+                        reflection_enabled,
+                        egui::Checkbox::new(&mut reflection, "Reflection"),
+                    )
+                    .on_disabled_hover_text(
+                        "Reflection applies when Rotation is inherited and Scale is not",
+                    );
+                self.record_target("boneInheritReflection", f.rect);
+                if r.changed() || s.changed() || f.changed() {
+                    // Turning Scale off starts from inheriting reflection, as before.
+                    if s.changed() && !scale {
+                        reflection = true;
+                    }
+                    changed = Some(peachy_document::Inherit::from_flags(
+                        rotation, scale, reflection,
+                    ));
+                }
+            });
+        });
+        if !self.setup_mode && active != setup {
+            ui.label(
+                RichText::new(format!(
+                    "Keyed in this animation: {} (Setup: {})",
+                    active.spine_name(),
+                    setup.spine_name()
+                ))
+                .small()
+                .color(MUTED),
+            );
+        }
+        if let Some(inherit) = changed
+            && inherit != setup
+        {
+            self.cancel_gesture();
+            if self.dispatch(Command::SetBoneInherit { bone, inherit }) {
+                self.status = format!("Inherit: {}", inherit.spine_name());
+            }
         }
     }
 }

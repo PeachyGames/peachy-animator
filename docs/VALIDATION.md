@@ -1432,3 +1432,17 @@ Artist inputs and reports stay under `.local/`; only counts are recorded here.
 
 The raw IK-curve import precision correction remains open (see
 [ik-raw-precision.md](slices/ik-raw-precision.md)).
+
+
+## Bone inheritance modes and native v10 — November 9, 2026
+
+| Check | Result |
+| --- | --- |
+| Formula derivation | 1,360 random runtime observations (shear, negative scales, nested parents); all five modes reproduced within 5e-7 |
+| Original Inherit Lab (`inherit-bot.peachy`): every mode, nonuniform/sheared/mirrored parent, keyed mode changes | 28,080 bone and 33,280 region comparisons against external 4.3.13; max world error 0.000036. Resetting all modes to normal moves bones by up to 1.5 matrix units, so the check discriminates |
+| Installed editor and runtime format probes | `inherit` field and keys round-trip; omitted key value is normal; Setup mode before the first key; legacy `transform` alias ignored by the editor |
+| Game audit | 21 skeletons now (two new survivor-liquids files); fully supported **4**; zero inheritance refusals remain; inputs unchanged |
+| Regression | Doggy-scene male rig pose vs runtime unchanged (max 0.00042) after merging animated IK |
+| Rust suite | fmt, clippy `-D warnings`, architecture and build pass; **491** tests pass |
+
+Animated IK (native9) was merged into `main` first; inheritance became native10.

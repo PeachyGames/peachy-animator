@@ -759,3 +759,12 @@ Properties, no Dopesheet physics rows, no constraint creation/deletion, and no
 Tree warnings for invalid physics. Percent display for influences, Inertia,
 Damping and Mix, and row order/grouping, are local choices not yet compared with
 the installed editor's panel. Native OS input acceptance is pending.
+
+
+## Bone Inherit checkboxes — November 9, 2026
+
+Bone Properties add **Inherit: Rotation, Scale, Reflection** below Length,
+editable in Setup (one undo step each) and read-only in Animate with a note when
+the active mode is keyed. Reflection is enabled only with Rotation on and Scale
+off. Row placement and the enabled/disabled rule are local choices pending a
+comparison with the installed editor; keying inheritance is not offered yet.

@@ -539,3 +539,14 @@ Sequential solving and the offset correction are elementary triangle geometry,
 checked only by black-box comparison with the external runtime on original
 fixtures. The attachment-name rule was corrected from installed-editor CLI probes
 with original minimal JSON. No implementation source was read.
+
+
+### Bone inheritance modes — November 9, 2026
+
+The public [bones guide](https://esotericsoftware.com/spine-bones) describes the
+Inherit checkboxes qualitatively. Exact formulas were fitted to black-box
+observations of the external runtime's public API for original random rigs:
+candidate models were tested numerically and kept only when they reproduced
+every sample. The degenerate-parent switch was located the same way and is
+refused rather than modeled. Editor CLI probes with original JSON established
+the field/key format. No runtime or editor implementation source was read.

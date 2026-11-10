@@ -67,6 +67,8 @@ mod ik_animation_tests;
 #[cfg(test)]
 mod ik_tests;
 #[cfg(test)]
+mod inherit_tests;
+#[cfg(test)]
 mod mesh_soft_selection_tests;
 #[cfg(test)]
 mod physics_tests;
