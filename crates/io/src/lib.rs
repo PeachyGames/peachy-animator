@@ -29,6 +29,25 @@ pub fn load(path: &Path) -> Result<Document, String> {
 pub fn decode_project(text: &str) -> Result<Document, String> {
     let mut value: serde_json::Value = serde_json::from_str(text).map_err(|e| e.to_string())?;
     let original_format = value["format"].as_u64();
+    if matches!(original_format, Some(1..=18))
+        && value["skins"].as_object().is_some_and(|skins| {
+            skins
+                .values()
+                .filter_map(serde_json::Value::as_object)
+                .any(|slots| {
+                    slots
+                        .values()
+                        .filter_map(serde_json::Value::as_object)
+                        .any(|attachments| {
+                            attachments
+                                .values()
+                                .any(|attachment| attachment["type"] == "clipping")
+                        })
+                })
+        })
+    {
+        return Err("Legacy project formats cannot contain clipping attachments".into());
+    }
     if matches!(original_format, Some(1..=17))
         && value["skins"].as_object().is_some_and(|skins| {
             skins
@@ -277,6 +296,10 @@ pub fn decode_project(text: &str) -> Result<Document, String> {
     // v17→v18: linked meshes are new; nothing to add.
     if value["format"].as_u64() == Some(17) {
         value["format"] = 18.into();
+    }
+    // v18→v19: clipping attachments are new; nothing to add.
+    if value["format"].as_u64() == Some(18) {
+        value["format"] = 19.into();
     }
     let mut doc: Document = serde_json::from_value(value).map_err(|e| e.to_string())?;
     // Wrapping vertices preserves their values and all surrounding fields. Decode

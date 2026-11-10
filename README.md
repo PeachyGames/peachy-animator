@@ -111,6 +111,13 @@ body colors (Animate, `wave`):
 cargo run -p peachy-animator -- examples/peach-bot/slot-bot.peachy
 ```
 
+The original Clip Lab cuts the body, left arm and head to a concave polygon and
+the right arm to a convex hull (Animate, `wave`):
+
+```sh
+cargo run -p peachy-animator -- examples/peach-bot/clip-bot.peachy
+```
+
 The original Transform Map Lab remaps a mirrored hand with offsets and scales
 and clamps the left foot to a box (Animate, `wave`):
 

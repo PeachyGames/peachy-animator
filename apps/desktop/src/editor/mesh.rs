@@ -153,6 +153,10 @@ impl Editor {
         let Some(attachment) = self.session.document().attachment(&key) else {
             return;
         };
+        if matches!(attachment, Attachment::Clipping(_)) {
+            ui.label("Clipping polygons are not editable yet.");
+            return;
+        }
         match attachment {
             Attachment::Region(_) => {
                 let mut convert_to_mesh = false;
@@ -305,6 +309,7 @@ impl Editor {
                     "Drag setup vertices to deform the image. UV editing, weights and deform keys are later slices."
                 }).small().color(MUTED));
             }
+            Attachment::Clipping(_) => unreachable!("returned above"),
         }
         ui.separator();
     }

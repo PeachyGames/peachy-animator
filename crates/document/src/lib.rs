@@ -1,6 +1,7 @@
 //! Editable animation data. This crate knows nothing about files, windows or GPUs.
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
+mod clipping;
 mod deform;
 mod draw_order;
 mod events;
@@ -11,6 +12,7 @@ mod physics;
 mod skin_scope;
 mod slot_keys;
 mod transform;
+pub use clipping::Clipping;
 pub use deform::{DeformKey, DeformTrack};
 pub use draw_order::{DrawOrderKey, DrawOrderOffset, sample_draw_order};
 pub use events::{EventDef, EventKey};
@@ -28,7 +30,7 @@ pub use transform::{
     TransformConstraint, TransformMapping, TransformProperty, TransformTarget, TransformValues,
 };
 
-pub const FORMAT_VERSION: u32 = 18;
+pub const FORMAT_VERSION: u32 = 19;
 pub const KEY_TIME_EPSILON: f32 = 0.00001;
 pub fn same_key_time(a: f32, b: f32) -> bool {
     (a - b).abs() < KEY_TIME_EPSILON
@@ -167,6 +169,8 @@ pub type Skin = BTreeMap<String, BTreeMap<String, Attachment>>;
 pub enum Attachment {
     Region(Region),
     Mesh(Mesh),
+    /// Cuts later attachments to a polygon; draws nothing itself. Native v19.
+    Clipping(Clipping),
 }
 
 impl Attachment {
@@ -175,22 +179,28 @@ impl Attachment {
         match self {
             Self::Region(region) => region.color,
             Self::Mesh(mesh) => mesh.color,
+            Self::Clipping(_) => WHITE,
         }
     }
     pub fn name(&self) -> Option<&str> {
         match self {
             Self::Region(r) => r.name.as_deref(),
             Self::Mesh(m) => m.name.as_deref(),
+            Self::Clipping(c) => c.name.as_deref(),
         }
     }
-    pub fn path(&self) -> &str {
+    /// Image path; clipping attachments draw no image.
+    pub fn path(&self) -> Option<&str> {
         match self {
-            Self::Region(r) => &r.path,
-            Self::Mesh(m) => &m.path,
+            Self::Region(r) => Some(&r.path),
+            Self::Mesh(m) => Some(&m.path),
+            Self::Clipping(_) => None,
         }
     }
     pub fn validate(&self) -> Result<(), String> {
-        if !safe_asset_path(self.path()) || self.name().is_some_and(|n| n.trim().is_empty()) {
+        if !self.path().is_none_or(safe_asset_path)
+            || self.name().is_some_and(|n| n.trim().is_empty())
+        {
             return Err("Invalid attachment name or asset path".into());
         }
         match self {
@@ -206,6 +216,8 @@ impl Attachment {
                 Ok(())
             }
             Self::Mesh(m) => m.validate(),
+            // Needs slot/bone context: checked in Document::validate.
+            Self::Clipping(_) => Ok(()),
         }
     }
 }
@@ -690,6 +702,9 @@ impl Document {
                     if let Attachment::Mesh(mesh) = attachment {
                         mesh.validate_bones(self.bones.len())?;
                     }
+                    if let Attachment::Clipping(clip) = attachment {
+                        clip.validate(self.slots.len(), self.bones.len())?;
+                    }
                 }
             }
         }
@@ -792,7 +807,7 @@ impl Document {
             .values()
             .flat_map(|s| s.values())
             .flat_map(|a| a.values())
-            .map(Attachment::path)
+            .filter_map(Attachment::path)
             .collect()
     }
     pub fn attachment(&self, key: &AttachmentRef) -> Option<&Attachment> {

@@ -603,3 +603,13 @@ No runtime or editor implementation source was read.
 The mapping rule was fitted to black-box runtime outputs for original probe
 rigs; field names were already observed in the transform constraint slice. No
 runtime or editor implementation source was read.
+
+
+### Clipping — November 10, 2026
+
+Semantics come from the public `ClippingAttachment`/`SkeletonClipping`/
+`SkeletonRendererCore` typings and black-box probes of the runtime's headless
+renderer with original rigs (rendered area and coverage). The polygon
+decomposition is our own (ear clipping, Sutherland–Hodgman); it is compared by
+coverage, not by matching the runtime's vertices. No runtime or editor
+implementation source was read.

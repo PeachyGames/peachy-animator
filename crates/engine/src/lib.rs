@@ -1,5 +1,6 @@
 //! Functional animation core and the in-memory session that records its results.
 mod authoring;
+mod clipping;
 mod commands;
 mod ghosting;
 mod ik;
@@ -19,6 +20,7 @@ mod tools;
 mod transform_constraint;
 
 pub use authoring::{IkPoseEdit, KeyState, PoseEdits, transform_group};
+pub use clipping::ClippedGeometry;
 pub use commands::{Command, EditTarget, apply_command, ik_keyframe_at, keyframe_at};
 pub use ghosting::{
     GhostRange, GhostSample, GhostSampling, GhostSide, GhostSource, MAX_GHOST_SAMPLES,
@@ -31,6 +33,7 @@ pub use ik::{
 pub use ik_sampling::{IkPose, sample_ik};
 pub use mesh::{
     deformed_mesh_world_vertices, mesh_world_vertices, region_to_mesh, region_vertices,
+    world_vertices,
 };
 pub use mesh_binding::MeshBindPose;
 pub use mesh_soft_selection::{MeshSoftSelection, MeshTranslation};
@@ -61,6 +64,8 @@ pub use tools::{
 mod animation_tests;
 #[cfg(test)]
 mod binding_tests;
+#[cfg(test)]
+mod clipping_tests;
 #[cfg(test)]
 mod deform_tests;
 #[cfg(test)]

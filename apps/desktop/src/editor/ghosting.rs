@@ -209,10 +209,10 @@ impl Editor {
                     continue;
                 };
                 let mut mesh = egui::Mesh::with_texture(texture.id());
-                mesh.vertices = draw
-                    .vertices
+                let (vertices, uvs, triangles) = draw.render_geometry();
+                mesh.vertices = vertices
                     .iter()
-                    .zip(&draw.uvs)
+                    .zip(uvs)
                     .map(|(&point, &uv)| egui::epaint::Vertex {
                         pos: scene_view::screen_point(pose.origin, zoom, point),
                         uv: pos2(uv[0], uv[1]),
@@ -223,7 +223,7 @@ impl Editor {
                         ),
                     })
                     .collect();
-                mesh.indices = draw.triangles.clone();
+                mesh.indices = triangles.to_vec();
                 painter.add(egui::Shape::mesh(mesh));
             }
         }

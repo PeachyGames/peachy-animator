@@ -579,14 +579,16 @@ impl Editor {
         for draw in &scene.attachments {
             if let Some(texture) = self.textures.get(&draw.image) {
                 let mut mesh = egui::Mesh::with_texture(texture.id());
-                for (&point, &uv) in draw.vertices.iter().zip(&draw.uvs) {
+                // Clipped draws show only their clipped geometry.
+                let (vertices, uvs, triangles) = draw.render_geometry();
+                for (&point, &uv) in vertices.iter().zip(uvs) {
                     mesh.vertices.push(egui::epaint::Vertex {
                         pos: scene_view::screen_point(origin, zoom, point),
                         uv: pos2(uv[0], uv[1]),
                         color: scene_view::attachment_tint(draw.color),
                     });
                 }
-                mesh.indices = draw.triangles.clone();
+                mesh.indices = triangles.to_vec();
                 painter.add(egui::Shape::mesh(mesh));
             }
         }

@@ -1551,3 +1551,14 @@ Animated IK (native9) was merged into `main` first; inheritance became native10.
 | Cow front (game asset, local only; SHA-256 unchanged) | 30 skins: 22,950 bone-activity checks, 137,700 world values (max 0.0002) and 40,260 mesh values (max 0.0002); original vs re-export with physics: 27,000 frames, max bone difference 0.0001, 18 physics constraints |
 | Game audit | **14 of 21** skeletons import fully |
 | Rust suite | fmt, clippy `-D warnings`, architecture and build pass; **533** tests pass |
+
+
+## Clipping, native v19 — November 10, 2026
+
+| Check | Result |
+| --- | --- |
+| Runtime probes (original) through the headless renderer | Clip range, own-slot `end`, ignored nested clips and the `convex` default as documented in the slice |
+| Original Clip Lab (`clip-bot.peachy`): concave polygon on the body through the head, convex-hull clip on the right arm to the end of drawing | At all 312 samples, total clipped area (max difference 0.006) and a 24×24 coverage grid (179,712 points, 0 mismatches) equal the runtime renderer's; 28,080 world values (max 0.00003); editor round trip keeps both polygons (editor sets `convex`, see the slice) |
+| Desktop capture | The Clip Lab renders with the concave notch through head and body and the arm trimmed to the hull |
+| Game audit | **15 of 21** skeletons import fully (female pose added) |
+| Rust suite | fmt, clippy `-D warnings`, architecture and build pass; **538** tests pass |

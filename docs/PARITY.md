@@ -44,7 +44,8 @@ comparison. The native `.peachy` format is our own editable model.
 | Linked meshes | Import, export, drawing, deform-key following and source-edit propagation | Linked Mesh Lab matches the runtime in every skin; no create/unlink commands yet. See [linked meshes](slices/linked-mesh.md) |
 | Attachment tint | Region/mesh color imports, exports and tints draws (slot × attachment) | Tint Lab matches the runtime color per sample; no editor control yet. See [attachment tint](slices/attachment-tint.md) |
 | Draw order | Keyed draw order imports, exports, migrates and reorders every scene (drawing and picking) | Draw Order Lab matches the runtime order at every sample; no draw order authoring, Dopesheet rows or folders yet. See [draw order](slices/draw-order.md) |
-| Clipping, sequences | Pending | Unsupported imports are refused; no silent approximation |
+| Clipping | Import, export, scene clipping (rendering and picking), concave and convex polygons, end slots | Clip Lab matches the runtime renderer's coverage at every sample; no polygon editing, viewport outline, inverse clipping or clip deform keys yet. See [clipping](slices/clipping.md) |
+| Sequences | Pending | Unsupported imports are refused; no silent approximation |
 | Engine integration | Versioned Spine JSON plus single-page atlas export | Separate licensed runtime is an external consumer/oracle; native `.spine` and binary `.skel` decoding remain unsupported |
 
 The mesh work maps to Spine's distinction between

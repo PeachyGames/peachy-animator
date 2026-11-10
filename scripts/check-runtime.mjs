@@ -12,7 +12,38 @@ import assert from 'node:assert/strict';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const runtimePath = process.argv[2];
 if (!runtimePath) throw new Error('Supply an absolute path to your separately licensed Spine 4.3 runtime module.');
-const { Texture, TextureAtlas, AtlasAttachmentLoader, SkeletonJson, Skeleton, AnimationState, AnimationStateData, Physics, MeshAttachment, RegionAttachment } = await import(pathToFileURL(resolve(runtimePath)));
+const { Texture, TextureAtlas, AtlasAttachmentLoader, SkeletonJson, Skeleton, AnimationState, AnimationStateData, Physics, MeshAttachment, RegionAttachment, ClippingAttachment, SkeletonRendererCore } = await import(pathToFileURL(resolve(runtimePath)));
+
+// Clipped drawing is compared by what is covered, not by vertices: the runtime
+// may decompose a clipping polygon differently. Triangle lists are flat
+// [[ax, ay, bx, by, cx, cy], ...].
+function runtimeTriangles(skeleton) {
+  const out = [];
+  for (let c = new SkeletonRendererCore().render(skeleton); c; c = c.next) {
+    const stride = c.positions.length / Math.max(1, c.numVertices) >= 2 ? Math.round(c.positions.length / c.numVertices) : 2;
+    for (let i = 0; i < c.numIndices; i += 3) out.push([0, 1, 2].flatMap(k => [c.positions[c.indices[i + k] * stride], c.positions[c.indices[i + k] * stride + 1]]));
+  }
+  return out;
+}
+function ourTriangles(draws) {
+  const out = [];
+  for (const d of draws) {
+    if (d.color[3] === 0) continue;
+    const g = d.clipped ?? d;
+    for (let i = 0; i < g.triangles.length; i += 3) out.push([0, 1, 2].flatMap(k => g.vertices[g.triangles[i + k]]));
+  }
+  return out;
+}
+const triArea = t => Math.abs((t[2] - t[0]) * (t[5] - t[1]) - (t[3] - t[1]) * (t[4] - t[0])) / 2;
+function coverage(tris, x, y) {
+  let n = 0;
+  for (const t of tris) {
+    const s = (ax, ay, bx, by) => (bx - ax) * (y - ay) - (by - ay) * (x - ax);
+    const a = s(t[0], t[1], t[2], t[3]), b = s(t[2], t[3], t[4], t[5]), c = s(t[4], t[5], t[0], t[1]);
+    if ((a >= 0 && b >= 0 && c >= 0) || (a <= 0 && b <= 0 && c <= 0)) n++;
+  }
+  return n;
+}
 class OracleTexture extends Texture {
   constructor(width, height) { super({ width, height }); }
   setFilters() {}
@@ -157,10 +188,27 @@ for (const animation of data.animations) {
       const actualDraws = new Map(ours.attachments.map(a=>[a.slot,a]));
       // Draw order: our draws come back to front in the runtime's applied order.
       const runtimeOrder = (Array.isArray(skeleton.drawOrder) ? skeleton.drawOrder : skeleton.drawOrder.appliedPose)
-        .filter(slot => slot.bone.active && slot.appliedPose.attachment)
+        .filter(slot => slot.bone.active && slot.appliedPose.attachment && !(slot.appliedPose.attachment instanceof ClippingAttachment))
         .map(slot => skeleton.slots.indexOf(slot));
       assert.deepEqual(ours.attachments.map(a => a.slot), runtimeOrder, `${animation.name} t=${time} draw order`);
       report.drawOrderChecks = (report.drawOrderChecks ?? 0) + 1;
+      if (ours.attachments.some(a => a.clipped)) {
+        const theirs = runtimeTriangles(skeleton), mine = ourTriangles(ours.attachments);
+        const [areaTheirs, areaMine] = [theirs, mine].map(ts => ts.reduce((sum, t) => sum + triArea(t), 0));
+        assert.ok(Math.abs(areaTheirs - areaMine) <= 1e-3 * Math.max(1, areaTheirs), `${animation.name} t=${time} clipped area: ours ${areaMine} vs runtime ${areaTheirs}`);
+        const xs = theirs.flatMap(t => [t[0], t[2], t[4]]), ys = theirs.flatMap(t => [t[1], t[3], t[5]]);
+        const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+        let points = 0, mismatched = 0;
+        for (let i = 0; i < 24; i++) for (let j = 0; j < 24; j++) {
+          const x = x0 + (x1 - x0) * (i + 0.37) / 24, y = y0 + (y1 - y0) * (j + 0.61) / 24;
+          points++; if (coverage(theirs, x, y) !== coverage(mine, x, y)) mismatched++;
+        }
+        assert.ok(mismatched <= points * 0.01, `${animation.name} t=${time} clipped coverage differs at ${mismatched}/${points} points`);
+        report.clipChecks = (report.clipChecks ?? 0) + 1;
+        report.clipCoveragePoints = (report.clipCoveragePoints ?? 0) + points;
+        report.clipCoverageMismatches = (report.clipCoverageMismatches ?? 0) + mismatched;
+        report.maxClipAreaError = Math.max(report.maxClipAreaError ?? 0, Math.abs(areaTheirs - areaMine));
+      }
       for (const draw of ours.attachments) {
         const key=draw.attachment;
         const native=sourceProject.skins[key.skin][key.slot][key.placeholder];
@@ -175,7 +223,8 @@ for (const animation of data.animations) {
         const slot=skeleton.slots[slotIndex];
         if (!slot.bone.active) { assert.ok(!actualDraws.has(slotIndex), 'Inactive slots are not drawn'); continue; }
         // Shown attachment (incl. keyed swaps/hides) and slot color agree.
-        assert.equal(actualDraws.has(slotIndex), !!slot.appliedPose.attachment, `${animation.name} t=${time} slot ${slot.data.name} visibility`);
+        const drawn = !!slot.appliedPose.attachment && !(slot.appliedPose.attachment instanceof ClippingAttachment);
+        assert.equal(actualDraws.has(slotIndex), drawn, `${animation.name} t=${time} slot ${slot.data.name} visibility`);
         const draw = actualDraws.get(slotIndex);
         if (draw) {
           // Renderers tint with slot color times attachment color.

@@ -24,8 +24,10 @@ pub fn pick_attachment(draws: &[AttachmentDraw], point: [f32; 2]) -> Option<&Att
         return None;
     }
     draws.iter().rev().find(|draw| {
-        draw.triangles.as_chunks::<3>().0.iter().any(|t| {
-            let [a, b, c] = t.map(|i| draw.vertices[i as usize]);
+        // Clipped-away parts cannot be picked.
+        let (vertices, _, triangles) = draw.render_geometry();
+        triangles.as_chunks::<3>().0.iter().any(|t| {
+            let [a, b, c] = t.map(|i| vertices[i as usize]);
             let cross = |a: [f32; 2], b: [f32; 2], p: [f32; 2]| {
                 (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0])
             };

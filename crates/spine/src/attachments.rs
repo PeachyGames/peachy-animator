@@ -54,7 +54,7 @@ pub(super) fn read_attachment(
     Ok(attachment)
 }
 
-fn read_mesh_vertices(
+pub(super) fn read_mesh_vertices(
     value: &Value,
     vertex_count: usize,
     bone_count: usize,
@@ -170,6 +170,31 @@ fn indices(value: &Value, context: &str) -> Result<Vec<u32>, String> {
         .collect()
 }
 
+/// Spine vertex array: plain coordinates, or per-vertex bone count followed by
+/// (bone, x, y, weight) for each influence.
+pub(super) fn write_vertices(vertices: &MeshVertices) -> Value {
+    match vertices {
+        MeshVertices::SlotLocal { positions } => {
+            json!(positions.iter().flatten().collect::<Vec<_>>())
+        }
+        MeshVertices::Weighted { influences } => {
+            let mut values = vec![];
+            for vertex in influences {
+                values.push(json!(vertex.len()));
+                for influence in vertex {
+                    values.extend([
+                        json!(influence.bone),
+                        json!(influence.position[0]),
+                        json!(influence.position[1]),
+                        json!(influence.weight),
+                    ]);
+                }
+            }
+            json!(values)
+        }
+    }
+}
+
 pub(super) fn write_attachment(attachment: &Attachment) -> Value {
     let mut value = match attachment {
         Attachment::Mesh(m) if m.link.is_some() => {
@@ -181,27 +206,9 @@ pub(super) fn write_attachment(attachment: &Attachment) -> Value {
             v["height"] = json!(r.height);
             v
         }
+        Attachment::Clipping(_) => unreachable!("clipping is written by clipping::write"),
         Attachment::Mesh(m) => {
-            let vertices = match &m.vertices {
-                MeshVertices::SlotLocal { positions } => {
-                    json!(positions.iter().flatten().collect::<Vec<_>>())
-                }
-                MeshVertices::Weighted { influences } => {
-                    let mut values = vec![];
-                    for vertex in influences {
-                        values.push(json!(vertex.len()));
-                        for influence in vertex {
-                            values.extend([
-                                json!(influence.bone),
-                                json!(influence.position[0]),
-                                json!(influence.position[1]),
-                                json!(influence.weight),
-                            ]);
-                        }
-                    }
-                    json!(values)
-                }
-            };
+            let vertices = write_vertices(&m.vertices);
             let mut v = json!({"type":"mesh", "vertices":vertices, "uvs":m.uvs.iter().flatten().collect::<Vec<_>>(), "triangles":m.triangles, "hull":m.hull});
             if m.width > 0.0 {
                 v["width"] = json!(m.width);
@@ -219,7 +226,9 @@ pub(super) fn write_attachment(attachment: &Attachment) -> Value {
     if attachment.color() != peachy_document::WHITE {
         value["color"] = json!(format!("{r:02x}{g:02x}{b:02x}{a:02x}"));
     }
-    value["path"] = json!(attachment.path());
+    if let Some(path) = attachment.path() {
+        value["path"] = json!(path);
+    }
     if let Some(name) = attachment.name() {
         value["name"] = json!(name);
     }
@@ -245,6 +254,11 @@ pub(super) fn inspect_attachment(
     }
     if let Err(error) = read_hex_color(region, &format!("{context}: color")) {
         issues.push(error);
+    }
+    if region["type"].as_str() == Some("clipping") {
+        // Fields only; vertices and the end slot are checked by read_document.
+        super::clipping::inspect(region, &context, issues);
+        return;
     }
     if region["type"].as_str() == Some("linkedmesh") {
         // Fields only; the source is resolved (and checked) by read_document.

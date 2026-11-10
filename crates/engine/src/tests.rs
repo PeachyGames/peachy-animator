@@ -426,6 +426,7 @@ fn contextual_edits_change_only_the_addressed_entity_and_undo_atomically() {
 #[test]
 fn picking_respects_triangles_draw_order_reflections_and_visibility_bounds() {
     let make = |slot, vertices: Vec<[f32; 2]>, triangles: Vec<u32>| AttachmentDraw {
+        clipped: None,
         slot,
         color: [255; 4],
         attachment: hand(),
@@ -570,7 +571,7 @@ fn subdivision_preserves_uv_mapping_hull_and_undo_and_rejects_invalid_batches() 
 fn explicit_attachment_keys_do_not_edit_named_skin_fallbacks() {
     let before = original();
     let (_, fallback) = before.resolved_attachment("mint", 13).unwrap();
-    assert_eq!(fallback.path(), "hand");
+    assert_eq!(fallback.path(), Some("hand"));
     let key = AttachmentRef {
         skin: "mint".into(),
         ..hand()

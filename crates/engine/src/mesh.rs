@@ -32,7 +32,16 @@ pub fn region_to_mesh(region: &Region) -> Mesh {
 /// Evaluate validated bind positions using the current world bone transforms.
 /// Weighted positions already name their bones; the slot transform is not applied again.
 pub fn mesh_world_vertices(mesh: &Mesh, slot_bone: usize, world: &[Affine]) -> Vec<[f32; 2]> {
-    match &mesh.vertices {
+    world_vertices(&mesh.vertices, slot_bone, world)
+}
+
+/// World positions of slot-local or weighted vertices (meshes, clipping polygons).
+pub fn world_vertices(
+    vertices: &MeshVertices,
+    slot_bone: usize,
+    world: &[Affine],
+) -> Vec<[f32; 2]> {
+    match vertices {
         MeshVertices::SlotLocal { positions } => positions
             .iter()
             .map(|position| world[slot_bone].point(position[0], position[1]))

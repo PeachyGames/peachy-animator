@@ -101,8 +101,22 @@ impl Editor {
                 ui.label(format!("Slot: {}", key.slot));
                 ui.label(format!("Skin: {}", key.skin));
                 if let Some(value) = self.session.document().attachment(&key) {
-                    ui.label(format!("Image: {}", value.path()));
+                    if let Some(path) = value.path() {
+                        ui.label(format!("Image: {path}"));
+                    }
                     match value {
+                        Attachment::Clipping(clip) => {
+                            let end = clip.end.map_or("the last slot".to_owned(), |end| {
+                                self.session.document().slots[end].name.clone()
+                            });
+                            ui.label(format!("Clipping · {} points", clip.vertex_count()));
+                            ui.label(format!("Cuts slots drawn after this one, through {end}"))
+                                .on_hover_text(if clip.convex {
+                                    "Uses the polygon's convex hull. Editing clipping polygons is not supported yet."
+                                } else {
+                                    "Editing clipping polygons is not supported yet."
+                                });
+                        }
                         Attachment::Region(r) => {
                             ui.label(format!("Region · {} × {}", r.width, r.height));
                         }

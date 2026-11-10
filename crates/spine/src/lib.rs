@@ -1,5 +1,6 @@
 //! Independently written Spine 4.3 JSON adapter. No runtime implementation dependency.
 mod attachments;
+mod clipping;
 mod constraints;
 mod deform;
 mod draw_order;
@@ -362,6 +363,23 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
             for (slot, regions) in attachments {
                 let mut mapped_regions = BTreeMap::new();
                 for (placeholder, region) in regions.as_object().ok_or("Invalid attachments")? {
+                    if region["type"].as_str() == Some("clipping") {
+                        let slot_names: BTreeMap<String, usize> = slots
+                            .iter()
+                            .enumerate()
+                            .map(|(index, slot)| (slot.name.clone(), index))
+                            .collect();
+                        mapped_regions.insert(
+                            placeholder.clone(),
+                            Attachment::Clipping(clipping::read(
+                                region,
+                                placeholder,
+                                &slot_names,
+                                bones.len(),
+                            )?),
+                        );
+                        continue;
+                    }
                     if region["type"].as_str() == Some("linkedmesh") {
                         linked.push(linked_mesh::Pending {
                             skin: name.into(),
@@ -534,7 +552,10 @@ pub fn export_json(doc: &Document) -> Result<Value, String> {
             for (slot, regions) in skin {
                 attachments[slot] = json!({});
                 for (name, region) in regions {
-                    attachments[slot][name] = write_attachment(region);
+                    attachments[slot][name] = match region {
+                        Attachment::Clipping(clip) => clipping::write(clip, doc),
+                        other => write_attachment(other),
+                    };
                 }
             }
             let mut skin = json!({"name":name,"attachments":attachments});

@@ -37,10 +37,24 @@ pub struct AttachmentDraw {
     pub attachment: AttachmentRef,
     pub image: String,
     pub color: [u8; 4],
+    /// The attachment's own geometry (editing tools index these vertices).
     pub vertices: Vec<[f32; 2]>,
     pub uvs: Vec<[f32; 2]>,
     pub triangles: Vec<u32>,
     pub hull: usize,
+    /// What is actually drawn while a clipping attachment cuts this draw.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub clipped: Option<crate::ClippedGeometry>,
+}
+
+impl AttachmentDraw {
+    /// Vertices, UVs and triangles to draw or pick: clipped when clipped.
+    pub fn render_geometry(&self) -> (&[[f32; 2]], &[[f32; 2]], &[u32]) {
+        match &self.clipped {
+            Some(c) => (&c.vertices, &c.uvs, &c.triangles),
+            None => (&self.vertices, &self.uvs, &self.triangles),
+        }
+    }
 }
 pub struct Scene {
     pub locals: Vec<Transform>,
@@ -164,18 +178,35 @@ fn scene_from_evaluated(doc: &Document, skin: &str, pose: crate::EvaluatedPose) 
         draw_order,
     } = pose;
     let mut attachments = vec![];
+    // Observed with the runtime's headless renderer: a clip starts at a shown
+    // clipping attachment (ignored while another clip is active) and ends
+    // after its end slot is drawn; its own slot never ends it.
+    let mut clip: Option<crate::clipping::ClipRegion> = None;
     for slot_index in draw_order {
         let slot = &doc.slots[slot_index];
-        if !active_bones[slot.bone] {
+        let shown = if active_bones[slot.bone] {
+            slot_attachments[slot_index]
+                .as_deref()
+                .and_then(|name| doc.resolve_attachment(skin, slot_index, name))
+        } else {
+            None
+        };
+        if let Some((_, Attachment::Clipping(c))) = shown {
+            if clip.is_none() {
+                let polygon = crate::world_vertices(&c.vertices, slot.bone, &world);
+                clip = Some(crate::clipping::ClipRegion::new(&polygon, c.convex, c.end));
+            }
             continue;
         }
-        let Some((key, attachment)) = slot_attachments[slot_index]
-            .as_deref()
-            .and_then(|name| doc.resolve_attachment(skin, slot_index, name))
-        else {
+        let ends_clip = clip.as_ref().is_some_and(|c| c.end == Some(slot_index));
+        let Some((key, attachment)) = shown else {
+            if ends_clip {
+                clip = None;
+            }
             continue;
         };
         let (vertices, uvs, triangles, hull) = match attachment {
+            Attachment::Clipping(_) => unreachable!("handled above"),
             Attachment::Region(r) => (
                 region_vertices(r)
                     .into_iter()
@@ -200,10 +231,15 @@ fn scene_from_evaluated(doc: &Document, skin: &str, pose: crate::EvaluatedPose) 
                 m.hull,
             ),
         };
+        let clipped = clip.as_ref().map(|c| c.clip(&vertices, &uvs, &triangles));
+        if ends_clip {
+            clip = None;
+        }
         attachments.push(AttachmentDraw {
+            clipped,
             slot: slot_index,
             attachment: key,
-            image: attachment.path().into(),
+            image: attachment.path().unwrap_or_default().into(),
             // Slot color times attachment color, as Spine renderers tint.
             color: {
                 let tint = attachment.color();

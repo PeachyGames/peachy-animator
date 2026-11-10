@@ -75,6 +75,10 @@ Native v13 adds `Animation.deform_tracks` with dense offsets (per vertex, or per
 weighted influence). Sampled deforms travel in `AuthoredPose`; scenes apply them
 via `deformed_mesh_world_vertices`. Keep slot renames updating deform refs.
 
+Native v19 adds `Attachment::Clipping`. `AttachmentDraw.vertices` stay the
+attachment's own geometry (tools index them); render and pick with
+`AttachmentDraw::render_geometry()`, which is clipped while a clip is active.
+
 Native v18 adds `Mesh.link`: a linked mesh stores a copy of its source's
 geometry. `apply_command` propagates source edits (`propagate_linked_geometry`)
 and validation refuses diverging copies; resolve deform keys through
