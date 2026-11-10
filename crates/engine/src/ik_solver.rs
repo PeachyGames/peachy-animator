@@ -55,9 +55,20 @@ pub(crate) fn apply(
             }
         }
     }
-    for (ik, pose) in active {
-        solve(doc, locals, world, ik, pose, inherits)
-            .map_err(|error| format!("IK {}: {error}", ik.name))?;
+    // All constraints run in list order: IK solves and transform constraints
+    // interleave; physics is data only.
+    for (index, constraint) in doc.constraints.iter().enumerate() {
+        match constraint {
+            peachy_document::Constraint::Ik(ik) if poses[index].mix != 0.0 => {
+                solve(doc, locals, world, ik, poses[index], inherits)
+                    .map_err(|error| format!("IK {}: {error}", ik.name))?;
+            }
+            peachy_document::Constraint::Transform(transform) => {
+                crate::transform_constraint::apply(doc, transform, locals, world, inherits)
+                    .map_err(|error| format!("Transform {}: {error}", transform.name))?;
+            }
+            _ => {}
+        }
     }
     Ok(())
 }
@@ -80,21 +91,18 @@ fn validate_domain(doc: &Document, locals: &[Transform], ik: &IkConstraint) -> R
             ik.name
         ));
     }
+    // Constrained bones need unit positive scale and zero shear. Ancestors may
+    // have any scale, shear or reflection: the solve works in the parent frame
+    // and matched the external runtime for uniform/nonuniform scale, shear and
+    // mirrored ancestors (docs/slices/ik-design.md addendum).
     for &bone in &ik.bones {
-        let mut current = Some(bone);
-        while let Some(index) = current {
-            let local = locals[index];
-            if local.scale_x != 1.
-                || local.scale_y != 1.
-                || local.shear_x != 0.
-                || local.shear_y != 0.
-            {
-                return Err(format!(
-                    "IK {}: bone {} requires unit positive scales and zero shear",
-                    ik.name, doc.bones[index].name
-                ));
-            }
-            current = doc.bones[index].parent;
+        let local = locals[bone];
+        if local.scale_x != 1. || local.scale_y != 1. || local.shear_x != 0. || local.shear_y != 0.
+        {
+            return Err(format!(
+                "IK {}: bone {} requires unit positive scales and zero shear",
+                ik.name, doc.bones[bone].name
+            ));
         }
     }
     if ik.bones.len() == 2 {

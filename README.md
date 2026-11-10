@@ -83,6 +83,13 @@ cargo run -p peachy-animator -- examples/peach-bot/inherit-bot.peachy
 
 Select a bone to see its **Inherit** Rotation/Scale/Reflection checkboxes.
 
+The original Transform Lab mirrors one hand's movement, aims the head along an
+arm and spins a foot with a large rotation offset:
+
+```sh
+cargo run -p peachy-animator -- examples/peach-bot/transform-bot.peachy
+```
+
 For either mesh fixture, select its hand.R attachment and **Vertices** to inspect the selected
 vertex's bone influences. Weighted inspection works in Setup and Animate, including
 an unkeyed pose. It stops playback and preserves the current pose and mode. Bone

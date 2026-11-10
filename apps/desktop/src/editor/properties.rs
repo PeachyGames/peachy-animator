@@ -143,6 +143,9 @@ impl Editor {
             TreeItem::Constraint(index) if self.physics_constraint(index).is_some() => {
                 self.physics_properties(ui, index)
             }
+            TreeItem::Constraint(index) if self.transform_constraint(index).is_some() => {
+                self.transform_constraint_properties(ui, index)
+            }
             TreeItem::Constraint(index) => self.ik_properties(ui, index),
             TreeItem::Folder(Folder::Constraints) => {
                 ui.label("Constraints are applied in Tree order. Select a constraint to edit its Setup settings.");

@@ -98,6 +98,37 @@ pub fn command_schema() -> Value {
     let settings = [
         "inertia", "strength", "damping", "mass", "wind", "gravity", "mix",
     ];
+    let transform_property =
+        json!({"type":"string","enum":["rotate","x","y","scaleX","scaleY","shearY"]});
+    let transform_values =
+        object(&["rotate", "x", "y", "scale_x", "scale_y", "shear_y"].map(|name| (name, number())));
+    let transform_constraint = object(&[
+        ("name", text()),
+        ("bones", list(index())),
+        ("source", index()),
+        ("offsets", transform_values.clone()),
+        ("mix", transform_values),
+        (
+            "mappings",
+            list(object(&[
+                ("from", transform_property.clone()),
+                ("offset", number()),
+                (
+                    "to",
+                    list(object(&[
+                        ("property", transform_property),
+                        ("offset", number()),
+                        ("max", number()),
+                        ("scale", number()),
+                    ])),
+                ),
+            ])),
+        ),
+        ("local_source", json!({"type":"boolean"})),
+        ("local_target", json!({"type":"boolean"})),
+        ("additive", json!({"type":"boolean"})),
+        ("clamp", json!({"type":"boolean"})),
+    ]);
     let physics = object(&[
         ("name", text()),
         ("bone", index()),
@@ -183,6 +214,14 @@ pub fn command_schema() -> Value {
         ),
         command("addIkConstraint", &[("constraint", ik.clone())]),
         command("setIkConstraint", &[("constraint", index()), ("value", ik)]),
+        command(
+            "addTransformConstraint",
+            &[("constraint", transform_constraint.clone())],
+        ),
+        command(
+            "setTransformConstraint",
+            &[("constraint", index()), ("value", transform_constraint)],
+        ),
         command("addPhysicsConstraint", &[("constraint", physics.clone())]),
         command(
             "setPhysicsConstraint",
@@ -346,6 +385,8 @@ mod tests {
         match command {
             Command::AddIkConstraint { .. } => "addIkConstraint",
             Command::SetIkConstraint { .. } => "setIkConstraint",
+            Command::AddTransformConstraint { .. } => "addTransformConstraint",
+            Command::SetTransformConstraint { .. } => "setTransformConstraint",
             Command::AddPhysicsConstraint { .. } => "addPhysicsConstraint",
             Command::SetPhysicsConstraint { .. } => "setPhysicsConstraint",
             Command::SetIkKey { .. } => "setIkKey",
@@ -418,7 +459,7 @@ mod tests {
     fn every_published_shape_decodes_through_strict_engine_serde() {
         let schema = command_schema();
         let variants = schema["oneOf"].as_array().unwrap();
-        assert_eq!(variants.len(), 33);
+        assert_eq!(variants.len(), 35);
         for variant in variants {
             let payload = sample(variant);
             let command: CommandInput = serde_json::from_value(payload.clone()).unwrap();

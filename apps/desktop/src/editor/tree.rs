@@ -183,11 +183,13 @@ impl Editor {
                             }),
                         );
                         let physics = matches!(e.item, TreeItem::Constraint(index) if self.physics_constraint(index).is_some());
+                        let transform = matches!(e.item, TreeItem::Constraint(index) if self.transform_constraint(index).is_some());
                         draw_icon(
                             ui.painter(),
                             row.rect.min + vec2(4., 4.),
                             &e.item,
                             physics,
+                            transform,
                             if selected { ACCENT } else { MUTED },
                         );
                         if row.rect.intersects(ui.clip_rect()) {
@@ -395,11 +397,19 @@ fn set_hidden(set: &mut BTreeSet<usize>, index: usize, hidden: bool) {
         set.remove(&index);
     }
 }
-fn draw_icon(p: &egui::Painter, origin: Pos2, item: &TreeItem, physics: bool, color: Color32) {
+fn draw_icon(
+    p: &egui::Painter,
+    origin: Pos2,
+    item: &TreeItem,
+    physics: bool,
+    transform: bool,
+    color: Color32,
+) {
     let stroke = Stroke::new(1., color);
     let r = egui::Rect::from_min_size(origin, vec2(10., 10.));
     match item {
         TreeItem::Constraint(_) if physics => icons::draw_physics(p, r, color),
+        TreeItem::Constraint(_) if transform => icons::draw_transform(p, r, color),
         TreeItem::Constraint(_) | TreeItem::Folder(Folder::Constraints) => {
             icons::draw_ik(p, r, color)
         }

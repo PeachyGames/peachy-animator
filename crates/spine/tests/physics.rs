@@ -240,13 +240,16 @@ fn unsupported_or_malformed_physics_is_refused_atomically() {
 fn inspection_names_each_constraint_kind_instead_of_calling_it_ik() {
     let mut input = fixture();
     input["constraints"].as_array_mut().unwrap().extend([
-        json!({"type":"transform","name":"copy","bones":["tip"],"source":"root"}),
+        json!({"type":"transform","name":"copy","bones":["tip"],"source":"root","localTarget":true,
+            "properties":{"x":{"to":{"x":{}}}}}),
         json!({"type":"path","name":"rail","bones":["tip"],"slot":"x"}),
     ]);
     let report = inspect(&input);
     assert!(!report.supported);
     let joined = report.unsupported.join("\n");
-    assert!(joined.contains("Transform constraint copy: transform constraints are unsupported"));
+    assert!(joined.contains(
+        "Transform copy: local, additive and clamped transform constraints are unsupported"
+    ));
     assert!(joined.contains("Path constraint rail: path constraints are unsupported"));
     assert!(!joined.contains("IK constraint"), "{joined}");
 }

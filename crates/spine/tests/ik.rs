@@ -174,8 +174,12 @@ fn unknown_kinds_invalid_references_chains_targets_and_settings_are_atomic_impor
     }
     for (extra, reason) in [
         (
-            json!({"type":"transform","name":"unsupported"}),
-            "transform constraints are unsupported",
+            json!({"type":"path","name":"unsupported"}),
+            "path constraints are unsupported",
+        ),
+        (
+            json!({"type":"transform","name":"incomplete"}),
+            "Transform incomplete: bones must be an array",
         ),
         (
             json!({"type":"physics","name":"boneless"}),
@@ -238,11 +242,21 @@ fn legacy_aliases_and_malformed_collections_reject_while_known_empty_ik_tracks_a
 #[test]
 fn source_domain_preflight_rejects_transformed_chains_shared_or_cross_target_lists_and_child_offset_tracks()
  {
+    // Ancestors may be scaled, sheared or mirrored (runtime-matched); the
+    // constrained bones themselves still need unit axes.
+    for (field, value) in [("scaleX", 1.01), ("shearY", 1.0), ("scaleY", -1.3)] {
+        let mut input = fixture();
+        input["bones"][0][field] = json!(value);
+        assert!(inspect(&input).supported, "root {field}");
+        assert!(import_json(&input, "Ancestor").is_ok());
+    }
+    let mut animated_ancestor = fixture();
+    animated_ancestor["animations"]["move"]["bones"]["root"] = json!({"scalex":[{"value":1.01}]});
+    assert!(inspect(&animated_ancestor).supported);
     for (bone, field, value) in [
-        (0, "scaleX", 1.01),
         (1, "scaleY", -1.0),
         (2, "shearX", 0.1),
-        (0, "shearY", 1.0),
+        (1, "scaleX", 1.01),
         (2, "x", 0.0),
         (2, "length", 0.0),
     ] {
@@ -252,7 +266,7 @@ fn source_domain_preflight_rejects_transformed_chains_shared_or_cross_target_lis
         assert!(import_json(&input, "Domain").is_err());
     }
     for (bone, timeline) in [
-        ("root", json!({"scalex":[{"value":1.01}]})),
+        ("upper", json!({"scalex":[{"value":1.01}]})),
         ("upper", json!({"sheary":[{"value":1}]})),
         ("lower", json!({"translatex":[{"value":1}]})),
         ("lower", json!({"translate":[{"x":0,"y":1}]})),
@@ -306,7 +320,7 @@ fn nested_chains_and_child_offsets_off_the_axis_import_and_roundtrip() {
 #[test]
 fn native_data_stays_serializable_when_adapter_domain_refuses_and_mix_zero_is_exactly_inactive() {
     let mut doc = import_json(&fixture(), "Raw").unwrap();
-    doc.bones[0].setup.scale_x = -1.3;
+    doc.bones[1].setup.scale_x = -1.3;
     assert!(doc.validate().is_ok());
     assert!(serde_json::to_vec(&doc).is_ok());
     assert!(

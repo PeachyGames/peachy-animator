@@ -1446,3 +1446,16 @@ The raw IK-curve import precision correction remains open (see
 | Rust suite | fmt, clippy `-D warnings`, architecture and build pass; **491** tests pass |
 
 Animated IK (native9) was merged into `main` first; inheritance became native10.
+
+
+## Transform constraints, IK ancestors and native v11 — November 9, 2026
+
+| Check | Result |
+| --- | --- |
+| Behavior derivation | 300 random runtime rigs (x, y, rotate, combinations; mirrored sources): max error 1e-6 |
+| Original Transform Lab (`transform-bot.peachy`): mirrored translate (mix −1), rotate with offset 30 and 250 | 28,080 bone and 33,280 region comparisons against external 4.3.13; max error 0.000045. Removing the constraints moves hand.L by up to 190 units |
+| IK under transformed ancestors | Uniform, small/large shear, nonuniform and mirrored ancestors: 1,800 values each, max error 2.8e-5; IK moves bones by a median 27 units |
+| Game audit | **6 of 21** fully supported (doggy female2 and doggy-artist back view added); inputs unchanged |
+| Doggy female2 (97 bones, 77 skins, 6 IK, 42 physics, 2 transform) | Our pose vs runtime: 29,100 values, max 0.00035. Original vs re-export with `Physics.update`: max bone 0.000079, mesh 0.00024 |
+| Doggy-artist back view (30 skins, 26 physics, transform) | Our pose vs runtime: 10,050 values, max 0.00035. With physics: max bone 0.000085 |
+| Rust suite | fmt, clippy `-D warnings`, architecture and build pass; **498** tests pass |

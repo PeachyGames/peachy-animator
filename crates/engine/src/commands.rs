@@ -14,6 +14,15 @@ pub enum Command {
         constraint: usize,
         value: IkConstraint,
     },
+    /// Appends a transform constraint after all existing ones.
+    AddTransformConstraint {
+        constraint: TransformConstraint,
+    },
+    /// Replaces one existing transform constraint's data, including its name.
+    SetTransformConstraint {
+        constraint: usize,
+        value: TransformConstraint,
+    },
     /// Appends a constraint after all existing ones (Spine's evaluation order).
     AddPhysicsConstraint {
         constraint: PhysicsConstraint,
@@ -361,6 +370,15 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
                 return Err("Unknown IK constraint".into());
             };
             *slot = Constraint::Ik(value);
+        }
+        Command::AddTransformConstraint { constraint } => {
+            doc.constraints.push(Constraint::Transform(constraint))
+        }
+        Command::SetTransformConstraint { constraint, value } => {
+            let Some(slot @ Constraint::Transform(_)) = doc.constraints.get_mut(constraint) else {
+                return Err("Unknown transform constraint".into());
+            };
+            *slot = Constraint::Transform(value);
         }
         Command::AddPhysicsConstraint { constraint } => {
             doc.constraints.push(Constraint::Physics(constraint))

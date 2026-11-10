@@ -29,6 +29,15 @@ pub fn load(path: &Path) -> Result<Document, String> {
 pub fn decode_project(text: &str) -> Result<Document, String> {
     let mut value: serde_json::Value = serde_json::from_str(text).map_err(|e| e.to_string())?;
     let original_format = value["format"].as_u64();
+    if matches!(original_format, Some(1..=10))
+        && value["constraints"].as_array().is_some_and(|constraints| {
+            constraints
+                .iter()
+                .any(|constraint| constraint["type"].as_str() == Some("transform"))
+        })
+    {
+        return Err("Legacy project formats cannot contain transform constraints".into());
+    }
     if matches!(original_format, Some(1..=9)) {
         reject_legacy_inherit(&value)?;
     }
@@ -112,6 +121,10 @@ pub fn decode_project(text: &str) -> Result<Document, String> {
     if value["format"].as_u64() == Some(9) {
         add_v9_inherit(&mut value)?;
         value["format"] = 10.into();
+    }
+    // v10→v11 adds the transform constraint kind only; no existing field changes.
+    if value["format"].as_u64() == Some(10) {
+        value["format"] = 11.into();
     }
     let mut doc: Document = serde_json::from_value(value).map_err(|e| e.to_string())?;
     // Wrapping vertices preserves their values and all surrounding fields. Decode

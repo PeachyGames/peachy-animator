@@ -1,5 +1,5 @@
 //! Ordered IK data. Evaluation capabilities do not rewrite authored data.
-use crate::{Bone, PhysicsConstraint};
+use crate::{Bone, PhysicsConstraint, TransformConstraint};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 pub enum Constraint {
     Ik(IkConstraint),
     Physics(PhysicsConstraint),
+    Transform(TransformConstraint),
 }
 
 impl Constraint {
@@ -14,24 +15,32 @@ impl Constraint {
         match self {
             Self::Ik(ik) => &ik.name,
             Self::Physics(physics) => &physics.name,
+            Self::Transform(transform) => &transform.name,
         }
     }
     pub fn set_name(&mut self, name: String) {
         match self {
             Self::Ik(ik) => ik.name = name,
             Self::Physics(physics) => physics.name = name,
+            Self::Transform(transform) => transform.name = name,
         }
     }
     pub fn as_ik(&self) -> Option<&IkConstraint> {
         match self {
             Self::Ik(ik) => Some(ik),
-            Self::Physics(_) => None,
+            Self::Physics(_) | Self::Transform(_) => None,
+        }
+    }
+    pub fn as_transform(&self) -> Option<&TransformConstraint> {
+        match self {
+            Self::Transform(transform) => Some(transform),
+            Self::Ik(_) | Self::Physics(_) => None,
         }
     }
     pub fn as_physics(&self) -> Option<&PhysicsConstraint> {
         match self {
             Self::Physics(physics) => Some(physics),
-            Self::Ik(_) => None,
+            Self::Ik(_) | Self::Transform(_) => None,
         }
     }
     /// Spine 4.3's unified constraint `type` and Tree terminology.
@@ -39,12 +48,14 @@ impl Constraint {
         match self {
             Self::Ik(_) => "IK Constraint",
             Self::Physics(_) => "Physics Constraint",
+            Self::Transform(_) => "Transform Constraint",
         }
     }
     pub fn validate(&self, bones: &[Bone]) -> Result<(), String> {
         match self {
             Self::Ik(ik) => ik.validate(bones),
             Self::Physics(physics) => physics.validate(bones),
+            Self::Transform(transform) => transform.validate(bones),
         }
     }
 }

@@ -109,6 +109,9 @@ impl Editor {
             TreeItem::Constraint(index) if self.physics_constraint(index).is_some() => {
                 "physics constraint"
             }
+            TreeItem::Constraint(index) if self.transform_constraint(index).is_some() => {
+                "transform constraint"
+            }
             TreeItem::Constraint(_) => "IK constraint",
             _ => return,
         };
@@ -153,6 +156,10 @@ impl Editor {
                             Some(Constraint::Physics(mut value)) => {
                                 value.name = name;
                                 Command::SetPhysicsConstraint { constraint, value }
+                            }
+                            Some(Constraint::Transform(mut value)) => {
+                                value.name = name;
+                                Command::SetTransformConstraint { constraint, value }
                             }
                             None => return,
                         }

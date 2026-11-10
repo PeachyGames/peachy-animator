@@ -7,6 +7,9 @@ use peachy_document::{
     PHYSICS_DEFAULT_SETUP, PhysicsConstraint, PhysicsGlobal, PhysicsInfluence, PhysicsProperty,
     PhysicsReset, PhysicsTrack, Property, ScaleYMode,
 };
+use peachy_document::{
+    TransformConstraint, TransformMapping, TransformProperty, TransformTarget, TransformValues,
+};
 use serde_json::{Value, json};
 use std::collections::BTreeMap;
 
@@ -54,7 +57,8 @@ pub(super) fn read(
         let result = match entry["type"].as_str() {
             Some("ik") => read_ik(entry, indices).map(Constraint::Ik),
             Some("physics") => read_physics(entry, indices).map(Constraint::Physics),
-            Some(kind @ ("transform" | "path" | "slider")) => Err(format!(
+            Some("transform") => read_transform(entry, indices).map(Constraint::Transform),
+            Some(kind @ ("path" | "slider")) => Err(format!(
                 "{} constraint {}: {kind} constraints are unsupported",
                 capitalized(kind),
                 entry["name"].as_str().unwrap_or("?")
@@ -190,6 +194,162 @@ fn read_ik(entry: &Value, indices: &BTreeMap<String, usize>) -> Result<IkConstra
         target,
         setup: IkSetup { mix, bend_positive },
     })
+}
+
+fn read_transform(
+    entry: &Value,
+    indices: &BTreeMap<String, usize>,
+) -> Result<TransformConstraint, String> {
+    let name = required_string(entry, "name")?;
+    let context = format!("Transform {name}");
+    let mut issues = vec![];
+    let mut allowed = vec![
+        "type",
+        "name",
+        "order",
+        "skin",
+        "bones",
+        "source",
+        "properties",
+        "localSource",
+        "localTarget",
+        "additive",
+        "clamp",
+    ];
+    for property in TransformProperty::ALL {
+        allowed.push(property.offset_name());
+        allowed.push(property.mix_name());
+    }
+    unknown_fields(entry, &allowed, &context, &mut issues);
+    if !issues.is_empty() {
+        return Err(issues.join("; "));
+    }
+    if entry
+        .get("skin")
+        .is_some_and(|v| v.as_bool() != Some(false))
+    {
+        return Err(format!(
+            "{context}: skin-required transform constraints are unsupported"
+        ));
+    }
+    check_order(entry, &context)?;
+    let finite = |value: &Value, what: &str| -> Result<f32, String> {
+        value
+            .as_f64()
+            .map(|v| v as f32)
+            .filter(|v| v.is_finite())
+            .ok_or_else(|| format!("{context}: {what} must be a finite f32 number"))
+    };
+    let number = |field: &str, default: f32| -> Result<f32, String> {
+        entry.get(field).map_or(Ok(default), |v| finite(v, field))
+    };
+    let flag = |field: &str| -> Result<bool, String> {
+        entry.get(field).map_or(Ok(false), |v| {
+            v.as_bool()
+                .ok_or_else(|| format!("{context}: {field} must be boolean"))
+        })
+    };
+    let mut mappings = vec![];
+    if let Some(properties) = entry.get("properties") {
+        let properties = properties
+            .as_object()
+            .ok_or_else(|| format!("{context}: properties must be an object"))?;
+        for (from_name, mapping) in properties {
+            let from = TransformProperty::from_spine_name(from_name)
+                .ok_or_else(|| format!("{context}: unknown property {from_name}"))?;
+            let mut issues = vec![];
+            unknown_fields(mapping, &["offset", "to"], &context, &mut issues);
+            if !issues.is_empty() {
+                return Err(issues.join("; "));
+            }
+            let to = mapping["to"]
+                .as_object()
+                .ok_or_else(|| format!("{context}: {from_name}.to must be an object"))?;
+            let mut targets = vec![];
+            for (to_name, target) in to {
+                let property = TransformProperty::from_spine_name(to_name)
+                    .ok_or_else(|| format!("{context}: unknown property {to_name}"))?;
+                let mut issues = vec![];
+                unknown_fields(target, &["offset", "max", "scale"], &context, &mut issues);
+                if !issues.is_empty() || !target.is_object() {
+                    return Err(format!("{context}: invalid {from_name}.to.{to_name}"));
+                }
+                let field = |key: &str, default: f32| {
+                    target.get(key).map_or(Ok(default), |v| finite(v, key))
+                };
+                targets.push(TransformTarget {
+                    property,
+                    offset: field("offset", 0.0)?,
+                    max: field("max", 1.0)?,
+                    scale: field("scale", 1.0)?,
+                });
+            }
+            mappings.push(TransformMapping {
+                from,
+                offset: mapping
+                    .get("offset")
+                    .map_or(Ok(0.0), |v| finite(v, "offset"))?,
+                to: targets,
+            });
+        }
+    }
+    let constraint_targets: Vec<_> = mappings
+        .iter()
+        .flat_map(|m| m.to.iter().map(|t| t.property))
+        .collect();
+    // Observed: a mapped property's mix defaults to 1, mixY to mixX and
+    // mixScaleY to mixScaleX; the runtime forces unmapped mixes to zero, so a
+    // nonzero unmapped mix would be data the runtime ignores and is refused.
+    let raw = |p: TransformProperty, default: f32| number(p.mix_name(), default);
+    let mix_x = raw(TransformProperty::X, 1.0)?;
+    let mix_scale_x = raw(TransformProperty::ScaleX, 1.0)?;
+    let mut mix = TransformValues::default();
+    let mut unmapped = None;
+    for property in TransformProperty::ALL {
+        let default = match property {
+            TransformProperty::Y => mix_x,
+            TransformProperty::ScaleY => mix_scale_x,
+            _ => 1.0,
+        };
+        let value = raw(property, default)?;
+        if constraint_targets.contains(&property) {
+            mix.set(property, value);
+        } else if entry.get(property.mix_name()).is_some() && value != 0.0 && unmapped.is_none() {
+            unmapped = Some(format!(
+                "{context}: {} has no effect without a {} mapping",
+                property.mix_name(),
+                property.spine_name()
+            ));
+        }
+    }
+    let mut offsets = TransformValues::default();
+    for property in TransformProperty::ALL {
+        offsets.set(property, number(property.offset_name(), 0.0)?);
+    }
+    let bones = entry["bones"]
+        .as_array()
+        .ok_or_else(|| format!("{context}: bones must be an array"))?
+        .iter()
+        .map(|value| resolve_bone(indices, value, &context))
+        .collect::<Result<Vec<_>, _>>()?;
+    let constraint = TransformConstraint {
+        name: name.into(),
+        bones,
+        source: resolve_bone(indices, &entry["source"], &context)?,
+        offsets,
+        mix,
+        mappings,
+        local_source: flag("localSource")?,
+        local_target: flag("localTarget")?,
+        additive: flag("additive")?,
+        clamp: flag("clamp")?,
+    };
+    // Report an unsupported mapping before a mix it would make meaningless.
+    constraint.supported_subset()?;
+    match unmapped {
+        Some(error) => Err(error),
+        None => Ok(constraint),
+    }
 }
 
 const PHYSICS_NUMBERS: [&str; 13] = [
@@ -397,6 +557,33 @@ fn inside(doc: &Document, mut bone: usize, root: usize) -> bool {
 /// validates the native graph first. There is deliberately no sampled solver or
 /// claim that all intermediate target poses are numerically evaluable.
 pub(super) fn validate_source(doc: &Document) -> Result<(), String> {
+    for transform in doc.constraints.iter().filter_map(Constraint::as_transform) {
+        let context = format!("Transform {}", transform.name);
+        transform.supported_subset()?;
+        for (i, &bone) in transform.bones.iter().enumerate() {
+            let keyed = doc.animations.iter().any(|animation| {
+                animation
+                    .inherit_tracks
+                    .iter()
+                    .any(|track| track.bone == bone && !track.keys.is_empty())
+            });
+            if doc.bones[bone].inherit != peachy_document::Inherit::Normal || keyed {
+                return Err(format!(
+                    "{context}: constrained bone {} must inherit normally",
+                    doc.bones[bone].name
+                ));
+            }
+            if inside(doc, transform.source, bone)
+                || transform.bones[..i]
+                    .iter()
+                    .any(|&other| inside(doc, bone, other) || inside(doc, other, bone))
+            {
+                return Err(format!(
+                    "{context}: the source and constrained bones must not contain one another"
+                ));
+            }
+        }
+    }
     let setup: Vec<_> = doc
         .constraints
         .iter()
@@ -481,8 +668,9 @@ fn validate_context(
                 ));
             }
         }
+        // Only the constrained bones need unit axes; ancestors may be transformed.
         let mut chain = Some(*ik.bones.last().unwrap());
-        while let Some(index) = chain {
+        while let Some(index) = chain.filter(|i| ik.bones.contains(i)) {
             let bone = &doc.bones[index];
             if bone.setup.scale_x != 1.0
                 || bone.setup.scale_y != 1.0
@@ -553,6 +741,32 @@ pub(super) fn write(doc: &Document) -> Value {
                     "target":bone(ik.target),
                     "mix":ik.setup.mix, "bendPositive":ik.setup.bend_positive
                 }),
+                Constraint::Transform(transform) => {
+                    let mut value = json!({
+                        "type":"transform", "name":transform.name,
+                        "bones":transform.bones.iter().map(|&index| bone(index)).collect::<Vec<_>>(),
+                        "source":bone(transform.source),
+                        "localSource":transform.local_source, "localTarget":transform.local_target,
+                        "additive":transform.additive, "clamp":transform.clamp,
+                    });
+                    for property in TransformProperty::ALL {
+                        value[property.offset_name()] = json!(transform.offsets.get(property));
+                        value[property.mix_name()] = json!(transform.mix.get(property));
+                    }
+                    let mut properties = json!({});
+                    for mapping in &transform.mappings {
+                        let mut to = json!({});
+                        for target in &mapping.to {
+                            to[target.property.spine_name()] = json!({
+                                "offset":target.offset, "max":target.max, "scale":target.scale
+                            });
+                        }
+                        properties[mapping.from.spine_name()] =
+                            json!({"offset":mapping.offset, "to":to});
+                    }
+                    value["properties"] = properties;
+                    value
+                }
                 Constraint::Physics(physics) => {
                     // Every value is explicit, so consumers never depend on defaults.
                     let mut value = json!({

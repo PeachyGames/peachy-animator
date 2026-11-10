@@ -42,6 +42,7 @@ pub(super) enum Icon {
     Weights,
     IkConstraint,
     PhysicsConstraint,
+    TransformConstraint,
     ChooseBone,
     Bone,
     TargetBone,
@@ -313,6 +314,7 @@ fn paint(ui: &Ui, rect: Rect, icon: Icon, response: &Response) {
         }
         Icon::IkConstraint => draw_ik(&painter, rect, ink),
         Icon::PhysicsConstraint => draw_physics(&painter, rect, ink),
+        Icon::TransformConstraint => draw_transform(&painter, rect, ink),
         Icon::Bone => draw_bone(&painter, rect, ink),
         Icon::TargetBone => {
             painter.circle_stroke(p(8., 8.), 4. * rect.width() / SIZE, stroke(warm));
@@ -552,6 +554,27 @@ pub(super) fn draw_ik(painter: &egui::Painter, rect: Rect, color: Color32) {
     painter.circle_filled(p(2., 13.), rect.width() / 10., color);
     painter.circle_filled(p(6., 5.), rect.width() / 10., color);
     painter.circle_stroke(p(12., 9.), rect.width() / 5., stroke);
+}
+
+/// Original follow cue: a source square, a constrained square and an arrow.
+pub(super) fn draw_transform(painter: &egui::Painter, rect: Rect, color: Color32) {
+    let p = |x: f32, y: f32| {
+        pos2(
+            rect.left() + x * rect.width() / 16.,
+            rect.top() + y * rect.height() / 16.,
+        )
+    };
+    let stroke = Stroke::new(rect.width() / 12., color);
+    painter.rect_stroke(
+        Rect::from_min_max(p(1.5, 9.), p(6.5, 14.)),
+        0.,
+        stroke,
+        egui::StrokeKind::Middle,
+    );
+    painter.rect_filled(Rect::from_min_max(p(9.5, 2.), p(14.5, 7.)), 0., color);
+    painter.line_segment([p(5., 10.), p(11., 4.5)], stroke);
+    painter.line_segment([p(11., 4.5), p(8., 4.8)], stroke);
+    painter.line_segment([p(11., 4.5), p(10.7, 7.5)], stroke);
 }
 
 /// Original pendulum cue: a pivot, a swinging arm and motion arcs.

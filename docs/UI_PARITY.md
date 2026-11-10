@@ -768,3 +768,12 @@ editable in Setup (one undo step each) and read-only in Animate with a note when
 the active mode is keyed. Reflection is enabled only with Rotation on and Scale
 off. Row placement and the enabled/disabled rule are local choices pending a
 comparison with the installed editor; keying inheritance is not offered yet.
+
+
+## Transform constraint properties — November 9, 2026
+
+Transform constraints appear in the Constraints folder with an original
+follow icon. Properties show Source and constrained Bones as links and, for each
+mapped property, Mix (percent, unbounded) and Offset; Setup edits apply once per
+typed value or drag. Mode flags, mappings and keying are not editable yet;
+layout is a local choice pending comparison with the installed editor.

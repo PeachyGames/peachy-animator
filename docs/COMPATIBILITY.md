@@ -26,9 +26,9 @@ Input-only obsolete integer `order` is validated and omitted, never used to sort
 | Skins | Region/mesh maps, explicit attachment names and default-skin fallback | Skin-required bones or constraints |
 | Animation | Bone rotation, translation, scale and shear; combined or scalar input timelines; grouped IK Mix/Positive timelines; physics setting and reset timelines, including global (`""`) timelines | Slot, attachment, draw-order, event, transform and path timelines |
 | Curves | Linear, stepped, normalized monotone-time cubic handles | Nonfinite or unordered controls; overshooting curves between equal values |
-| Constraints | One-/two-bone normal IK with keyed Mix/Positive, two-bone Positive, nested chains in list order, off-axis child offsets; animated targets. Physics constraints as data: every setting, Scale Y mode and Global flag, in unified constraint order | Advanced IK settings, shared-bone or cross-target chains, transformed chains; skin-required physics; transform, path, slider and other constraints |
+| Constraints | One-/two-bone normal IK with keyed Mix/Positive, two-bone Positive, nested chains in list order, off-axis child offsets; animated targets. Physics constraints as data: every setting, Scale Y mode and Global flag, in unified constraint order. World transform constraints with identity Rotate/X/Y mappings; IK under any transformed ancestors | Advanced IK settings, shared-bone or cross-target chains, transformed chains; skin-required physics; transform, path, slider and other constraints |
 | Images | Loose PNGs for editing; one untrimmed atlas page for desktop export | Packed-atlas import, rotated/trimmed atlas regions, multipage export |
-| Files | `.peachy` v10; in-memory v1–v9 migration; Spine JSON adapter | Native `.spine` projects and binary `.skel`; `skeleton.referenceScale` other than 100 |
+| Files | `.peachy` v11; in-memory v1–v10 migration; Spine JSON adapter | Native `.spine` projects and binary `.skel`; `skeleton.referenceScale` other than 100 |
 
 Our own project format is JSON and holds the editable rig, skin references and clips.
 It is distinct from a runtime export. The importer ignores documented editor-only
@@ -430,3 +430,11 @@ omitted value normal) round-trip. Native v10 adds required `Bone.inherit` and
 `Animation.inherit_tracks`; v9 and earlier migrate with normal modes and empty
 lists and refuse inheritance fields. Evaluation matches the external runtime;
 see [the slice](slices/inherit-modes.md).
+
+## Transform constraints and native v11 — November 9, 2026
+
+4.3 transform constraints import/export completely (offsets, mixes, mappings,
+flags); the world-mode identity Rotate/X/Y subset evaluates and edits in Setup.
+Native v11 adds the constraint kind only; v10 and earlier migrate unchanged and
+refuse transform constraints. IK chains may now sit under scaled, sheared or
+mirrored ancestors. See [the slice](slices/transform-constraints.md).

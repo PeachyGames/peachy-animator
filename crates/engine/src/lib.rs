@@ -16,6 +16,7 @@ mod scene;
 mod session;
 mod timeline;
 mod tools;
+mod transform_constraint;
 
 pub use authoring::{IkPoseEdit, KeyState, PoseEdits, transform_group};
 pub use commands::{Command, EditTarget, apply_command, ik_keyframe_at, keyframe_at};
@@ -84,6 +85,8 @@ mod slot_color_tests;
 mod tests;
 #[cfg(test)]
 mod timeline_tests;
+#[cfg(test)]
+mod transform_tests;
 #[cfg(test)]
 mod weighted_tests;
 

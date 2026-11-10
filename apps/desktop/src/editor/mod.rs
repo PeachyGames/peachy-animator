@@ -35,6 +35,7 @@ mod timeline_clipboard;
 mod timeline_model;
 mod timeline_view;
 mod tools;
+mod transform_constraint;
 mod transform_gesture;
 use transform_gesture::TransformEdit;
 mod tree;

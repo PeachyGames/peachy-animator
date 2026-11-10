@@ -1012,7 +1012,8 @@ mod tests {
         let mut editor = editor_fixture();
         install_ik(&mut editor, true, 1.);
         let mut document = editor.session.document().clone();
-        document.bones[0].setup.scale_x = 2.;
+        // A scaled constrained bone (not an ancestor) remains outside IK's domain.
+        document.bones[7].setup.scale_x = 2.;
         editor.session = Session::new(document).unwrap();
         editor.select(TreeItem::Bone(8));
         let mut local = editor.session.local_pose(Some(0), editor.time)[2];

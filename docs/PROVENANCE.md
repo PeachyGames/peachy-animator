@@ -550,3 +550,12 @@ candidate models were tested numerically and kept only when they reproduced
 every sample. The degenerate-parent switch was located the same way and is
 refused rather than modeled. Editor CLI probes with original JSON established
 the field/key format. No runtime or editor implementation source was read.
+
+
+### Transform constraints and IK ancestors — November 9, 2026
+
+Public TypeScript declarations named the 4.3 data fields. Defaults came from
+original probes through the installed editor CLI and the runtime's public data
+API. Evaluation rules were fitted to black-box runtime observations of original
+random rigs; the IK ancestor relaxation rests on the same kind of comparison. No
+runtime or editor implementation source was read.
