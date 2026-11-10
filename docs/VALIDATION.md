@@ -1644,4 +1644,6 @@ the captured text and resulting selection/time rather than assuming delivery.
 
 No native format change. These are read-only viewport guides; vertex authoring,
 translucent clipping fill and exact editor styling remain gaps. The female-pose
-full compatibility run is tracked separately and is not counted as passed here.
+full compatibility run was stopped at Chris's request on November 10; its wrapper
+and workers were verified exited. Partial results are retained locally, and no
+full-check pass is claimed. Do not restart it without a new explicit request.

@@ -13,28 +13,22 @@ still apply.
   `underwear-source`). Per-rig evidence is in `docs/VALIDATION.md`.
 - 562 Rust tests pass (one existing ignored), clippy `-D warnings` and the architecture check pass. All 21
   original Peach Bot labs in `examples/peach-bot/` pass `scripts/check-runtime.mjs`.
-- One check was still running when the session ended: the female pose's full
-  runtime check (clipping coverage on real data; its clip ends on its own slot).
-  Rerun it with:
+- **Female-pose full verification: stopped at Chris's explicit request on
+  November 10, 2026. Do not restart it unless he explicitly requests it in the
+  current session.** The wrapper, full-check process and CLI worker were stopped
+  and verified exited. There is no continuing background verification.
 
-  ```sh
-  scripts/verify-game-rig.sh femalepose ../loadofftemp-release-0.51.0/src/assets/spine/female-pose/female_pose.json --full
-  ```
+  The interrupted run was `femalepose-overlays-20261110`. Partial evidence stays
+  local: `.local/artist/femalepose-overlays-20261110.log`,
+  `.local/artist/femalepose-overlays-20261110-runtime.txt`, and matching native/
+  JSON/hash files. Its full report was empty at cancellation; this is **not a
+  full-check pass**. Stop/process evidence is recorded in
+  `.local/overlays-20261110/female-run.json` and `stop-request-processes.json`.
+  The stopped run's disposable CLI snapshot has been removed.
 
-  It takes hours (85 skins). Its bones and meshes already matched (3.56M world
-  values, max 0.0005). If it fails, the likely suspects are the own-slot clip
-  end rule and the 1% coverage-mismatch allowance (`docs/slices/clipping.md`).
-
-  **Overlay follow-up, November 10:** the earlier process was gone and its full
-  report empty. A fresh run uses the name `femalepose-overlays-20261110`.
-  Check whether it is still running before starting another one. Its overall
-  log is `.local/artist/femalepose-overlays-20261110.log`, full report is
-  `.local/artist/femalepose-overlays-20261110-runtime.txt`, and private native/
-  JSON/hash files use the same prefix. Its immutable CLI snapshot is
-  `.local/peachy-cli-femalepose-overlays-20261110`; do not delete it during the
-  run. The wrapper removes that snapshot when finished. This run is **pending**,
-  not additional validation evidence; check the full report even if the wrapper
-  exits zero (the wrapper prints full-check failure without failing its exit code).
+  Earlier bone/mesh checks matched (3.56M world values, max 0.0005). The rerun's
+  original-vs-re-export phase also passed before cancellation. Full clipping
+  coverage across all 85 skins remains unverified; see `docs/slices/clipping.md`.
 
 - **Viewport guides completed:** evaluated path/clipping outlines, active-skin
   and deform handling, picking, selected vertices/handles, path end directions,
@@ -117,8 +111,8 @@ still apply.
 
 ## Next tasks, in suggested order
 
-1. **Finish the female pose full check** (above) and add its numbers to
-   `docs/VALIDATION.md`.
+1. **Female-pose full check: deferred by Chris's request.** Do not run or
+   restart it without a new explicit request. Continue with other work below.
 2. **Viewport overlays: done** in the November 10 follow-up. Scene guides live
    in `crates/engine/src/scene.rs`; `path_cubics` shares solver/viewport knot
    interpretation; painting/picking live in

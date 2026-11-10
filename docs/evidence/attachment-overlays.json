@@ -167,7 +167,7 @@
   "limitations": [
     "Local macOS only; hosted CI not run.",
     "No vertex authoring, polygon fill, multi-selection or exact pixel parity.",
-    "Female-pose full runtime check is still running and is not counted as passed."
+    "Female-pose full runtime check was stopped at the user's request; partial evidence is retained and no full-check pass is claimed."
   ],
   "localEvidence": ".local/overlays-20261110/"
 }

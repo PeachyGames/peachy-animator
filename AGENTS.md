@@ -3,6 +3,9 @@
 Starting a new session on Spine parity? Read [docs/NEXT-RUN.md](docs/NEXT-RUN.md) first: current
 state, verification workflow, pitfalls and the prioritized next tasks.
 
+Chris stopped the hours-long female-pose full verification on November 10, 2026.
+Do not restart that check unless he explicitly requests it in the current session.
+
 Build a native, open-source 2D skeletal animation editor with versioned Spine-compatible exports.
 
 ## Spine user interface parity
