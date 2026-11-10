@@ -22,6 +22,7 @@ fn mesh(influences: Vec<Vec<BoneInfluence>>) -> Mesh {
         height: 10.,
         edges: vec![0, 2, 2, 4, 4, 0],
         color: peachy_document::WHITE,
+        link: None,
     }
 }
 

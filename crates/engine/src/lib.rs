@@ -76,6 +76,8 @@ mod ik_tests;
 #[cfg(test)]
 mod inherit_tests;
 #[cfg(test)]
+mod linked_mesh_tests;
+#[cfg(test)]
 mod mesh_soft_selection_tests;
 #[cfg(test)]
 mod physics_tests;

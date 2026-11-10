@@ -74,6 +74,11 @@ Native v13 adds `Animation.deform_tracks` with dense offsets (per vertex, or per
 weighted influence). Sampled deforms travel in `AuthoredPose`; scenes apply them
 via `deformed_mesh_world_vertices`. Keep slot renames updating deform refs.
 
+Native v18 adds `Mesh.link`: a linked mesh stores a copy of its source's
+geometry. `apply_command` propagates source edits (`propagate_linked_geometry`)
+and validation refuses diverging copies; resolve deform keys through
+`Document::deform_target`.
+
 Native v17 adds `Region.color`/`Mesh.color` (draws use slot × attachment color)
 and `Curve::BezierOffset` (value handles as offsets; sample values with
 `curve_value`, not `curve_progress`). Bezier handles only need to be finite.

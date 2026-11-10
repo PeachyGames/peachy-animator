@@ -112,6 +112,17 @@ impl Editor {
                             } else {
                                 "Unweighted mesh"
                             });
+                            if let Some(link) = &mesh.link {
+                                ui.label(format!(
+                                    "Linked to {}/{}: edit that mesh's shape",
+                                    link.skin, link.source
+                                ))
+                                .on_hover_text(if link.timelines {
+                                    "Shares the source mesh's vertices, bones and triangles, and follows its deform keys. Its image and tint are its own."
+                                } else {
+                                    "Shares the source mesh's vertices, bones and triangles, but ignores its deform keys. Its image and tint are its own."
+                                });
+                            }
                         }
                     }
                 }

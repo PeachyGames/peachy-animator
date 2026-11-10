@@ -846,6 +846,7 @@ fn sheared_weighted_and_region_scene_matches_original_external_observation_point
         width: 0.,
         height: 0.,
         color: peachy_document::WHITE,
+        link: None,
     };
     document.slots = vec![
         Slot {

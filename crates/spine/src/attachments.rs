@@ -42,6 +42,7 @@ pub(super) fn read_attachment(
                 width: number(value, "width", 0.0),
                 height: number(value, "height", 0.0),
                 color,
+                link: None,
             })
         }
         kind => return Err(format!("Unsupported attachment type {kind}")),
@@ -171,6 +172,9 @@ fn indices(value: &Value, context: &str) -> Result<Vec<u32>, String> {
 
 pub(super) fn write_attachment(attachment: &Attachment) -> Value {
     let mut value = match attachment {
+        Attachment::Mesh(m) if m.link.is_some() => {
+            super::linked_mesh::write(m, m.link.as_ref().expect("checked"))
+        }
         Attachment::Region(r) => {
             let mut v = region_transform_json(r.transform);
             v["width"] = json!(r.width);
@@ -241,6 +245,11 @@ pub(super) fn inspect_attachment(
     }
     if let Err(error) = read_hex_color(region, &format!("{context}: color")) {
         issues.push(error);
+    }
+    if region["type"].as_str() == Some("linkedmesh") {
+        // Fields only; the source is resolved (and checked) by read_document.
+        unknown_fields(region, super::linked_mesh::FIELDS, &context, issues);
+        return;
     }
     let fields: &[&str] = match region["type"].as_str().unwrap_or("region") {
         "region" => &[

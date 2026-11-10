@@ -40,6 +40,7 @@ fn fixture() -> Document {
                         width: 0.,
                         height: 0.,
                         color: peachy_document::WHITE,
+                        link: None,
                     }),
                 )]),
             )]),

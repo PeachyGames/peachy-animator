@@ -204,6 +204,9 @@ pub fn apply_command(document: &Document, command: Command) -> Result<Document, 
     document.validate()?;
     let mut candidate = document.clone();
     apply(&mut candidate, command)?;
+    // Linked meshes follow source geometry edits; editing one alone is refused
+    // by validation.
+    candidate.propagate_linked_geometry(document);
     candidate.validate()?;
     Ok(candidate)
 }

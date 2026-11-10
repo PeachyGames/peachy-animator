@@ -111,6 +111,14 @@ body colors (Animate, `wave`):
 cargo run -p peachy-animator -- examples/peach-bot/slot-bot.peachy
 ```
 
+The original Linked Mesh Lab swaps the right hand to linked meshes that follow
+or ignore its deform keys, and links the mint body to the peach body across
+skins (Animate, `wave`; switch skins):
+
+```sh
+cargo run -p peachy-animator -- examples/peach-bot/linked-mesh-bot.peachy
+```
+
 The original Tint Lab tints attachments on top of keyed slot colors and keys a
 curve that overshoots between equal values (Animate, `wave`):
 

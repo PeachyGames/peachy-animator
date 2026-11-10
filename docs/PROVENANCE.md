@@ -587,3 +587,12 @@ out-of-interval curves were compared black-box against the runtime with original
 fixtures; the shipped game export only showed that they occur. No runtime or
 editor implementation source was read. Reading egui's own (MIT) source to
 confirm `SliderClamping` defaults is ordinary dependency inspection.
+
+
+### Linked meshes — November 10, 2026
+
+Shared fields come from the public `MeshAttachment`/`Attachment` typings.
+Source lookup, the `timelines` default and color came from original probes
+through the runtime's public API (`getSourceMesh`, `timelineAttachment`,
+`computeWorldVertices`), and the field layout from installed-editor round trips.
+No runtime or editor implementation source was read.

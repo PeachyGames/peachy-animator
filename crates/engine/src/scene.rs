@@ -186,7 +186,10 @@ fn scene_from_evaluated(doc: &Document, skin: &str, pose: crate::EvaluatedPose) 
                 4,
             ),
             Attachment::Mesh(m) => (
-                match deforms.iter().find(|(target, _)| *target == key) {
+                match deforms
+                    .iter()
+                    .find(|(target, _)| *target == doc.deform_target(&key))
+                {
                     Some((_, offsets)) => {
                         crate::deformed_mesh_world_vertices(m, slot.bone, &world, offsets)
                     }

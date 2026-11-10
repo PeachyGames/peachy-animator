@@ -5,6 +5,7 @@ mod deform;
 mod draw_order;
 mod events;
 mod ik_timelines;
+mod linked_mesh;
 mod slot_keys;
 use attachments::{inspect_attachment, read_attachment, write_attachment};
 use peachy_document::*;
@@ -353,23 +354,36 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
         });
     }
     let mut skins = BTreeMap::new();
+    let mut linked = vec![];
     for skin in array(&value["skins"]) {
+        let name = required_string(skin, "name")?;
         let mut mapped = Skin::new();
         if let Some(attachments) = skin["attachments"].as_object() {
             for (slot, regions) in attachments {
                 let mut mapped_regions = BTreeMap::new();
-                for (name, region) in regions.as_object().ok_or("Invalid attachments")? {
-                    mapped_regions
-                        .insert(name.clone(), read_attachment(region, name, bones.len())?);
+                for (placeholder, region) in regions.as_object().ok_or("Invalid attachments")? {
+                    if region["type"].as_str() == Some("linkedmesh") {
+                        linked.push(linked_mesh::Pending {
+                            skin: name.into(),
+                            slot: slot.clone(),
+                            placeholder: placeholder.clone(),
+                            value: region.clone(),
+                        });
+                        continue;
+                    }
+                    mapped_regions.insert(
+                        placeholder.clone(),
+                        read_attachment(region, placeholder, bones.len())?,
+                    );
                 }
                 mapped.insert(slot.clone(), mapped_regions);
             }
         }
-        let name = required_string(skin, "name")?;
         if skins.insert(name.into(), mapped).is_some() {
             return Err(format!("Duplicate skin name {name}"));
         }
     }
+    linked_mesh::resolve(&mut skins, linked)?;
     let constraints = constraints::read(value, &indices)?;
     let skin_scope = read_skin_scope(value, &indices, &constraints)?;
     let event_defs = events::read_defs(value)?;

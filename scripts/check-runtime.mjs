@@ -19,7 +19,8 @@ class OracleTexture extends Texture {
   setWraps() {}
   dispose() {}
 }
-const cli = resolve(root, 'target/debug/peachy-cli');
+// PEACHY_CLI lets long checks use a snapshot while the workspace rebuilds.
+const cli = process.env.PEACHY_CLI ?? resolve(root, 'target/debug/peachy-cli');
 const source = process.argv[5] ? resolve(process.argv[5]) : resolve(root, 'examples/peach-bot/peach-bot.peachy');
 const exportPath = process.argv[3] ? resolve(process.argv[3]) : resolve(root, '.local/peach-bot.json');
 const atlasPath = process.argv[4] ? resolve(process.argv[4]) : resolve(root, 'examples/peach-bot/peach-bot.atlas');
@@ -193,6 +194,13 @@ for (const animation of data.animations) {
           attachment.computeWorldVertices(slot,attachment.getOffsets(slot.appliedPose),vertices,0,2);
           const uvs=attachment.sequence.getUVs(0),region=attachment.sequence.regions[0];
           assert.ok(region);
+          // A trimmed atlas region draws only its opaque part, so its corners
+          // differ from the full image quad we draw; bones are still compared.
+          if (region.offsetX !== 0 || region.offsetY !== 0
+            || region.originalWidth !== region.width || region.originalHeight !== region.height) {
+            report.trimmedRegionsSkipped = (report.trimmedRegionsSkipped ?? 0) + 1;
+            continue;
+          }
           if ((region.degrees ?? 0) !== 0) {
             // Packed game atlases rotate regions: match corners by position.
             report.rotatedRegions = (report.rotatedRegions ?? 0) + 1;

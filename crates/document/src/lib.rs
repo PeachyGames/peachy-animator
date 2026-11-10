@@ -6,6 +6,7 @@ mod draw_order;
 mod events;
 mod ik;
 mod inherit;
+mod linked_mesh;
 mod physics;
 mod skin_scope;
 mod slot_keys;
@@ -15,6 +16,7 @@ pub use draw_order::{DrawOrderKey, DrawOrderOffset, sample_draw_order};
 pub use events::{EventDef, EventKey};
 pub use ik::{Constraint, IkConstraint, IkCurve, IkKeyframe, IkSetup, IkTrack};
 pub use inherit::{Inherit, InheritKey, InheritTrack};
+pub use linked_mesh::MeshLink;
 pub use physics::{
     PHYSICS_DEFAULT_FPS, PHYSICS_DEFAULT_LIMIT, PHYSICS_DEFAULT_SETUP, PhysicsConstraint,
     PhysicsGlobal, PhysicsInfluence, PhysicsProperty, PhysicsReset, PhysicsSetup, PhysicsTrack,
@@ -26,7 +28,7 @@ pub use transform::{
     TransformConstraint, TransformMapping, TransformProperty, TransformTarget, TransformValues,
 };
 
-pub const FORMAT_VERSION: u32 = 17;
+pub const FORMAT_VERSION: u32 = 18;
 pub const KEY_TIME_EPSILON: f32 = 0.00001;
 pub fn same_key_time(a: f32, b: f32) -> bool {
     (a - b).abs() < KEY_TIME_EPSILON
@@ -247,6 +249,9 @@ pub struct Mesh {
     /// Omitted when white. Native v17.
     #[serde(default = "white", skip_serializing_if = "is_white")]
     pub color: [u8; 4],
+    /// Set for a Spine linked mesh; geometry then equals the source's. Native v18.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub link: Option<MeshLink>,
 }
 
 pub const WHITE: [u8; 4] = [255; 4];
@@ -775,6 +780,7 @@ impl Document {
         }
         self.validate_skin_scope()?;
         self.validate_events()?;
+        self.validate_linked_meshes()?;
         if !self.reference_scale.is_finite() || self.reference_scale <= 0.0 {
             return Err("Reference scale must be finite and positive".into());
         }

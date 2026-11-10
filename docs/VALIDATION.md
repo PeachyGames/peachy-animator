@@ -1528,3 +1528,15 @@ Animated IK (native9) was merged into `main` first; inheritance became native10.
 | Runtime check script | Now also runs on packed game atlases: rotated regions are matched by position and packed UVs are compared only on untrimmed, unrotated regions |
 | Game audit | **11 of 21** skeletons import fully |
 | Rust suite | fmt, clippy `-D warnings`, architecture and build pass; **527** tests pass |
+
+
+## Linked meshes, native v18 — November 10, 2026
+
+| Check | Result |
+| --- | --- |
+| Runtime and editor probes (original) | Source in the same slot of `skin` (omitted: default); `timelines` defaults to following the source; own color; editor layout as documented |
+| Original Linked Mesh Lab (`linked-mesh-bot.peachy`): weighted hand swapped to a tinted linked mesh that follows its deform keys and to one that ignores them; mint body linked to the deformed peach body across skins | All skins against external 4.3.13: 5,200 mesh coordinates (3,120 weighted), 10,400 UVs, 16,640 color channels, draw order at 312 samples, max mesh error 0.00003; editor round trip keeps every link field |
+| Doggy-artist front (game asset, local only; SHA-256 unchanged; 4 links) | 30 skins: 106,920 world values (max 0.0013, the stretched IK toe) and 24,882 mesh values (max 0.003); original vs re-export with physics: 16,200 frames, max bone difference 0.0007, 33 physics constraints |
+| Oral female (game asset, local only; SHA-256 unchanged; 2 links) | 60 skins: 317,520 world values (max 0.0002) and 119,718 mesh values (max 0.0004); original vs re-export with physics: 32,400 frames, max bone difference 0.0001, 44 physics constraints |
+| Game audit | **13 of 21** skeletons import fully |
+| Rust suite | fmt, clippy `-D warnings`, architecture and build pass; **532** tests pass |
