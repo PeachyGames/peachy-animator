@@ -112,7 +112,11 @@ still apply.
    and clipping vertex editing, linked mesh create/unlink, IK stretch toggle.
    Every edit must go through `peachy_engine::Command` so undo and validation
    work. Follow the memory rules: UI explanations in tooltips, name features
-   by what they do.
+   by what they do. **UI parity is an acceptance criterion** (`AGENTS.md`,
+   "Spine user interface parity"): observe where the installed Spine 4.3 puts
+   each control, match placement, terminology and interaction, record it in
+   `docs/UI_PARITY.md`, and verify real mouse and keyboard behaviour, not only
+   screenshots.
 4. **Exact screen and multiply compositing** in the viewport. Today screen is
    drawn additively and multiply as normal (`scene_view::draw_tint`). Needs an
    egui paint callback or offscreen pass.
