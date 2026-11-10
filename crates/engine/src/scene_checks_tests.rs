@@ -20,6 +20,7 @@ fn fixture() -> Document {
             name: "body".into(),
             bone: 0,
             attachment: Some("triangle".into()),
+            blend: peachy_document::BlendMode::Normal,
         }],
         skins: BTreeMap::from([(
             "default".into(),
@@ -41,6 +42,7 @@ fn fixture() -> Document {
                         height: 0.,
                         color: peachy_document::WHITE,
                         link: None,
+                        sequence: None,
                     }),
                 )]),
             )]),
@@ -58,6 +60,7 @@ fn fixture() -> Document {
             events: vec![],
             draw_order: vec![],
             path_tracks: vec![],
+            sequence_tracks: vec![],
         }],
         skin_scope: Default::default(),
         events: vec![],

@@ -629,3 +629,12 @@ paths. No runtime or editor implementation source was read.
 Rules were fitted to black-box runtime outputs on original random rigs and
 probes (stretch factor, mix blending, ignored child Y offset, mirrored bones).
 No runtime or editor implementation source was read.
+
+
+### Image sequences and blend modes — November 10, 2026
+
+Field names, defaults and frame selection came from the public `Sequence`/
+`SequenceTimeline`/`AttachmentLoader` typings and black-box probes through the
+runtime's public API (`resolveIndex`, `getPath`, `sequenceIndex`). Sequence Lab
+frames are copies of original Peach Bot art. No runtime or editor
+implementation source was read.

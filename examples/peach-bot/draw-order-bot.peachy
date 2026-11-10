@@ -1,5 +1,5 @@
 {
-  "format": 21,
+  "format": 22,
   "constraints": [],
   "name": "Peach Bot Draw Order Lab",
   "fps": 30,
@@ -879,7 +879,8 @@
           "offsets": []
         }
       ],
-      "path_tracks": []
+      "path_tracks": [],
+      "sequence_tracks": []
     },
     {
       "name": "idle",
@@ -967,7 +968,8 @@
           ]
         }
       ],
-      "path_tracks": []
+      "path_tracks": [],
+      "sequence_tracks": []
     }
   ]
 }

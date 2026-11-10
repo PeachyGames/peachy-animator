@@ -446,6 +446,7 @@ mod tests {
                 events: vec![],
                 draw_order: vec![],
                 path_tracks: vec![],
+                sequence_tracks: vec![],
             }],
             skin_scope: Default::default(),
             events: vec![],

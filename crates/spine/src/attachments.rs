@@ -20,6 +20,7 @@ pub(super) fn read_attachment(
             height: number(value, "height", 0.0),
             transform: region_transform(value),
             color,
+            sequence: super::sequence::read_def(value, &format!("Attachment {placeholder}"))?,
         }),
         "path" => Attachment::Path(super::path::read_attachment(
             value,
@@ -48,6 +49,7 @@ pub(super) fn read_attachment(
                 height: number(value, "height", 0.0),
                 color,
                 link: None,
+                sequence: super::sequence::read_def(value, &format!("Attachment {placeholder}"))?,
             })
         }
         kind => return Err(format!("Unsupported attachment type {kind}")),
@@ -232,6 +234,9 @@ pub(super) fn write_attachment(attachment: &Attachment) -> Value {
     if attachment.color() != peachy_document::WHITE {
         value["color"] = json!(format!("{r:02x}{g:02x}{b:02x}{a:02x}"));
     }
+    if let Some(sequence) = attachment.sequence() {
+        value["sequence"] = super::sequence::write_def(sequence);
+    }
     if let Some(path) = attachment.path() {
         value["path"] = json!(path);
     }
@@ -255,8 +260,8 @@ pub(super) fn inspect_attachment(
         &context,
         issues,
     );
-    if region.get("sequence").is_some() {
-        issues.push(format!("{context}: image sequence"));
+    if let Err(error) = super::sequence::read_def(region, &context) {
+        issues.push(error);
     }
     if let Err(error) = read_hex_color(region, &format!("{context}: color")) {
         issues.push(error);
@@ -281,7 +286,7 @@ pub(super) fn inspect_attachment(
     let fields: &[&str] = match region["type"].as_str().unwrap_or("region") {
         "region" => &[
             "type", "name", "path", "x", "y", "rotation", "scaleX", "scaleY", "width", "height",
-            "color",
+            "color", "sequence",
         ],
         "mesh" => &[
             "type",
@@ -295,6 +300,7 @@ pub(super) fn inspect_attachment(
             "width",
             "height",
             "color",
+            "sequence",
         ],
         kind => {
             issues.push(format!("{context}: unsupported {kind}"));

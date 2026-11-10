@@ -1,0 +1,858 @@
+{
+  "format": 21,
+  "constraints": [],
+  "name": "Peach Bot",
+  "fps": 30,
+  "bones": [
+    {
+      "name": "root",
+      "parent": null,
+      "length": 0,
+      "setup": {
+        "x": 0,
+        "y": 0,
+        "rotation": 0,
+        "scale_x": 1,
+        "scale_y": 1,
+        "shear_x": 0,
+        "shear_y": 0
+      },
+      "inherit": "normal"
+    },
+    {
+      "name": "body",
+      "parent": 0,
+      "length": 95,
+      "setup": {
+        "x": 0,
+        "y": 125,
+        "rotation": 0,
+        "scale_x": 1,
+        "scale_y": 1,
+        "shear_x": 0,
+        "shear_y": 0
+      },
+      "inherit": "normal"
+    },
+    {
+      "name": "head",
+      "parent": 1,
+      "length": 64,
+      "setup": {
+        "x": 0,
+        "y": 118,
+        "rotation": 0,
+        "scale_x": 1,
+        "scale_y": 1,
+        "shear_x": 0,
+        "shear_y": 0
+      },
+      "inherit": "normal"
+    },
+    {
+      "name": "arm.L",
+      "parent": 1,
+      "length": 64,
+      "setup": {
+        "x": -70,
+        "y": 48,
+        "rotation": -128,
+        "scale_x": 1,
+        "scale_y": 1,
+        "shear_x": 0,
+        "shear_y": 0
+      },
+      "inherit": "normal"
+    },
+    {
+      "name": "forearm.L",
+      "parent": 3,
+      "length": 60,
+      "setup": {
+        "x": 64,
+        "y": 0,
+        "rotation": 30,
+        "scale_x": 1,
+        "scale_y": 1,
+        "shear_x": 0,
+        "shear_y": 0
+      },
+      "inherit": "normal"
+    },
+    {
+      "name": "hand.L",
+      "parent": 4,
+      "length": 28,
+      "setup": {
+        "x": 60,
+        "y": 0,
+        "rotation": 0,
+        "scale_x": 1,
+        "scale_y": 1,
+        "shear_x": 0,
+        "shear_y": 0
+      },
+      "inherit": "normal"
+    },
+    {
+      "name": "arm.R",
+      "parent": 1,
+      "length": 64,
+      "setup": {
+        "x": 70,
+        "y": 48,
+        "rotation": 38,
+        "scale_x": 1,
+        "scale_y": 1,
+        "shear_x": 0,
+        "shear_y": 0
+      },
+      "inherit": "normal"
+    },
+    {
+      "name": "forearm.R",
+      "parent": 6,
+      "length": 60,
+      "setup": {
+        "x": 64,
+        "y": 0,
+        "rotation": 45,
+        "scale_x": 1,
+        "scale_y": 1,
+        "shear_x": 0,
+        "shear_y": 0
+      },
+      "inherit": "normal"
+    },
+    {
+      "name": "hand.R",
+      "parent": 7,
+      "length": 28,
+      "setup": {
+        "x": 60,
+        "y": 0,
+        "rotation": 0,
+        "scale_x": 1,
+        "scale_y": 1,
+        "shear_x": 0,
+        "shear_y": 0
+      },
+      "inherit": "normal"
+    },
+    {
+      "name": "leg.L",
+      "parent": 1,
+      "length": 82,
+      "setup": {
+        "x": -34,
+        "y": -61,
+        "rotation": -102,
+        "scale_x": 1,
+        "scale_y": 1,
+        "shear_x": 0,
+        "shear_y": 0
+      },
+      "inherit": "normal"
+    },
+    {
+      "name": "shin.L",
+      "parent": 9,
+      "length": 72,
+      "setup": {
+        "x": 82,
+        "y": 0,
+        "rotation": 15,
+        "scale_x": 1,
+        "scale_y": 1,
+        "shear_x": 0,
+        "shear_y": 0
+      },
+      "inherit": "normal"
+    },
+    {
+      "name": "foot.L",
+      "parent": 10,
+      "length": 36,
+      "setup": {
+        "x": 72,
+        "y": 0,
+        "rotation": 87,
+        "scale_x": 1,
+        "scale_y": 1,
+        "shear_x": 0,
+        "shear_y": 0
+      },
+      "inherit": "normal"
+    },
+    {
+      "name": "leg.R",
+      "parent": 1,
+      "length": 82,
+      "setup": {
+        "x": 34,
+        "y": -61,
+        "rotation": -78,
+        "scale_x": 1,
+        "scale_y": 1,
+        "shear_x": 0,
+        "shear_y": 0
+      },
+      "inherit": "normal"
+    },
+    {
+      "name": "shin.R",
+      "parent": 12,
+      "length": 72,
+      "setup": {
+        "x": 82,
+        "y": 0,
+        "rotation": -15,
+        "scale_x": 1,
+        "scale_y": 1,
+        "shear_x": 0,
+        "shear_y": 0
+      },
+      "inherit": "normal"
+    },
+    {
+      "name": "foot.R",
+      "parent": 13,
+      "length": 36,
+      "setup": {
+        "x": 72,
+        "y": 0,
+        "rotation": 93,
+        "scale_x": 1,
+        "scale_y": 1,
+        "shear_x": 0,
+        "shear_y": 0
+      },
+      "inherit": "normal"
+    }
+  ],
+  "slots": [
+    {
+      "color": [255, 255, 255, 255],
+      "name": "thigh.L",
+      "bone": 9,
+      "attachment": "thigh.L"
+    },
+    {
+      "color": [255, 255, 255, 255],
+      "name": "shin.L",
+      "bone": 10,
+      "attachment": "shin.L"
+    },
+    {
+      "color": [255, 255, 255, 255],
+      "name": "foot.L",
+      "bone": 11,
+      "attachment": "foot.L"
+    },
+    {
+      "color": [255, 255, 255, 255],
+      "name": "thigh.R",
+      "bone": 12,
+      "attachment": "thigh.R"
+    },
+    {
+      "color": [255, 255, 255, 255],
+      "name": "shin.R",
+      "bone": 13,
+      "attachment": "shin.R"
+    },
+    {
+      "color": [255, 255, 255, 255],
+      "name": "foot.R",
+      "bone": 14,
+      "attachment": "foot.R"
+    },
+    {
+      "color": [255, 255, 255, 255],
+      "name": "upper-arm.L",
+      "bone": 3,
+      "attachment": "upper-arm.L"
+    },
+    {
+      "color": [255, 255, 255, 255],
+      "name": "forearm.L",
+      "bone": 4,
+      "attachment": "forearm.L"
+    },
+    {
+      "color": [255, 255, 255, 255],
+      "name": "hand.L",
+      "bone": 5,
+      "attachment": "hand.L"
+    },
+    {
+      "color": [255, 255, 255, 255],
+      "name": "body",
+      "bone": 1,
+      "attachment": "body"
+    },
+    {
+      "color": [255, 255, 255, 255],
+      "name": "head",
+      "bone": 2,
+      "attachment": "head"
+    },
+    {
+      "color": [255, 255, 255, 255],
+      "name": "upper-arm.R",
+      "bone": 6,
+      "attachment": "upper-arm.R"
+    },
+    {
+      "color": [255, 255, 255, 255],
+      "name": "forearm.R",
+      "bone": 7,
+      "attachment": "forearm.R"
+    },
+    {
+      "color": [255, 255, 255, 255],
+      "name": "hand.R",
+      "bone": 8,
+      "attachment": "hand.R"
+    }
+  ],
+  "skins": {
+    "default": {
+      "thigh.L": {
+        "thigh.L": {
+          "type": "region",
+          "path": "thigh",
+          "width": 100,
+          "height": 49,
+          "transform": {
+            "x": 38,
+            "y": 0,
+            "rotation": 0,
+            "scale_x": 1,
+            "scale_y": 1
+          }
+        }
+      },
+      "shin.L": {
+        "shin.L": {
+          "type": "region",
+          "path": "shin",
+          "width": 88,
+          "height": 45,
+          "transform": {
+            "x": 33,
+            "y": 0,
+            "rotation": 0,
+            "scale_x": 1,
+            "scale_y": 1
+          }
+        }
+      },
+      "foot.L": {
+        "foot.L": {
+          "type": "region",
+          "path": "foot",
+          "width": 81,
+          "height": 45,
+          "transform": {
+            "x": 12,
+            "y": -5,
+            "rotation": 0,
+            "scale_x": 1,
+            "scale_y": 1
+          }
+        }
+      },
+      "thigh.R": {
+        "thigh.R": {
+          "type": "region",
+          "path": "thigh",
+          "width": 100,
+          "height": 49,
+          "transform": {
+            "x": 38,
+            "y": 0,
+            "rotation": 0,
+            "scale_x": 1,
+            "scale_y": 1
+          }
+        }
+      },
+      "shin.R": {
+        "shin.R": {
+          "type": "region",
+          "path": "shin",
+          "width": 88,
+          "height": 45,
+          "transform": {
+            "x": 33,
+            "y": 0,
+            "rotation": 0,
+            "scale_x": 1,
+            "scale_y": 1
+          }
+        }
+      },
+      "foot.R": {
+        "foot.R": {
+          "type": "region",
+          "path": "foot",
+          "width": 81,
+          "height": 45,
+          "transform": {
+            "x": 12,
+            "y": -5,
+            "rotation": 0,
+            "scale_x": 1,
+            "scale_y": 1
+          }
+        }
+      },
+      "upper-arm.L": {
+        "upper-arm.L": {
+          "type": "region",
+          "path": "upper-arm",
+          "width": 82,
+          "height": 42,
+          "transform": {
+            "x": 29,
+            "y": 0,
+            "rotation": 0,
+            "scale_x": 1,
+            "scale_y": 1
+          }
+        }
+      },
+      "forearm.L": {
+        "forearm.L": {
+          "type": "region",
+          "path": "forearm",
+          "width": 78,
+          "height": 40,
+          "transform": {
+            "x": 27,
+            "y": 0,
+            "rotation": 0,
+            "scale_x": 1,
+            "scale_y": 1
+          }
+        }
+      },
+      "hand.L": {
+        "hand.L": {
+          "type": "region",
+          "path": "hand",
+          "width": 54,
+          "height": 56,
+          "transform": {
+            "x": 10,
+            "y": 0,
+            "rotation": -90,
+            "scale_x": 1,
+            "scale_y": 1
+          }
+        }
+      },
+      "upper-arm.R": {
+        "upper-arm.R": {
+          "type": "region",
+          "path": "upper-arm",
+          "width": 82,
+          "height": 42,
+          "transform": {
+            "x": 29,
+            "y": 0,
+            "rotation": 0,
+            "scale_x": 1,
+            "scale_y": 1
+          }
+        }
+      },
+      "forearm.R": {
+        "forearm.R": {
+          "type": "region",
+          "path": "forearm",
+          "width": 78,
+          "height": 40,
+          "transform": {
+            "x": 27,
+            "y": 0,
+            "rotation": 0,
+            "scale_x": 1,
+            "scale_y": 1
+          }
+        }
+      },
+      "hand.R": {
+        "hand.R": {
+          "type": "region",
+          "path": "hand",
+          "width": 54,
+          "height": 56,
+          "transform": {
+            "x": 10,
+            "y": 0,
+            "rotation": -90,
+            "scale_x": 1,
+            "scale_y": 1
+          }
+        }
+      }
+    },
+    "peach": {
+      "body": {
+        "body": {
+          "type": "region",
+          "path": "torso",
+          "width": 140,
+          "height": 148,
+          "transform": {
+            "x": 0,
+            "y": 3,
+            "rotation": 0,
+            "scale_x": 1,
+            "scale_y": 1
+          },
+          "name": "body.peach"
+        }
+      },
+      "head": {
+        "head": {
+          "type": "region",
+          "path": "head",
+          "width": 142,
+          "height": 134,
+          "transform": {
+            "x": 0,
+            "y": 12,
+            "rotation": 0,
+            "scale_x": 1,
+            "scale_y": 1
+          },
+          "name": "head.peach"
+        }
+      }
+    },
+    "mint": {
+      "body": {
+        "body": {
+          "type": "region",
+          "path": "torso-mint",
+          "width": 140,
+          "height": 148,
+          "transform": {
+            "x": 0,
+            "y": 3,
+            "rotation": 0,
+            "scale_x": 1,
+            "scale_y": 1
+          },
+          "name": "body.mint"
+        }
+      },
+      "head": {
+        "head": {
+          "type": "region",
+          "path": "head-mint",
+          "width": 142,
+          "height": 134,
+          "transform": {
+            "x": 0,
+            "y": 12,
+            "rotation": 0,
+            "scale_x": 1,
+            "scale_y": 1
+          },
+          "name": "head.mint"
+        }
+      }
+    }
+  },
+  "skin_scope": {
+    "required_bones": [],
+    "required_constraints": [],
+    "skins": {}
+  },
+  "events": [],
+  "reference_scale": 100.0,
+  "animations": [
+    {
+      "name": "wave",
+      "tracks": [
+        {
+          "bone": 8,
+          "property": "rotation",
+          "keys": [
+            {
+              "time": 0,
+              "value": -15,
+              "curve": "linear"
+            },
+            {
+              "time": 0.3,
+              "value": 25,
+              "curve": "linear"
+            },
+            {
+              "time": 0.6,
+              "value": -18,
+              "curve": "linear"
+            },
+            {
+              "time": 0.9,
+              "value": 25,
+              "curve": "linear"
+            },
+            {
+              "time": 1.2,
+              "value": -18,
+              "curve": "linear"
+            },
+            {
+              "time": 1.5,
+              "value": 25,
+              "curve": "linear"
+            },
+            {
+              "time": 1.8,
+              "value": -15,
+              "curve": "linear"
+            },
+            {
+              "time": 2.4,
+              "value": -15,
+              "curve": "linear"
+            }
+          ]
+        },
+        {
+          "bone": 7,
+          "property": "rotation",
+          "keys": [
+            {
+              "time": 0,
+              "value": 0,
+              "curve": "linear"
+            },
+            {
+              "time": 0.6,
+              "value": 12,
+              "curve": "linear"
+            },
+            {
+              "time": 1.2,
+              "value": 0,
+              "curve": "linear"
+            },
+            {
+              "time": 1.8,
+              "value": 12,
+              "curve": "linear"
+            },
+            {
+              "time": 2.4,
+              "value": 0,
+              "curve": "linear"
+            }
+          ]
+        },
+        {
+          "bone": 1,
+          "property": "y",
+          "keys": [
+            {
+              "time": 0,
+              "value": 0,
+              "curve": {
+                "bezier": [
+                  0.42,
+                  0,
+                  0.58,
+                  1
+                ]
+              }
+            },
+            {
+              "time": 0.6,
+              "value": 5,
+              "curve": {
+                "bezier": [
+                  0.42,
+                  0,
+                  0.58,
+                  1
+                ]
+              }
+            },
+            {
+              "time": 1.2,
+              "value": 0,
+              "curve": {
+                "bezier": [
+                  0.42,
+                  0,
+                  0.58,
+                  1
+                ]
+              }
+            },
+            {
+              "time": 1.8,
+              "value": 5,
+              "curve": {
+                "bezier": [
+                  0.42,
+                  0,
+                  0.58,
+                  1
+                ]
+              }
+            },
+            {
+              "time": 2.4,
+              "value": 0,
+              "curve": {
+                "bezier": [
+                  0.42,
+                  0,
+                  0.58,
+                  1
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "bone": 2,
+          "property": "rotation",
+          "keys": [
+            {
+              "time": 0,
+              "value": -4,
+              "curve": {
+                "bezier": [
+                  0.42,
+                  0,
+                  0.58,
+                  1
+                ]
+              }
+            },
+            {
+              "time": 1.2,
+              "value": 4,
+              "curve": {
+                "bezier": [
+                  0.42,
+                  0,
+                  0.58,
+                  1
+                ]
+              }
+            },
+            {
+              "time": 2.4,
+              "value": -4,
+              "curve": {
+                "bezier": [
+                  0.42,
+                  0,
+                  0.58,
+                  1
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "ik_tracks": [],
+      "physics": [],
+      "physics_resets": [],
+      "inherit_tracks": [],
+      "deform_tracks": [],
+      "attachment_tracks": [],
+      "color_tracks": [],
+      "events": [],
+      "draw_order": [],
+      "path_tracks": []
+    },
+    {
+      "name": "idle",
+      "tracks": [
+        {
+          "bone": 1,
+          "property": "y",
+          "keys": [
+            {
+              "time": 0,
+              "value": 0,
+              "curve": {
+                "bezier": [
+                  0.42,
+                  0,
+                  0.58,
+                  1
+                ]
+              }
+            },
+            {
+              "time": 1,
+              "value": 4,
+              "curve": {
+                "bezier": [
+                  0.42,
+                  0,
+                  0.58,
+                  1
+                ]
+              }
+            },
+            {
+              "time": 2,
+              "value": 0,
+              "curve": {
+                "bezier": [
+                  0.42,
+                  0,
+                  0.58,
+                  1
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "bone": 2,
+          "property": "rotation",
+          "keys": [
+            {
+              "time": 0,
+              "value": -2,
+              "curve": "linear"
+            },
+            {
+              "time": 1,
+              "value": 2,
+              "curve": "linear"
+            },
+            {
+              "time": 2,
+              "value": -2,
+              "curve": "linear"
+            }
+          ]
+        }
+      ],
+      "ik_tracks": [],
+      "physics": [],
+      "physics_resets": [],
+      "inherit_tracks": [],
+      "deform_tracks": [],
+      "attachment_tracks": [],
+      "color_tracks": [],
+      "events": [],
+      "draw_order": [],
+      "path_tracks": []
+    }
+  ]
+}

@@ -23,6 +23,7 @@ fn mesh(influences: Vec<Vec<BoneInfluence>>) -> Mesh {
         edges: vec![0, 2, 2, 4, 4, 0],
         color: peachy_document::WHITE,
         link: None,
+        sequence: None,
     }
 }
 
@@ -98,6 +99,7 @@ pub(super) fn rig() -> Document {
             name: "weighted".into(),
             bone: 2,
             attachment: Some("shape".into()),
+            blend: peachy_document::BlendMode::Normal,
         }],
         skins: BTreeMap::from([(
             "default".into(),
@@ -134,6 +136,7 @@ pub(super) fn rig() -> Document {
             events: vec![],
             draw_order: vec![],
             path_tracks: vec![],
+            sequence_tracks: vec![],
         }],
         skin_scope: Default::default(),
         events: vec![],
@@ -333,6 +336,7 @@ fn region_and_slot_local_mesh_paths_apply_the_slot_transform_once_and_keep_draw_
         name: "overlay".into(),
         bone: 3,
         attachment: Some("shape".into()),
+        blend: peachy_document::BlendMode::Normal,
     });
     let region = Region {
         name: None,
@@ -345,6 +349,7 @@ fn region_and_slot_local_mesh_paths_apply_the_slot_transform_once_and_keep_draw_
             ..Default::default()
         },
         color: peachy_document::WHITE,
+        sequence: None,
     };
     doc.skins.get_mut("default").unwrap().insert(
         "overlay".into(),

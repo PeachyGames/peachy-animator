@@ -297,13 +297,7 @@ impl Editor {
     fn load_textures(&mut self, ctx: &egui::Context) {
         self.textures.clear();
         self.ghosting.solid_textures.clear();
-        let paths: Vec<_> = self
-            .session
-            .document()
-            .image_paths()
-            .into_iter()
-            .map(str::to_owned)
-            .collect();
+        let paths: Vec<_> = self.session.document().image_paths().into_iter().collect();
         let mut missing = vec![];
         for path in paths {
             let file = self.asset_root.join("images").join(format!("{path}.png"));

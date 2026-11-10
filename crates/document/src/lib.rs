@@ -10,6 +10,9 @@ mod inherit;
 mod linked_mesh;
 mod path;
 mod physics;
+mod sequence;
+#[cfg(test)]
+mod sequence_tests;
 mod skin_scope;
 mod slot_keys;
 mod transform;
@@ -28,13 +31,14 @@ pub use physics::{
     PhysicsGlobal, PhysicsInfluence, PhysicsProperty, PhysicsReset, PhysicsSetup, PhysicsTrack,
     ScaleYMode,
 };
+pub use sequence::{BlendMode, SequenceDef, SequenceKey, SequenceMode, SequenceTrack};
 pub use skin_scope::{Activity, SkinMembers, SkinScope};
 pub use slot_keys::{AttachmentKey, AttachmentTrack, ColorKey, ColorTrack};
 pub use transform::{
     TransformConstraint, TransformMapping, TransformProperty, TransformTarget, TransformValues,
 };
 
-pub const FORMAT_VERSION: u32 = 21;
+pub const FORMAT_VERSION: u32 = 22;
 pub const KEY_TIME_EPSILON: f32 = 0.00001;
 pub fn same_key_time(a: f32, b: f32) -> bool {
     (a - b).abs() < KEY_TIME_EPSILON
@@ -163,6 +167,9 @@ pub struct Slot {
     pub attachment: Option<String>,
     /// Setup tint in exact, unpremultiplied RGBA bytes. Required in native v7.
     pub color: [u8; 4],
+    /// Blend mode for this slot's attachments. Native v22.
+    #[serde(default, skip_serializing_if = "BlendMode::is_normal")]
+    pub blend: BlendMode,
 }
 
 /// Slot name -> attachment placeholder -> attachment. Draw order is the slot vector.
@@ -196,6 +203,24 @@ impl Attachment {
             Self::Path(p) => p.name.as_deref(),
         }
     }
+    /// Image sequence of a region or mesh.
+    pub fn sequence(&self) -> Option<&SequenceDef> {
+        match self {
+            Self::Region(r) => r.sequence.as_ref(),
+            Self::Mesh(m) => m.sequence.as_ref(),
+            Self::Clipping(_) | Self::Path(_) => None,
+        }
+    }
+    /// Every image file this attachment can show (all sequence frames).
+    pub fn image_files(&self) -> Vec<String> {
+        match (self.path(), self.sequence()) {
+            (Some(path), Some(sequence)) => (0..sequence.count)
+                .map(|i| sequence.frame_path(path, i))
+                .collect(),
+            (Some(path), None) => vec![path.to_owned()],
+            (None, _) => vec![],
+        }
+    }
     /// Image path; clipping attachments draw no image.
     pub fn path(&self) -> Option<&str> {
         match self {
@@ -212,6 +237,9 @@ impl Attachment {
         }
         match self {
             Self::Region(r) => {
+                if let Some(sequence) = &r.sequence {
+                    sequence.validate()?;
+                }
                 if !r.width.is_finite()
                     || !r.height.is_finite()
                     || r.width <= 0.0
@@ -222,7 +250,12 @@ impl Attachment {
                 }
                 Ok(())
             }
-            Self::Mesh(m) => m.validate(),
+            Self::Mesh(m) => {
+                if let Some(sequence) = &m.sequence {
+                    sequence.validate()?;
+                }
+                m.validate()
+            }
             // Needs slot/bone context: checked in Document::validate.
             Self::Clipping(_) | Self::Path(_) => Ok(()),
         }
@@ -271,6 +304,9 @@ pub struct Mesh {
     /// Set for a Spine linked mesh; geometry then equals the source's. Native v18.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub link: Option<MeshLink>,
+    /// Image sequence (frames replace `path`). Native v22.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sequence: Option<SequenceDef>,
 }
 
 pub const WHITE: [u8; 4] = [255; 4];
@@ -411,6 +447,9 @@ pub struct Region {
     /// Omitted when white. Native v17.
     #[serde(default = "white", skip_serializing_if = "is_white")]
     pub color: [u8; 4],
+    /// Image sequence (frames replace `path`). Native v22.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sequence: Option<SequenceDef>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -438,6 +477,8 @@ pub struct Animation {
     pub draw_order: Vec<DrawOrderKey>,
     /// Keyed path constraint position/spacing. Required in native v20.
     pub path_tracks: Vec<PathTrack>,
+    /// Keyed image sequence frames. Required in native v22.
+    pub sequence_tracks: Vec<SequenceTrack>,
 }
 
 impl Animation {
@@ -455,6 +496,7 @@ impl Animation {
             events: vec![],
             draw_order: vec![],
             path_tracks: vec![],
+            sequence_tracks: vec![],
         }
     }
     /// The highest authored key time across validated, ordered timelines, or zero.
@@ -498,6 +540,11 @@ impl Animation {
             .chain(self.draw_order.iter().map(|key| key.time))
             .chain(
                 self.path_tracks
+                    .iter()
+                    .filter_map(|track| track.keys.last().map(|key| key.time)),
+            )
+            .chain(
+                self.sequence_tracks
                     .iter()
                     .filter_map(|track| track.keys.last().map(|key| key.time)),
             )
@@ -547,6 +594,11 @@ impl Animation {
             .chain(self.draw_order.iter().map(|key| key.time))
             .chain(
                 self.path_tracks
+                    .iter()
+                    .flat_map(|track| track.keys.iter().map(|key| key.time)),
+            )
+            .chain(
+                self.sequence_tracks
                     .iter()
                     .flat_map(|track| track.keys.iter().map(|key| key.time)),
             )
@@ -756,6 +808,37 @@ impl Document {
                     )),
                 },
             };
+            let mut sequenced = BTreeSet::new();
+            for track in &a.sequence_tracks {
+                let count = self
+                    .attachment(&track.attachment)
+                    .and_then(Attachment::sequence)
+                    .map(|s| s.count);
+                let mut previous = -1.0;
+                let valid_keys = track.keys.iter().all(|key| {
+                    let ok = key.time.is_finite()
+                        && key.time >= 0.0
+                        && key.time >= previous
+                        && key.delay.is_finite()
+                        && key.delay >= 0.0
+                        && count.is_some_and(|count| key.index < count);
+                    previous = key.time;
+                    ok
+                });
+                if count.is_none()
+                    || !valid_keys
+                    || !sequenced.insert((
+                        track.attachment.skin.clone(),
+                        track.attachment.slot.clone(),
+                        track.attachment.placeholder.clone(),
+                    ))
+                {
+                    return Err(format!(
+                        "Animation {}: sequence keys need a sequenced attachment, ordered times, frames inside the sequence and nonnegative delays",
+                        a.name
+                    ));
+                }
+            }
             let mut paths = BTreeSet::new();
             for t in &a.path_tracks {
                 if !matches!(
@@ -842,12 +925,13 @@ impl Document {
         Ok(())
     }
 
-    pub fn image_paths(&self) -> BTreeSet<&str> {
+    /// Every image the document can show, including all sequence frames.
+    pub fn image_paths(&self) -> BTreeSet<String> {
         self.skins
             .values()
             .flat_map(|s| s.values())
             .flat_map(|a| a.values())
-            .filter_map(Attachment::path)
+            .flat_map(Attachment::image_files)
             .collect()
     }
     pub fn attachment(&self, key: &AttachmentRef) -> Option<&Attachment> {

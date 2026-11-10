@@ -39,6 +39,7 @@ fn rig() -> Document {
             events: vec![],
             draw_order: vec![],
             path_tracks: vec![],
+            sequence_tracks: vec![],
         }],
         skin_scope: Default::default(),
         events: vec![],
@@ -848,6 +849,7 @@ fn sheared_weighted_and_region_scene_matches_original_external_observation_point
         height: 0.,
         color: peachy_document::WHITE,
         link: None,
+        sequence: None,
     };
     document.slots = vec![
         Slot {
@@ -855,12 +857,14 @@ fn sheared_weighted_and_region_scene_matches_original_external_observation_point
             name: "mesh".into(),
             bone: 0,
             attachment: Some("mesh".into()),
+            blend: peachy_document::BlendMode::Normal,
         },
         Slot {
             color: [255; 4],
             name: "region".into(),
             bone: 2,
             attachment: Some("region".into()),
+            blend: peachy_document::BlendMode::Normal,
         },
     ];
     document.skins = BTreeMap::from([(
@@ -881,6 +885,7 @@ fn sheared_weighted_and_region_scene_matches_original_external_observation_point
                         height: 4.,
                         transform: RegionTransform::default(),
                         color: peachy_document::WHITE,
+                        sequence: None,
                     }),
                 )]),
             ),
@@ -1078,6 +1083,7 @@ fn shear_clipboard_and_retiming_keep_scalar_identity_curves_fractional_neighbors
         events: vec![],
         draw_order: vec![],
         path_tracks: vec![],
+        sequence_tracks: vec![],
     });
     let keys = vec![
         TimelineKey {

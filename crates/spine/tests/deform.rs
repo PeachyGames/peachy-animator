@@ -81,7 +81,7 @@ fn malformed_or_unsupported_deform_data_is_refused() {
     );
     reject(
         &set(&["plain", "quad"], json!({"sequence":[{"time":0}]})),
-        "sequence timelines are unsupported",
+        "sequence keys need a sequenced attachment",
     );
     reject(
         &set(

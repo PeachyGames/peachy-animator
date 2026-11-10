@@ -231,6 +231,13 @@ for (const animation of data.animations) {
         assert.equal(actualDraws.has(slotIndex), drawn, `${animation.name} t=${time} slot ${slot.data.name} visibility`);
         const draw = actualDraws.get(slotIndex);
         if (draw) {
+          // Sequenced attachments show the runtime's current frame; draws carry
+          // the slot blend mode.
+          const att = slot.appliedPose.attachment;
+          const frame = att.sequence?.hasPathSuffix?.() ? att.sequence.getPath(att.path, att.sequence.resolveIndex(slot.appliedPose)) : att.path;
+          assert.equal(draw.image, frame, `${animation.name} t=${time} slot ${slot.data.name} image`);
+          assert.equal(draw.blend, ['normal', 'additive', 'multiply', 'screen'][slot.data.blendMode], `${slot.data.name} blend`);
+          report.imageChecks = (report.imageChecks ?? 0) + 1;
           // Renderers tint with slot color times attachment color.
           const c = slot.appliedPose.color, t = slot.appliedPose.attachment.color;
           [c.r * t.r, c.g * t.g, c.b * t.b, c.a * t.a].forEach((channel, i) => {

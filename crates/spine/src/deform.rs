@@ -33,6 +33,10 @@ pub(super) fn read(
                     format!("{context}: {slot}/{placeholder} timelines must be an object")
                 })?;
                 for (timeline, keys) in timelines {
+                    // Sequence timelines are read by sequence::read_tracks.
+                    if timeline == "sequence" {
+                        continue;
+                    }
                     if timeline != "deform" {
                         return Err(format!(
                             "{context}: {slot}/{placeholder} {timeline} timelines are unsupported"

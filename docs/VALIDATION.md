@@ -1608,3 +1608,15 @@ Animated IK (native9) was merged into `main` first; inheritance became native10.
 | Oral male full runtime check (incl. clipping coverage) | 1,857,024 world values (max 0.0005), 557,570 mesh values, 624 clip checks over 359,424 coverage points (2 edge mismatches), 4,836 draw order checks, 95,264 color channels |
 | Game audit | **20 of 21** skeletons import fully; only the bonfire (image sequence, blend mode) remains |
 | Rust suite | fmt, clippy `-D warnings`, architecture and build pass; **549** tests pass |
+
+
+## Image sequences and blend modes, native v22 — November 10, 2026
+
+| Check | Result |
+| --- | --- |
+| Runtime probes (original) | All seven modes over 22 sample times (table in `sequence_tests.rs`); boundary tolerance 1e-5 frames (bisected); path naming and defaults; delay carry-forward |
+| Original Sequence Lab (`sequence-bot.peachy`, frames copied from Peach Bot art): loop → pingpong → once-reverse head frames with a setup frame; additive, screen and multiply slots | 4,160 frame-and-blend checks and 28,080 world values (max 0.00003) against the runtime |
+| Bonfire (game asset, local only; SHA-256 unchanged; 96-frame sequence, screen-blended glow mesh) | 156 frame-and-blend checks, 624 world values, 416 mesh and 832 region coordinates match; original vs re-export: max bone difference 1e-6 |
+| All 21 labs | Pass the extended runtime check (frame image and blend for every draw) |
+| Game audit | **21 of 21** skeletons import fully |
+| Rust suite | fmt, clippy `-D warnings`, architecture and build pass; **554** tests pass |

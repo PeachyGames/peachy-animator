@@ -239,6 +239,7 @@ fn doc() -> Document {
             events: vec![],
             draw_order: vec![],
             path_tracks: vec![],
+            sequence_tracks: vec![],
         }],
         skin_scope: Default::default(),
         events: vec![],
@@ -428,6 +429,7 @@ fn contextual_edits_change_only_the_addressed_entity_and_undo_atomically() {
 fn picking_respects_triangles_draw_order_reflections_and_visibility_bounds() {
     let make = |slot, vertices: Vec<[f32; 2]>, triangles: Vec<u32>| AttachmentDraw {
         clipped: None,
+        blend: BlendMode::Normal,
         slot,
         color: [255; 4],
         attachment: hand(),

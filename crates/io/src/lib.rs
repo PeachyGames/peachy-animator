@@ -29,6 +29,33 @@ pub fn load(path: &Path) -> Result<Document, String> {
 pub fn decode_project(text: &str) -> Result<Document, String> {
     let mut value: serde_json::Value = serde_json::from_str(text).map_err(|e| e.to_string())?;
     let original_format = value["format"].as_u64();
+    if matches!(original_format, Some(1..=21))
+        && (value["slots"]
+            .as_array()
+            .is_some_and(|slots| slots.iter().any(|slot| slot.get("blend").is_some()))
+            || value["animations"].as_array().is_some_and(|animations| {
+                animations
+                    .iter()
+                    .any(|a| a.get("sequence_tracks").is_some())
+            })
+            || value["skins"].as_object().is_some_and(|skins| {
+                skins
+                    .values()
+                    .filter_map(serde_json::Value::as_object)
+                    .any(|slots| {
+                        slots
+                            .values()
+                            .filter_map(serde_json::Value::as_object)
+                            .any(|attachments| {
+                                attachments
+                                    .values()
+                                    .any(|attachment| attachment.get("sequence").is_some())
+                            })
+                    })
+            }))
+    {
+        return Err("Legacy project formats cannot contain blend modes or image sequences".into());
+    }
     if matches!(original_format, Some(1..=20))
         && value["constraints"]
             .as_array()
@@ -349,6 +376,19 @@ pub fn decode_project(text: &str) -> Result<Document, String> {
     // v20→v21: IK stretch defaults to off; nothing to add.
     if value["format"].as_u64() == Some(20) {
         value["format"] = 21.into();
+    }
+    // v21→v22 adds empty sequence track lists.
+    if value["format"].as_u64() == Some(21) {
+        for animation in value["animations"]
+            .as_array_mut()
+            .ok_or("Legacy animations must be an array")?
+        {
+            animation
+                .as_object_mut()
+                .ok_or("Legacy animation must be an object")?
+                .insert("sequence_tracks".into(), serde_json::json!([]));
+        }
+        value["format"] = 22.into();
     }
     let mut doc: Document = serde_json::from_value(value).map_err(|e| e.to_string())?;
     // Wrapping vertices preserves their values and all surrounding fields. Decode
@@ -882,6 +922,7 @@ mod tests {
                 "events",
                 "draw_order",
                 "path_tracks",
+                "sequence_tracks",
             ] {
                 assert_eq!(
                     animation.as_object_mut().unwrap().remove(field),

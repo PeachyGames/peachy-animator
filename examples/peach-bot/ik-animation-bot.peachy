@@ -1,5 +1,5 @@
 {
-  "format": 21,
+  "format": 22,
   "name": "Peach Bot IK Animation Lab",
   "fps": 30,
   "bones": [
@@ -1078,7 +1078,8 @@
       "color_tracks": [],
       "events": [],
       "draw_order": [],
-      "path_tracks": []
+      "path_tracks": [],
+      "sequence_tracks": []
     },
     {
       "name": "ik bend stepped",
@@ -1130,7 +1131,8 @@
       "color_tracks": [],
       "events": [],
       "draw_order": [],
-      "path_tracks": []
+      "path_tracks": [],
+      "sequence_tracks": []
     },
     {
       "name": "ik bezier excursion",
@@ -1219,7 +1221,8 @@
       "color_tracks": [],
       "events": [],
       "draw_order": [],
-      "path_tracks": []
+      "path_tracks": [],
+      "sequence_tracks": []
     },
     {
       "name": "ik mix signed",
@@ -1292,7 +1295,8 @@
       "color_tracks": [],
       "events": [],
       "draw_order": [],
-      "path_tracks": []
+      "path_tracks": [],
+      "sequence_tracks": []
     },
     {
       "name": "ik ratio time",
@@ -1336,7 +1340,8 @@
       "color_tracks": [],
       "events": [],
       "draw_order": [],
-      "path_tracks": []
+      "path_tracks": [],
+      "sequence_tracks": []
     },
     {
       "name": "ik disabled scale",
@@ -1415,7 +1420,8 @@
       "color_tracks": [],
       "events": [],
       "draw_order": [],
-      "path_tracks": []
+      "path_tracks": [],
+      "sequence_tracks": []
     },
     {
       "name": "ik positive",
@@ -1524,7 +1530,8 @@
       "color_tracks": [],
       "events": [],
       "draw_order": [],
-      "path_tracks": []
+      "path_tracks": [],
+      "sequence_tracks": []
     },
     {
       "name": "ik negative",
@@ -1633,7 +1640,8 @@
       "color_tracks": [],
       "events": [],
       "draw_order": [],
-      "path_tracks": []
+      "path_tracks": [],
+      "sequence_tracks": []
     },
     {
       "name": "ik reach",
@@ -1816,7 +1824,8 @@
       "color_tracks": [],
       "events": [],
       "draw_order": [],
-      "path_tracks": []
+      "path_tracks": [],
+      "sequence_tracks": []
     },
     {
       "name": "wave",
@@ -2016,7 +2025,8 @@
       "color_tracks": [],
       "events": [],
       "draw_order": [],
-      "path_tracks": []
+      "path_tracks": [],
+      "sequence_tracks": []
     },
     {
       "name": "idle",
@@ -2094,7 +2104,8 @@
       "color_tracks": [],
       "events": [],
       "draw_order": [],
-      "path_tracks": []
+      "path_tracks": [],
+      "sequence_tracks": []
     }
   ]
 }

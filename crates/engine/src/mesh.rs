@@ -26,6 +26,7 @@ pub fn region_to_mesh(region: &Region) -> Mesh {
         edges: vec![0, 2, 2, 4, 4, 6, 6, 0],
         color: region.color,
         link: None,
+        sequence: None,
     }
 }
 

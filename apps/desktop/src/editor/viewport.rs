@@ -156,7 +156,7 @@ impl Editor {
                     mesh.vertices.push(egui::epaint::Vertex {
                         pos: screen(point),
                         uv: pos2(uv[0], uv[1]),
-                        color: scene_view::attachment_tint(draw.color),
+                        color: scene_view::draw_tint(draw.color, draw.blend),
                     });
                 }
                 mesh.indices = triangles.to_vec();

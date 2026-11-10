@@ -1,5 +1,5 @@
 {
-  "format": 21,
+  "format": 22,
   "constraints": [
     {
       "type": "transform",
@@ -995,7 +995,8 @@
       "color_tracks": [],
       "events": [],
       "draw_order": [],
-      "path_tracks": []
+      "path_tracks": [],
+      "sequence_tracks": []
     },
     {
       "name": "idle",
@@ -1073,7 +1074,8 @@
       "color_tracks": [],
       "events": [],
       "draw_order": [],
-      "path_tracks": []
+      "path_tracks": [],
+      "sequence_tracks": []
     }
   ]
 }

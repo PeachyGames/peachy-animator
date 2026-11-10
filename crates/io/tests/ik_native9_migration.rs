@@ -35,6 +35,7 @@ fn v8() -> Value {
             "events",
             "draw_order",
             "path_tracks",
+            "sequence_tracks",
         ] {
             assert_eq!(
                 animation.as_object_mut().unwrap().remove(field),

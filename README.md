@@ -111,6 +111,14 @@ body colors (Animate, `wave`):
 cargo run -p peachy-animator -- examples/peach-bot/slot-bot.peachy
 ```
 
+The original Sequence Lab flips the head through a four-frame sequence and
+draws hands and body with additive, screen and multiply blending (Animate,
+`wave`):
+
+```sh
+cargo run -p peachy-animator -- examples/peach-bot/sequence-bot.peachy
+```
+
 The original IK Scale Lab runs IK on mirrored and scaled arms, a stretchy
 keyed-scale leg and a stretchy head (Animate, `wave`):
 

@@ -60,6 +60,7 @@ fn rig() -> Document {
             events: vec![],
             draw_order: vec![],
             path_tracks: vec![],
+            sequence_tracks: vec![],
         }],
         skin_scope: Default::default(),
         events: vec![],
@@ -649,6 +650,7 @@ fn partial_mix_weight_binding_add_and_unbind_use_applied_snapshot_once_with_pend
         name: "surface".into(),
         bone: 0,
         attachment: Some("triangle".into()),
+        blend: peachy_document::BlendMode::Normal,
     });
     document.skins = BTreeMap::from([(
         "default".into(),
@@ -670,6 +672,7 @@ fn partial_mix_weight_binding_add_and_unbind_use_applied_snapshot_once_with_pend
                     height: 0.,
                     color: peachy_document::WHITE,
                     link: None,
+                    sequence: None,
                 }),
             )]),
         )]),

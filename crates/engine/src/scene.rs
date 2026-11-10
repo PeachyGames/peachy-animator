@@ -37,6 +37,8 @@ pub struct AttachmentDraw {
     pub attachment: AttachmentRef,
     pub image: String,
     pub color: [u8; 4],
+    /// The slot's blend mode.
+    pub blend: peachy_document::BlendMode,
     /// The attachment's own geometry (editing tools index these vertices).
     pub vertices: Vec<[f32; 2]>,
     pub uvs: Vec<[f32; 2]>,
@@ -176,6 +178,7 @@ fn scene_from_evaluated(doc: &Document, skin: &str, pose: crate::EvaluatedPose) 
         slot_attachments,
         slot_colors,
         draw_order,
+        sequence_frames,
     } = pose;
     let mut attachments = vec![];
     // Observed with the runtime's headless renderer: a clip starts at a shown
@@ -241,11 +244,26 @@ fn scene_from_evaluated(doc: &Document, skin: &str, pose: crate::EvaluatedPose) 
         if ends_clip {
             clip = None;
         }
+        // Sequenced attachments show their keyed (or setup) frame; linked meshes
+        // that follow their source's timelines use the source's frame.
+        let path = attachment.path().unwrap_or_default();
+        let image = match attachment.sequence() {
+            Some(sequence) => {
+                let target = doc.deform_target(&key);
+                let frame = sequence_frames
+                    .iter()
+                    .find(|(k, _)| *k == target)
+                    .map_or(sequence.setup_index, |(_, frame)| *frame);
+                sequence.frame_path(path, frame)
+            }
+            None => path.into(),
+        };
         attachments.push(AttachmentDraw {
             clipped,
+            blend: slot.blend,
             slot: slot_index,
             attachment: key,
-            image: attachment.path().unwrap_or_default().into(),
+            image,
             // Slot color times attachment color, as Spine renderers tint.
             color: {
                 let tint = attachment.color();

@@ -30,6 +30,7 @@ fn mesh(positions: &[[f32; 2]]) -> Mesh {
         edges: vec![0, 2, 2, 4, 4, 0],
         color: peachy_document::WHITE,
         link: None,
+        sequence: None,
     };
     mesh.validate().unwrap();
     mesh
@@ -61,6 +62,7 @@ fn rig(mesh: Mesh) -> Document {
             name: "surface".into(),
             bone: 0,
             attachment: Some("mesh".into()),
+            blend: peachy_document::BlendMode::Normal,
         }],
         skins: BTreeMap::from([(
             "default".into(),
@@ -82,6 +84,7 @@ fn rig(mesh: Mesh) -> Document {
             events: vec![],
             draw_order: vec![],
             path_tracks: vec![],
+            sequence_tracks: vec![],
         }],
         skin_scope: Default::default(),
         events: vec![],

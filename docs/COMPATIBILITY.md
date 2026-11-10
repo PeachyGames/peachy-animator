@@ -22,13 +22,13 @@ Input-only obsolete integer `order` is validated and omitted, never used to sort
 | --- | --- | --- |
 | Bones | All five inheritance modes (normal, onlyTranslation, noRotationOrReflection, noScale, noScaleOrReflection) and stepped `inherit` keys; X/Y, rotation, scale X/Y, shear X/Y, length | Legacy `transform` alias, inheritance changes on IK-constrained bones, degenerate zero-scale parents, skin-required bones |
 | Attachments | Regions, unweighted meshes and weighted meshes with explicit UVs/topology and bone-local influences; attachment tint (RGB/RGBA); linked meshes (any source skin, own image and tint, `timelines`); clipping polygons (end slot, convex hull, concave) | Linked-mesh chains, inverse clipping, paths, sequences, other attachment types |
-| Slots | Setup attachment, exact RGBA tint and normal blending in fixed draw order | Dark/two-color tint, other blend modes |
+| Slots | Setup attachment, exact RGBA tint, normal/additive/multiply/screen blend modes | Dark/two-color tint |
 | Skins | Region/mesh maps, explicit attachment names, default-skin fallback; skin-required bones and IK/transform/physics constraints with per-skin activation | Skin path-constraint lists, a unified skin `constraints` list, non-required bones under required parents |
 | Animation | Path position and spacing keys; draw order keys (offsets as written); event keys with per-key overrides; slot attachment and RGBA color keys; mesh deform keys (unweighted and weighted); bone rotation, translation, scale and shear; combined or scalar input timelines; grouped IK Mix/Positive timelines; physics setting and reset timelines, including global (`""`) timelines | Draw order folders; transform, path and other slot (rgb, alpha, dark tint, sequence) timelines |
 | Curves | Linear, stepped, normalized cubic handles (time handles may cross or leave the key interval); overshoot between equal values as offset handles | Nonfinite controls; overshooting curves between equal values |
 | Constraints | One-/two-bone normal IK with keyed Mix/Positive, two-bone Positive, nested chains in list order, off-axis child offsets; animated targets. Physics constraints as data: every setting, Scale Y mode and Global flag, in unified constraint order. World transform constraints: identity Rotate, X/Y mappings with offsets, scale and clamping; IK under any transformed ancestors | Advanced IK settings, shared-bone or cross-target chains, transformed chains; skin-required physics; transform, path, slider and other constraints |
 | Images | Loose PNGs for editing; one untrimmed atlas page for desktop export | Packed-atlas import, rotated/trimmed atlas regions, multipage export |
-| Files | `.peachy` v21; in-memory v1–v20 migration; Spine JSON adapter; event definitions and `skeleton.referenceScale` stored as data | Native `.spine` projects and binary `.skel` |
+| Files | `.peachy` v22; in-memory v1–v21 migration; Spine JSON adapter; event definitions and `skeleton.referenceScale` stored as data | Native `.spine` projects and binary `.skel` |
 
 Our own project format is JSON and holds the editable rig, skin references and clips.
 It is distinct from a runtime export. The importer ignores documented editor-only
@@ -531,3 +531,11 @@ IK chains with uniformly scaled or mirrored bones (keyed scale included) and
 adds `IkConstraint.stretch`; v20 and earlier migrate unchanged and refuse it.
 `compress`, `uniform`, softness and keyed stretch stay refused. See
 [the slice](slices/ik-scale-stretch.md).
+
+## Image sequences and blend modes, native v22 — November 10, 2026
+
+Region/mesh sequences, sequence keys (all seven modes) and slot blend modes
+import, export and evaluate as the external runtime does. Native v22 adds
+`SequenceDef`, `Animation.sequence_tracks` and `Slot.blend`; v21 and earlier
+migrate with empty tracks and cannot contain them. **All 21 game skeletons now
+import.** See [the slice](slices/sequences-and-blending.md).

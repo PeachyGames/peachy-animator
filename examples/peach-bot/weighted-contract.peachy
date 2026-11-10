@@ -1,5 +1,5 @@
 {
-  "format": 21,
+  "format": 22,
   "constraints": [],
   "name": "Weighted Transform Contract",
   "fps": 30,
@@ -1009,7 +1009,8 @@
       "color_tracks": [],
       "events": [],
       "draw_order": [],
-      "path_tracks": []
+      "path_tracks": [],
+      "sequence_tracks": []
     }
   ]
 }

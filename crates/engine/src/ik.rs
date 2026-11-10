@@ -17,6 +17,7 @@ pub struct EvaluatedPose {
     pub(crate) slot_attachments: Vec<Option<String>>,
     pub(crate) slot_colors: Vec<[f32; 4]>,
     pub(crate) draw_order: Vec<usize>,
+    pub(crate) sequence_frames: Vec<(peachy_document::AttachmentRef, u32)>,
 }
 
 /// Complete authored state. Bone-only input cannot silently select setup IK.
@@ -40,6 +41,8 @@ pub struct AuthoredPose {
     pub(crate) paths: Vec<crate::PathPose>,
     /// Skin used to resolve path attachments.
     pub(crate) skin: String,
+    /// Keyed sequence frame per sequenced attachment (absent = setup frame).
+    pub(crate) sequence_frames: Vec<(peachy_document::AttachmentRef, u32)>,
 }
 
 impl AuthoredPose {
@@ -171,6 +174,20 @@ pub fn sample_authored_pose(
             })
             .collect(),
         skin: "default".into(),
+        // Like the runtime's non-looping playback, clip time stops at the clip's
+        // end: held poses past the end keep the last sequence frame.
+        sequence_frames: clip
+            .map(|clip| {
+                let time = time.min(clip.duration());
+                clip.sequence_tracks
+                    .iter()
+                    .filter_map(|track| {
+                        let count = doc.attachment(&track.attachment)?.sequence()?.count;
+                        Some((track.attachment.clone(), track.sample(time, count)?))
+                    })
+                    .collect()
+            })
+            .unwrap_or_default(),
     })
 }
 
@@ -246,6 +263,7 @@ pub fn checked_pose_from_authored(
         slot_attachments: authored.slot_attachments.clone(),
         slot_colors: authored.slot_colors.clone(),
         draw_order: authored.draw_order.clone(),
+        sequence_frames: authored.sequence_frames.clone(),
     })
 }
 

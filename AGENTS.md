@@ -75,6 +75,10 @@ Native v13 adds `Animation.deform_tracks` with dense offsets (per vertex, or per
 weighted influence). Sampled deforms travel in `AuthoredPose`; scenes apply them
 via `deformed_mesh_world_vertices`. Keep slot renames updating deform refs.
 
+Native v22 adds `SequenceDef` (regions/meshes), `Animation.sequence_tracks` and
+`Slot.blend`. Draws carry the frame image and blend; `Document::image_paths`
+lists every frame.
+
 Native v21 adds `IkConstraint.stretch`. IK bones may have equal-magnitude
 scale (mirrored first bone allowed); see docs/slices/ik-scale-stretch.md for the
 runtime-fitted rules (stretch flattens the child's applied Y).

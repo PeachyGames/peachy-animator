@@ -8,6 +8,7 @@ mod events;
 mod ik_timelines;
 mod linked_mesh;
 mod path;
+mod sequence;
 mod slot_keys;
 use attachments::{inspect_attachment, read_attachment, write_attachment};
 use peachy_document::*;
@@ -128,8 +129,8 @@ pub fn inspect(value: &Value) -> Inspection {
     }
     for slot in array(&value["slots"]) {
         let name = slot["name"].as_str().unwrap_or("?");
-        if slot["blend"].as_str().is_some_and(|v| v != "normal") {
-            unsupported.push(format!("Slot {name}: blend mode"));
+        if let Err(error) = sequence::read_blend(slot) {
+            unsupported.push(format!("Slot {name}: {error}"));
         }
         if let Err(error) = read_slot_color(slot) {
             unsupported.push(format!("Slot {name}: {error}"));
@@ -352,6 +353,7 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
                 .ok_or("Unknown slot bone")?,
             attachment: slot["attachment"].as_str().map(str::to_owned),
             color: read_slot_color(slot)?,
+            blend: sequence::read_blend(slot)?,
         });
     }
     let mut skins = BTreeMap::new();
@@ -485,6 +487,7 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
                 events: events::read_keys(name, animation, &event_defs)?,
                 draw_order: draw_order::read(name, animation, &slot_indices)?,
                 path_tracks: path::read_timelines(name, animation, &path_indices)?,
+                sequence_tracks: sequence::read_tracks(name, animation, &skins)?,
             });
         }
     }
@@ -539,10 +542,14 @@ pub fn export_json(doc: &Document) -> Result<Value, String> {
     let slots: Vec<_> = doc
         .slots
         .iter()
-        .map(|s| {
+        .enumerate()
+        .map(|(index, s)| {
             let mut slot = json!({"name":s.name,"bone":doc.bones[s.bone].name});
             if let Some(a) = &s.attachment {
                 slot["attachment"] = json!(a);
+            }
+            if let Some(blend) = sequence::blend_name(doc, index) {
+                slot["blend"] = json!(blend);
             }
             if s.color != [255; 4] {
                 let [r, g, b, a] = s.color;
@@ -659,7 +666,8 @@ pub fn export_json(doc: &Document) -> Result<Value, String> {
         {
             animations[&animation.name]["slots"] = slot_timelines;
         }
-        let deform = deform::write(&animation.deform_tracks)?;
+        let mut deform = deform::write(&animation.deform_tracks)?;
+        sequence::write_tracks(&mut deform, &animation.sequence_tracks);
         if !deform.as_object().is_some_and(serde_json::Map::is_empty) {
             animations[&animation.name]["attachments"] = deform;
         }
@@ -1213,7 +1221,9 @@ mod tests {
             // Attachment tint is supported (native v17); malformed hex is not.
             ("color", json!("ff00")),
             ("type", json!("linkedmesh")),
-            ("sequence", json!({"count":2})),
+            // Sequences are supported (native v22); empty or malformed ones are not.
+            ("sequence", json!({"count":0})),
+            ("sequence", json!({"count":2,"setup":5})),
         ] {
             let mut v = fixture.clone();
             v["skins"][0]["attachments"]["hand.R"]["hand.R"][field] = bad;
@@ -1221,7 +1231,7 @@ mod tests {
             assert!(import_json(&v, "bad").is_err(), "{field}");
         }
         let mut v = fixture;
-        // Deform keys are supported; sequence timelines are not (yet).
+        // Sequence keys need a sequenced attachment.
         v["animations"]["wave"]["attachments"] =
             json!({"default":{"hand.R":{"hand.R":{"sequence":[{"time":0}]}}}});
         assert!(import_json(&v, "sequence").is_err());
@@ -1380,6 +1390,7 @@ mod tests {
             name: "body".into(),
             bone: 0,
             attachment: Some("shared".into()),
+            blend: peachy_document::BlendMode::Normal,
         });
         let region = Region {
             name: None,
@@ -1388,6 +1399,7 @@ mod tests {
             height: 10.0,
             transform: RegionTransform::default(),
             color: peachy_document::WHITE,
+            sequence: None,
         };
         let skin = BTreeMap::from([(
             "body".into(),
@@ -1406,6 +1418,7 @@ mod tests {
             name: "body2".into(),
             bone: 0,
             attachment: None,
+            blend: peachy_document::BlendMode::Normal,
         });
         let shared = doc.skins["other"]["body"].clone();
         doc.skins

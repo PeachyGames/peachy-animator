@@ -54,6 +54,21 @@ pub(super) fn attachment_tint([r, g, b, a]: [u8; 4]) -> Color32 {
     Color32::from_rgba_unmultiplied(r, g, b, a)
 }
 
+/// Tint for a draw with its slot blend mode. egui composites premultiplied
+/// colors, so a premultiplied color with zero alpha adds to what is behind it:
+/// additive is exact, screen is drawn additively (slightly brighter), and
+/// multiply falls back to normal blending.
+pub(super) fn draw_tint(color: [u8; 4], blend: peachy_document::BlendMode) -> Color32 {
+    use peachy_document::BlendMode;
+    match blend {
+        BlendMode::Additive | BlendMode::Screen => {
+            let tint = Color32::from_rgba_unmultiplied(color[0], color[1], color[2], color[3]);
+            Color32::from_rgba_premultiplied(tint.r(), tint.g(), tint.b(), 0)
+        }
+        BlendMode::Normal | BlendMode::Multiply => attachment_tint(color),
+    }
+}
+
 pub(super) fn ghost_tint(ghost: Color32, slot: [u8; 4], solid: bool) -> Color32 {
     let base = ghost.to_srgba_unmultiplied();
     let multiply = |a: u8, b: u8| ((u16::from(a) * u16::from(b) + 127) / 255) as u8;

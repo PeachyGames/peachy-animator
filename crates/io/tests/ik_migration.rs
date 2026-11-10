@@ -160,6 +160,7 @@ fn v5_load_is_read_only_and_explicit_latest_save_backs_up_original_bytes() {
         animation["events"] = json!([]);
         animation["draw_order"] = json!([]);
         animation["path_tracks"] = json!([]);
+        animation["sequence_tracks"] = json!([]);
     }
     for bone in expected["bones"].as_array_mut().unwrap() {
         bone["inherit"] = json!("normal");
