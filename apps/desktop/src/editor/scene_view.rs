@@ -116,7 +116,13 @@ impl Editor {
         let vertices = scene
             .attachments
             .iter()
-            .flat_map(|draw| draw.vertices.iter().copied());
+            .flat_map(|draw| draw.vertices.iter().copied())
+            .chain(
+                scene
+                    .overlays
+                    .iter()
+                    .flat_map(|overlay| overlay.vertices.iter().copied()),
+            );
         let bones = self
             .session
             .document()

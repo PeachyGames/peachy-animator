@@ -777,3 +777,36 @@ follow icon. Properties show Source and constrained Bones as links and, for each
 mapped property, Mix (percent, unbounded) and Offset; Setup edits apply once per
 typed value or drag. Mode flags, mappings and keying are not editable yet;
 layout is a local choice pending comparison with the installed editor.
+
+
+## Path and clipping viewport guides — November 10, 2026
+
+Observed installed Spine 4.3.26 with the original Path and Clip Labs: paths are
+orange by default, selected paths show cyan knots/handles and end directions,
+and clipping polygons use their nonessential editor colors with cyan selected
+vertices. Both are selectable in the viewport and reveal the corresponding
+Tree attachment/properties. The public [Paths](https://esotericsoftware.com/spine-paths)
+and [Clipping](https://esotericsoftware.com/spine-clipping) guides distinguish
+these vertices from image geometry and describe selection/transform workflows.
+
+Implemented in the existing viewport, without adding a new view: cubic path
+curves and closed clipping outlines, stored editor colors, selected cyan knots,
+handles/vertices and dashed open-path end directions. Curve construction shares
+the engine's knot interpretation. Guides use the evaluated pose, including
+weighted vertices, deforms, active-skin fallback and keyed attachment visibility.
+Hidden slots hide their guides; Fit includes guides, even without any images.
+Outline clicks use the same typed Tree selection and filters as other picking.
+Selecting these read-only attachments never exposes a cached bone as an edit target.
+
+Native OS input on both original labs verifies outline/Tree selection, actual
+typed search text, Space deselection, non-editing arrow input, slot-dot hide/show
+and R frame stepping in Animate, while checking document/history remain unchanged.
+The [gallery](evidence/attachment-overlays.html) includes full-size before/after
+captures and identifies the separately verified interaction and runtime checks.
+
+Remaining differences: no vertex dragging/edit mode, polygon fill, vertex
+multi-selection, path/clipping transform controls or overlay preference panel.
+Dash length, stroke widths and hover presentation are bounded local choices;
+this is not pixel parity. Spine's CLI enables `convex` on the Clip Lab import,
+so the original runtime-validated native polygon remains the geometry reference.
+Installed-editor screenshots stay under `.local/overlays-20261110/`.

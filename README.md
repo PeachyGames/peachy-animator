@@ -127,14 +127,16 @@ cargo run -p peachy-animator -- examples/peach-bot/ik-scale-bot.peachy
 ```
 
 The original Path Lab moves the left hand along a rail past both ends and walks
-the right leg chain along a weighted path (Animate, `wave`):
+the right leg chain along a weighted path (Animate, `wave`). The viewport draws
+both evaluated curves; select a curve to inspect its knots and handles:
 
 ```sh
 cargo run -p peachy-animator -- examples/peach-bot/path-bot.peachy
 ```
 
 The original Clip Lab cuts the body, left arm and head to a concave polygon and
-the right arm to a convex hull (Animate, `wave`):
+the right arm to a convex hull (Animate, `wave`). Colored polygon outlines show
+the evaluated clipping attachments. These guides can be selected but not edited:
 
 ```sh
 cargo run -p peachy-animator -- examples/peach-bot/clip-bot.peachy

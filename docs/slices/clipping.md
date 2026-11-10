@@ -29,5 +29,9 @@ and each triangle is clipped against each convex piece, with UVs interpolated
 from the source triangle. The runtime may decompose differently, so the runtime
 check compares covered area and a coverage grid per sample, not vertices.
 
-Not yet: editing clipping polygons, drawing them in the viewport, deform keys on
-clipping attachments (refused) and inverse clipping.
+Deform keys on clipping attachments now import, export and evaluate (see the
+[path/deform follow-up](path-constraints.md#deform-keys-on-paths-and-clipping-polygons--november-10-2026)).
+The viewport draws their evaluated polygons in the stored editor color and
+supports outline selection, including ignored nested clips. Convex clips retain
+the authored polygon outline while clipping uses its hull. Vertex editing,
+Spine's translucent polygon fill and inverse clipping remain unimplemented.

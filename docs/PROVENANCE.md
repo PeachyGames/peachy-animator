@@ -638,3 +638,22 @@ Field names, defaults and frame selection came from the public `Sequence`/
 runtime's public API (`resolveIndex`, `getPath`, `sequenceIndex`). Sequence Lab
 frames are copies of original Peach Bot art. No runtime or editor
 implementation source was read.
+
+
+### Path and clipping viewport guides — November 10, 2026
+
+Visual references: the public [Paths](https://esotericsoftware.com/spine-paths)
+and [Clipping](https://esotericsoftware.com/spine-clipping) guides, plus actual
+mouse selection in task-owned installed Spine 4.3.26 windows opened on our
+original Path/Clip Labs. Orange paths, cyan selection points and attachment
+editor colors were observed directly; the fallback clipping color was also
+checked through `new ClippingAttachment(...).color` in external 4.3.13. Runtime
+`PathAttachment.color` defaults to white, so the editor's observed orange is the
+viewport fallback instead. These are black-box/public API observations.
+
+World guide vertices reuse our existing weighted/deform evaluation. Cubic knot
+interpretation is shared with our independently derived constraint solver;
+painting uses egui's MIT-licensed cubic Bezier primitive. No proprietary editor
+or runtime implementation, icons or UI assets were inspected/copied. Committed
+screenshots show original Peach Bot artwork in our application only. Installed
+reference captures and native-input attempt logs remain local.

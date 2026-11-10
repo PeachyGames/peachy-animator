@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Path and clipping viewport guides — Peachy Animator</title>
+<style>
+  :root{color-scheme:dark;font:16px/1.5 system-ui;background:#202226;color:#e9eaec}
+  body{max-width:1500px;margin:auto;padding:24px}h1{font-size:1.7rem}h2{font-size:1.2rem}
+  a{color:#a5d7fa}input{font:inherit;padding:10px;width:min(90%,600px);background:#30343b;color:inherit;border:1px solid #7b818e;border-radius:5px}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:16px}article{border:1px solid #515865;border-radius:8px;margin:24px 0;padding:16px}
+  figure{margin:0}img{width:100%;height:auto;display:block;background:#292929}figcaption{padding:8px 0;color:#d3d5d9}
+  .level{color:#c4e6ae}table{border-collapse:collapse;width:100%}td,th{text-align:left;vertical-align:top;border-bottom:1px solid #515865;padding:8px}
+  @media(max-width:900px){.pair{grid-template-columns:1fr}}
+</style>
+<h1>Path and clipping viewport guides</h1>
+<p>November 10, 2026 · Original Peach Bot artwork only. Select any image for its full-size PNG.</p>
+<p>Setup comparisons use the same original documents and starting selection. Fit now includes guide vertices,
+so the Path Lab zoom changes. The Animate captures below separately show selected guides and native input acceptance.</p>
+<label for="search">Filter evidence</label><br><input id="search" type="search" placeholder="Try path, clipping, native, visibility…">
+<article data-search="path setup before after curves fit weighted deforms">
+  <h2>Path Lab · Setup before / after</h2>
+  <p class="level">Inspection: rendered native captures; geometry separately checked against the external runtime.</p>
+  <div class="pair">
+    <figure><a href="attachment-overlays-before-path.png"><img src="attachment-overlays-before-path.png" alt="Starting revision: Path Lab without viewport path curves" loading="lazy"></a><figcaption>Before: imported paths affect constraints but have no visible curve.</figcaption></figure>
+    <figure><a href="attachment-overlays-after-path.png"><img src="attachment-overlays-after-path.png" alt="Path Lab with both evaluated orange curves visible" loading="lazy"></a><figcaption>After: plain and weighted paths are visible; Fit includes guides.</figcaption></figure>
+  </div>
+</article>
+<article data-search="clipping setup before after polygon color convex concave">
+  <h2>Clip Lab · Setup before / after</h2>
+  <p class="level">Inspection: rendered native captures; clipping area/coverage separately checked against the external runtime.</p>
+  <div class="pair">
+    <figure><a href="attachment-overlays-before-clip.png"><img src="attachment-overlays-before-clip.png" alt="Starting revision: clipped Peach Bot without polygon outlines" loading="lazy"></a><figcaption>Before: clipping is applied, but its polygons are invisible.</figcaption></figure>
+    <figure><a href="attachment-overlays-after-clip.png"><img src="attachment-overlays-after-clip.png" alt="Clip Lab with red and blue clipping polygon outlines" loading="lazy"></a><figcaption>After: stored editor colors identify the authored clipping polygons, including the convex clip's original outline.</figcaption></figure>
+  </div>
+</article>
+<article data-search="native animate selected path clipping knots handles directions visibility keyboard search read-only">
+  <h2>Animate · Selected guides</h2>
+  <p class="level">Inspection: actual OS mouse/keyboard input in verified task-owned foreground windows.</p>
+  <div class="pair">
+    <figure><a href="attachment-overlays-selected-path.png"><img src="attachment-overlays-selected-path.png" alt="Selected animated path with cyan knots and handles and dashed end directions" loading="lazy"></a><figcaption>Path: knot/handle cues and dashed end directions; frame stepping updates evaluated geometry.</figcaption></figure>
+    <figure><a href="attachment-overlays-selected-clip.png"><img src="attachment-overlays-selected-clip.png" alt="Selected animated clipping polygon with cyan vertices" loading="lazy"></a><figcaption>Clipping: selected polygon vertices; attachment selection is shared with the Tree.</figcaption></figure>
+  </div>
+  <p>Both labs verify actual typed search text, outline and Tree selection, Space deselection,
+  slot-dot hide/show and R frame stepping. Arrow input preserves the document and history.</p>
+</article>
+<article data-search="verification limits tests runtime native parity gaps fill editing">
+  <h2>Verification and limits</h2>
+  <table><thead><tr><th>Level</th><th>Evidence</th><th>Limit</th></tr></thead><tbody>
+    <tr><td>Core and shell checks</td><td>562 Rust tests pass; one existing ignored test. Formatting, Clippy, build and architecture checks pass.</td><td>Local macOS checks; hosted CI and other platforms were not run.</td></tr>
+    <tr><td>External runtime</td><td>All 21 original labs pass; Path/Clip Lab geometry and coverage remain within their established tolerances.</td><td>Finite samples; no full compatibility or pixel-equivalence claim.</td></tr>
+    <tr><td>Installed editor observation</td><td>Actual selection in Spine 4.3.26 on original lab projects.</td><td>Color and selection cues compared; exact strokes/hover/dash length differ.</td></tr>
+    <tr><td>Pending authoring</td><td>Guides are read-only.</td><td>Vertex editing, transforms, multi-selection and translucent clipping fill remain gaps.</td></tr>
+  </tbody></table>
+  <p><a href="attachment-overlays.json">Machine-readable evidence</a> · <a href="../UI_PARITY.md">UI parity record</a> · <a href="../VALIDATION.md">Validation record</a></p>
+</article>
+<script>
+  document.querySelector('#search').addEventListener('input', event => {
+    const words = event.target.value.toLowerCase().trim().split(/\s+/);
+    for (const article of document.querySelectorAll('article')) {
+      const text = (article.dataset.search + ' ' + article.textContent).toLowerCase();
+      article.hidden = !words.every(word => text.includes(word));
+    }
+  });
+</script>
+</html>

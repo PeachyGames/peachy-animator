@@ -1,5 +1,5 @@
 use super::*;
-use peachy_engine::{attachment_bounds, pick_attachment};
+use peachy_engine::{geometry_bounds, pick_attachment};
 
 impl Editor {
     pub(super) fn canvas(&mut self, ui: &mut egui::Ui) {
@@ -27,7 +27,8 @@ impl Editor {
                 if fit.clicked() {
                     self.fit = true;
                 }
-                ui.checkbox(&mut self.show_bones, "Bones");
+                let bones = ui.checkbox(&mut self.show_bones, "Bones");
+                self.record_target("showBones", bones.rect);
                 let ghosts = ui
                     .add_enabled_ui(!self.setup_mode, |ui| {
                         ui.checkbox(&mut self.ghosting.enabled, "Ghosts")
@@ -56,7 +57,21 @@ impl Editor {
         scene
             .attachments
             .retain(|a| !self.hidden_slots.contains(&a.slot));
-        scene.bounds = attachment_bounds(&scene.attachments);
+        scene
+            .overlays
+            .retain(|a| !self.hidden_slots.contains(&a.slot));
+        scene.bounds = geometry_bounds(
+            scene
+                .attachments
+                .iter()
+                .flat_map(|a| a.vertices.iter().copied())
+                .chain(
+                    scene
+                        .overlays
+                        .iter()
+                        .flat_map(|a| a.vertices.iter().copied()),
+                ),
+        );
         if self.fit {
             if let Some(b) = scene.bounds
                 && b.width() > 0.
@@ -131,7 +146,6 @@ impl Editor {
                 ACCENT,
             );
         }
-        let doc = self.session.document();
         let selected_key = self.selected_attachment().cloned();
         if let Some(draw) = scene
             .attachments
@@ -175,7 +189,15 @@ impl Editor {
         if self.ghosting.on_top {
             self.paint_ghosts(&painter, &ghosts, zoom);
         }
+        let overlay_hit = self.paint_attachment_overlays(
+            &painter,
+            &scene.overlays,
+            origin,
+            zoom,
+            response.interact_pointer_pos(),
+        );
         let selected_bone = self.selected_bone();
+        let doc = self.session.document();
         let mut nearest_bone: Option<(usize, f32)> = None;
         for (i, (bone, matrix)) in doc.bones.iter().zip(&scene.world).enumerate() {
             // Skin-inactive bones are not posed or drawn (Spine hides them too).
@@ -434,20 +456,23 @@ impl Editor {
                 }
             }
         }
-        let picked = nearest_bone.map(|(i, _)| TreeItem::Bone(i)).or_else(|| {
-            response
-                .interact_pointer_pos()
-                .and_then(|p| pick_attachment(&scene.attachments, world_point(p)))
-                .map(|draw| {
-                    if self.tree.filters.attachments || self.weights.bind.is_some() {
-                        TreeItem::Attachment(draw.attachment.clone())
-                    } else if self.tree.filters.slots {
-                        TreeItem::Slot(draw.slot)
-                    } else {
-                        TreeItem::Bone(doc.slots[draw.slot].bone)
-                    }
-                })
-        });
+        let picked = nearest_bone
+            .map(|(i, _)| TreeItem::Bone(i))
+            .or(overlay_hit)
+            .or_else(|| {
+                response
+                    .interact_pointer_pos()
+                    .and_then(|p| pick_attachment(&scene.attachments, world_point(p)))
+                    .map(|draw| {
+                        if self.tree.filters.attachments || self.weights.bind.is_some() {
+                            TreeItem::Attachment(draw.attachment.clone())
+                        } else if self.tree.filters.slots {
+                            TreeItem::Slot(draw.slot)
+                        } else {
+                            TreeItem::Bone(doc.slots[draw.slot].bone)
+                        }
+                    })
+            });
         let mesh_edit = self.mesh_drag.as_ref().and_then(|drag| {
             let mouse = response.interact_pointer_pos()?;
             let delta = [

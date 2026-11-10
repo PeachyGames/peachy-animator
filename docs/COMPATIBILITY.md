@@ -504,8 +504,8 @@ See [the slice](slices/transform-constraints.md#remapping--november-10-2026).
 ## Clipping, native v19 — November 10, 2026
 
 `clipping` attachments import, export and cut later draws as the runtime's
-renderer does; inverse clipping and deform keys on clipping polygons are
-refused. Native v19 adds `Attachment::Clipping`; v18 and earlier migrate
+renderer does; inverse clipping is refused. Deform keys are supported by the
+follow-up below. Native v19 adds `Attachment::Clipping`; v18 and earlier migrate
 unchanged and cannot contain clipping. See [the slice](slices/clipping.md).
 
 ## Path constraints, native v20 — November 10, 2026
@@ -513,8 +513,8 @@ unchanged and cannot contain clipping. See [the slice](slices/clipping.md).
 Open, constant-speed path attachments (plain or weighted), path constraints with
 percent or fixed position, length/fixed/percent spacing and tangent rotation,
 and position/spacing timelines import, export and evaluate as the external
-runtime does. Closed paths, other modes, mix timelines and path deform keys are
-refused. Native v20 adds `Attachment::Path`, `Constraint::Path` and
+runtime does. Closed paths, other modes and mix timelines are refused; path
+deforms are supported by the follow-up below. Native v20 adds `Attachment::Path`, `Constraint::Path` and
 `Animation.path_tracks`; v19 and earlier migrate with empty tracks. See
 [the slice](slices/path-constraints.md).
 
@@ -523,6 +523,11 @@ refused. Native v20 adds `Attachment::Path`, `Constraint::Path` and
 Deform keys import, export and apply on paths and clipping polygons as on
 meshes; regions still refuse them. No format change. See
 [the path slice](slices/path-constraints.md#deform-keys-on-paths-and-clipping-polygons--november-10-2026).
+
+The main viewport also draws these attachments as evaluated, selectable guides,
+following the active skin, slot visibility and sampled/pending pose. These
+editor overlays do not enter textured draws or change runtime/export semantics.
+Path/clipping vertex authoring and exact editor styling remain separate gaps.
 
 ## IK with scaled, mirrored and stretched bones, native v21 — November 10, 2026
 

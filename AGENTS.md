@@ -91,6 +91,13 @@ Native v20 adds `Attachment::Path`, `Constraint::Path` and
 `ik_solver::apply` (`path_constraint::apply`), resolving the slot's shown path
 under `AuthoredPose.skin`.
 
+`Scene.overlays` carries evaluated path/clipping guide vertices, including
+deforms, skin fallback and keyed visibility. Keep guides out of textured draws
+and runtime/export geometry. The solver and viewport share `path_cubics` knot
+interpretation. Include guides in viewport projection guards and Fit, and hide
+them with their slots. Outline picking uses the shared typed Tree selection;
+these attachments remain read-only until engine authoring commands exist.
+
 Native v19 adds `Attachment::Clipping`. `AttachmentDraw.vertices` stay the
 attachment's own geometry (tools index them); render and pick with
 `AttachmentDraw::render_geometry()`, which is clipped while a clip is active.

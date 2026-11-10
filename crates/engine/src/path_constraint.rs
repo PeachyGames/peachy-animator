@@ -20,6 +20,28 @@ use peachy_document::{
 
 type P = [f64; 2];
 
+/// Cubic segments of the native (in handle, knot, out handle) representation.
+/// Shared by constraint evaluation and editor overlays. Open paths omit the
+/// unused first in handle and last out handle; closed paths join the last knot
+/// back to the first. Invalid topology emits no segments.
+pub fn path_cubics(points: &[[f32; 2]], closed: bool) -> Vec<[[f32; 2]; 4]> {
+    if points.len() < 6 || !points.len().is_multiple_of(3) {
+        return vec![];
+    }
+    let knots = points.len() / 3;
+    (0..if closed { knots } else { knots - 1 })
+        .map(|i| {
+            let next = (i + 1) % knots;
+            [
+                points[3 * i + 1],
+                points[3 * i + 2],
+                points[3 * next],
+                points[3 * next + 1],
+            ]
+        })
+        .collect()
+}
+
 fn cubic(c: &[P; 4], t: f64) -> P {
     let u = 1. - t;
     [0, 1].map(|k| {
@@ -59,9 +81,9 @@ struct Curves {
 
 impl Curves {
     fn new(points: &[[f32; 2]]) -> Self {
-        let p = |i: usize| [f64::from(points[i][0]), f64::from(points[i][1])];
-        let curves: Vec<[P; 4]> = (0..points.len() / 3 - 1)
-            .map(|i| [p(3 * i + 1), p(3 * i + 2), p(3 * i + 3), p(3 * i + 4)])
+        let curves: Vec<[P; 4]> = path_cubics(points, false)
+            .into_iter()
+            .map(|curve| curve.map(|point| point.map(f64::from)))
             .collect();
         let coarse: Vec<f64> = curves.iter().map(|c| polyline(c, 4)[4]).collect();
         let fine = curves.iter().map(|c| polyline(c, 10)).collect();

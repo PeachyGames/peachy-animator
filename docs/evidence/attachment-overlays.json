@@ -1,0 +1,173 @@
+{
+  "date": "2026-11-10",
+  "baseCommit": "3a608ebf89d4cae2e1604fb5115cedf8abd9e139",
+  "nativeFormat": 22,
+  "scope": "Read-only evaluated path and clipping viewport guides",
+  "rust": {
+    "passed": 562,
+    "failed": 0,
+    "existingIgnored": 1,
+    "focusedNewTests": 8,
+    "workers": 2,
+    "testThreads": 2
+  },
+  "checks": {
+    "format": "passed",
+    "clippyWarningsDenied": "passed",
+    "workspaceBuild": "passed",
+    "architectureCrates": 7
+  },
+  "native": [
+    {
+      "lab": "path",
+      "complete": true,
+      "windowClosed": true,
+      "stages": [
+        "loaded-geometry",
+        "viewport-selection",
+        "arrow-does-not-edit-cached-bone",
+        "space-deselects",
+        "typed-search-and-tree-selection",
+        "slot-dot-hides-guide",
+        "slot-dot-restores-guide",
+        "animate-frame-updates-guides",
+        "animate-fit",
+        "animate-deselects"
+      ],
+      "searchText": "rail",
+      "frameTime": 0.03333333507180214,
+      "selectedAttachment": {
+        "placeholder": "rail",
+        "skin": "default",
+        "slot": "rail"
+      }
+    },
+    {
+      "lab": "clip",
+      "complete": true,
+      "windowClosed": true,
+      "stages": [
+        "loaded-geometry",
+        "viewport-selection",
+        "arrow-does-not-edit-cached-bone",
+        "space-deselects",
+        "typed-search-and-tree-selection",
+        "slot-dot-hides-guide",
+        "slot-dot-restores-guide",
+        "animate-frame-updates-guides",
+        "animate-fit",
+        "animate-deselects"
+      ],
+      "searchText": "torso-clip",
+      "frameTime": 0.03333333507180214,
+      "selectedAttachment": {
+        "placeholder": "torso-clip",
+        "skin": "default",
+        "slot": "torso-clip"
+      }
+    }
+  ],
+  "runtime": [
+    {
+      "lab": "peach",
+      "exitCode": 0
+    },
+    {
+      "lab": "mesh",
+      "exitCode": 0
+    },
+    {
+      "lab": "weighted",
+      "exitCode": 0
+    },
+    {
+      "lab": "ik",
+      "exitCode": 0
+    },
+    {
+      "lab": "ik-chain",
+      "exitCode": 0
+    },
+    {
+      "lab": "ik-animation",
+      "exitCode": 0
+    },
+    {
+      "lab": "physics",
+      "exitCode": 0
+    },
+    {
+      "lab": "inherit",
+      "exitCode": 0
+    },
+    {
+      "lab": "transform",
+      "exitCode": 0
+    },
+    {
+      "lab": "skin",
+      "exitCode": 0
+    },
+    {
+      "lab": "deform",
+      "exitCode": 0
+    },
+    {
+      "lab": "slot",
+      "exitCode": 0
+    },
+    {
+      "lab": "draw-order",
+      "exitCode": 0
+    },
+    {
+      "lab": "tint",
+      "exitCode": 0
+    },
+    {
+      "lab": "linked-mesh",
+      "exitCode": 0
+    },
+    {
+      "lab": "transform-map",
+      "exitCode": 0
+    },
+    {
+      "lab": "clip",
+      "exitCode": 0
+    },
+    {
+      "lab": "path",
+      "exitCode": 0
+    },
+    {
+      "lab": "ik-scale",
+      "exitCode": 0
+    },
+    {
+      "lab": "sequence",
+      "exitCode": 0
+    },
+    {
+      "lab": "shear",
+      "exitCode": 0
+    }
+  ],
+  "sourceSHA256": {
+    "crates/engine/src/scene.rs": "7b9162dc3c6a835f82bc07cae5f6680831f2b0d30a0b4c44f1b1dbf49db29adf",
+    "crates/engine/src/picking.rs": "4fb8adce2c6f3df66176e1f693eda38c3fda2d66887bc3ca56fd607e72ce010f",
+    "crates/engine/src/path_constraint.rs": "52d41c12355dd625e37b6005283d9357c8a78c30bb7bb6f2b66fa74f4019a2e4",
+    "crates/engine/src/overlay_tests.rs": "6132fca47a722f5431f45152c0f5d18fa2e491839c5fb8ab1b303fadc3f8d40e",
+    "crates/engine/src/lib.rs": "dc2dc01f394aa6f740c3bc3d48cb86b5fca3a0e9e0a502b0e9b3d6b8bab2b857",
+    "apps/desktop/src/editor/mod.rs": "9a9d5a273abdf5dd95b2ef424e2ddbb16b89396d59bed9cb830a20b6c9da57ab",
+    "apps/desktop/src/editor/scene_view.rs": "9b215599b789164391c706754d2ee3403aff3de2cceb1eb9b5281b6184b86a23",
+    "apps/desktop/src/editor/viewport.rs": "6632860ae3b765c88ffb2a0d754131daf3238ed24a9eddb8b51ddd6371e3f3a0",
+    "apps/desktop/src/editor/viewport_overlays.rs": "081a5db56b55d633ff8670690021613652bab55b1f2b231df23efff360dd9a61"
+  },
+  "limitations": [
+    "Local macOS only; hosted CI not run.",
+    "No vertex authoring, polygon fill, multi-selection or exact pixel parity.",
+    "Female-pose full runtime check is still running and is not counted as passed."
+  ],
+  "localEvidence": ".local/overlays-20261110/"
+}

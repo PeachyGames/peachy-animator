@@ -4,8 +4,18 @@ use crate::{AttachmentDraw, Bounds};
 pub fn attachment_bounds<'a>(
     draws: impl IntoIterator<Item = &'a AttachmentDraw>,
 ) -> Option<Bounds> {
+    geometry_bounds(
+        draws
+            .into_iter()
+            .flat_map(|draw| draw.vertices.iter().copied()),
+    )
+}
+
+/// Bounds of evaluated geometry, including non-rendering editor guides when
+/// the caller includes them. Does not change the textured draw bounds contract.
+pub fn geometry_bounds(points: impl IntoIterator<Item = [f32; 2]>) -> Option<Bounds> {
     let mut bounds: Option<Bounds> = None;
-    for &point in draws.into_iter().flat_map(|draw| &draw.vertices) {
+    for point in points {
         let b = bounds.get_or_insert(Bounds {
             min: point,
             max: point,

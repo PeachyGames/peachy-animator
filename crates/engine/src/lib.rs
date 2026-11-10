@@ -38,8 +38,8 @@ pub use mesh::{
 };
 pub use mesh_binding::MeshBindPose;
 pub use mesh_soft_selection::{MeshSoftSelection, MeshTranslation};
-pub use path_constraint::PathPose;
-pub use picking::{attachment_bounds, pick_attachment};
+pub use path_constraint::{PathPose, path_cubics};
+pub use picking::{attachment_bounds, geometry_bounds, pick_attachment};
 pub use playback::{
     PlayDirection, PlaybackStep, adjacent_key_time, advance_playback, last_key_time,
 };
@@ -48,8 +48,8 @@ pub use pose::{
     local_pose, sample, world_pose, world_pose_with,
 };
 pub use scene::{
-    AttachmentDraw, Bounds, Scene, checked_evaluate_scene, checked_scene_from_authored,
-    checked_setup_scene_from_locals, evaluate_scene,
+    AttachmentDraw, AttachmentOverlay, Bounds, OverlayKind, Scene, checked_evaluate_scene,
+    checked_scene_from_authored, checked_setup_scene_from_locals, evaluate_scene,
 };
 pub use session::Session;
 pub use timeline::{
@@ -88,6 +88,8 @@ mod inherit_tests;
 mod linked_mesh_tests;
 #[cfg(test)]
 mod mesh_soft_selection_tests;
+#[cfg(test)]
+mod overlay_tests;
 #[cfg(test)]
 mod path_tests;
 #[cfg(test)]

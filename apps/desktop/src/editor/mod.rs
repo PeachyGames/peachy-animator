@@ -43,6 +43,7 @@ mod tree_model;
 use selection::{Folder, TreeItem};
 use tree_model::TreeState;
 mod viewport;
+mod viewport_overlays;
 mod views;
 mod weight_direct;
 mod weights;
@@ -1001,6 +1002,8 @@ impl Editor {
                     "targets":self.capture_targets,"meshHandles":self.mesh_handles,"innerSize":[ctx.content_rect().width(),ctx.content_rect().height()]
                 });
                 report["views"] = self.views_diagnostic();
+                report["showBones"] = self.show_bones.into();
+                report["treeQuery"] = self.tree.query.clone().into();
                 report["compactTimeline"] = self.timeline_view_diagnostic();
                 report["ghosting"] = self.ghosting_diagnostic();
                 report["preview"] = self.preview_diagnostic();
@@ -1026,6 +1029,27 @@ impl Editor {
                 };
                 report["transformGesture"] = self.transform_gesture_diagnostic();
                 report["evaluationError"] = self.evaluation_error.clone().into();
+                report["attachmentOverlays"] = self
+                    .scene_for_view()
+                    .ok()
+                    .map(|scene| {
+                        scene
+                            .overlays
+                            .iter()
+                            .filter(|overlay| !self.hidden_slots.contains(&overlay.slot))
+                            .map(|overlay| {
+                                serde_json::json!({
+                                    "attachment":overlay.attachment, "slot":overlay.slot,
+                                    "vertices":overlay.vertices, "color":overlay.color,
+                                    "kind":match overlay.kind {
+                                        peachy_engine::OverlayKind::Clipping => "clipping",
+                                        peachy_engine::OverlayKind::Path { .. } => "path",
+                                    }
+                                })
+                            })
+                            .collect::<Vec<_>>()
+                    })
+                    .into();
                 report["shearDisplayPolicy"] = "localPendingComparison".into();
                 report["meshInspection"] = self.mesh_inspection().unwrap_or_default();
                 report["meshTools"] = self.mesh_tools_diagnostic();

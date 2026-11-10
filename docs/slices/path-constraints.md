@@ -38,8 +38,9 @@ A path constraint whose slot is not showing a path attachment leaves its bones
 alone. Path attachments draw nothing.
 
 Refused: closed paths, paths without constant speed, chain and chain-scale
-rotation, proportional spacing and path mix timelines. Editing paths and drawing them in the viewport are not
-done yet.
+rotation, proportional spacing and path mix timelines. Paths are visible as
+evaluated viewport curves, including weighted/deformed paths. Selection shows
+knots, handles and dashed open-end directions. Vertex editing is not implemented.
 
 
 ## Deform keys on paths and clipping polygons — November 10, 2026

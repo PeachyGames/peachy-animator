@@ -1620,3 +1620,28 @@ Animated IK (native9) was merged into `main` first; inheritance became native10.
 | All 21 labs | Pass the extended runtime check (frame image and blend for every draw) |
 | Game audit | **21 of 21** skeletons import fully |
 | Rust suite | fmt, clippy `-D warnings`, architecture and build pass; **554** tests pass |
+
+
+## Path and clipping viewport guides — November 10, 2026
+
+| Check | Result |
+| --- | --- |
+| Engine | Five added checks: cubic indexing/closure; plain and weighted deforms; active-skin fallback and keyed hiding; convex clip's authored outline; nonfinite guide refusal |
+| Desktop | Three added checks: real egui pointer selection with no cached-bone edits; hidden slots and image-free Fit; projection guards include guides |
+| Native mouse/keyboard | Both original labs: outline and Tree selection, actual typed search text, Space deselection, arrows preserve document/history, slot-dot hide/show, R frame stepping updates evaluated guides |
+| Installed Spine 4.3.26 | Original Path/Clip Labs imported into task-owned projects; selected guides observed through actual mouse input; colors, knots/handles and open-end directions compared |
+| External Spine 4.3.13 | All 21 original labs pass `check-runtime.mjs`, including Path/Clip Lab world geometry and clipped coverage; no geometry, picking or export regressions observed |
+| Workspace | **562 passed**, one existing ignored test, zero failures; formatting, warnings-denied Clippy, build and seven-crate architecture guard pass; two workers/test threads maximum |
+| Disk and ownership | 28 GiB free; one existing shared target directory reused; task-owned reference/native windows closed; private artist inputs unchanged |
+
+[Original-only evidence](evidence/attachment-overlays.json) and the
+[before/after gallery](evidence/attachment-overlays.html) separate screenshot,
+native-input and compatibility evidence. Local detailed captures, attempted
+input-helper runs and reference `.spine` projects are under
+`.local/overlays-20261110/`. The input harness was corrected to use R for next
+frame and individual ASCII key events for exact search entry; assertions inspect
+the captured text and resulting selection/time rather than assuming delivery.
+
+No native format change. These are read-only viewport guides; vertex authoring,
+translucent clipping fill and exact editor styling remain gaps. The female-pose
+full compatibility run is tracked separately and is not counted as passed here.

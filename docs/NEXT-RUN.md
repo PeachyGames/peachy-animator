@@ -11,7 +11,7 @@ still apply.
   runtime** (`peachy-cli inspect` over
   `../loadofftemp-release-0.51.0/src/assets/spine/**/*.json`, skipping
   `underwear-source`). Per-rig evidence is in `docs/VALIDATION.md`.
-- 554 Rust tests, clippy `-D warnings` and the architecture check pass. All 21
+- 562 Rust tests pass (one existing ignored), clippy `-D warnings` and the architecture check pass. All 21
   original Peach Bot labs in `examples/peach-bot/` pass `scripts/check-runtime.mjs`.
 - One check was still running when the session ended: the female pose's full
   runtime check (clipping coverage on real data; its clip ends on its own slot).
@@ -24,6 +24,26 @@ still apply.
   It takes hours (85 skins). Its bones and meshes already matched (3.56M world
   values, max 0.0005). If it fails, the likely suspects are the own-slot clip
   end rule and the 1% coverage-mismatch allowance (`docs/slices/clipping.md`).
+
+  **Overlay follow-up, November 10:** the earlier process was gone and its full
+  report empty. A fresh run uses the name `femalepose-overlays-20261110`.
+  Check whether it is still running before starting another one. Its overall
+  log is `.local/artist/femalepose-overlays-20261110.log`, full report is
+  `.local/artist/femalepose-overlays-20261110-runtime.txt`, and private native/
+  JSON/hash files use the same prefix. Its immutable CLI snapshot is
+  `.local/peachy-cli-femalepose-overlays-20261110`; do not delete it during the
+  run. The wrapper removes that snapshot when finished. This run is **pending**,
+  not additional validation evidence; check the full report even if the wrapper
+  exits zero (the wrapper prints full-check failure without failing its exit code).
+
+- **Viewport guides completed:** evaluated path/clipping outlines, active-skin
+  and deform handling, picking, selected vertices/handles, path end directions,
+  hidden-slot handling and image-free Fit. Both original labs pass actual native
+  selection, typed search, hide/show and frame-step checks. See
+  `docs/evidence/attachment-overlays.html` and `docs/UI_PARITY.md`. Vertex editing,
+  clipping fill and exact styling remain gaps. Reference/native windows were closed;
+  local detailed evidence is `.local/overlays-20261110/`. The existing shared
+  `target/` was reused; no extra build directory was created.
 
 ## Ground rules that bit or nearly bit
 
@@ -99,11 +119,10 @@ still apply.
 
 1. **Finish the female pose full check** (above) and add its numbers to
    `docs/VALIDATION.md`.
-2. **Viewport overlays** for paths and clipping polygons, so imported data is
-   visible. Starting points: `apps/desktop/src/editor/viewport.rs` (draw loop),
-   `peachy_engine::world_vertices` / `deformed_world_vertices`; path curves in
-   `crates/engine/src/path_constraint.rs` (`Curves`). Spine draws clips with
-   the editor color stored in `Clipping.color` / `Path.color`.
+2. **Viewport overlays: done** in the November 10 follow-up. Scene guides live
+   in `crates/engine/src/scene.rs`; `path_cubics` shares solver/viewport knot
+   interpretation; painting/picking live in
+   `apps/desktop/src/editor/viewport_overlays.rs`. Vertex authoring is still task 3.
 3. **Authoring for imported-only features** (data, import/export and
    evaluation exist; the editor can't create or edit them yet): draw order
    keys, slot attachment and color keys (Dopesheet rows), events (an Events

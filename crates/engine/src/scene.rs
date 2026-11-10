@@ -58,11 +58,29 @@ impl AttachmentDraw {
         }
     }
 }
+/// Non-rendering attachments, evaluated alongside textured draws. These are
+/// editor guides only and never enter clipping, textured picking or exports.
+#[derive(Clone, Debug)]
+pub struct AttachmentOverlay {
+    pub slot: usize,
+    pub attachment: AttachmentRef,
+    pub vertices: Vec<[f32; 2]>,
+    pub color: Option<[u8; 4]>,
+    pub kind: OverlayKind,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum OverlayKind {
+    Clipping,
+    Path { closed: bool },
+}
+
 pub struct Scene {
     pub locals: Vec<Transform>,
     pub applied_locals: Vec<Transform>,
     pub world: Vec<Affine>,
     pub attachments: Vec<AttachmentDraw>,
+    pub overlays: Vec<AttachmentOverlay>,
     pub bounds: Option<Bounds>,
     pub ik_poses: Vec<IkPose>,
     /// Bones active under the scene's skin; inactive bones' slots are not drawn.
@@ -118,6 +136,14 @@ pub fn checked_scene_from_authored(
     let authored = authored.clone().with_skin(doc, skin);
     let pose = checked_pose_from_authored(doc, &authored)?;
     let scene = scene_from_evaluated(doc, skin, pose);
+    for overlay in &scene.overlays {
+        if !overlay.vertices.iter().flatten().all(|v| v.is_finite()) {
+            return Err(format!(
+                "Attachment {}/{}: evaluated overlay geometry is nonfinite or outside the f32 range",
+                overlay.attachment.slot, overlay.attachment.placeholder
+            ));
+        }
+    }
     for draw in &scene.attachments {
         if !draw
             .vertices
@@ -181,6 +207,7 @@ fn scene_from_evaluated(doc: &Document, skin: &str, pose: crate::EvaluatedPose) 
         sequence_frames,
     } = pose;
     let mut attachments = vec![];
+    let mut overlays = vec![];
     // Observed with the runtime's headless renderer: a clip starts at a shown
     // clipping attachment (ignored while another clip is active) and ends
     // after its end slot is drawn; its own slot never ends it.
@@ -194,15 +221,34 @@ fn scene_from_evaluated(doc: &Document, skin: &str, pose: crate::EvaluatedPose) 
         } else {
             None
         };
-        if let Some((key, Attachment::Clipping(c))) = &shown {
-            if clip.is_none() {
-                let polygon = match deforms.iter().find(|(target, _)| target == key) {
+        if let Some((key, attachment)) = &shown {
+            let guide = match attachment {
+                Attachment::Clipping(c) => Some((&c.vertices, c.color, OverlayKind::Clipping)),
+                Attachment::Path(p) => {
+                    Some((&p.vertices, p.color, OverlayKind::Path { closed: p.closed }))
+                }
+                _ => None,
+            };
+            if let Some((vertices, color, kind)) = guide {
+                let vertices = match deforms.iter().find(|(target, _)| target == key) {
                     Some((_, offsets)) => {
-                        crate::deformed_world_vertices(&c.vertices, slot.bone, &world, offsets)
+                        crate::deformed_world_vertices(vertices, slot.bone, &world, offsets)
                     }
-                    None => crate::world_vertices(&c.vertices, slot.bone, &world),
+                    None => crate::world_vertices(vertices, slot.bone, &world),
                 };
-                clip = Some(crate::clipping::ClipRegion::new(&polygon, c.convex, c.end));
+                overlays.push(AttachmentOverlay {
+                    slot: slot_index,
+                    attachment: key.clone(),
+                    vertices,
+                    color,
+                    kind,
+                });
+            }
+        }
+        if let Some((_, Attachment::Clipping(c))) = &shown {
+            if clip.is_none() {
+                let polygon = &overlays.last().expect("shown clipping overlay").vertices;
+                clip = Some(crate::clipping::ClipRegion::new(polygon, c.convex, c.end));
             }
             continue;
         }
@@ -288,6 +334,7 @@ fn scene_from_evaluated(doc: &Document, skin: &str, pose: crate::EvaluatedPose) 
         applied_locals,
         world,
         attachments,
+        overlays,
         bounds,
         ik_poses,
         active_bones,
