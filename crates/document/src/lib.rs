@@ -4,6 +4,7 @@ use std::collections::{BTreeMap, BTreeSet};
 mod ik;
 mod inherit;
 mod physics;
+mod skin_scope;
 mod transform;
 pub use ik::{Constraint, IkConstraint, IkCurve, IkKeyframe, IkSetup, IkTrack};
 pub use inherit::{Inherit, InheritKey, InheritTrack};
@@ -12,11 +13,12 @@ pub use physics::{
     PhysicsGlobal, PhysicsInfluence, PhysicsProperty, PhysicsReset, PhysicsSetup, PhysicsTrack,
     ScaleYMode,
 };
+pub use skin_scope::{Activity, SkinMembers, SkinScope};
 pub use transform::{
     TransformConstraint, TransformMapping, TransformProperty, TransformTarget, TransformValues,
 };
 
-pub const FORMAT_VERSION: u32 = 11;
+pub const FORMAT_VERSION: u32 = 12;
 pub const KEY_TIME_EPSILON: f32 = 0.00001;
 pub fn same_key_time(a: f32, b: f32) -> bool {
     (a - b).abs() < KEY_TIME_EPSILON
@@ -32,6 +34,9 @@ pub struct Document {
     pub constraints: Vec<Constraint>,
     pub slots: Vec<Slot>,
     pub skins: BTreeMap<String, Skin>,
+    /// Skin-required bones/constraints and the named skins that list them.
+    /// Required in native v12.
+    pub skin_scope: SkinScope,
     pub animations: Vec<Animation>,
 }
 
@@ -660,6 +665,7 @@ impl Document {
                 }
             }
         }
+        self.validate_skin_scope()?;
         Ok(())
     }
 

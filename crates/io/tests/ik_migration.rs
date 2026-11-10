@@ -158,6 +158,7 @@ fn v5_load_is_read_only_and_explicit_latest_save_backs_up_original_bytes() {
     for bone in expected["bones"].as_array_mut().unwrap() {
         bone["inherit"] = json!("normal");
     }
+    expected["skin_scope"] = json!({"required_bones":[],"required_constraints":[],"skins":{}});
     assert_eq!(doc, serde_json::from_value::<Document>(expected).unwrap());
     save(&path, &doc, &folder).unwrap();
     let backup = fs::read_dir(&folder)

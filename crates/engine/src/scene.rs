@@ -49,6 +49,8 @@ pub struct Scene {
     pub attachments: Vec<AttachmentDraw>,
     pub bounds: Option<Bounds>,
     pub ik_poses: Vec<IkPose>,
+    /// Bones active under the scene's skin; inactive bones' slots are not drawn.
+    pub active_bones: Vec<bool>,
 }
 
 /// The caller supplies a validated document, as held by Session.
@@ -97,7 +99,8 @@ pub fn checked_scene_from_authored(
     skin: &str,
     authored: &AuthoredPose,
 ) -> Result<Scene, String> {
-    let pose = checked_pose_from_authored(doc, authored)?;
+    let authored = authored.clone().with_skin(doc, skin);
+    let pose = checked_pose_from_authored(doc, &authored)?;
     let scene = scene_from_evaluated(doc, skin, pose);
     for draw in &scene.attachments {
         if !draw
@@ -154,9 +157,13 @@ fn scene_from_evaluated(doc: &Document, skin: &str, pose: crate::EvaluatedPose) 
         applied_locals,
         world,
         authored_ik: ik_poses,
+        active_bones,
     } = pose;
     let mut attachments = vec![];
     for (slot_index, slot) in doc.slots.iter().enumerate() {
+        if !active_bones[slot.bone] {
+            continue;
+        }
         let Some((key, attachment)) = doc.resolved_attachment(skin, slot_index) else {
             continue;
         };
@@ -196,5 +203,6 @@ fn scene_from_evaluated(doc: &Document, skin: &str, pose: crate::EvaluatedPose) 
         attachments,
         bounds,
         ik_poses,
+        active_bones,
     }
 }

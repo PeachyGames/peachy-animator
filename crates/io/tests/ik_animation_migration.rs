@@ -141,6 +141,7 @@ fn nine_native6_migrations_and_latest_examples_preserve_full_export_bytes() {
         for bone in expected["bones"].as_array_mut().unwrap() {
             bone["inherit"] = json!("normal");
         }
+        expected["skin_scope"] = json!({"required_bones":[],"required_constraints":[],"skins":{}});
         for text in [
             original,
             fs::read_to_string(root.join(format!("../../examples/peach-bot/{name}.peachy")))

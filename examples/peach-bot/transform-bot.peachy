@@ -1,5 +1,5 @@
 {
-  "format": 11,
+  "format": 12,
   "constraints": [
     {
       "type": "transform",
@@ -788,6 +788,11 @@
         }
       }
     }
+  },
+  "skin_scope": {
+    "required_bones": [],
+    "required_constraints": [],
+    "skins": {}
   },
   "animations": [
     {

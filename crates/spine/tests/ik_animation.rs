@@ -378,5 +378,7 @@ fn review_schema_document(text: &str) -> Document {
         assert!(bone.get("inherit").is_none());
         bone["inherit"] = serde_json::json!("normal");
     }
+    value["skin_scope"] =
+        serde_json::json!({"required_bones":[],"required_constraints":[],"skins":{}});
     serde_json::from_value(value).unwrap()
 }

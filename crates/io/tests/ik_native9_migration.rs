@@ -10,6 +10,13 @@ fn v8() -> Value {
     ))
     .unwrap();
     value["format"] = json!(8);
+    assert!(
+        value
+            .as_object_mut()
+            .unwrap()
+            .remove("skin_scope")
+            .is_some()
+    );
     for animation in value["animations"].as_array_mut().unwrap() {
         for field in ["ik_tracks", "inherit_tracks"] {
             assert_eq!(

@@ -1,5 +1,5 @@
 {
-  "format": 11,
+  "format": 12,
   "name": "Peach Bot IK Chain Lab",
   "fps": 30,
   "bones": [
@@ -1072,6 +1072,11 @@
         }
       }
     }
+  },
+  "skin_scope": {
+    "required_bones": [],
+    "required_constraints": [],
+    "skins": {}
   },
   "animations": [
     {

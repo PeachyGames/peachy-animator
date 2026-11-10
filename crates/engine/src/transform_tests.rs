@@ -92,6 +92,7 @@ fn rig(mirrored: bool, mappings: &[TransformProperty], mix: f32) -> Document {
         slots: vec![],
         skins: Default::default(),
         animations: vec![],
+        skin_scope: Default::default(),
     }
 }
 

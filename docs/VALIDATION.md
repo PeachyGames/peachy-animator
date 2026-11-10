@@ -1459,3 +1459,14 @@ Animated IK (native9) was merged into `main` first; inheritance became native10.
 | Doggy female2 (97 bones, 77 skins, 6 IK, 42 physics, 2 transform) | Our pose vs runtime: 29,100 values, max 0.00035. Original vs re-export with `Physics.update`: max bone 0.000079, mesh 0.00024 |
 | Doggy-artist back view (30 skins, 26 physics, transform) | Our pose vs runtime: 10,050 values, max 0.00035. With physics: max bone 0.000085 |
 | Rust suite | fmt, clippy `-D warnings`, architecture and build pass; **498** tests pass |
+
+
+## Skin-required bones and constraints, native v12 — November 9, 2026
+
+| Check | Result |
+| --- | --- |
+| Runtime activity probes | Listing a child activates required parents; constraints need active bones; default/no skin activates none |
+| Original Skin Lab (`skin-bot.peachy`): mint-only bone, slot and IK aim; non-required transform on that bone | All three skins: activity agrees; 30,576 bone and 34,112 region comparisons, max 0.000027; 208 inactive bone samples skipped |
+| Side-view head (game, 52 skins, 19 skin-required bones, 12 physics) | 26,000 activity checks agree; 95,850 active-bone comparisons, max 0.00004; with `Physics.update` re-export matches the original within 0.00005 |
+| Game audit | **7 of 21** fully supported; inputs unchanged |
+| Rust suite | fmt, clippy `-D warnings`, architecture and build pass; **504** tests pass |

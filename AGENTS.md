@@ -66,6 +66,10 @@ Constraints run in list order inside `ik_solver::apply`; transform results are
 written back as applied locals (`transform_constraint::local_from_world`). IK
 chain ancestors may be transformed; constrained IK bones still need unit axes.
 
+Native v12 adds `Document.skin_scope`. Evaluate through `AuthoredPose::with_skin`
+(Session holds the active skin as view state; the shell syncs it every frame).
+Inactive constraints never run; inactive bones' slots are not drawn.
+
 IK evaluation uses one checked engine solve. `EvaluatedPose` distinguishes authored
 locals, applied locals and world transforms; `Session::local_pose` stays authored.
 Rendering, picking, bounds and tools use the evaluated frame. The old evaluation

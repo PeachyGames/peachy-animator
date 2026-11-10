@@ -51,6 +51,7 @@ fn fixture() -> Document {
             physics_resets: vec![],
             inherit_tracks: vec![],
         }],
+        skin_scope: Default::default(),
     }
 }
 

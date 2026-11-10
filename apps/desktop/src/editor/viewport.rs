@@ -176,7 +176,8 @@ impl Editor {
         let selected_bone = self.selected_bone();
         let mut nearest_bone: Option<(usize, f32)> = None;
         for (i, (bone, matrix)) in doc.bones.iter().zip(&scene.world).enumerate() {
-            if !self.show_bones || self.hidden_bones.contains(&i) {
+            // Skin-inactive bones are not posed or drawn (Spine hides them too).
+            if !self.show_bones || self.hidden_bones.contains(&i) || !scene.active_bones[i] {
                 continue;
             }
             let (start, end) = (
@@ -410,6 +411,7 @@ impl Editor {
                             .all(|(i, (b, m))| {
                                 !self.show_bones
                                     || self.hidden_bones.contains(&i)
+                                    || !scene.active_bones[i]
                                     || distance_to_segment(
                                         screen_p,
                                         screen(m.point(0., 0.)),

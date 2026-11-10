@@ -29,6 +29,9 @@ pub fn load(path: &Path) -> Result<Document, String> {
 pub fn decode_project(text: &str) -> Result<Document, String> {
     let mut value: serde_json::Value = serde_json::from_str(text).map_err(|e| e.to_string())?;
     let original_format = value["format"].as_u64();
+    if matches!(original_format, Some(1..=11)) && value.get("skin_scope").is_some() {
+        return Err("Legacy project formats cannot contain skin scope data".into());
+    }
     if matches!(original_format, Some(1..=10))
         && value["constraints"].as_array().is_some_and(|constraints| {
             constraints
@@ -125,6 +128,12 @@ pub fn decode_project(text: &str) -> Result<Document, String> {
     // v10→v11 adds the transform constraint kind only; no existing field changes.
     if value["format"].as_u64() == Some(10) {
         value["format"] = 11.into();
+    }
+    // v11→v12: no item was skin-required before skin scope existed.
+    if value["format"].as_u64() == Some(11) {
+        value["skin_scope"] =
+            serde_json::json!({"required_bones":[],"required_constraints":[],"skins":{}});
+        value["format"] = 12.into();
     }
     let mut doc: Document = serde_json::from_value(value).map_err(|e| e.to_string())?;
     // Wrapping vertices preserves their values and all surrounding fields. Decode
@@ -613,6 +622,7 @@ mod tests {
             Some(serde_json::json!([]))
         );
         v["format"] = 1.into();
+        assert!(v.as_object_mut().unwrap().remove("skin_scope").is_some());
         for slot in v["slots"].as_array_mut().unwrap() {
             assert_eq!(
                 slot.as_object_mut().unwrap().remove("color"),

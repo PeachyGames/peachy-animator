@@ -135,7 +135,6 @@ fn neutral_advanced_fields_are_typed_and_nondefault_aliases_never_silently_disap
             ("uniform", json!(false)),
             ("scaleYMode", json!("none")),
             ("enabled", json!(true)),
-            ("skin", json!(true)),
             ("skin", json!(0)),
             ("skin", json!("false")),
             ("skin", Value::Null),

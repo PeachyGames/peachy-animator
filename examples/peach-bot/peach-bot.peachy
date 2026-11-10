@@ -1,5 +1,5 @@
 {
-  "format": 11,
+  "format": 12,
   "constraints": [],
   "name": "Peach Bot",
   "fps": 30,
@@ -567,6 +567,11 @@
         }
       }
     }
+  },
+  "skin_scope": {
+    "required_bones": [],
+    "required_constraints": [],
+    "skins": {}
   },
   "animations": [
     {

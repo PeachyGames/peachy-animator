@@ -16,14 +16,17 @@ pub(crate) fn apply(
     locals: &mut [Transform],
     world: &mut Vec<Affine>,
     inherits: &[Inherit],
+    enabled: &[bool],
 ) -> Result<(), String> {
+    // Skin-inactive constraints neither run nor take part in domain checks.
     let active: Vec<_> = doc
         .constraints
         .iter()
         .zip(poses)
-        .filter_map(|(constraint, pose)| {
+        .zip(enabled)
+        .filter_map(|((constraint, pose), &on)| {
             let ik = constraint.as_ik()?;
-            (pose.mix != 0.0).then_some((ik, *pose))
+            (on && pose.mix != 0.0).then_some((ik, *pose))
         })
         .collect();
     for (index, (ik, _)) in active.iter().enumerate() {
@@ -58,6 +61,9 @@ pub(crate) fn apply(
     // All constraints run in list order: IK solves and transform constraints
     // interleave; physics is data only.
     for (index, constraint) in doc.constraints.iter().enumerate() {
+        if !enabled[index] {
+            continue;
+        }
         match constraint {
             peachy_document::Constraint::Ik(ik) if poses[index].mix != 0.0 => {
                 solve(doc, locals, world, ik, poses[index], inherits)

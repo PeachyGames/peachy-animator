@@ -1,5 +1,5 @@
 {
-  "format": 11,
+  "format": 12,
   "constraints": [
     {
       "type": "physics",
@@ -737,6 +737,11 @@
         }
       }
     }
+  },
+  "skin_scope": {
+    "required_bones": [],
+    "required_constraints": [],
+    "skins": {}
   },
   "animations": [
     {

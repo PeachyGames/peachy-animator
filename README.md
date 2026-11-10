@@ -90,6 +90,13 @@ arm and spins a foot with a large rotation offset:
 cargo run -p peachy-animator -- examples/peach-bot/transform-bot.peachy
 ```
 
+The original Skin Lab has a badge bone, slot and IK aim that exist only in the
+mint skin; switch skins in the Tree to see them appear:
+
+```sh
+cargo run -p peachy-animator -- examples/peach-bot/skin-bot.peachy
+```
+
 For either mesh fixture, select its hand.R attachment and **Vertices** to inspect the selected
 vertex's bone influences. Weighted inspection works in Setup and Animate, including
 an unkeyed pose. It stops playback and preserves the current pose and mode. Bone

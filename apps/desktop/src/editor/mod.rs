@@ -530,6 +530,7 @@ impl Editor {
     fn activate_skin(&mut self, skin: String) {
         if selection::active_skin_exists(self.session.document(), &skin) {
             self.cancel_gesture();
+            self.session.set_skin(&skin);
             self.skin = skin;
             self.reconcile_selection();
         }
@@ -798,6 +799,8 @@ impl Editor {
 
 impl Editor {
     fn workspace_ui(&mut self, ui: &mut egui::Ui) {
+        // Skin-required bones/constraints evaluate under the shell's active skin.
+        self.session.set_skin(&self.skin);
         let ctx = ui.ctx().clone();
         if !ctx.input(|input| input.focused) {
             self.cancel_gesture();

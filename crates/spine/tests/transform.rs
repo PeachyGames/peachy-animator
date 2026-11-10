@@ -81,8 +81,8 @@ fn modes_remapping_and_unsafe_domains_are_refused_explicitly() {
         "mixShearY has no effect without a shearY mapping",
     );
     let mut skin = fixture();
-    skin["constraints"][0]["skin"] = json!(true);
-    reject(&skin, "skin-required transform constraints are unsupported");
+    skin["constraints"][0]["skin"] = json!("yes");
+    reject(&skin, "skin must be boolean");
     let mut source_inside = fixture();
     source_inside["constraints"][0]["source"] = json!("a child");
     reject(&source_inside, "must not contain one another");

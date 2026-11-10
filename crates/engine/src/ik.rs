@@ -1,6 +1,6 @@
 //! Authored and applied poses are separate. FK reconstruction never solves IK.
 use crate::{Affine, IkPose, inherit_pose, local_pose, sample_ik, world_pose_with};
-use peachy_document::{Constraint, Document, Inherit, Transform, finite_transform};
+use peachy_document::{Activity, Constraint, Document, Inherit, Transform, finite_transform};
 
 #[derive(Clone, Debug)]
 pub struct EvaluatedPose {
@@ -8,6 +8,8 @@ pub struct EvaluatedPose {
     pub(crate) applied_locals: Vec<Transform>,
     pub(crate) world: Vec<Affine>,
     pub(crate) authored_ik: Vec<IkPose>,
+    /// Bones active under the evaluated skin (skin-required bones may be off).
+    pub(crate) active_bones: Vec<bool>,
 }
 
 /// Complete authored state. Bone-only input cannot silently select setup IK.
@@ -17,6 +19,8 @@ pub struct AuthoredPose {
     pub(crate) ik: Vec<IkPose>,
     /// Setup or keyed (stepped) inheritance mode per bone.
     pub(crate) inherits: Vec<Inherit>,
+    /// Bones and constraints active under the evaluated skin.
+    pub(crate) active: Activity,
 }
 
 impl AuthoredPose {
@@ -25,6 +29,15 @@ impl AuthoredPose {
     }
     pub fn inherits(&self) -> &[Inherit] {
         &self.inherits
+    }
+    /// Evaluate skin-required bones and constraints for `skin` (the default
+    /// skin, or an unknown name, activates none of them).
+    pub fn with_skin(mut self, doc: &Document, skin: &str) -> Self {
+        self.active = doc.activity(skin);
+        self
+    }
+    pub fn activity(&self) -> &Activity {
+        &self.active
     }
     pub fn ik_poses(&self) -> &[IkPose] {
         &self.ik
@@ -43,6 +56,9 @@ impl EvaluatedPose {
     }
     pub fn ik_poses(&self) -> &[IkPose] {
         &self.authored_ik
+    }
+    pub fn active_bones(&self) -> &[bool] {
+        &self.active_bones
     }
 }
 
@@ -77,6 +93,7 @@ pub fn sample_authored_pose(
         locals: local_pose(doc, animation, time),
         ik,
         inherits: inherit_pose(doc, animation, time),
+        active: doc.activity("default"),
     })
 }
 
@@ -96,6 +113,11 @@ pub fn checked_pose_from_authored(
         .any(|(i, bone)| bone.parent.is_some_and(|parent| parent >= i))
     {
         return Err("Evaluation requires a parent-first bone hierarchy".into());
+    }
+    if authored.active.bones.len() != doc.bones.len()
+        || authored.active.constraints.len() != doc.constraints.len()
+    {
+        return Err("Evaluation needs skin activity for every bone and constraint".into());
     }
     if authored.inherits.len() != doc.bones.len() {
         return Err("Evaluation needs one inheritance mode per bone".into());
@@ -129,12 +151,14 @@ pub fn checked_pose_from_authored(
         &mut applied_locals,
         &mut world,
         &authored.inherits,
+        &authored.active.constraints,
     )?;
     Ok(EvaluatedPose {
         authored_locals: authored_locals.clone(),
         applied_locals,
         world,
         authored_ik: authored.ik.clone(),
+        active_bones: authored.active.bones.clone(),
     })
 }
 

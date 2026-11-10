@@ -234,6 +234,7 @@ fn doc() -> Document {
             physics_resets: vec![],
             inherit_tracks: vec![],
         }],
+        skin_scope: Default::default(),
     }
 }
 fn key(time: f32, value: f32) -> Command {

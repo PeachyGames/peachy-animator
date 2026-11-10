@@ -86,6 +86,7 @@ fn fixture() -> Document {
                 inherit_tracks: vec![],
             },
         ],
+        skin_scope: Default::default(),
     }
 }
 fn keys(doc: &Document, animation: usize, bone: usize, property: Property) -> &[Keyframe] {

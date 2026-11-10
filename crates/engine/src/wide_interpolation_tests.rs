@@ -142,6 +142,7 @@ fn extreme_shear_sampling_and_pose_preview_preserve_original_keys_curves_and_his
             physics_resets: vec![],
             inherit_tracks: vec![],
         }],
+        skin_scope: Default::default(),
     };
     let mut session = Session::new(document.clone()).unwrap();
     session

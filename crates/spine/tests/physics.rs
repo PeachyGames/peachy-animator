@@ -154,11 +154,7 @@ fn reject(value: &Value, reason: &str) {
 #[test]
 fn unsupported_or_malformed_physics_is_refused_atomically() {
     for (field, bad, reason) in [
-        (
-            "skin",
-            json!(true),
-            "skin-required physics constraints are unsupported",
-        ),
+        ("skin", json!(1), "skin must be boolean"),
         (
             "scaleY",
             json!("stretch"),

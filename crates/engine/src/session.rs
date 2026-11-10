@@ -206,6 +206,9 @@ pub struct Session {
     redo: Vec<WorkingState>,
     saved: Document,
     transaction: Option<WorkingState>,
+    /// Active skin for skin-required bones/constraints. View state, outside
+    /// history and the document, like the shell's skin selection.
+    skin: String,
 }
 
 impl Session {
@@ -220,7 +223,17 @@ impl Session {
             undo: vec![],
             redo: vec![],
             transaction: None,
+            skin: "default".into(),
         })
+    }
+    /// Select the skin whose skin-required bones and constraints are evaluated.
+    pub fn set_skin(&mut self, skin: &str) {
+        if self.skin != skin {
+            self.skin = skin.into();
+        }
+    }
+    pub fn skin(&self) -> &str {
+        &self.skin
     }
     pub fn document(&self) -> &Document {
         &self.state.document
@@ -269,7 +282,10 @@ impl Session {
     }
     /// Read the full authored state without solving, keying or discarding it.
     pub fn authored_pose(&self, target: EditTarget) -> Result<AuthoredPose, String> {
-        self.state.authored_pose(target)
+        Ok(self
+            .state
+            .authored_pose(target)?
+            .with_skin(self.document(), &self.skin))
     }
     pub fn edit_ik_pose(
         &mut self,

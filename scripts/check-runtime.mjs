@@ -142,6 +142,9 @@ for (const animation of data.animations) {
         const official = skeleton.bones[i].appliedPose;
         const actual = ours.bones[i].world;
         assert.equal(ours.bones[i].name, skeleton.bones[i].data.name);
+        // Skin-required bones: activity must agree; inactive bones are not posed.
+        assert.equal(ours.bones[i].active ?? true, skeleton.bones[i].active, `${ours.bones[i].name} activity under ${skin?.name}`);
+        if (!skeleton.bones[i].active) { report.inactiveBones = (report.inactiveBones ?? 0) + 1; continue; }
         for (const [ourKey, theirKey] of [['a','a'],['b','b'],['c','c'],['d','d'],['x','worldX'],['y','worldY']]) {
           const error = Math.abs(actual[ourKey] - official[theirKey]);
           assert.ok(Number.isFinite(error), `${animation.name} ${time} ${theirKey} is nonfinite`);
@@ -163,6 +166,7 @@ for (const animation of data.animations) {
       }
       for (let slotIndex=0;slotIndex<skeleton.slots.length;slotIndex++) {
         const slot=skeleton.slots[slotIndex];
+        if (!slot.bone.active) { assert.ok(!actualDraws.has(slotIndex), 'Inactive slots are not drawn'); continue; }
         const attachment=slot.appliedPose.attachment;
         if (attachment instanceof RegionAttachment) {
           const actual=actualDraws.get(slotIndex);

@@ -79,8 +79,8 @@ pub fn inspect(value: &Value) -> Inspection {
             &format!("Bone {name}"),
             &mut unsupported,
         );
-        if bone["skin"].as_bool() == Some(true) {
-            unsupported.push(format!("Bone {name}: skin-required bone"));
+        if bone.get("skin").is_some_and(|v| !v.is_boolean()) {
+            unsupported.push(format!("Bone {name}: skin must be boolean"));
         }
         // Spine 4.3 reads `inherit`; installed 4.3.26 ignores the legacy
         // `transform` alias, so a non-normal alias is refused, never guessed.
@@ -156,9 +156,19 @@ pub fn inspect(value: &Value) -> Inspection {
             "Skin",
             &mut unsupported,
         );
-        for field in ["bones", "constraints", "ik", "transform", "path", "physics"] {
+        // Skin-scoped bones and IK/transform/physics constraints are read by
+        // read_document; path constraints (and a unified list) are unsupported.
+        for field in ["constraints", "path"] {
             if nonempty(&skin[field]) {
                 unsupported.push(format!("Skin {}: {field}", skin["name"]));
+            }
+        }
+        for field in ["bones", "ik", "transform", "physics"] {
+            if skin.get(field).is_some_and(|v| {
+                !v.as_array()
+                    .is_some_and(|items| items.iter().all(Value::is_string))
+            }) {
+                unsupported.push(format!("Skin {}: {field} must list names", skin["name"]));
             }
         }
         if let Some(slots) = skin["attachments"].as_object() {
@@ -348,6 +358,7 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
         }
     }
     let constraints = constraints::read(value, &indices)?;
+    let skin_scope = read_skin_scope(value, &indices, &constraints)?;
     let constraint_indices: BTreeMap<String, usize> = constraints
         .iter()
         .enumerate()
@@ -423,6 +434,7 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
         slots,
         skins,
         animations,
+        skin_scope,
     };
     doc.validate()?;
     constraints::validate_source(&doc)?;
@@ -436,12 +448,16 @@ pub fn export_json(doc: &Document) -> Result<Value, String> {
     let bones: Vec<_> = doc
         .bones
         .iter()
-        .map(|b| {
+        .enumerate()
+        .map(|(index, b)| {
             let mut bone = bone_transform_json(b.setup);
             bone["name"] = json!(b.name);
             bone["length"] = json!(b.length);
             if b.inherit != Inherit::Normal {
                 bone["inherit"] = json!(b.inherit.spine_name());
+            }
+            if doc.skin_scope.required_bones.contains(&index) {
+                bone["skin"] = json!(true);
             }
             if let Some(parent) = b.parent {
                 bone["parent"] = json!(doc.bones[parent].name);
@@ -475,7 +491,31 @@ pub fn export_json(doc: &Document) -> Result<Value, String> {
                     attachments[slot][name] = write_attachment(region);
                 }
             }
-            json!({"name":name,"attachments":attachments})
+            let mut skin = json!({"name":name,"attachments":attachments});
+            if let Some(members) = doc.skin_scope.skins.get(name) {
+                if !members.bones.is_empty() {
+                    skin["bones"] = json!(
+                        members
+                            .bones
+                            .iter()
+                            .map(|&b| &doc.bones[b].name)
+                            .collect::<Vec<_>>()
+                    );
+                }
+                for field in ["ik", "transform", "physics"] {
+                    let names: Vec<_> = members
+                        .constraints
+                        .iter()
+                        .map(|&c| &doc.constraints[c])
+                        .filter(|c| constraint_kind(c) == field)
+                        .map(Constraint::name)
+                        .collect();
+                    if !names.is_empty() {
+                        skin[field] = json!(names);
+                    }
+                }
+            }
+            skin
         })
         .collect();
     let mut animations = json!({});
@@ -560,6 +600,63 @@ fn read_slot_color(slot: &Value) -> Result<[u8; 4], String> {
         color[channel] = hex(high) * 16 + hex(low);
     }
     Ok(color)
+}
+
+/// Skin-required bones (`skin: true`), constraints (`skin: true`) and the named
+/// skins' `bones`/`ik`/`transform`/`physics` lists.
+fn read_skin_scope(
+    value: &Value,
+    bones: &BTreeMap<String, usize>,
+    constraints: &[Constraint],
+) -> Result<SkinScope, String> {
+    let mut scope = SkinScope::default();
+    for (index, bone) in array(&value["bones"]).iter().enumerate() {
+        if bone["skin"].as_bool() == Some(true) {
+            scope.required_bones.insert(index);
+        }
+    }
+    for (index, entry) in array(&value["constraints"]).iter().enumerate() {
+        if entry["skin"].as_bool() == Some(true) {
+            scope.required_constraints.insert(index);
+        }
+    }
+    for skin in array(&value["skins"]) {
+        let name = required_string(skin, "name")?;
+        let mut members = SkinMembers::default();
+        for listed in array(&skin["bones"]) {
+            let bone = listed.as_str().unwrap_or_default();
+            members.bones.push(
+                *bones
+                    .get(bone)
+                    .ok_or_else(|| format!("Skin {name}: unknown bone {bone}"))?,
+            );
+        }
+        for field in ["ik", "transform", "physics"] {
+            for listed in array(&skin[field]) {
+                let wanted = listed.as_str().unwrap_or_default();
+                let index = constraints
+                    .iter()
+                    .position(|c| c.name() == wanted && constraint_kind(c) == field)
+                    .ok_or_else(|| format!("Skin {name}: unknown {field} constraint {wanted}"))?;
+                members.constraints.push(index);
+            }
+        }
+        if !members.bones.is_empty() || !members.constraints.is_empty() {
+            if name == "default" {
+                return Err("The default skin cannot list skin-required items".into());
+            }
+            scope.skins.insert(name.into(), members);
+        }
+    }
+    Ok(scope)
+}
+
+fn constraint_kind(constraint: &Constraint) -> &'static str {
+    match constraint {
+        Constraint::Ik(_) => "ik",
+        Constraint::Transform(_) => "transform",
+        Constraint::Physics(_) => "physics",
+    }
 }
 
 /// Reads one scalar channel. `channel` selects the Bezier handle group for

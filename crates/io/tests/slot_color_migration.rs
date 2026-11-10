@@ -148,6 +148,7 @@ fn all_nine_current_examples_equal_their_white_v6_migration() {
         assert_eq!(doc.format, FORMAT_VERSION);
         let mut old = current;
         old["format"] = json!(6);
+        assert!(old.as_object_mut().unwrap().remove("skin_scope").is_some());
         for animation in old["animations"].as_array_mut().unwrap() {
             for field in ["ik_tracks", "physics", "physics_resets", "inherit_tracks"] {
                 assert_eq!(

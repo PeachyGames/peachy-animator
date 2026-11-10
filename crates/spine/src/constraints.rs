@@ -169,7 +169,10 @@ fn read_ik(entry: &Value, indices: &BTreeMap<String, usize>) -> Result<IkConstra
             context()
         ));
     }
-    for field in ["compress", "stretch", "skin"] {
+    if entry.get("skin").is_some_and(|v| !v.is_boolean()) {
+        return Err(format!("{}: skin must be boolean", context()));
+    }
+    for field in ["compress", "stretch"] {
         if entry.get(field).is_some_and(|v| v.as_bool() != Some(false)) {
             return Err(format!("{}: {field} must be omitted or false", context()));
         }
@@ -224,13 +227,8 @@ fn read_transform(
     if !issues.is_empty() {
         return Err(issues.join("; "));
     }
-    if entry
-        .get("skin")
-        .is_some_and(|v| v.as_bool() != Some(false))
-    {
-        return Err(format!(
-            "{context}: skin-required transform constraints are unsupported"
-        ));
+    if entry.get("skin").is_some_and(|v| !v.is_boolean()) {
+        return Err(format!("{context}: skin must be boolean"));
     }
     check_order(entry, &context)?;
     let finite = |value: &Value, what: &str| -> Result<f32, String> {
@@ -384,13 +382,8 @@ fn read_physics(
                 .ok_or_else(|| format!("{context}: {field} must be a finite f32 number")),
         }
     };
-    if entry
-        .get("skin")
-        .is_some_and(|v| v.as_bool() != Some(false))
-    {
-        return Err(format!(
-            "{context}: skin-required physics constraints are unsupported"
-        ));
+    if entry.get("skin").is_some_and(|v| !v.is_boolean()) {
+        return Err(format!("{context}: skin must be boolean"));
     }
     check_order(entry, &context)?;
     let scale_y_mode = match entry.get("scaleY").map(Value::as_str) {
@@ -734,7 +727,8 @@ pub(super) fn write(doc: &Document) -> Value {
     Value::Array(
         doc.constraints
             .iter()
-            .map(|constraint| match constraint {
+            .enumerate()
+            .map(|(index, constraint)| (index, match constraint {
                 Constraint::Ik(ik) => json!({
                     "type":"ik", "name":ik.name,
                     "bones":ik.bones.iter().map(|&index| bone(index)).collect::<Vec<_>>(),
@@ -788,6 +782,12 @@ pub(super) fn write(doc: &Document) -> Value {
                     }
                     value
                 }
+            }))
+            .map(|(index, mut value)| {
+                if doc.skin_scope.required_constraints.contains(&index) {
+                    value["skin"] = json!(true);
+                }
+                value
             })
             .collect(),
     )

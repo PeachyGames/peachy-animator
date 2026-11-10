@@ -178,6 +178,7 @@ fn rig(child: Inherit) -> Document {
                 ],
             }],
         }],
+        skin_scope: Default::default(),
     }
 }
 
