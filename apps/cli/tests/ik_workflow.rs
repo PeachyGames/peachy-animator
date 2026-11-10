@@ -194,7 +194,7 @@ fn adapter_source_preflight_and_dynamic_query_failures_remain_separate_atomic_bo
     assert!(rejected.stdout.is_empty());
     assert!(String::from_utf8_lossy(&rejected.stderr).contains("coincident"));
     let mut raw = read(&native);
-    // A scaled constrained bone stays outside IK's domain; ancestors may scale.
+    // A nonuniformly scaled constrained bone stays outside IK's domain; ancestors may scale.
     raw["bones"][1]["setup"]["scale_x"] = json!(2);
     let unsupported = folder.join("transformed.peachy");
     write(&unsupported, &raw);
@@ -202,7 +202,7 @@ fn adapter_source_preflight_and_dynamic_query_failures_remain_separate_atomic_bo
     let rejected = run(&[Path::new("export"), &unsupported, &unpublished]);
     assert!(!rejected.status.success());
     assert!(!unpublished.exists());
-    assert!(String::from_utf8_lossy(&rejected.stderr).contains("unit positive axes"));
+    assert!(String::from_utf8_lossy(&rejected.stderr).contains("equal-magnitude scale"));
     let mut alias = input;
     alias["ik"] = json!([]);
     let alias_source = folder.join("alias.json");

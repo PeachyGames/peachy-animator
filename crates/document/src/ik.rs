@@ -80,6 +80,9 @@ pub struct IkConstraint {
     pub bones: Vec<usize>,
     pub target: usize,
     pub setup: IkSetup,
+    /// Scale the first bone along X to reach an out-of-range target. Native v21.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub stretch: bool,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]

@@ -258,7 +258,7 @@ fn degenerate_parents_are_explicit_errors_not_guesses() {
 #[test]
 fn ik_bones_must_inherit_normally_and_the_setup_mode_is_a_command() {
     let mut doc = rig(Inherit::Normal);
-    // IK separately requires unit positive scales on the chain's ancestors.
+    // IK separately requires equal-magnitude scales on the chain's own bones.
     doc.bones[1].setup.scale_x = 1.;
     doc.bones[1].setup.scale_y = 1.;
     doc.bones.push(bone(
@@ -278,6 +278,7 @@ fn ik_bones_must_inherit_normally_and_the_setup_mode_is_a_command() {
             mix: 1.,
             bend_positive: true,
         },
+        stretch: false,
     }));
     doc.animations[0].inherit_tracks.clear();
     assert!(checked_evaluate_pose(&doc, None, 0.).is_ok());

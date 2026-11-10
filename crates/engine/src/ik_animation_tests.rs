@@ -62,6 +62,7 @@ fn rig() -> Document {
                 mix: 0.,
                 bend_positive: true,
             },
+            stretch: false,
         })],
         slots: vec![],
         skins: BTreeMap::new(),
@@ -1098,6 +1099,7 @@ fn selected_constraint_key_keeps_other_ik_pending_and_global_key_commits_all_as_
             mix: 0.25,
             bend_positive: false,
         },
+        stretch: false,
     }));
     let mut session = Session::new(document).unwrap();
     let target = EditTarget::Animate {

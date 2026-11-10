@@ -133,16 +133,21 @@ fn validate_domain(doc: &Document, locals: &[Transform], ik: &IkConstraint) -> R
             ik.name
         ));
     }
-    // Constrained bones need unit positive scale and zero shear. Ancestors may
-    // have any scale, shear or reflection: the solve works in the parent frame
-    // and matched the external runtime for uniform/nonuniform scale, shear and
-    // mirrored ancestors (docs/slices/ik-design.md addendum).
-    for &bone in &ik.bones {
+    // Constrained bones need equal-magnitude X/Y scale and zero shear; the
+    // first bone may be mirrored, a child scales uniformly and positively.
+    // Ancestors may have any scale, shear or reflection: the solve works in the
+    // parent frame (docs/slices/ik-design.md addendum,
+    // docs/slices/ik-scale-stretch.md).
+    for (position, &bone) in ik.bones.iter().enumerate() {
         let local = locals[bone];
-        if local.scale_x != 1. || local.scale_y != 1. || local.shear_x != 0. || local.shear_y != 0.
+        if local.scale_x.abs() != local.scale_y.abs()
+            || local.scale_x == 0.
+            || (position == 1 && (local.scale_x < 0. || local.scale_y < 0.))
+            || local.shear_x != 0.
+            || local.shear_y != 0.
         {
             return Err(format!(
-                "IK {}: bone {} requires unit positive scales and zero shear",
+                "IK {}: bone {} requires equal-magnitude scale (a mirrored first bone is allowed) and zero shear",
                 ik.name, doc.bones[bone].name
             ));
         }
@@ -194,16 +199,43 @@ fn solve(
     if !distance.is_finite() || distance == 0. {
         return Err("target must have a finite noncoincident direction".into());
     }
-    let mut desired = vec![(first, dy.atan2(dx) / OBSERVED_DEGREES_TO_RADIANS)];
+    let (s1x, s1y) = (
+        f64::from(locals[first].scale_x),
+        f64::from(locals[first].scale_y),
+    );
+    // A mirrored bone's X axis points the other way: turn 180° further.
+    let mirror = if s1x < 0. { 180. } else { 0. };
+    let mut desired = vec![(first, dy.atan2(dx) / OBSERVED_DEGREES_TO_RADIANS - mirror)];
+    // Out-of-reach targets stretch the first bone along X (observed: factor
+    // distance / reach, blended by mix like the rotation).
+    let mut stretch = None;
+    if ik.bones.len() == 1 {
+        let reach = f64::from(doc.bones[first].length) * s1x.abs();
+        if ik.stretch && reach > 0. && distance > reach {
+            stretch = Some(distance / reach);
+        }
+    }
     if ik.bones.len() == 2 {
         let child = ik.bones[1];
-        // The child origin sits at (x, y) in the parent's frame: a link of
-        // length `a` at angle `offset` from the parent's X axis. Elementary
-        // triangle geometry, verified against the external runtime.
-        let (cx, cy) = (f64::from(locals[child].x), f64::from(locals[child].y));
+        // The child origin sits at (x, y) in the first bone's frame, scaled by
+        // that bone's scale: a link of length `a` at angle `offset` from its
+        // X axis. The child's length scales by both bones' scales. Elementary
+        // triangle geometry, verified against the external runtime for
+        // uniform, mirrored and stretched chains.
+        // Observed: with stretch on, the runtime solves as if the child had
+        // no Y offset (results equal the on-axis case exactly).
+        let child_y = if ik.stretch {
+            0.
+        } else {
+            f64::from(locals[child].y)
+        };
+        let (cx, cy) = (f64::from(locals[child].x) * s1x, child_y * s1y);
         let a = cx.hypot(cy);
         let offset = cy.atan2(cx);
-        let b = f64::from(doc.bones[child].length);
+        let b = f64::from(doc.bones[child].length) * s1x.abs() * f64::from(locals[child].scale_x);
+        if ik.stretch && distance > a + b && a + b > 0. {
+            stretch = Some(distance / (a + b));
+        }
         // Reach limiting is geometry, not normalization of authored angles.
         // Branch before division to avoid extreme but finite length ratios
         // overflowing a cosine that is already known to be outside reach.
@@ -217,7 +249,11 @@ fn solve(
         let bend = cosine.acos() * if pose.bend_positive { 1. } else { -1. };
         let parent_angle = dy.atan2(dx) - (b * bend.sin()).atan2(a + b * bend.cos()) - offset;
         desired[0].1 = parent_angle / OBSERVED_DEGREES_TO_RADIANS;
-        desired.push((child, (bend + offset) / OBSERVED_DEGREES_TO_RADIANS));
+        // The child's world X angle relative to the first bone is bend + offset;
+        // undo the first bone's (diagonal) scale to get its local rotation.
+        let alpha = bend + offset;
+        let child_angle = (alpha.sin() / s1y).atan2(alpha.cos() / s1x);
+        desired.push((child, child_angle / OBSERVED_DEGREES_TO_RADIANS));
     }
     let mut solved = Vec::with_capacity(desired.len());
     for (bone, angle) in desired {
@@ -236,14 +272,32 @@ fn solve(
         }
         solved.push((bone, rotation));
     }
+    let stretched_scale = stretch.map(|factor| (s1x * (1. + (factor - 1.) * pose.mix)) as f32);
+    // Observed: an active two-bone stretch IK also moves the child onto the
+    // first bone's X axis (applied Y = 0, not blended by mix).
+    let flatten_child = (ik.stretch && ik.bones.len() == 2)
+        .then_some(ik.bones.get(1).copied())
+        .flatten()
+        .filter(|&child| locals[child].y != 0.);
     if solved
         .iter()
         .all(|&(bone, rotation)| rotation == f64::from(locals[bone].rotation))
+        && stretched_scale.is_none_or(|scale| scale == locals[first].scale_x)
+        && flatten_child.is_none()
     {
         return Ok(());
     }
+    if let Some(child) = flatten_child {
+        locals[child].y = 0.;
+    }
     for &(bone, rotation) in &solved {
         locals[bone].rotation = rotation as f32;
+    }
+    if let Some(scale) = stretched_scale {
+        if !scale.is_finite() {
+            return Err("stretched scale is outside the finite range".into());
+        }
+        locals[first].scale_x = scale;
     }
     let candidate = world_pose_with(doc, locals, inherits);
     check_world(doc, &candidate)?;

@@ -34,7 +34,7 @@ pub use transform::{
     TransformConstraint, TransformMapping, TransformProperty, TransformTarget, TransformValues,
 };
 
-pub const FORMAT_VERSION: u32 = 20;
+pub const FORMAT_VERSION: u32 = 21;
 pub const KEY_TIME_EPSILON: f32 = 0.00001;
 pub fn same_key_time(a: f32, b: f32) -> bool {
     (a - b).abs() < KEY_TIME_EPSILON

@@ -267,6 +267,7 @@ mod tests {
                         mix: 1.,
                         bend_positive: true,
                     },
+                    stretch: false,
                 })
             })
             .collect();

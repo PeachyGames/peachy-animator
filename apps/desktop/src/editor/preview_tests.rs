@@ -227,6 +227,7 @@ fn preview_reads_checked_keyed_weighted_mesh_and_ik_geometry_without_pending_pos
             mix: 0.5,
             bend_positive: true,
         },
+        stretch: false,
     }));
     editor.session = Session::new(doc).unwrap();
     editor.setup_mode = false;

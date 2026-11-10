@@ -180,11 +180,18 @@ fn read_ik(entry: &Value, indices: &BTreeMap<String, usize>) -> Result<IkConstra
     if entry.get("skin").is_some_and(|v| !v.is_boolean()) {
         return Err(format!("{}: skin must be boolean", context()));
     }
-    for field in ["compress", "stretch"] {
-        if entry.get(field).is_some_and(|v| v.as_bool() != Some(false)) {
-            return Err(format!("{}: {field} must be omitted or false", context()));
-        }
+    if entry
+        .get("compress")
+        .is_some_and(|v| v.as_bool() != Some(false))
+    {
+        return Err(format!("{}: compress must be omitted or false", context()));
     }
+    let stretch = match entry.get("stretch") {
+        None => false,
+        Some(value) => value
+            .as_bool()
+            .ok_or_else(|| format!("{}: stretch must be boolean", context()))?,
+    };
     if entry
         .get("scaleY")
         .is_some_and(|v| v.as_str() != Some("none"))
@@ -204,6 +211,7 @@ fn read_ik(entry: &Value, indices: &BTreeMap<String, usize>) -> Result<IkConstra
         bones,
         target,
         setup: IkSetup { mix, bend_positive },
+        stretch,
     })
 }
 
@@ -687,38 +695,46 @@ fn validate_context(
                 ));
             }
         }
-        // Only the constrained bones need unit axes; ancestors may be transformed.
-        let mut chain = Some(*ik.bones.last().unwrap());
-        while let Some(index) = chain.filter(|i| ik.bones.contains(i)) {
+        // Constrained bones keep equal-magnitude X/Y scale and no shear (the
+        // first bone may be mirrored; a child scales uniformly and positively).
+        // Ancestors may be transformed freely. Black-box fitted; see
+        // docs/slices/ik-scale-stretch.md.
+        for (position, &index) in ik.bones.iter().enumerate() {
             let bone = &doc.bones[index];
-            if bone.setup.scale_x != 1.0
-                || bone.setup.scale_y != 1.0
+            let (sx, sy) = (bone.setup.scale_x, bone.setup.scale_y);
+            if sx.abs() != sy.abs()
+                || sx == 0.0
+                || (position == 1 && (sx < 0.0 || sy < 0.0))
                 || bone.setup.shear_x != 0.0
                 || bone.setup.shear_y != 0.0
             {
                 return Err(format!(
-                    "IK {}: bone {} requires unit positive axes and zero shear",
+                    "IK {}: bone {} requires equal-magnitude scale (a mirrored first bone is allowed) and zero shear",
                     ik.name, bone.name
                 ));
             }
             if let Some(animation) = clip {
-                for track in animation.tracks.iter().filter(|track| track.bone == index) {
-                    if matches!(
-                        track.property,
-                        Property::ScaleX | Property::ScaleY | Property::ShearX | Property::ShearY
-                    ) && track
-                        .keys
+                let track = |property| {
+                    animation
+                        .tracks
                         .iter()
-                        .any(|key| key.value != track.property.neutral())
-                    {
-                        return Err(format!(
-                            "IK {}: animation {} bone {} has a non-neutral scale/shear track",
-                            ik.name, animation.name, bone.name
-                        ));
-                    }
+                        .find(|track| track.bone == index && track.property == property)
+                };
+                let shear_keyed = [Property::ShearX, Property::ShearY].into_iter().any(|p| {
+                    track(p).is_some_and(|t| t.keys.iter().any(|k| k.value != p.neutral()))
+                });
+                let uneven_scale = match (track(Property::ScaleX), track(Property::ScaleY)) {
+                    (None, None) => false,
+                    (Some(x), Some(y)) => x.keys != y.keys || x.keys.iter().any(|k| k.value <= 0.0),
+                    (Some(t), None) | (None, Some(t)) => t.keys.iter().any(|k| k.value != 1.0),
+                };
+                if shear_keyed || uneven_scale {
+                    return Err(format!(
+                        "IK {}: animation {} bone {} needs matching positive X/Y scale keys and no shear keys",
+                        ik.name, animation.name, bone.name
+                    ));
                 }
             }
-            chain = bone.parent;
         }
         if ik.bones.len() == 2 {
             let index = ik.bones[1];
@@ -755,12 +771,19 @@ pub(super) fn write(doc: &Document) -> Value {
             .iter()
             .enumerate()
             .map(|(index, constraint)| (index, match constraint {
-                Constraint::Ik(ik) => json!({
-                    "type":"ik", "name":ik.name,
-                    "bones":ik.bones.iter().map(|&index| bone(index)).collect::<Vec<_>>(),
-                    "target":bone(ik.target),
-                    "mix":ik.setup.mix, "bendPositive":ik.setup.bend_positive
-                }),
+                Constraint::Ik(ik) => {
+                    let mut value = json!({
+                        "type":"ik", "name":ik.name,
+                        "bones":ik.bones.iter().map(|&index| bone(index)).collect::<Vec<_>>(),
+                        "target":bone(ik.target),
+                        "mix":ik.setup.mix, "bendPositive":ik.setup.bend_positive
+                    });
+                    // Written only when set, so existing exports stay byte-stable.
+                    if ik.stretch {
+                        value["stretch"] = json!(true);
+                    }
+                    value
+                }
                 Constraint::Transform(transform) => {
                     let mut value = json!({
                         "type":"transform", "name":transform.name,

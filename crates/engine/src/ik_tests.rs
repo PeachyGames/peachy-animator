@@ -76,6 +76,7 @@ fn constraint() -> IkConstraint {
             mix: 1.,
             bend_positive: true,
         },
+        stretch: false,
     }
 }
 
@@ -427,18 +428,21 @@ fn unsupported_or_degenerate_queries_preserve_raw_native_data_pending_pose_and_h
                 ..Transform::default()
             },
         ),
-        (
-            1,
-            Transform {
-                scale_x: -1.,
-                ..Transform::default()
-            },
-        ),
+        // Nonuniform scale, and a mirrored child, stay outside IK's domain
+        // (uniform and mirrored first bones are supported).
         (
             1,
             Transform {
                 scale_x: 2.,
-                scale_y: 2.,
+                ..Transform::default()
+            },
+        ),
+        (
+            2,
+            Transform {
+                x: 10.,
+                scale_x: -1.,
+                scale_y: -1.,
                 ..Transform::default()
             },
         ),

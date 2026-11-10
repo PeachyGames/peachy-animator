@@ -1595,3 +1595,16 @@ Animated IK (native9) was merged into `main` first; inheritance became native10.
 | Runtime check script | Its native clip end now counts every keyed kind (deform, slot, path, draw order, events), as `Animation::duration` does; all twelve labs pass |
 | Path Lab with a 1.3-scaled chain bone | 28,080 world values (max 0.00006) and 33,280 region coordinates (max 0.0001) |
 | Female pose (game asset, local only; SHA-256 unchanged) | 85 skins: 1,085,280 bone-activity checks, 3,560,256 world values (max 0.0005), 1,355,542 mesh values (max 0.0007); original vs re-export with physics: 489,600 frames, max bone difference 0.00014, 33 physics constraints |
+
+
+## IK with scaled, mirrored and stretched bones, native v21 — November 10, 2026
+
+| Check | Result |
+| --- | --- |
+| Black-box fits (original random two-bone rigs) | Unit, uniform, mirrored and mirrored-with-scaled-child chains: max 7.5e-6. One bone: X axis aims at the target (mirrored turns 180°). Stretch: factor distance/reach blended by mix; with stretch on, the child's Y offset is ignored and its applied Y becomes 0 |
+| Original IK Scale Lab (`ik-scale-bot.peachy`): mirrored arm, (1, −1)-scaled arm with 0.8 child and negative bend, keyed-scale leg with an off-axis child and stretch, one-bone head stretch at mix 0.6 | 35,568 world values (max 0.00004), 33,280 region coordinates and 1,248 IK pose values against the runtime; stretch reaches 2.48× (leg) and 6.1× (head) |
+| Oral-artist front, idle male, male pose, cow back (game assets, local only; SHA-256 unchanged) | 31/49/25/31 skins: 83,700/419,832/141,750/156,240 world values (max 0.0004/0.0005/0.0004/0.0002) and 14,534/90,632/59,926/27,378 mesh values (max 0.0005); original vs re-export with physics max bone difference 0.0026/0.0002/0.0003/0.0004 |
+| Idle female full runtime check (draw order, color, regions, meshes) | 44,911,776 world values (max 0.0004), 18,121,432 mesh values (max 0.0007), 77,168 draw order checks, 2,292,888 color channels |
+| Oral male full runtime check (incl. clipping coverage) | 1,857,024 world values (max 0.0005), 557,570 mesh values, 624 clip checks over 359,424 coverage points (2 edge mismatches), 4,836 draw order checks, 95,264 color channels |
+| Game audit | **20 of 21** skeletons import fully; only the bonfire (image sequence, blend mode) remains |
+| Rust suite | fmt, clippy `-D warnings`, architecture and build pass; **549** tests pass |

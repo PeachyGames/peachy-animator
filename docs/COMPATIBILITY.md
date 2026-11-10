@@ -28,7 +28,7 @@ Input-only obsolete integer `order` is validated and omitted, never used to sort
 | Curves | Linear, stepped, normalized cubic handles (time handles may cross or leave the key interval); overshoot between equal values as offset handles | Nonfinite controls; overshooting curves between equal values |
 | Constraints | One-/two-bone normal IK with keyed Mix/Positive, two-bone Positive, nested chains in list order, off-axis child offsets; animated targets. Physics constraints as data: every setting, Scale Y mode and Global flag, in unified constraint order. World transform constraints: identity Rotate, X/Y mappings with offsets, scale and clamping; IK under any transformed ancestors | Advanced IK settings, shared-bone or cross-target chains, transformed chains; skin-required physics; transform, path, slider and other constraints |
 | Images | Loose PNGs for editing; one untrimmed atlas page for desktop export | Packed-atlas import, rotated/trimmed atlas regions, multipage export |
-| Files | `.peachy` v20; in-memory v1–v19 migration; Spine JSON adapter; event definitions and `skeleton.referenceScale` stored as data | Native `.spine` projects and binary `.skel` |
+| Files | `.peachy` v21; in-memory v1–v20 migration; Spine JSON adapter; event definitions and `skeleton.referenceScale` stored as data | Native `.spine` projects and binary `.skel` |
 
 Our own project format is JSON and holds the editable rig, skin references and clips.
 It is distinct from a runtime export. The importer ignores documented editor-only
@@ -523,3 +523,11 @@ refused. Native v20 adds `Attachment::Path`, `Constraint::Path` and
 Deform keys import, export and apply on paths and clipping polygons as on
 meshes; regions still refuse them. No format change. See
 [the path slice](slices/path-constraints.md#deform-keys-on-paths-and-clipping-polygons--november-10-2026).
+
+## IK with scaled, mirrored and stretched bones, native v21 — November 10, 2026
+
+IK chains with uniformly scaled or mirrored bones (keyed scale included) and
+`stretch` import, export and evaluate as the external runtime does. Native v21
+adds `IkConstraint.stretch`; v20 and earlier migrate unchanged and refuse it.
+`compress`, `uniform`, softness and keyed stretch stay refused. See
+[the slice](slices/ik-scale-stretch.md).

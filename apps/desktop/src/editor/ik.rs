@@ -623,6 +623,7 @@ mod tests {
                 mix,
                 bend_positive: true,
             },
+            stretch: false,
         }));
         editor.session = Session::new(document).unwrap();
         editor.setup_mode = true;
@@ -685,6 +686,7 @@ mod tests {
                 mix: 0.5,
                 bend_positive: true,
             },
+            stretch: false,
         })];
         editor.session = Session::new(document).unwrap();
         editor.skin = "default".into();

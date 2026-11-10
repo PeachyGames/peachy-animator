@@ -111,6 +111,13 @@ body colors (Animate, `wave`):
 cargo run -p peachy-animator -- examples/peach-bot/slot-bot.peachy
 ```
 
+The original IK Scale Lab runs IK on mirrored and scaled arms, a stretchy
+keyed-scale leg and a stretchy head (Animate, `wave`):
+
+```sh
+cargo run -p peachy-animator -- examples/peach-bot/ik-scale-bot.peachy
+```
+
 The original Path Lab moves the left hand along a rail past both ends and walks
 the right leg chain along a weighted path (Animate, `wave`):
 

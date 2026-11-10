@@ -622,3 +622,10 @@ Field names and defaults came from the public `PathConstraintData`/
 (4-segment distances, 10-segment in-curve table, end extension, tangent
 rotation, mixes) was fitted to black-box runtime outputs on original random
 paths. No runtime or editor implementation source was read.
+
+
+### IK scale and stretch — November 10, 2026
+
+Rules were fitted to black-box runtime outputs on original random rigs and
+probes (stretch factor, mix blending, ignored child Y offset, mirrored bones).
+No runtime or editor implementation source was read.

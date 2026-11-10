@@ -201,6 +201,7 @@ mod tests {
                     mix: 0.,
                     bend_positive: true,
                 },
+                stretch: false,
             }),
             Constraint::Ik(IkConstraint {
                 name: "other IK".into(),
@@ -210,6 +211,7 @@ mod tests {
                     mix: 0.,
                     bend_positive: false,
                 },
+                stretch: false,
             }),
         ];
         editor.session = Session::new(document).unwrap();

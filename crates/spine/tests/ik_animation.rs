@@ -235,7 +235,7 @@ fn references_key_time_collisions_and_final_source_bezier_metadata_are_not_silen
 fn activity_is_per_setup_and_clip_and_includes_nonzero_controls_negative_values_and_reachable_setup()
  {
     let mut off = fixture(json!([{"mix":0}]));
-    off["animations"]["clip"]["bones"] = json!({"upper":{"scale":[{"x":2,"y":2}]}});
+    off["animations"]["clip"]["bones"] = json!({"upper":{"scale":[{"x":2,"y":1}]}});
     assert!(import_json(&off, "Inactive clip").is_ok());
     off["animations"]["clip"]["ik"]["aim"][0]["time"] = json!(0.25);
     reject(&off);

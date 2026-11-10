@@ -127,7 +127,6 @@ fn neutral_advanced_fields_are_typed_and_nondefault_aliases_never_silently_disap
             ("softness", json!("0")),
             ("compress", json!(true)),
             ("compress", json!(0)),
-            ("stretch", json!(true)),
             ("stretch", Value::Null),
             ("scaleY", json!("uniform")),
             ("scaleY", json!("volume")),
@@ -246,7 +245,7 @@ fn legacy_aliases_and_malformed_collections_reject_while_known_empty_ik_tracks_a
 fn source_domain_preflight_rejects_transformed_chains_shared_or_cross_target_lists_and_child_offset_tracks()
  {
     // Ancestors may be scaled, sheared or mirrored (runtime-matched); the
-    // constrained bones themselves still need unit axes.
+    // constrained bones themselves need equal-magnitude scale and no shear.
     for (field, value) in [("scaleX", 1.01), ("shearY", 1.0), ("scaleY", -1.3)] {
         let mut input = fixture();
         input["bones"][0][field] = json!(value);
@@ -257,7 +256,8 @@ fn source_domain_preflight_rejects_transformed_chains_shared_or_cross_target_lis
     animated_ancestor["animations"]["move"]["bones"]["root"] = json!({"scalex":[{"value":1.01}]});
     assert!(inspect(&animated_ancestor).supported);
     for (bone, field, value) in [
-        (1, "scaleY", -1.0),
+        (1, "scaleY", -1.3),
+        (2, "scaleX", -1.0),
         (2, "shearX", 0.1),
         (1, "scaleX", 1.01),
         (2, "x", 0.0),
@@ -329,7 +329,7 @@ fn native_data_stays_serializable_when_adapter_domain_refuses_and_mix_zero_is_ex
     assert!(
         export_json(&doc)
             .unwrap_err()
-            .contains("unit positive axes")
+            .contains("equal-magnitude scale")
     );
     let Constraint::Ik(ik) = &mut doc.constraints[0] else {
         unreachable!("fixture constraint is IK")
@@ -363,4 +363,23 @@ fn neutral_tracks_unrelated_transforms_and_dynamic_target_coincidence_are_not_bl
     root["constraints"][0]["bones"] = json!(["root"]);
     root["constraints"][0]["target"] = json!("target");
     reject(&root, "target cannot"); // Structural descendant target is invalid independently of evaluator domain.
+}
+
+#[test]
+fn stretch_roundtrips_and_is_written_only_when_set() {
+    let mut input = fixture();
+    input["constraints"][0]["stretch"] = json!(true);
+    assert!(
+        inspect(&input).supported,
+        "{:?}",
+        inspect(&input).unsupported
+    );
+    let doc = import_json(&input, "Stretch").unwrap();
+    let Constraint::Ik(ik) = &doc.constraints[0] else {
+        unreachable!()
+    };
+    assert!(ik.stretch);
+    let out = export_json(&doc).unwrap();
+    assert_eq!(out["constraints"][0]["stretch"], json!(true));
+    assert_eq!(import_json(&out, "Stretch").unwrap(), doc);
 }

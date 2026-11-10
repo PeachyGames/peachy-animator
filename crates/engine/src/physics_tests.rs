@@ -151,6 +151,7 @@ fn physics_commands_are_atomic_typed_and_validated() {
                         mix: 1.,
                         bend_positive: true,
                     },
+                    stretch: false,
                 },
             },
         )
@@ -170,6 +171,7 @@ fn physics_commands_are_atomic_typed_and_validated() {
                         mix: 1.,
                         bend_positive: true,
                     },
+                    stretch: false,
                 },
             },
         )
@@ -198,6 +200,7 @@ fn physics_timelines_must_reference_physics_constraints_once() {
             mix: 0.,
             bend_positive: true,
         },
+        stretch: false,
     }));
     doc.validate().unwrap();
     let mut wrong_kind = doc.clone();
@@ -236,6 +239,7 @@ fn ik_tracks_and_physics_constraints_share_one_ordered_constraint_list() {
             mix: 0.,
             bend_positive: true,
         },
+        stretch: false,
     }));
     doc.animations[0].ik_tracks.push(IkTrack {
         constraint: 1,

@@ -79,6 +79,8 @@ mod duration_tests;
 #[cfg(test)]
 mod ik_animation_tests;
 #[cfg(test)]
+mod ik_scale_tests;
+#[cfg(test)]
 mod ik_tests;
 #[cfg(test)]
 mod inherit_tests;
