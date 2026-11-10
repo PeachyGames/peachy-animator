@@ -36,6 +36,18 @@ A path constraint whose slot is not showing a path attachment leaves its bones
 alone. Path attachments draw nothing.
 
 Refused: closed paths, paths without constant speed, chain and chain-scale
-rotation, proportional spacing, path mix timelines, and (until the follow-up)
-deform keys on paths. Editing paths and drawing them in the viewport are not
+rotation, proportional spacing and path mix timelines. Editing paths and drawing them in the viewport are not
 done yet.
+
+
+## Deform keys on paths and clipping polygons — November 10, 2026
+
+Four game skeletons key deforms on a path or a clipping polygon. Deform keys now
+apply to any vertex attachment (mesh, path, clipping) with the mesh rule:
+offsets add to plain vertices, or to each weighted influence. Paths followed by
+a constraint and clipping polygons use their deformed shapes. No format change.
+
+The deformed Path Lab exposed one more observed rule: **below t = 0.001 the
+runtime uses a curve's start direction (`c₁ − p₀`) as the tangent**, not the
+derivative at t (bisected to 0.001 on three random curves). A leg bone landing
+just past a knot showed it as a 0.02° rotation difference.

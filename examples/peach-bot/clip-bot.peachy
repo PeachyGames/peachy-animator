@@ -943,7 +943,77 @@
       "physics": [],
       "physics_resets": [],
       "inherit_tracks": [],
-      "deform_tracks": [],
+      "deform_tracks": [
+        {
+          "attachment": {
+            "skin": "default",
+            "slot": "torso-clip",
+            "placeholder": "torso-clip"
+          },
+          "keys": [
+            {
+              "time": 0.0,
+              "curve": "linear",
+              "offsets": [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "time": 1.2,
+              "curve": "linear",
+              "offsets": [
+                5.96,
+                28.389,
+                -13.276,
+                -24.968,
+                19.71,
+                19.889,
+                -24.835,
+                -13.489,
+                28.311,
+                6.194,
+                -29.907,
+                1.513,
+                29.517,
+                -9.119
+              ]
+            },
+            {
+              "time": 2.4,
+              "curve": "linear",
+              "offsets": [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          ]
+        }
+      ],
       "attachment_tracks": [],
       "color_tracks": [],
       "events": [],

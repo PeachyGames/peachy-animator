@@ -256,7 +256,7 @@ for (const animation of data.animations) {
             report.rotatedRegions = (report.rotatedRegions ?? 0) + 1;
             for (let i=0;i<4;i++) {
               const error=Math.min(...actual.vertices.map(v=>Math.max(Math.abs(v[0]-vertices[i*2]),Math.abs(v[1]-vertices[i*2+1]))));
-              assert.ok(Number.isFinite(error) && error<=report.tolerance,`${animation.name} skin=${skin?.name} region=${slotIndex} error=${error}`);
+              assert.ok(Number.isFinite(error) && error<=report.tolerance,`${animation.name} skin=${skin?.name} t=${time} region=${slotIndex} error=${error}`);
               report.regionComparisons+=2;report.maxRegionError=Math.max(report.maxRegionError,error);
             }
             continue;
@@ -267,7 +267,7 @@ for (const animation of data.animations) {
             assert.ok(ours>=0,'Region corner identified by UV');
             for (let axis=0;axis<2;axis++) {
               const error=Math.abs(actual.vertices[ours][axis]-vertices[i*2+axis]);
-              assert.ok(Number.isFinite(error) && error<=report.tolerance,`${animation.name} skin=${skin?.name} region=${slotIndex} error=${error}`);
+              assert.ok(Number.isFinite(error) && error<=report.tolerance,`${animation.name} skin=${skin?.name} t=${time} region=${slotIndex} error=${error}`);
               report.regionComparisons++;report.maxRegionError=Math.max(report.maxRegionError,error);
             }
           }

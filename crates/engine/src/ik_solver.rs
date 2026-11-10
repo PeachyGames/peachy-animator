@@ -16,6 +16,8 @@ pub(crate) struct PathContext<'a> {
     pub poses: &'a [crate::PathPose],
     pub slot_attachments: &'a [Option<String>],
     pub skin: &'a str,
+    /// Keyed deform offsets (paths can be deformed).
+    pub deforms: &'a [(peachy_document::AttachmentRef, Vec<f32>)],
 }
 
 pub(crate) fn apply(
@@ -88,12 +90,18 @@ pub(crate) fn apply(
                 let shown = paths.slot_attachments[path.slot]
                     .as_deref()
                     .and_then(|name| doc.resolve_attachment(paths.skin, path.slot, name));
-                if let Some((_, peachy_document::Attachment::Path(curve))) = shown {
+                if let Some((key, peachy_document::Attachment::Path(curve))) = shown {
+                    let offsets = paths
+                        .deforms
+                        .iter()
+                        .find(|(target, _)| *target == key)
+                        .map(|(_, offsets)| offsets.as_slice());
                     crate::path_constraint::apply(
                         doc,
                         path,
                         paths.poses[index],
                         curve,
+                        offsets,
                         locals,
                         world,
                         inherits,

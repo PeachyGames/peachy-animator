@@ -5,6 +5,8 @@
 //!   10-segment arc-length table (linear in the parameter within a segment).
 //! - Percent position and spacing scale the summed 4-segment length.
 //! - Beyond either end, bones continue in a straight line along the end handle.
+//! - The tangent is the curve derivative, except below t = 0.001 where the
+//!   curve's start direction is used.
 //! - Tangent rotation turns the bone's world frame toward the curve direction
 //!   plus the offset rotation, by mixRotate; X/Y move toward the point by mixX/Y.
 //!
@@ -125,7 +127,14 @@ impl Curves {
             })
             / 10.;
         let curve = &self.curves[index];
-        (cubic(curve, t), angle(derivative(curve, t)))
+        // Observed: below t = 0.001 the runtime uses the curve's start
+        // direction instead of the derivative at t.
+        let direction = if t < 0.001 {
+            [curve[1][0] - curve[0][0], curve[1][1] - curve[0][1]]
+        } else {
+            derivative(curve, t)
+        };
+        (cubic(curve, t), angle(direction))
     }
 }
 
@@ -174,6 +183,7 @@ pub(crate) fn apply(
     constraint: &PathConstraint,
     pose: PathPose,
     path: &Path,
+    deform: Option<&[f32]>,
     locals: &mut [Transform],
     world: &mut Vec<Affine>,
     inherits: &[Inherit],
@@ -189,7 +199,10 @@ pub(crate) fn apply(
         return Ok(());
     }
     let slot_bone = doc.slots[constraint.slot].bone;
-    let curves = Curves::new(&world_vertices(&path.vertices, slot_bone, world));
+    let curves = Curves::new(&match deform {
+        Some(offsets) => crate::deformed_world_vertices(&path.vertices, slot_bone, world, offsets),
+        None => world_vertices(&path.vertices, slot_bone, world),
+    });
     let (position, spacing) = (f64::from(pose.position), f64::from(pose.spacing));
     let mut s = match constraint.position_mode {
         PositionMode::Fixed => position,

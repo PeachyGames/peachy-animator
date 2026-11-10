@@ -43,15 +43,19 @@ pub(super) fn read(
                         slot: slot.clone(),
                         placeholder: placeholder.clone(),
                     };
-                    let mesh = match skins
+                    let vertices = match skins
                         .get(skin)
                         .and_then(|s| s.get(slot))
                         .and_then(|a| a.get(placeholder))
                     {
-                        Some(Attachment::Mesh(mesh)) => mesh,
+                        Some(
+                            attachment @ (Attachment::Mesh(_)
+                            | Attachment::Path(_)
+                            | Attachment::Clipping(_)),
+                        ) => attachment.vertices().expect("vertex attachment"),
                         Some(_) => {
                             return Err(format!(
-                                "{context}: deform keys on non-mesh {slot}/{placeholder} are unsupported"
+                                "{context}: deform keys on region {slot}/{placeholder} are unsupported"
                             ));
                         }
                         None => {
@@ -60,7 +64,7 @@ pub(super) fn read(
                             ));
                         }
                     };
-                    let count = mesh.deform_len();
+                    let count = vertices.deform_len();
                     let keys = keys
                         .as_array()
                         .ok_or_else(|| format!("{context}: deform keys must be an array"))?;

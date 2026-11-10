@@ -61,10 +61,21 @@ pub fn deformed_mesh_world_vertices(
     world: &[Affine],
     offsets: &[f32],
 ) -> Vec<[f32; 2]> {
-    if offsets.len() != mesh.deform_len() {
-        return mesh_world_vertices(mesh, slot_bone, world);
+    deformed_world_vertices(&mesh.vertices, slot_bone, world, offsets)
+}
+
+/// World positions with deform offsets for any vertex attachment (meshes,
+/// paths, clipping polygons).
+pub fn deformed_world_vertices(
+    vertices: &MeshVertices,
+    slot_bone: usize,
+    world: &[Affine],
+    offsets: &[f32],
+) -> Vec<[f32; 2]> {
+    if offsets.len() != vertices.deform_len() {
+        return world_vertices(vertices, slot_bone, world);
     }
-    match &mesh.vertices {
+    match vertices {
         MeshVertices::SlotLocal { positions } => positions
             .iter()
             .zip(offsets.as_chunks::<2>().0)

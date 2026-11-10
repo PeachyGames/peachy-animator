@@ -1572,3 +1572,14 @@ Animated IK (native9) was merged into `main` first; inheritance became native10.
 | Original Path Lab (`path-bot.peachy`): unweighted rail with keyed position past both ends (Bezier key), offset rotation and partial mixes; three-bone leg chain on a weighted path with keyed negative spacing | 28,080 world values (max 0.00003) and 33,280 region coordinates against the runtime; the constraints move the bones by up to ~120 units vs unconstrained. Editor round trip keeps both constraints, both timelines and the path vertices (it recomputes setup `lengths`) |
 | Game audit | Path constraints themselves now import; the five path rigs remain blocked by deform keys on path/clipping attachments (next) or IK stretch (cow back). Still **15 of 21** |
 | Rust suite | fmt, clippy `-D warnings`, architecture and build pass; **543** tests pass |
+
+
+## Deform keys on paths and clipping polygons — November 10, 2026
+
+| Check | Result |
+| --- | --- |
+| Tangent near a curve start (original probes) | Runtime uses the start direction below t = 0.001 (bisected on three curves), the derivative above |
+| Path Lab with deform keys on its plain and weighted rails | 28,080 world values (max 0.00003) and 33,280 region coordinates (max 0.0001) against the runtime; the deform moves the hand by more than 1 unit |
+| Clip Lab with deform keys on the concave polygon | 312 samples, 179,712 coverage points, 0 mismatches; the deform changes the clipped area (29,793 vs 34,216 at t = 1.2) |
+| Game audit | **16 of 21** skeletons import fully (oral male added) |
+| Rust suite | fmt, clippy `-D warnings`, architecture and build pass; **545** tests pass |

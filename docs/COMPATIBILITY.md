@@ -21,7 +21,7 @@ Input-only obsolete integer `order` is validated and omitted, never used to sort
 | Area | Supported | Import refuses |
 | --- | --- | --- |
 | Bones | All five inheritance modes (normal, onlyTranslation, noRotationOrReflection, noScale, noScaleOrReflection) and stepped `inherit` keys; X/Y, rotation, scale X/Y, shear X/Y, length | Legacy `transform` alias, inheritance changes on IK-constrained bones, degenerate zero-scale parents, skin-required bones |
-| Attachments | Regions, unweighted meshes and weighted meshes with explicit UVs/topology and bone-local influences; attachment tint (RGB/RGBA); linked meshes (any source skin, own image and tint, `timelines`); clipping polygons (end slot, convex hull, concave) | Linked-mesh chains, inverse clipping, deform keys on clipping polygons, paths, sequences, other attachment types |
+| Attachments | Regions, unweighted meshes and weighted meshes with explicit UVs/topology and bone-local influences; attachment tint (RGB/RGBA); linked meshes (any source skin, own image and tint, `timelines`); clipping polygons (end slot, convex hull, concave) | Linked-mesh chains, inverse clipping, paths, sequences, other attachment types |
 | Slots | Setup attachment, exact RGBA tint and normal blending in fixed draw order | Dark/two-color tint, other blend modes |
 | Skins | Region/mesh maps, explicit attachment names, default-skin fallback; skin-required bones and IK/transform/physics constraints with per-skin activation | Skin path-constraint lists, a unified skin `constraints` list, non-required bones under required parents |
 | Animation | Path position and spacing keys; draw order keys (offsets as written); event keys with per-key overrides; slot attachment and RGBA color keys; mesh deform keys (unweighted and weighted); bone rotation, translation, scale and shear; combined or scalar input timelines; grouped IK Mix/Positive timelines; physics setting and reset timelines, including global (`""`) timelines | Draw order folders; transform, path and other slot (rgb, alpha, dark tint, sequence) timelines |
@@ -517,3 +517,9 @@ runtime does. Closed paths, other modes, mix timelines and path deform keys are
 refused. Native v20 adds `Attachment::Path`, `Constraint::Path` and
 `Animation.path_tracks`; v19 and earlier migrate with empty tracks. See
 [the slice](slices/path-constraints.md).
+
+## Deform keys on paths and clipping polygons — November 10, 2026
+
+Deform keys import, export and apply on paths and clipping polygons as on
+meshes; regions still refuse them. No format change. See
+[the path slice](slices/path-constraints.md#deform-keys-on-paths-and-clipping-polygons--november-10-2026).

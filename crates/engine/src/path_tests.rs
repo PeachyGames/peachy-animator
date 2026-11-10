@@ -51,3 +51,18 @@ fn closed_paths_fail_explicitly() {
             .contains("closed paths")
     );
 }
+
+#[test]
+fn deform_keys_reshape_the_path_bones_follow() {
+    let doc = lab();
+    let mut flat = doc.clone();
+    for animation in &mut flat.animations {
+        animation.deform_tracks.clear();
+    }
+    let hand = doc.bones.iter().position(|b| b.name == "hand.L").unwrap();
+    let at = |doc: &Document| checked_evaluate_pose(doc, Some(0), 1.0).unwrap().world()[hand].x;
+    assert!(
+        (at(&doc) - at(&flat)).abs() > 1.,
+        "deformed rail moves the hand"
+    );
+}

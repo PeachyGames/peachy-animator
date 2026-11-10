@@ -33,8 +33,8 @@ pub use ik::{
 };
 pub use ik_sampling::{IkPose, sample_ik};
 pub use mesh::{
-    deformed_mesh_world_vertices, mesh_world_vertices, region_to_mesh, region_vertices,
-    world_vertices,
+    deformed_mesh_world_vertices, deformed_world_vertices, mesh_world_vertices, region_to_mesh,
+    region_vertices, world_vertices,
 };
 pub use mesh_binding::MeshBindPose;
 pub use mesh_soft_selection::{MeshSoftSelection, MeshTranslation};

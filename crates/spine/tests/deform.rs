@@ -73,7 +73,7 @@ fn malformed_or_unsupported_deform_data_is_refused() {
     );
     reject(
         &set(&["card"], json!({"card":{"deform":[{"time":0}]}})),
-        "non-mesh",
+        "deform keys on region",
     );
     reject(
         &set(&["plain"], json!({"missing":{"deform":[{"time":0}]}})),
@@ -93,5 +93,28 @@ fn malformed_or_unsupported_deform_data_is_refused() {
     reject(
         &set(&["plain", "quad", "deform"], json!([{"time":0,"scale":1}])),
         "unsupported field scale",
+    );
+}
+
+#[test]
+fn deform_keys_on_paths_and_clipping_polygons_roundtrip() {
+    let input = json!({"skeleton":{"spine":"4.3.26"},"bones":[{"name":"root"}],
+        "slots":[{"name":"p","bone":"root","attachment":"rail"},{"name":"c","bone":"root","attachment":"clip"}],
+        "skins":[{"name":"default","attachments":{
+            "p":{"rail":{"type":"path","vertexCount":6,"vertices":[-10,0,0,0,30,80,70,-40,100,10,110,10],"lengths":[1,2]}},
+            "c":{"clip":{"type":"clipping","vertexCount":3,"vertices":[0,0,10,0,0,10]}}}}],
+        "animations":{"anim":{"attachments":{"default":{
+            "p":{"rail":{"deform":[{"time":0},{"time":1,"offset":2,"vertices":[3,4]}]}},
+            "c":{"clip":{"deform":[{"time":0,"vertices":[1,1,2,2,3,3]}]}}}}}}});
+    assert!(
+        inspect(&input).supported,
+        "{:?}",
+        inspect(&input).unsupported
+    );
+    let doc = import_json(&input, "Deform").unwrap();
+    assert_eq!(doc.animations[0].deform_tracks.len(), 2);
+    assert_eq!(
+        import_json(&export_json(&doc).unwrap(), "Deform").unwrap(),
+        doc
     );
 }

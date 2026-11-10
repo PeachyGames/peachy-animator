@@ -21,12 +21,30 @@ pub struct DeformKey {
     pub offsets: Vec<f32>,
 }
 
-impl Mesh {
+impl MeshVertices {
     /// Number of deform values: two per vertex, or two per weighted influence.
     pub fn deform_len(&self) -> usize {
-        2 * match &self.vertices {
+        2 * match self {
             MeshVertices::SlotLocal { positions } => positions.len(),
             MeshVertices::Weighted { influences } => influences.iter().map(Vec::len).sum(),
+        }
+    }
+}
+
+impl Mesh {
+    pub fn deform_len(&self) -> usize {
+        self.vertices.deform_len()
+    }
+}
+
+impl Attachment {
+    /// Deformable vertices: meshes, paths and clipping polygons.
+    pub fn vertices(&self) -> Option<&MeshVertices> {
+        match self {
+            Attachment::Mesh(mesh) => Some(&mesh.vertices),
+            Attachment::Path(path) => Some(&path.vertices),
+            Attachment::Clipping(clip) => Some(&clip.vertices),
+            Attachment::Region(_) => None,
         }
     }
 }
@@ -36,9 +54,9 @@ impl Document {
         let mut seen = std::collections::BTreeSet::new();
         for track in &animation.deform_tracks {
             let key = &track.attachment;
-            let Some(Attachment::Mesh(mesh)) = self.attachment(key) else {
+            let Some(vertices) = self.attachment(key).and_then(Attachment::vertices) else {
                 return Err(format!(
-                    "Animation {}: deform keys need an existing mesh {}/{}/{}",
+                    "Animation {}: deform keys need an existing mesh, path or clipping polygon {}/{}/{}",
                     animation.name, key.skin, key.slot, key.placeholder
                 ));
             };
@@ -54,14 +72,14 @@ impl Document {
                     return Err("Deform keys must be finite, nonnegative and ordered".into());
                 }
                 previous = deform.time;
-                if deform.offsets.len() != mesh.deform_len()
+                if deform.offsets.len() != vertices.deform_len()
                     || deform.offsets.iter().any(|v| !v.is_finite())
                 {
                     return Err(format!(
                         "Animation {}: deform key at {} needs {} finite offsets for {}/{}",
                         animation.name,
                         deform.time,
-                        mesh.deform_len(),
+                        vertices.deform_len(),
                         key.slot,
                         key.placeholder
                     ));

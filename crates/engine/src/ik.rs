@@ -233,6 +233,7 @@ pub fn checked_pose_from_authored(
             poses: &authored.paths,
             slot_attachments: &authored.slot_attachments,
             skin: &authored.skin,
+            deforms: &authored.deforms,
         },
     )?;
     Ok(EvaluatedPose {

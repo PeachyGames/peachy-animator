@@ -191,9 +191,14 @@ fn scene_from_evaluated(doc: &Document, skin: &str, pose: crate::EvaluatedPose) 
         } else {
             None
         };
-        if let Some((_, Attachment::Clipping(c))) = shown {
+        if let Some((key, Attachment::Clipping(c))) = &shown {
             if clip.is_none() {
-                let polygon = crate::world_vertices(&c.vertices, slot.bone, &world);
+                let polygon = match deforms.iter().find(|(target, _)| target == key) {
+                    Some((_, offsets)) => {
+                        crate::deformed_world_vertices(&c.vertices, slot.bone, &world, offsets)
+                    }
+                    None => crate::world_vertices(&c.vertices, slot.bone, &world),
+                };
                 clip = Some(crate::clipping::ClipRegion::new(&polygon, c.convex, c.end));
             }
             continue;
