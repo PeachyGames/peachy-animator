@@ -161,9 +161,11 @@ fn scene_from_evaluated(doc: &Document, skin: &str, pose: crate::EvaluatedPose) 
         deforms,
         slot_attachments,
         slot_colors,
+        draw_order,
     } = pose;
     let mut attachments = vec![];
-    for (slot_index, slot) in doc.slots.iter().enumerate() {
+    for slot_index in draw_order {
+        let slot = &doc.slots[slot_index];
         if !active_bones[slot.bone] {
             continue;
         }

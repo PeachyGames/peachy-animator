@@ -33,6 +33,7 @@ fn v8() -> Value {
             "attachment_tracks",
             "color_tracks",
             "events",
+            "draw_order",
         ] {
             assert_eq!(
                 animation.as_object_mut().unwrap().remove(field),

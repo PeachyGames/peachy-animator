@@ -29,6 +29,15 @@ pub fn load(path: &Path) -> Result<Document, String> {
 pub fn decode_project(text: &str) -> Result<Document, String> {
     let mut value: serde_json::Value = serde_json::from_str(text).map_err(|e| e.to_string())?;
     let original_format = value["format"].as_u64();
+    if matches!(original_format, Some(1..=15))
+        && value["animations"].as_array().is_some_and(|animations| {
+            animations
+                .iter()
+                .any(|animation| animation.get("draw_order").is_some())
+        })
+    {
+        return Err("Legacy project formats cannot contain draw order keys".into());
+    }
     if matches!(original_format, Some(1..=14))
         && (value.get("events").is_some()
             || value.get("reference_scale").is_some()
@@ -209,6 +218,19 @@ pub fn decode_project(text: &str) -> Result<Document, String> {
                 .insert("events".into(), serde_json::json!([]));
         }
         value["format"] = 15.into();
+    }
+    // v15→v16 adds empty draw order key lists.
+    if value["format"].as_u64() == Some(15) {
+        for animation in value["animations"]
+            .as_array_mut()
+            .ok_or("Legacy animations must be an array")?
+        {
+            animation
+                .as_object_mut()
+                .ok_or("Legacy animation must be an object")?
+                .insert("draw_order".into(), serde_json::json!([]));
+        }
+        value["format"] = 16.into();
     }
     let mut doc: Document = serde_json::from_value(value).map_err(|e| e.to_string())?;
     // Wrapping vertices preserves their values and all surrounding fields. Decode
@@ -740,6 +762,7 @@ mod tests {
                 "attachment_tracks",
                 "color_tracks",
                 "events",
+                "draw_order",
             ] {
                 assert_eq!(
                     animation.as_object_mut().unwrap().remove(field),

@@ -1,5 +1,5 @@
 {
-  "format": 15,
+  "format": 16,
   "constraints": [
     {
       "type": "physics",
@@ -1021,7 +1021,8 @@
       "deform_tracks": [],
       "attachment_tracks": [],
       "color_tracks": [],
-      "events": []
+      "events": [],
+      "draw_order": []
     },
     {
       "name": "idle",
@@ -1138,7 +1139,8 @@
       "deform_tracks": [],
       "attachment_tracks": [],
       "color_tracks": [],
-      "events": []
+      "events": [],
+      "draw_order": []
     }
   ]
 }

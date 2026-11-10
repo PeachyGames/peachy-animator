@@ -166,6 +166,7 @@ fn all_nine_current_examples_equal_their_white_v6_migration() {
                 "attachment_tracks",
                 "color_tracks",
                 "events",
+                "draw_order",
             ] {
                 assert_eq!(
                     animation.as_object_mut().unwrap().remove(field),

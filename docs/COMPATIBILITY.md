@@ -24,11 +24,11 @@ Input-only obsolete integer `order` is validated and omitted, never used to sort
 | Attachments | Regions, unweighted meshes and weighted meshes with explicit UVs/topology and bone-local influences | Linked meshes, clipping, paths, sequences, other attachment types |
 | Slots | Setup attachment, exact RGBA tint and normal blending in fixed draw order | Dark/two-color tint, other blend modes |
 | Skins | Region/mesh maps, explicit attachment names, default-skin fallback; skin-required bones and IK/transform/physics constraints with per-skin activation | Skin path-constraint lists, a unified skin `constraints` list, non-required bones under required parents |
-| Animation | Event keys with per-key overrides; slot attachment and RGBA color keys; mesh deform keys (unweighted and weighted); bone rotation, translation, scale and shear; combined or scalar input timelines; grouped IK Mix/Positive timelines; physics setting and reset timelines, including global (`""`) timelines | Draw-order, transform, path and other slot (rgb, alpha, dark tint, sequence) timelines |
+| Animation | Draw order keys (offsets as written); event keys with per-key overrides; slot attachment and RGBA color keys; mesh deform keys (unweighted and weighted); bone rotation, translation, scale and shear; combined or scalar input timelines; grouped IK Mix/Positive timelines; physics setting and reset timelines, including global (`""`) timelines | Draw order folders; transform, path and other slot (rgb, alpha, dark tint, sequence) timelines |
 | Curves | Linear, stepped, normalized cubic handles (time handles within the key interval; crossing allowed) | Nonfinite controls or time handles outside the key interval; overshooting curves between equal values |
 | Constraints | One-/two-bone normal IK with keyed Mix/Positive, two-bone Positive, nested chains in list order, off-axis child offsets; animated targets. Physics constraints as data: every setting, Scale Y mode and Global flag, in unified constraint order. World transform constraints with identity Rotate/X/Y mappings; IK under any transformed ancestors | Advanced IK settings, shared-bone or cross-target chains, transformed chains; skin-required physics; transform, path, slider and other constraints |
 | Images | Loose PNGs for editing; one untrimmed atlas page for desktop export | Packed-atlas import, rotated/trimmed atlas regions, multipage export |
-| Files | `.peachy` v15; in-memory v1–v14 migration; Spine JSON adapter; event definitions and `skeleton.referenceScale` stored as data | Native `.spine` projects and binary `.skel` |
+| Files | `.peachy` v16; in-memory v1–v15 migration; Spine JSON adapter; event definitions and `skeleton.referenceScale` stored as data | Native `.spine` projects and binary `.skel` |
 
 Our own project format is JSON and holds the editable rig, skin references and clips.
 It is distinct from a runtime export. The importer ignores documented editor-only
@@ -470,3 +470,10 @@ names are unique per type, and Bezier time handles may cross. Native v15 adds
 `Document.events`, `Document.reference_scale` and `Animation.events`; v14 and
 earlier migrate with empty events and a reference scale of 100. See
 [the slice](slices/events.md).
+
+## Draw order keys, native v16 — November 10, 2026
+
+Animation `drawOrder` keys round-trip with their offsets as written and
+evaluate as the external runtime does; offsets the runtime cannot read are
+refused, as are draw order folders. Native v16 adds `Animation.draw_order`;
+v15 and earlier migrate with empty lists. See [the slice](slices/draw-order.md).

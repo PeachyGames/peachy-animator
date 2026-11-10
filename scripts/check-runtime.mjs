@@ -154,6 +154,12 @@ for (const animation of data.animations) {
         }
       }
       const actualDraws = new Map(ours.attachments.map(a=>[a.slot,a]));
+      // Draw order: our draws come back to front in the runtime's applied order.
+      const runtimeOrder = (Array.isArray(skeleton.drawOrder) ? skeleton.drawOrder : skeleton.drawOrder.appliedPose)
+        .filter(slot => slot.bone.active && slot.appliedPose.attachment)
+        .map(slot => skeleton.slots.indexOf(slot));
+      assert.deepEqual(ours.attachments.map(a => a.slot), runtimeOrder, `${animation.name} t=${time} draw order`);
+      report.drawOrderChecks = (report.drawOrderChecks ?? 0) + 1;
       for (const draw of ours.attachments) {
         const key=draw.attachment;
         const native=sourceProject.skins[key.skin][key.slot][key.placeholder];

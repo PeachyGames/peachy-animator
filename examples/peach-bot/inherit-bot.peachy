@@ -1,5 +1,5 @@
 {
-  "format": 15,
+  "format": 16,
   "constraints": [],
   "name": "Peach Bot Inherit Lab",
   "fps": 30,
@@ -975,7 +975,8 @@
       "deform_tracks": [],
       "attachment_tracks": [],
       "color_tracks": [],
-      "events": []
+      "events": [],
+      "draw_order": []
     },
     {
       "name": "idle",
@@ -1072,7 +1073,8 @@
       "deform_tracks": [],
       "attachment_tracks": [],
       "color_tracks": [],
-      "events": []
+      "events": [],
+      "draw_order": []
     }
   ]
 }

@@ -568,3 +568,12 @@ editor CLI (import/re-export) and the runtime's public data API. Per-type
 constraint names and crossed Bezier handles were observed in a shipped game
 export and confirmed by black-box runtime comparison of original fixtures. No
 runtime or editor implementation source was read.
+
+
+### Draw order keys — November 10, 2026
+
+The public JSON format page defines offsets relative to the setup draw order
+but not how unlisted slots are placed. That rule, and the malformed cases, were
+established by black-box comparison of original random probes against the
+runtime's public `Skeleton.drawOrder` and through installed-editor round trips.
+No runtime or editor implementation source was read.

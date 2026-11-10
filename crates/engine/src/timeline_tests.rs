@@ -75,6 +75,7 @@ fn fixture() -> Document {
                 attachment_tracks: vec![],
                 color_tracks: vec![],
                 events: vec![],
+                draw_order: vec![],
             },
             Animation {
                 ik_tracks: vec![],
@@ -92,6 +93,7 @@ fn fixture() -> Document {
                 attachment_tracks: vec![],
                 color_tracks: vec![],
                 events: vec![],
+                draw_order: vec![],
             },
         ],
         skin_scope: Default::default(),

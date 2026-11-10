@@ -111,6 +111,13 @@ body colors (Animate, `wave`):
 cargo run -p peachy-animator -- examples/peach-bot/slot-bot.peachy
 ```
 
+The original Draw Order Lab moves the left arm in front, sends the head to the
+back and then restores setup order (Animate, `wave`):
+
+```sh
+cargo run -p peachy-animator -- examples/peach-bot/draw-order-bot.peachy
+```
+
 For either mesh fixture, select its hand.R attachment and **Vertices** to inspect the selected
 vertex's bone influences. Weighted inspection works in Setup and Animate, including
 an unkeyed pose. It stops playback and preserves the current pose and mode. Bone

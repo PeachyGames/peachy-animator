@@ -58,6 +58,7 @@ fn document() -> Document {
             attachment_tracks: vec![],
             color_tracks: vec![],
             events: vec![],
+            draw_order: vec![],
         }],
         skin_scope: Default::default(),
         events: vec![],

@@ -2,6 +2,7 @@
 mod attachments;
 mod constraints;
 mod deform;
+mod draw_order;
 mod events;
 mod ik_timelines;
 mod slot_keys;
@@ -198,7 +199,13 @@ pub fn inspect(value: &Value) -> Inspection {
                     // constraints::inspect and read_document.
                     if !matches!(
                         field.as_str(),
-                        "bones" | "ik" | "physics" | "attachments" | "slots" | "events"
+                        "bones"
+                            | "ik"
+                            | "physics"
+                            | "attachments"
+                            | "slots"
+                            | "events"
+                            | "drawOrder"
                     ) && nonempty(contents)
                     {
                         unsupported.push(format!("Animation {name}: {field} timelines"));
@@ -438,6 +445,7 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
                 attachment_tracks,
                 color_tracks,
                 events: events::read_keys(name, animation, &event_defs)?,
+                draw_order: draw_order::read(name, animation, &slot_indices)?,
             });
         }
     }
@@ -590,6 +598,10 @@ pub fn export_json(doc: &Document) -> Result<Value, String> {
         let physics = constraints::write_physics_timelines(doc, animation)?;
         if !physics.as_object().is_some_and(serde_json::Map::is_empty) {
             animations[&animation.name]["physics"] = physics;
+        }
+        if !animation.draw_order.is_empty() {
+            animations[&animation.name]["drawOrder"] =
+                draw_order::write(doc, &animation.draw_order);
         }
         if !animation.events.is_empty() {
             animations[&animation.name]["events"] =

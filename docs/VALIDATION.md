@@ -1503,3 +1503,14 @@ Animated IK (native9) was merged into `main` first; inheritance became native10.
 | Doggy-scene female (game asset, local only; SHA-256 unchanged) | Imports with events and reference scale 92. Across 73 skins: 107,310 bone-activity checks and 643,860 world values match our CLI, max 0.0015 (the 292 values above 0.001 are all `toe.L`, at the end of a two-bone IK chain at 99.98% reach, where the bend angle is ill-conditioned); 80,558 mesh values, max 0.002. Original vs re-export with physics: 65,700 frames, max bone difference 0.0001, 56 physics constraints |
 | Game audit | **9 of 21** skeletons import fully |
 | Rust suite | fmt, clippy `-D warnings`, architecture and build pass; **518** tests pass |
+
+
+## Draw order keys, native v16 — November 10, 2026
+
+| Check | Result |
+| --- | --- |
+| Runtime probe (original, 9 slots) | Hypothesis matches 301 of 301 random offset encodings; 7 malformed cases throw or corrupt the order and are refused |
+| Editor probe | Installed 4.3.26 preserves all 81 key orders and re-encodes minimally |
+| Original Draw Order Lab (`draw-order-bot.peachy`): arm to the front, head to the back with a zero offset, reset key, first key after 0 | Our draw sequence equals the runtime's applied draw order at all 312 samples; 28,080 world values, max error 0.00003; editor round trip keeps every order |
+| Game audit | Draw order no longer blocks any skeleton; still **9 of 21** (the draw order rigs have other blockers) |
+| Rust suite | fmt, clippy `-D warnings`, architecture and build pass; **522** tests pass |

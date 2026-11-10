@@ -2,6 +2,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 mod deform;
+mod draw_order;
 mod events;
 mod ik;
 mod inherit;
@@ -10,6 +11,7 @@ mod skin_scope;
 mod slot_keys;
 mod transform;
 pub use deform::{DeformKey, DeformTrack};
+pub use draw_order::{DrawOrderKey, DrawOrderOffset, sample_draw_order};
 pub use events::{EventDef, EventKey};
 pub use ik::{Constraint, IkConstraint, IkCurve, IkKeyframe, IkSetup, IkTrack};
 pub use inherit::{Inherit, InheritKey, InheritTrack};
@@ -24,7 +26,7 @@ pub use transform::{
     TransformConstraint, TransformMapping, TransformProperty, TransformTarget, TransformValues,
 };
 
-pub const FORMAT_VERSION: u32 = 15;
+pub const FORMAT_VERSION: u32 = 16;
 pub const KEY_TIME_EPSILON: f32 = 0.00001;
 pub fn same_key_time(a: f32, b: f32) -> bool {
     (a - b).abs() < KEY_TIME_EPSILON
@@ -385,6 +387,8 @@ pub struct Animation {
     pub color_tracks: Vec<ColorTrack>,
     /// Timed event keys, in firing order. Required in native v15.
     pub events: Vec<EventKey>,
+    /// Draw order keys. Required in native v16.
+    pub draw_order: Vec<DrawOrderKey>,
 }
 
 impl Animation {
@@ -400,6 +404,7 @@ impl Animation {
             attachment_tracks: vec![],
             color_tracks: vec![],
             events: vec![],
+            draw_order: vec![],
         }
     }
     /// The highest authored key time across validated, ordered timelines, or zero.
@@ -440,6 +445,7 @@ impl Animation {
                     .filter_map(|track| track.keys.last().map(|key| key.time)),
             )
             .chain(self.events.iter().map(|key| key.time))
+            .chain(self.draw_order.iter().map(|key| key.time))
             .fold(0.0, f32::max)
     }
     /// Every authored key time across bone, IK, physics and reset timelines.
@@ -483,6 +489,7 @@ impl Animation {
                     .flat_map(|track| track.keys.iter().map(|key| key.time)),
             )
             .chain(self.events.iter().map(|key| key.time))
+            .chain(self.draw_order.iter().map(|key| key.time))
     }
     /// Whether any timeline other than bone transforms has keys.
     pub fn has_constraint_keys(&self) -> bool {
@@ -707,6 +714,7 @@ impl Document {
             }
             self.validate_deform(a)?;
             self.validate_slot_keys(a)?;
+            self.validate_draw_order(a)?;
             let mut inherit_bones = BTreeSet::new();
             for track in &a.inherit_tracks {
                 if track.bone >= self.bones.len() || !inherit_bones.insert(track.bone) {

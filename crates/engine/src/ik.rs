@@ -16,6 +16,7 @@ pub struct EvaluatedPose {
     pub(crate) deforms: Vec<(AttachmentRef, Vec<f32>)>,
     pub(crate) slot_attachments: Vec<Option<String>>,
     pub(crate) slot_colors: Vec<[f32; 4]>,
+    pub(crate) draw_order: Vec<usize>,
 }
 
 /// Complete authored state. Bone-only input cannot silently select setup IK.
@@ -33,6 +34,8 @@ pub struct AuthoredPose {
     pub(crate) slot_attachments: Vec<Option<String>>,
     /// Slot color per slot as unpremultiplied 0–1 channels (Setup or keyed).
     pub(crate) slot_colors: Vec<[f32; 4]>,
+    /// Slot indices back to front (Setup or keyed draw order).
+    pub(crate) draw_order: Vec<usize>,
 }
 
 impl AuthoredPose {
@@ -136,6 +139,11 @@ pub fn sample_authored_pose(
                     .unwrap_or_else(|| slot.color.map(|byte| f32::from(byte) / 255.))
             })
             .collect(),
+        draw_order: peachy_document::sample_draw_order(
+            clip.map_or(&[][..], |clip| &clip.draw_order),
+            doc.slots.len(),
+            time,
+        ),
     })
 }
 
@@ -204,6 +212,7 @@ pub fn checked_pose_from_authored(
         deforms: authored.deforms.clone(),
         slot_attachments: authored.slot_attachments.clone(),
         slot_colors: authored.slot_colors.clone(),
+        draw_order: authored.draw_order.clone(),
     })
 }
 

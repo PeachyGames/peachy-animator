@@ -74,6 +74,9 @@ Native v13 adds `Animation.deform_tracks` with dense offsets (per vertex, or per
 weighted influence). Sampled deforms travel in `AuthoredPose`; scenes apply them
 via `deformed_mesh_world_vertices`. Keep slot renames updating deform refs.
 
+Native v16 adds `Animation.draw_order` (Spine offsets as written; scenes draw
+in `EvaluatedPose.draw_order`, never slot-list order, in Animate).
+
 Native v15 adds `Document.events`, `Document.reference_scale` and
 `Animation.events` (data only; key overrides stay `Option`). Constraint names
 are unique per type, not globally.

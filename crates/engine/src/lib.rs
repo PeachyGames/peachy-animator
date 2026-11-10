@@ -66,6 +66,8 @@ mod deform_tests;
 #[cfg(test)]
 mod direct_weight_tests;
 #[cfg(test)]
+mod draw_order_tests;
+#[cfg(test)]
 mod duration_tests;
 #[cfg(test)]
 mod ik_animation_tests;
