@@ -374,6 +374,8 @@ fn review_schema_document(text: &str) -> Document {
         animation["physics_resets"] = serde_json::json!([]);
         animation["inherit_tracks"] = serde_json::json!([]);
         animation["deform_tracks"] = serde_json::json!([]);
+        animation["attachment_tracks"] = serde_json::json!([]);
+        animation["color_tracks"] = serde_json::json!([]);
     }
     for bone in value["bones"].as_array_mut().unwrap() {
         assert!(bone.get("inherit").is_none());

@@ -88,6 +88,8 @@ mod skin_scope_tests;
 #[cfg(test)]
 mod slot_color_tests;
 #[cfg(test)]
+mod slot_keys_tests;
+#[cfg(test)]
 mod tests;
 #[cfg(test)]
 mod timeline_tests;

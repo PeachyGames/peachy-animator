@@ -3,6 +3,7 @@ mod attachments;
 mod constraints;
 mod deform;
 mod ik_timelines;
+mod slot_keys;
 use attachments::{inspect_attachment, read_attachment, write_attachment};
 use peachy_document::*;
 use serde::Serialize;
@@ -195,8 +196,10 @@ pub fn inspect(value: &Value) -> Inspection {
                 for (field, contents) in fields {
                     // IK and physics timelines are decoded and checked by
                     // constraints::inspect and read_document.
-                    if !matches!(field.as_str(), "bones" | "ik" | "physics" | "attachments")
-                        && nonempty(contents)
+                    if !matches!(
+                        field.as_str(),
+                        "bones" | "ik" | "physics" | "attachments" | "slots"
+                    ) && nonempty(contents)
                     {
                         unsupported.push(format!("Animation {name}: {field} timelines"));
                     }
@@ -414,6 +417,13 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
             }
             let (physics, physics_resets) =
                 constraints::read_physics_timelines(name, animation, &constraint_indices)?;
+            let slot_indices: BTreeMap<String, usize> = slots
+                .iter()
+                .enumerate()
+                .map(|(index, slot)| (slot.name.clone(), index))
+                .collect();
+            let (attachment_tracks, color_tracks) =
+                slot_keys::read(name, animation, &slot_indices)?;
             animations.push(Animation {
                 name: name.clone(),
                 tracks,
@@ -422,6 +432,8 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
                 physics_resets,
                 inherit_tracks,
                 deform_tracks: deform::read(name, animation, &skins)?,
+                attachment_tracks,
+                color_tracks,
             });
         }
     }
@@ -570,6 +582,13 @@ pub fn export_json(doc: &Document) -> Result<Value, String> {
         let physics = constraints::write_physics_timelines(doc, animation)?;
         if !physics.as_object().is_some_and(serde_json::Map::is_empty) {
             animations[&animation.name]["physics"] = physics;
+        }
+        let slot_timelines = slot_keys::write(doc, animation)?;
+        if !slot_timelines
+            .as_object()
+            .is_some_and(serde_json::Map::is_empty)
+        {
+            animations[&animation.name]["slots"] = slot_timelines;
         }
         let deform = deform::write(&animation.deform_tracks)?;
         if !deform.as_object().is_some_and(serde_json::Map::is_empty) {

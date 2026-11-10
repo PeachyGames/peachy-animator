@@ -159,13 +159,18 @@ fn scene_from_evaluated(doc: &Document, skin: &str, pose: crate::EvaluatedPose) 
         authored_ik: ik_poses,
         active_bones,
         deforms,
+        slot_attachments,
+        slot_colors,
     } = pose;
     let mut attachments = vec![];
     for (slot_index, slot) in doc.slots.iter().enumerate() {
         if !active_bones[slot.bone] {
             continue;
         }
-        let Some((key, attachment)) = doc.resolved_attachment(skin, slot_index) else {
+        let Some((key, attachment)) = slot_attachments[slot_index]
+            .as_deref()
+            .and_then(|name| doc.resolve_attachment(skin, slot_index, name))
+        else {
             continue;
         };
         let (vertices, uvs, triangles, hull) = match attachment {
@@ -194,7 +199,8 @@ fn scene_from_evaluated(doc: &Document, skin: &str, pose: crate::EvaluatedPose) 
             slot: slot_index,
             attachment: key,
             image: attachment.path().into(),
-            color: slot.color,
+            color: slot_colors[slot_index]
+                .map(|channel| (channel.clamp(0., 1.) * 255.).round() as u8),
             vertices,
             uvs,
             triangles,

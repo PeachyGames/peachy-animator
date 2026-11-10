@@ -29,6 +29,16 @@ pub fn load(path: &Path) -> Result<Document, String> {
 pub fn decode_project(text: &str) -> Result<Document, String> {
     let mut value: serde_json::Value = serde_json::from_str(text).map_err(|e| e.to_string())?;
     let original_format = value["format"].as_u64();
+    if matches!(original_format, Some(1..=13))
+        && value["animations"].as_array().is_some_and(|animations| {
+            animations.iter().any(|animation| {
+                animation.get("attachment_tracks").is_some()
+                    || animation.get("color_tracks").is_some()
+            })
+        })
+    {
+        return Err("Legacy project formats cannot contain slot keys".into());
+    }
     if matches!(original_format, Some(1..=12))
         && value["animations"].as_array().is_some_and(|animations| {
             animations
@@ -156,6 +166,20 @@ pub fn decode_project(text: &str) -> Result<Document, String> {
                 .insert("deform_tracks".into(), serde_json::json!([]));
         }
         value["format"] = 13.into();
+    }
+    // v13→v14 adds empty slot attachment and color key lists.
+    if value["format"].as_u64() == Some(13) {
+        for animation in value["animations"]
+            .as_array_mut()
+            .ok_or("Legacy animations must be an array")?
+        {
+            let object = animation
+                .as_object_mut()
+                .ok_or("Legacy animation must be an object")?;
+            object.insert("attachment_tracks".into(), serde_json::json!([]));
+            object.insert("color_tracks".into(), serde_json::json!([]));
+        }
+        value["format"] = 14.into();
     }
     let mut doc: Document = serde_json::from_value(value).map_err(|e| e.to_string())?;
     // Wrapping vertices preserves their values and all surrounding fields. Decode
@@ -677,6 +701,8 @@ mod tests {
                 "physics_resets",
                 "inherit_tracks",
                 "deform_tracks",
+                "attachment_tracks",
+                "color_tracks",
             ] {
                 assert_eq!(
                     animation.as_object_mut().unwrap().remove(field),

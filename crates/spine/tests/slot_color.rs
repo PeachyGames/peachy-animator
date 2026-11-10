@@ -80,12 +80,12 @@ fn dark_tint_and_slot_animation_continue_to_be_explicit_refusals() {
         assert!(!inspect(&value).supported);
         assert!(import_json(&value, "Reject dark").is_err());
     }
-    for timeline in [
-        json!({"rgba":[{"time":0,"color":"ff000080"}]}),
-        json!({"color":[]}),
-        json!({"rgba2":[]}),
-        json!({}),
-    ] {
+    // Plain RGBA keys are supported (native v14); dark tint and others are not.
+    let mut rgba = source();
+    rgba["animations"] =
+        json!({"clip":{"slots":{"paint":{"rgba":[{"time":0,"color":"ff000080"}]}}}});
+    assert!(inspect(&rgba).supported);
+    for timeline in [json!({"color":[]}), json!({"rgba2":[]}), json!({"rgb2":[]})] {
         let mut value = source();
         value["animations"] = json!({"clip":{"slots":{"paint":timeline}}});
         assert!(!inspect(&value).supported);

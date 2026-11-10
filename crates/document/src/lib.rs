@@ -6,6 +6,7 @@ mod ik;
 mod inherit;
 mod physics;
 mod skin_scope;
+mod slot_keys;
 mod transform;
 pub use deform::{DeformKey, DeformTrack};
 pub use ik::{Constraint, IkConstraint, IkCurve, IkKeyframe, IkSetup, IkTrack};
@@ -16,11 +17,12 @@ pub use physics::{
     ScaleYMode,
 };
 pub use skin_scope::{Activity, SkinMembers, SkinScope};
+pub use slot_keys::{AttachmentKey, AttachmentTrack, ColorKey, ColorTrack};
 pub use transform::{
     TransformConstraint, TransformMapping, TransformProperty, TransformTarget, TransformValues,
 };
 
-pub const FORMAT_VERSION: u32 = 13;
+pub const FORMAT_VERSION: u32 = 14;
 pub const KEY_TIME_EPSILON: f32 = 0.00001;
 pub fn same_key_time(a: f32, b: f32) -> bool {
     (a - b).abs() < KEY_TIME_EPSILON
@@ -370,6 +372,10 @@ pub struct Animation {
     pub inherit_tracks: Vec<InheritTrack>,
     /// Mesh deform keys. Required in native v13.
     pub deform_tracks: Vec<DeformTrack>,
+    /// Slot attachment keys (stepped). Required in native v14.
+    pub attachment_tracks: Vec<AttachmentTrack>,
+    /// Slot color keys. Required in native v14.
+    pub color_tracks: Vec<ColorTrack>,
 }
 
 impl Animation {
@@ -382,6 +388,8 @@ impl Animation {
             physics_resets: vec![],
             inherit_tracks: vec![],
             deform_tracks: vec![],
+            attachment_tracks: vec![],
+            color_tracks: vec![],
         }
     }
     /// The highest authored key time across validated, ordered timelines, or zero.
@@ -408,6 +416,16 @@ impl Animation {
             )
             .chain(
                 self.deform_tracks
+                    .iter()
+                    .filter_map(|track| track.keys.last().map(|key| key.time)),
+            )
+            .chain(
+                self.attachment_tracks
+                    .iter()
+                    .filter_map(|track| track.keys.last().map(|key| key.time)),
+            )
+            .chain(
+                self.color_tracks
                     .iter()
                     .filter_map(|track| track.keys.last().map(|key| key.time)),
             )
@@ -440,6 +458,16 @@ impl Animation {
             )
             .chain(
                 self.deform_tracks
+                    .iter()
+                    .flat_map(|track| track.keys.iter().map(|key| key.time)),
+            )
+            .chain(
+                self.attachment_tracks
+                    .iter()
+                    .flat_map(|track| track.keys.iter().map(|key| key.time)),
+            )
+            .chain(
+                self.color_tracks
                     .iter()
                     .flat_map(|track| track.keys.iter().map(|key| key.time)),
             )
@@ -664,6 +692,7 @@ impl Document {
                 }
             }
             self.validate_deform(a)?;
+            self.validate_slot_keys(a)?;
             let mut inherit_bones = BTreeSet::new();
             for track in &a.inherit_tracks {
                 if track.bone >= self.bones.len() || !inherit_bones.insert(track.bone) {

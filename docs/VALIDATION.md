@@ -1482,3 +1482,13 @@ Animated IK (native9) was merged into `main` first; inheritance became native10.
 | Front-view unified head (game, 119 skins, 56 bones, 37 constraints, deform keys) | 99,960 activity checks agree; 135,090 bone values max 0.00004; 61,410 deformed mesh coordinates max 0.00006; physics-on re-export within 0.00005 |
 | Game audit | **8 of 21** fully supported; inputs unchanged |
 | Rust suite | fmt, clippy `-D warnings`, architecture and build pass; **509** tests pass |
+
+
+## Slot attachment and color keys, native v14 — November 9, 2026
+
+| Check | Result |
+| --- | --- |
+| Runtime and editor probes | Setup before the first key; nameless key hides; per-channel absolute Bezier; color required on rgba keys |
+| Original Slot Lab (`slot-bot.peachy`): swap to a second image, hide, return; per-channel Bezier, stepped and linear color keys | Visibility agrees at every sample; 32,992 region coordinates and 16,496 color channels (within half a byte) against external 4.3.13 |
+| Game audit | Slot keys no longer block any skeleton; still **8 of 21** fully supported (remaining rigs have other blockers) |
+| Rust suite | fmt, clippy `-D warnings`, architecture and build pass; **514** tests pass |

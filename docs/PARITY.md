@@ -39,7 +39,8 @@ comparison. The native `.peachy` format is our own editable model.
 | Physics simulation preview | Pending | Needs an independently derived model calibrated against the external runtime, Simulate/Deterministic/Reset controls and wind/gravity reference scale |
 | Transform constraints | Full 4.3 data; world-mode identity Rotate/X/Y evaluation (mirrored offsets, negative mixes), Setup Mix/Offset editing, Tree icon, rename | Fitted to 300 runtime observations; Transform Lab and two game rigs match the runtime. Local/additive/clamp modes, remapping, scale/shear mappings and timelines remain. See [slice](slices/transform-constraints.md) |
 | Path constraints | Pending | Needs controlled inputs, public behavior specification and runtime boundary checks |
-| Slot animation, draw order, events, clipping, sequences | Pending | Unsupported imports are refused; no silent approximation |
+| Slot animation | Attachment swaps (incl. hide) and RGBA keys with per-channel curves import/export and evaluate | Slot Lab matches the runtime incl. visibility and color per sample; authoring UI, rgb/alpha/dark tint and sequences remain. See [slot keys](slices/slot-keys.md) |
+| Draw order, events, clipping, sequences | Pending | Unsupported imports are refused; no silent approximation |
 | Engine integration | Versioned Spine JSON plus single-page atlas export | Separate licensed runtime is an external consumer/oracle; native `.spine` and binary `.skel` decoding remain unsupported |
 
 The mesh work maps to Spine's distinction between

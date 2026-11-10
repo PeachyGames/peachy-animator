@@ -1,7 +1,7 @@
 //! Authored and applied poses are separate. FK reconstruction never solves IK.
 use crate::{Affine, IkPose, inherit_pose, local_pose, sample_ik, world_pose_with};
 use peachy_document::{
-    Activity, AttachmentRef, Constraint, DeformTrack, Document, Inherit, Transform,
+    Activity, AttachmentRef, ColorTrack, Constraint, DeformTrack, Document, Inherit, Transform,
     finite_transform,
 };
 
@@ -14,6 +14,8 @@ pub struct EvaluatedPose {
     /// Bones active under the evaluated skin (skin-required bones may be off).
     pub(crate) active_bones: Vec<bool>,
     pub(crate) deforms: Vec<(AttachmentRef, Vec<f32>)>,
+    pub(crate) slot_attachments: Vec<Option<String>>,
+    pub(crate) slot_colors: Vec<[f32; 4]>,
 }
 
 /// Complete authored state. Bone-only input cannot silently select setup IK.
@@ -27,6 +29,10 @@ pub struct AuthoredPose {
     pub(crate) active: Activity,
     /// Sampled deform offsets for keyed meshes (absent = setup vertices).
     pub(crate) deforms: Vec<(AttachmentRef, Vec<f32>)>,
+    /// Shown attachment placeholder per slot (Setup or keyed; `None` hidden).
+    pub(crate) slot_attachments: Vec<Option<String>>,
+    /// Slot color per slot as unpremultiplied 0–1 channels (Setup or keyed).
+    pub(crate) slot_colors: Vec<[f32; 4]>,
 }
 
 impl AuthoredPose {
@@ -110,6 +116,26 @@ pub fn sample_authored_pose(
                     .collect()
             })
             .unwrap_or_default(),
+        slot_attachments: doc
+            .slots
+            .iter()
+            .enumerate()
+            .map(|(index, slot)| {
+                clip.and_then(|clip| clip.attachment_tracks.iter().find(|t| t.slot == index))
+                    .and_then(|track| track.sample(time))
+                    .map_or_else(|| slot.attachment.clone(), |keyed| keyed.map(str::to_owned))
+            })
+            .collect(),
+        slot_colors: doc
+            .slots
+            .iter()
+            .enumerate()
+            .map(|(index, slot)| {
+                clip.and_then(|clip| clip.color_tracks.iter().find(|t| t.slot == index))
+                    .and_then(|track| sample_color(track, time))
+                    .unwrap_or_else(|| slot.color.map(|byte| f32::from(byte) / 255.))
+            })
+            .collect(),
     })
 }
 
@@ -176,6 +202,8 @@ pub fn checked_pose_from_authored(
         authored_ik: authored.ik.clone(),
         active_bones: authored.active.bones.clone(),
         deforms: authored.deforms.clone(),
+        slot_attachments: authored.slot_attachments.clone(),
+        slot_colors: authored.slot_colors.clone(),
     })
 }
 
@@ -304,4 +332,28 @@ pub(crate) fn sample_deform(track: &DeformTrack, time: f32) -> Option<Vec<f32>> 
         }
     }
     track.keys.last().map(|key| key.offsets.clone())
+}
+
+/// Slot color at `time`: none before the first key (Setup), the last key after
+/// the end, and per-channel curve interpolation between keys.
+pub(crate) fn sample_color(track: &ColorTrack, time: f32) -> Option<[f32; 4]> {
+    let first = track.keys.first()?;
+    if time < first.time {
+        return None;
+    }
+    let channels = |c: [u8; 4]| c.map(|byte| f32::from(byte) / 255.);
+    for pair in track.keys.windows(2) {
+        let (left, right) = (&pair[0], &pair[1]);
+        if time < right.time {
+            let progress = (time - left.time) / (right.time - left.time);
+            let (a, b) = (channels(left.color), channels(right.color));
+            let mut out = [0.; 4];
+            for channel in 0..4 {
+                let t = crate::curve_progress(left.curves[channel], progress);
+                out[channel] = a[channel] + (b[channel] - a[channel]) * t;
+            }
+            return Some(out);
+        }
+    }
+    track.keys.last().map(|key| channels(key.color))
 }

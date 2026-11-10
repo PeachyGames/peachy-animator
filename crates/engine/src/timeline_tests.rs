@@ -72,6 +72,8 @@ fn fixture() -> Document {
                 physics_resets: vec![],
                 inherit_tracks: vec![],
                 deform_tracks: vec![],
+                attachment_tracks: vec![],
+                color_tracks: vec![],
             },
             Animation {
                 ik_tracks: vec![],
@@ -86,6 +88,8 @@ fn fixture() -> Document {
                 physics_resets: vec![],
                 inherit_tracks: vec![],
                 deform_tracks: vec![],
+                attachment_tracks: vec![],
+                color_tracks: vec![],
             },
         ],
         skin_scope: Default::default(),

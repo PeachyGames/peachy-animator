@@ -75,6 +75,8 @@ fn rig(mesh: Mesh) -> Document {
             ik_tracks: vec![],
             inherit_tracks: vec![],
             deform_tracks: vec![],
+            attachment_tracks: vec![],
+            color_tracks: vec![],
         }],
         skin_scope: Default::default(),
     };

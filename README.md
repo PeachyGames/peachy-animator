@@ -104,6 +104,13 @@ body mesh (Animate, `wave`):
 cargo run -p peachy-animator -- examples/peach-bot/deform-bot.peachy
 ```
 
+The original Slot Lab swaps the left hand's image, hides it, and keys head and
+body colors (Animate, `wave`):
+
+```sh
+cargo run -p peachy-animator -- examples/peach-bot/slot-bot.peachy
+```
+
 For either mesh fixture, select its hand.R attachment and **Vertices** to inspect the selected
 vertex's bone influences. Weighted inspection works in Setup and Animate, including
 an unkeyed pose. It stops playback and preserves the current pose and mode. Bone

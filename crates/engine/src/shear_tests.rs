@@ -34,6 +34,8 @@ fn rig() -> Document {
             physics_resets: vec![],
             inherit_tracks: vec![],
             deform_tracks: vec![],
+            attachment_tracks: vec![],
+            color_tracks: vec![],
         }],
         skin_scope: Default::default(),
     }
@@ -1063,6 +1065,8 @@ fn shear_clipboard_and_retiming_keep_scalar_identity_curves_fractional_neighbors
         physics_resets: vec![],
         inherit_tracks: vec![],
         deform_tracks: vec![],
+        attachment_tracks: vec![],
+        color_tracks: vec![],
     });
     let keys = vec![
         TimelineKey {

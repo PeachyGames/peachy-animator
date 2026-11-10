@@ -167,6 +167,17 @@ for (const animation of data.animations) {
       for (let slotIndex=0;slotIndex<skeleton.slots.length;slotIndex++) {
         const slot=skeleton.slots[slotIndex];
         if (!slot.bone.active) { assert.ok(!actualDraws.has(slotIndex), 'Inactive slots are not drawn'); continue; }
+        // Shown attachment (incl. keyed swaps/hides) and slot color agree.
+        assert.equal(actualDraws.has(slotIndex), !!slot.appliedPose.attachment, `${animation.name} t=${time} slot ${slot.data.name} visibility`);
+        const draw = actualDraws.get(slotIndex);
+        if (draw) {
+          const c = slot.appliedPose.color;
+          [c.r, c.g, c.b, c.a].forEach((channel, i) => {
+            const error = Math.abs(draw.color[i] / 255 - channel);
+            assert.ok(error <= 0.5 / 255 + 1e-6, `${animation.name} t=${time} slot ${slot.data.name} color ${i}: ours ${draw.color[i]} vs ${channel}`);
+            report.colorComparisons = (report.colorComparisons ?? 0) + 1;
+          });
+        }
         const attachment=slot.appliedPose.attachment;
         if (attachment instanceof RegionAttachment) {
           const actual=actualDraws.get(slotIndex);

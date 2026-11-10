@@ -1,5 +1,5 @@
 {
-  "format": 13,
+  "format": 14,
   "constraints": [
     {
       "type": "ik",
@@ -983,7 +983,9 @@
       "physics": [],
       "physics_resets": [],
       "inherit_tracks": [],
-      "deform_tracks": []
+      "deform_tracks": [],
+      "attachment_tracks": [],
+      "color_tracks": []
     },
     {
       "name": "idle",
@@ -1056,7 +1058,9 @@
       "physics": [],
       "physics_resets": [],
       "inherit_tracks": [],
-      "deform_tracks": []
+      "deform_tracks": [],
+      "attachment_tracks": [],
+      "color_tracks": []
     }
   ]
 }

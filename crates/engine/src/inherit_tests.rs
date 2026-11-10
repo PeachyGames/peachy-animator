@@ -178,6 +178,8 @@ fn rig(child: Inherit) -> Document {
                 ],
             }],
             deform_tracks: vec![],
+            attachment_tracks: vec![],
+            color_tracks: vec![],
         }],
         skin_scope: Default::default(),
     }

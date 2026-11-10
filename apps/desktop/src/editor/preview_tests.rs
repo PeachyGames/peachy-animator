@@ -103,6 +103,8 @@ fn fixture() -> (Editor, egui::Context) {
         ik_tracks: vec![],
         inherit_tracks: vec![],
         deform_tracks: vec![],
+        attachment_tracks: vec![],
+        color_tracks: vec![],
     });
     editor.session = Session::new(doc).unwrap();
     pending(&mut editor);

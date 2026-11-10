@@ -156,6 +156,8 @@ fn all_nine_current_examples_equal_their_white_v6_migration() {
                 "physics_resets",
                 "inherit_tracks",
                 "deform_tracks",
+                "attachment_tracks",
+                "color_tracks",
             ] {
                 assert_eq!(
                     animation.as_object_mut().unwrap().remove(field),
