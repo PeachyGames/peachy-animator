@@ -46,6 +46,16 @@ pub enum Command {
         constraint: usize,
         time: f32,
     },
+    SetDeformKey {
+        animation: usize,
+        attachment: AttachmentRef,
+        key: DeformKey,
+    },
+    DeleteDeformKey {
+        animation: usize,
+        attachment: AttachmentRef,
+        time: f32,
+    },
     MoveAnimationKeys {
         animation: usize,
         keys: Vec<AnimationKey>,
@@ -127,6 +137,15 @@ pub enum Command {
     },
     AddBone {
         bone: Bone,
+    },
+    /// Append an empty slot. Add its artwork explicitly before activating it.
+    AddSlot {
+        slot: Slot,
+    },
+    /// Insert new region/mesh artwork in an existing skin and slot. Never replaces.
+    AddAttachment {
+        attachment: AttachmentRef,
+        value: Attachment,
     },
     AddAnimation {
         name: String,
@@ -211,6 +230,15 @@ pub fn apply_command(document: &Document, command: Command) -> Result<Document, 
     // Linked meshes follow source geometry edits; editing one alone is refused
     // by validation.
     candidate.propagate_linked_geometry(document);
+    for animation in &document.animations {
+        for track in &animation.deform_tracks {
+            crate::deform_authoring::check_layout_transition(
+                document,
+                &candidate,
+                &track.attachment,
+            )?;
+        }
+    }
     candidate.validate()?;
     Ok(candidate)
 }
@@ -403,6 +431,45 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
             *slot = Constraint::Physics(value);
         }
         Command::AddBone { bone } => doc.bones.push(bone),
+        Command::AddSlot { slot } => {
+            if slot.name.trim().is_empty()
+                || doc.slots.iter().any(|existing| existing.name == slot.name)
+                || slot.bone >= doc.bones.len()
+            {
+                return Err("New slot needs a unique nonempty name and an existing bone".into());
+            }
+            if slot.attachment.is_some() {
+                return Err(
+                    "New slot must be empty; add artwork then use SetSlotAttachment".into(),
+                );
+            }
+            doc.slots.push(slot);
+        }
+        Command::AddAttachment { attachment, value } => {
+            if !matches!(value, Attachment::Region(_) | Attachment::Mesh(_)) {
+                return Err(
+                    "Attachment creation currently supports regions and meshes only".into(),
+                );
+            }
+            if !doc.slots.iter().any(|slot| slot.name == attachment.slot) {
+                return Err("New attachment needs an existing slot".into());
+            }
+            if attachment.placeholder.trim().is_empty() {
+                return Err("New attachment placeholder must be nonempty".into());
+            }
+            value.validate()?;
+            let skin = doc
+                .skins
+                .get_mut(&attachment.skin)
+                .ok_or("New attachment needs an existing skin")?;
+            let entries = skin.entry(attachment.slot).or_default();
+            if entries.contains_key(&attachment.placeholder) {
+                return Err(
+                    "Attachment placeholder is occupied; creation never overwrites artwork".into(),
+                );
+            }
+            entries.insert(attachment.placeholder, value);
+        }
         Command::AddAnimation { name, duration } => {
             if !duration.is_finite() || duration < 0.0 {
                 return Err("Animation duration must be finite and nonnegative".into());
@@ -534,6 +601,20 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
             }
             clip.ik_tracks.retain(|t| !t.keys.is_empty());
         }
+        Command::SetDeformKey {
+            animation,
+            attachment,
+            key,
+        } => {
+            crate::deform_authoring::set_key(doc, animation, &attachment, key)?;
+        }
+        Command::DeleteDeformKey {
+            animation,
+            attachment,
+            time,
+        } => {
+            crate::deform_authoring::delete_key(doc, animation, &attachment, time)?;
+        }
         Command::MoveAnimationKeys {
             animation,
             keys,
@@ -620,6 +701,14 @@ pub fn ik_keyframe_at(keys: &[IkKeyframe], time: f32) -> Result<Option<IkKeyfram
         return Err("Key time must be finite and nonnegative".into());
     }
     key_index_by_time(keys, time, |key| key.time).map(|index| index.map(|index| keys[index]))
+}
+
+/// Exact imported deform-key identities take priority over nearby cursor times.
+pub fn deform_keyframe_at(keys: &[DeformKey], time: f32) -> Result<Option<&DeformKey>, String> {
+    if !time.is_finite() || time < 0. {
+        return Err("Key time must be finite and nonnegative".into());
+    }
+    key_index_by_time(keys, time, |key| key.time).map(|index| index.map(|index| &keys[index]))
 }
 
 pub(crate) fn snapped_time(fps: u32, time: f32) -> Result<f32, String> {

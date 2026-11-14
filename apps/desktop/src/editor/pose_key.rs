@@ -13,6 +13,9 @@ pub(super) enum PoseKeyAction {
     Ik {
         constraint: usize,
     },
+    Deform {
+        attachment: AttachmentRef,
+    },
 }
 
 pub(super) struct PoseKeyRequest {
@@ -38,7 +41,7 @@ impl Editor {
             animation: self.animation,
             time: self.time,
         };
-        if self.drag.is_some() || self.ik_edit.is_some() {
+        if self.drag.is_some() || self.ik_edit.is_some() || self.deform_drag.is_some() {
             self.pose_key_request = Some(request);
         } else {
             self.apply_pose_key(request);
@@ -59,11 +62,16 @@ impl Editor {
                 self.session
                     .key_ik_pose(request.animation, request.time, constraint)
             }
+            PoseKeyAction::Deform { attachment } => {
+                self.session
+                    .key_deform_pose(request.animation, request.time, attachment)
+            }
         };
         match result {
             Ok(()) => {
                 self.seal_transform_for_key();
                 self.seal_ik_for_key();
+                self.seal_deform_for_key();
                 self.session.commit_transaction();
                 self.status = "Keyed the current authored pose".into();
             }

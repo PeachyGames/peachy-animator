@@ -22,6 +22,7 @@ change a keyed mesh's vertex or influence count are refused (keys would no
 longer fit). The editor round trip drops zero-weight influences and reorders
 the rest, moving deform values consistently (geometry within 0.0016).
 
-Not yet: authoring deform keys in the editor (Animate vertex editing),
-Dopesheet rows for deform keys, sequence timelines, and deform keys on paths,
-clipping or bounding boxes.
+Single-vertex Animate authoring is available; see
+[the authoring contract](deform-authoring.md). Deform Dopesheet rows and
+multi-vertex/soft transforms remain pending. Path/clipping deforms import and
+evaluate, but their vertices remain read-only. Bounding boxes remain unsupported.

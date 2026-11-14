@@ -36,7 +36,9 @@ impl Editor {
     }
 
     pub(super) fn cancel_mesh_drag(&mut self) {
-        if self.mesh_drag.take().is_some() {
+        let setup_drag = self.mesh_drag.take().is_some();
+        let deform_drag = self.deform_drag.take().is_some();
+        if setup_drag || deform_drag {
             self.session.cancel_transaction();
             self.mesh_blocked = true;
         }
@@ -59,6 +61,17 @@ impl Editor {
                         .editable_mesh_position(&drag.attachment, drag.vertex)
                         .is_none()
             })
+            || self.deform_drag.as_ref().is_some_and(|drag| {
+                self.tool != Tool::Mesh
+                    || self.selected_attachment() != Some(&drag.attachment)
+                    || self.mesh_vertex != drag.vertex
+                    || self.setup_mode
+                    || !matches!(drag.target, EditTarget::Animate { animation, time }
+                        if animation == self.animation && time == self.time)
+                    || self
+                        .deform_world_position(&drag.attachment, drag.vertex)
+                        .is_none()
+            })
         {
             self.cancel_mesh_drag();
         }
@@ -67,7 +80,8 @@ impl Editor {
     pub(super) fn mesh_tools_panel(&mut self, ui: &mut egui::Ui) {
         self.record_target("meshSoftPanelClip", ui.clip_rect());
         let size = ui
-            .add(
+            .add_enabled(
+                self.setup_mode,
                 egui::Slider::new(&mut self.mesh_tools.settings.size, 0.0..=1000.0)
                     .text("Size")
                     .suffix(" px")
@@ -79,7 +93,8 @@ impl Editor {
         self.record_target("meshSoftSize", size.rect);
         let mut feather = self.mesh_tools.settings.feather * 100.;
         let feather_response = ui
-            .add(
+            .add_enabled(
+                self.setup_mode,
                 egui::Slider::new(&mut feather, 0.0..=100.0)
                     .text("Feather")
                     .suffix("%")
@@ -90,7 +105,10 @@ impl Editor {
             );
         self.record_target("meshSoftFeather", feather_response.rect);
         let hull = ui
-            .checkbox(&mut self.mesh_tools.settings.hull_vertices, "Hull vertices")
+            .add_enabled(
+                self.setup_mode,
+                egui::Checkbox::new(&mut self.mesh_tools.settings.hull_vertices, "Hull vertices"),
+            )
             .on_hover_text(
                 "Affect neighboring hull vertices. The explicitly selected vertex always moves.",
             );
@@ -122,7 +140,9 @@ impl Editor {
                     egui::Button::new("Vertices"),
                 )
                 .on_disabled_hover_text("Activate this attachment's skin to edit its vertices.")
-                .on_hover_text(if weighted {
+                .on_hover_text(if !self.setup_mode {
+                    "Pose one vertex in Animate. Soft selection is available in Setup."
+                } else if weighted {
                     "Inspect weighted vertices; use Weights for binding edits."
                 } else {
                     "Enter Setup vertex editing."
@@ -131,18 +151,18 @@ impl Editor {
             if edit.clicked() {
                 self.enter_mesh_tool();
             }
-            if weighted {
+            if !self.setup_mode {
                 ui.label(
                     RichText::new(
-                        "Weighted soft selection is not available. Use Weights to edit bindings.",
+                        "Animate moves one vertex. Switch to Setup to use soft selection.",
                     )
                     .small()
                     .color(MUTED),
                 );
-            } else if !self.setup_mode {
+            } else if weighted {
                 ui.label(
                     RichText::new(
-                        "Soft selection edits Setup vertices. Vertices opens Setup editing.",
+                        "Weighted soft selection is not available. Use Weights to edit bindings.",
                     )
                     .small()
                     .color(MUTED),
@@ -191,7 +211,8 @@ impl Editor {
             "hullVertices":settings.hull_vertices, "radiusVisible":self.mesh_tools.show_radius,
             "weights":self.mesh_drag.as_ref().map(|drag|drag.translation.weights())
                 .or_else(||current.as_ref().ok().map(|translation|translation.weights())),
-            "unavailable":current.err(), "dragging":self.mesh_drag.is_some(), "blocked":self.mesh_blocked
+            "unavailable":current.err(), "dragging":self.mesh_drag.is_some(),
+            "deformDragging":self.deform_drag.is_some(), "blocked":self.mesh_blocked
         })
     }
 }

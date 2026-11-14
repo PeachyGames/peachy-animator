@@ -1,5 +1,14 @@
 # Peachy Animator
 
+Animate mesh vertices now supports weighted/unweighted single-vertex dragging and
+nudging, Auto Key, pending poses, K, explicit Deform key/delete and undo. See the
+[authoring contract](docs/slices/deform-authoring.md) and
+[native screenshot](docs/deform-authoring-editor.png). The original
+`examples/peach-bot/deform-authoring-bot.peachy` lab and its adjacent command JSON
+exercise weighted and unweighted deform-key creation through the CLI.
+Large loose images load at original resolution within the actual GPU limit;
+oversized images report an error. Freeform meshes and brush weights remain pending.
+
 This branch adds animated IK (keyed Mix/Positive) on native9 projects. See the
 [review checkpoint](docs/IK_ANIMATION_REVIEW.md) for controls, verification and
 the remaining raw-curve import precision issue. Interactive review is still pending.

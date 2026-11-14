@@ -802,6 +802,7 @@ pub fn save(path: &Path, doc: &Document, asset_root: &Path) -> Result<(), String
 }
 
 pub fn export_bundle(parent: &Path, doc: &Document, asset_root: &Path) -> Result<PathBuf, String> {
+    const MAX_SIDE: u32 = 4096;
     let value = peachy_spine::export_json(doc)?;
     let mut regions = vec![];
     let mut x = 2;
@@ -812,16 +813,21 @@ pub fn export_bundle(parent: &Path, doc: &Document, asset_root: &Path) -> Result
         let image = image::open(asset_root.join("images").join(format!("{path}.png")))
             .map_err(|e| format!("Image {path}: {e}"))?
             .into_rgba8();
-        if image.width() > 2044 || image.height() > 2044 {
-            return Err("Slice 1 atlas pages support images up to 2044 pixels".into());
+        if image.width() > MAX_SIDE - 4 || image.height() > MAX_SIDE - 4 {
+            return Err(format!(
+                "Image {path} exceeds the single-page atlas image limit of {} pixels per side",
+                MAX_SIDE - 4
+            ));
         }
-        if x + image.width() + 2 > 2048 {
+        if x + image.width() + 2 > MAX_SIDE {
             x = 2;
             y += row + 4;
             row = 0;
         }
-        if y + image.height() + 2 > 2048 {
-            return Err("Slice 1 supports one 2048×2048 atlas page".into());
+        if y + image.height() + 2 > MAX_SIDE {
+            return Err(format!(
+                "Images do not fit one {MAX_SIDE}×{MAX_SIDE} atlas page"
+            ));
         }
         used_width = used_width.max(x + image.width() + 2);
         row = row.max(image.height());
@@ -992,6 +998,51 @@ mod tests {
         assert!(export.join("character.png").exists());
         assert!(export.join("character.atlas").exists());
         assert!(export.join("character.json").exists());
+        fs::remove_dir_all(folder).unwrap();
+    }
+
+    #[test]
+    fn bundle_preserves_large_source_images_and_refuses_the_real_page_limit() {
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../examples/peach-bot");
+        let mut doc = load(&root.join("peach-bot.peachy")).unwrap();
+        for attachment in doc
+            .skins
+            .values_mut()
+            .flat_map(|s| s.values_mut())
+            .flat_map(|s| s.values_mut())
+        {
+            let peachy_document::Attachment::Region(region) = attachment else {
+                panic!("Original fixture has regions")
+            };
+            region.path = "wide".into();
+        }
+        let folder = std::env::temp_dir().join(format!("peachy-large-bundle-{}", stamp()));
+        fs::create_dir_all(folder.join("images")).unwrap();
+        let path = folder.join("images/wide.png");
+        let image = image::RgbaImage::from_fn(2059, 2, |x, y| {
+            image::Rgba([(x % 256) as u8, y as u8, 125, 255])
+        });
+        image.save(&path).unwrap();
+        let original = fs::read(&path).unwrap();
+        let export = export_bundle(&folder, &doc, &folder).unwrap();
+        let atlas = image::open(export.join("character.png"))
+            .unwrap()
+            .into_rgba8();
+        assert_eq!(atlas.width(), 4096);
+        for x in [0, 1024, 2058] {
+            assert_eq!(atlas.get_pixel(x + 2, 2), image.get_pixel(x, 0));
+        }
+        assert_eq!(fs::read(&path).unwrap(), original);
+        let atlas_text = fs::read_to_string(export.join("character.atlas")).unwrap();
+        assert!(atlas_text.contains("bounds: 2,2,2059,2"));
+        image::RgbaImage::new(4093, 1).save(&path).unwrap();
+        let entries = fs::read_dir(&folder).unwrap().count();
+        assert!(
+            export_bundle(&folder, &doc, &folder)
+                .unwrap_err()
+                .contains("4092")
+        );
+        assert_eq!(fs::read_dir(&folder).unwrap().count(), entries);
         fs::remove_dir_all(folder).unwrap();
     }
 }

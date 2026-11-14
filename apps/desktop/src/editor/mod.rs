@@ -31,6 +31,7 @@ mod slot_color;
 mod style;
 #[cfg(test)]
 mod test_support;
+mod textures;
 mod timeline_clipboard;
 mod timeline_model;
 mod timeline_view;
@@ -149,6 +150,7 @@ pub(crate) struct Editor {
     mesh_vertex: usize,
     mesh_triangle: usize,
     mesh_drag: Option<MeshDrag>,
+    deform_drag: Option<mesh::DeformDrag>,
     mesh_blocked: bool,
     mesh_tools: mesh_tools::MeshToolsView,
     capture_targets: BTreeMap<String, [f32; 4]>,
@@ -276,6 +278,7 @@ impl Editor {
             mesh_vertex: 0,
             mesh_triangle: 0,
             mesh_drag: None,
+            deform_drag: None,
             mesh_blocked: false,
             mesh_tools: Default::default(),
             capture_targets: BTreeMap::new(),
@@ -291,51 +294,14 @@ impl Editor {
             frames: 0,
         };
         editor.reconcile_selection();
+        textures::configure_texture_limit(
+            &cc.egui_ctx,
+            cc.wgpu_render_state
+                .as_ref()
+                .map(|render| render.device.limits().max_texture_dimension_2d as usize),
+        );
         editor.load_textures(&cc.egui_ctx);
         editor
-    }
-
-    fn load_textures(&mut self, ctx: &egui::Context) {
-        self.textures.clear();
-        self.ghosting.solid_textures.clear();
-        let paths: Vec<_> = self.session.document().image_paths().into_iter().collect();
-        let mut missing = vec![];
-        for path in paths {
-            let file = self.asset_root.join("images").join(format!("{path}.png"));
-            match image::open(&file) {
-                Ok(image) => {
-                    let image = image.into_rgba8();
-                    let size = [image.width() as usize, image.height() as usize];
-                    let mut solid = image.clone();
-                    for pixel in solid.pixels_mut() {
-                        pixel.0[..3].fill(255);
-                    }
-                    self.ghosting.solid_textures.insert(
-                        path.clone(),
-                        ctx.load_texture(
-                            format!("ghost-solid:{path}"),
-                            egui::ColorImage::from_rgba_unmultiplied(size, solid.as_raw()),
-                            egui::TextureOptions::LINEAR,
-                        ),
-                    );
-                    self.textures.insert(
-                        path.clone(),
-                        ctx.load_texture(
-                            path,
-                            egui::ColorImage::from_rgba_unmultiplied(size, image.as_raw()),
-                            egui::TextureOptions::LINEAR,
-                        ),
-                    );
-                }
-                Err(_) => missing.push(path),
-            }
-        }
-        if !missing.is_empty() {
-            self.error = Some(format!(
-                "Missing loose PNG images: {}. Slice 1 loads images from an images/ folder next to the project; packed-atlas import is a later slice.",
-                missing.join(", ")
-            ));
-        }
     }
 
     fn dispatch(&mut self, command: Command) -> bool {
@@ -608,7 +574,7 @@ impl Editor {
             self.cancel_dopesheet_drag();
             return;
         }
-        if self.mesh_drag.is_some() {
+        if self.mesh_drag.is_some() || self.deform_drag.is_some() {
             self.cancel_mesh_drag();
             return;
         }
@@ -616,6 +582,7 @@ impl Editor {
         self.key_selection.clear();
         self.drag = None;
         self.mesh_drag = None;
+        self.deform_drag = None;
         self.reconcile_selection();
     }
     fn redo(&mut self) {
@@ -646,7 +613,7 @@ impl Editor {
             self.cancel_dopesheet_drag();
             return;
         }
-        if self.mesh_drag.is_some() {
+        if self.mesh_drag.is_some() || self.deform_drag.is_some() {
             self.cancel_mesh_drag();
             return;
         }
@@ -654,6 +621,7 @@ impl Editor {
         self.key_selection.clear();
         self.drag = None;
         self.mesh_drag = None;
+        self.deform_drag = None;
         self.reconcile_selection();
     }
 
@@ -723,6 +691,7 @@ impl Editor {
                     self.hidden_bones.clear();
                     self.hidden_slots.clear();
                     self.mesh_drag = None;
+                    self.deform_drag = None;
                     self.rename = None;
                     self.duplicate_animation = None;
                     self.reconcile_selection();
@@ -1014,6 +983,7 @@ impl Editor {
                 report["status"] = self.status.clone().into();
                 report["timelineOwner"] = serde_json::json!(self.timeline_owner());
                 report["animationEnd"] = self.animation_end().into();
+                report["deformDragging"] = self.deform_drag.is_some().into();
                 report["weightedMeshCount"] = self.weighted_mesh_count().into();
                 report["weightsContext"] = self.weights_diagnostic();
                 report["weightsDirect"] = self.weight_direct_diagnostic();

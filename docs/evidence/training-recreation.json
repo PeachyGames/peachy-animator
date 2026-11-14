@@ -1,0 +1,225 @@
+{
+  "date": "2026-11-14",
+  "baselineCommit": "a173c3e1229ab3a49115c94cbd14ede33cf89f40",
+  "scope": "Original fresh-MCP tutorial mechanism studies from prepared private cutouts; aggregate evidence only, no artwork or skeleton data.",
+  "referenceCoverage": {
+    "videos": 4,
+    "sampledFrames": 569,
+    "contactSheets": 31,
+    "chapterCount": 47,
+    "intervalSeconds": 30,
+    "finalFrameAlsoSampled": true,
+    "allSheetsInspected": true,
+    "continuousWatch": false,
+    "totalVideoSeconds": 16913.872531,
+    "audio": {
+      "allTracksFullyDecoded": true,
+      "instructionalNarrationPresent": false,
+      "halloweenTracksSilent": 3,
+      "windSilentUntilSeconds": 2403.050045,
+      "windUnverifiedNarrativeOutroSeconds": 16.39957,
+      "verbatimOutroAudioVerified": false,
+      "onScreenSubtitlesRecordedSeparately": true,
+      "lowConfidenceAsrRejected": true
+    }
+  },
+  "freshAuthoring": {
+    "actualStdioMcp": true,
+    "initialRootBones": 1,
+    "initialSlots": 0,
+    "initialConstraints": 0,
+    "initialAnimations": 0,
+    "initialSource": null,
+    "emptyDefaultSkin": true,
+    "finishedRigImported": false,
+    "onlyOpenCallReopensOwnSavedOutput": true,
+    "newControls": [
+      "create_project",
+      "addSlot",
+      "addAttachment"
+    ],
+    "formatVersion": 22,
+    "formatMigrationRequired": false,
+    "creationContracts": [
+      "empty slots append to existing bones",
+      "region/mesh payloads insert into existing skin/slot",
+      "occupied placeholders rejected",
+      "document validation, expected revision and atomic history retained"
+    ],
+    "strictIkStretchPublished": true,
+    "currentBinaryReplayMatchesSavedDocuments": true
+  },
+  "halloween": {
+    "bones": 79,
+    "slots": 37,
+    "meshes": 27,
+    "weightedMeshes": 26,
+    "weightedVertices": 1127,
+    "blendedVertices": 715,
+    "constraints": 1,
+    "clips": [
+      {
+        "durationSeconds": 6.0,
+        "previewFrames": 72,
+        "loopSeamMax": 0.0,
+        "maxMotion": 100.80224609375
+      },
+      {
+        "durationSeconds": 4.0,
+        "previewFrames": 48,
+        "loopSeamMax": 0.0,
+        "maxMotion": 171.2254638671875
+      },
+      {
+        "durationSeconds": 3.0,
+        "previewFrames": 36,
+        "loopSeamMax": 0.0,
+        "maxMotion": 45.271240234375
+      }
+    ],
+    "deformTracksPerClip": [
+      5,
+      5,
+      5
+    ],
+    "complete": true,
+    "undoRedo": true,
+    "savedReopened": true,
+    "sourceImagesUnchanged": true,
+    "maxSetupBindResidual": 0.0002848307292424579,
+    "runtime": {
+      "runtime": "Spine 4.3 external oracle",
+      "tolerance": 0.001,
+      "comparisons": 73944,
+      "maxWorldError": 0.00045152608799980953,
+      "meshComparisons": 377832,
+      "weightedMeshComparisons": 351624,
+      "maxMeshError": 0.000732421875,
+      "uvComparisons": 755664,
+      "maxUVError": 2.930755726993084e-08,
+      "ikPoseComparisons": 156,
+      "maxIKMixError": 0,
+      "drawOrderChecks": 156,
+      "imageChecks": 5772
+    },
+    "deformIsolation": {
+      "passed": true,
+      "boneWorldDelta": 0.0,
+      "targetKinds": [
+        "face",
+        "hat",
+        "cowl",
+        "body",
+        "broom"
+      ],
+      "meshMotionWorldUnits": [
+        4.5,
+        7.0,
+        5.0001220703125,
+        3.8043212890625,
+        9.0
+      ]
+    },
+    "constraintsScope": "One independently authored two-bone leg IK with animated target; exact tutorial chest-target setup unclaimed.",
+    "nativeFinal": {
+      "status": "verified",
+      "imageCount": 37,
+      "clipsAdvancing": 3,
+      "allPlaying": true,
+      "evaluationErrors": 0,
+      "documentUnchangedAtNativePrecision": true,
+      "normalWindowAndForegroundVerified": true,
+      "coordinatorVisualReview": "Fitted full character, including hat and boots, inspected during native playback."
+    },
+    "authoringCommandsReplayed": 4063
+  },
+  "wind": {
+    "bones": 48,
+    "slots": 7,
+    "meshes": 7,
+    "weightedMeshes": 7,
+    "weightedVertices": 506,
+    "blendedVertices": 424,
+    "constraints": 0,
+    "clips": [
+      {
+        "durationSeconds": 4.0,
+        "previewFrames": 48,
+        "loopSeamMax": 0.0,
+        "maxMotion": 114.81231689453125
+      },
+      {
+        "durationSeconds": 4.0,
+        "previewFrames": 48,
+        "loopSeamMax": 0.0,
+        "maxMotion": 202.13507080078125
+      }
+    ],
+    "deformTracksPerClip": [
+      0,
+      0
+    ],
+    "complete": true,
+    "undoRedo": true,
+    "savedReopened": true,
+    "sourceImagesUnchanged": true,
+    "maxSetupBindResidual": 0.0001627604167424579,
+    "runtime": {
+      "runtime": "Spine 4.3 external oracle",
+      "tolerance": 0.001,
+      "comparisons": 29952,
+      "maxWorldError": 0.0002205512801083387,
+      "meshComparisons": 105248,
+      "weightedMeshComparisons": 105248,
+      "maxMeshError": 0.0003662109375,
+      "uvComparisons": 210496,
+      "maxUVError": 1.437729224562645e-08,
+      "ikPoseComparisons": 0,
+      "maxIKMixError": 0,
+      "drawOrderChecks": 104,
+      "imageChecks": 728
+    },
+    "caseCount": 5,
+    "caseNames": [
+      "front hair",
+      "head cloth",
+      "long cloth",
+      "upper garment",
+      "waist sash"
+    ],
+    "allCaseGatesPassedBothClips": true,
+    "maxCaseRootDrift": 0.0,
+    "maxCaseLoopSeam": 0.0,
+    "upperGarmentRequiredTranslation": [
+      "y"
+    ],
+    "waistSashRequiredTranslation": [
+      "x",
+      "y"
+    ],
+    "originalCharacterAssetsAvailable": false,
+    "exactOriginalCharacterClaimed": false,
+    "nativeFinal": {
+      "status": "verified",
+      "imageCount": 7,
+      "clipsAdvancing": 2,
+      "allPlaying": true,
+      "evaluationErrors": 0,
+      "documentUnchangedAtNativePrecision": true,
+      "normalWindowAndForegroundVerified": true,
+      "coordinatorVisualReview": "All five proxy panels fully loaded and fitted; gust and selected-mesh overlay reviewed."
+    },
+    "authoringCommandsReplayed": 2970
+  },
+  "limits": [
+    "Photoshop painting, cutout repair and PSD preparation are external prerequisites.",
+    "Prepared art quality and crop/layout differences limit exact source composition.",
+    "Wind is a mechanism study using explicitly qualified supplied-art proxies.",
+    "Exact artist hierarchy, topology, poses and timing are not reproduced.",
+    "Auto/brush weights, Graph, Ghosting and multi-row Offset UI parity are not established by explicit MCP data authoring.",
+    "Sampled tutorial evidence does not establish blinking, smoke, standalone bat-wing or lantern-swing instruction.",
+    "Native playback and loaded-art review passed for both final saved studies. Exact source poses/timing, artwork quality and Spine UI interaction parity remain qualified."
+  ],
+  "privateEvidencePolicy": "Artist cutouts, source documents, exported skeleton data, screenshots, detailed logs and absolute source paths remain outside Git.",
+  "verificationCompleteForAuthoredStudies": true
+}

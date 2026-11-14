@@ -1,5 +1,106 @@
 # First-slice validation — November 5, 2026
 
+## Fresh tutorial authoring through MCP — November 14, 2026
+
+A fresh native factory, append-only slot/region/mesh commands and MCP
+`create_project` enable authoring from prepared cutouts without importing a
+finished rig. Native v22 is unchanged. Focused engine `creation` (4), MCP
+`stdio` (2) and `schema` (4), and I/O `bundle` (1) checks pass with two Cargo
+workers and two test threads. Formatting, all-target workspace Clippy with
+warnings denied, workspace build and the seven-crate architecture check pass.
+An independent source review found no blocking validation, atomicity or path
+confinement issue. The final schema check also covers the optional IK stretch
+field used by reconstruction requests; it retains strict unknown-field rejection.
+Both original rig/motion batches were replayed through the updated MCP binary
+and produced documents identical to the saved, runtime-checked outputs.
+
+Actual stdio MCP calls authored two projects from one neutral root. Both pass
+atomic history restoration, native Save/reopen document equality, JSON and
+packed export, and unchanged source PNG hashes. Halloween has 79 bones, 37
+slots, 27 meshes, one IK constraint and three clips. Wind has 48 bones, seven
+weighted meshes, two clips and five independently measured technique cases.
+The single-page packer now handles up to 4096×4096; a focused original-image
+check preserves 2059-pixel art and rejects a 4093-pixel image before writing an
+output directory.
+
+| Actual authored output | External 4.3 runtime checks | Maximum world / mesh error |
+| --- | --- | --- |
+| Halloween | 73,944 bone values; 377,832 mesh values; 755,664 UV values; 156 IK samples | 0.00045153 / 0.00073242 |
+| Wind technique studies | 29,952 bone values; 105,248 weighted mesh values; 210,496 UV values | 0.00022056 / 0.00036622 |
+
+Both final native projects open with all textures (37 Halloween, seven Wind).
+All five clips advance in the actual editor with no evaluation errors. Fitted
+screenshots show the full character or five technique panels. Saved document
+data remains unchanged at native f32 precision, with no pending poses. Both
+verified owned editor processes were closed after review.
+
+All five clip endpoint residuals are zero. Every Wind case moves and loops with
+fixed roots; garment Y and sash X/Y translation engage. A separate MCP check
+removes Halloween bone keys temporarily: bone transforms remain exactly fixed
+while face, hat, cowl, torso and broom deforms move their meshes by 3.8–9 world
+units. Undo restores the full authored document before Save/export. Numerical
+agreement uses the unchanged 0.001 geometry tolerance and does not establish
+pixel equivalence or identical artist timing.
+
+See [the precise reference/recreation scope](slices/training-recreation.md) and
+[redacted scalar evidence](evidence/training-recreation.json). Full audio
+coverage found silent instructional portions; timestamped visual walkthroughs
+use 569 sampled frames across 31 sheets. The short Wind showcase speech remains
+unverified; its visible English subtitles are separate. Wind character source
+artwork was absent, so those cases use explicit proxies. Private artwork,
+projects, detailed MCP requests and review media remain gitignored. Hosted CI
+registration is still unresolved; this feature branch is not integrated into main.
+
+## Animate deform authoring and texture startup — November 14, 2026
+
+Integrated checks use two Cargo workers and two test threads. Focused filters:
+engine `deform` (15), `binding` (20) and `pose` (42); desktop `mesh` (24) and
+`editor::textures::tests` (3); MCP `schema` (2). Filters overlap; these are not
+additive test totals. Format, all-target workspace Clippy with `-D warnings`,
+workspace build and the seven-crate architecture check pass locally.
+
+Hosted CI was requested on the pushed feature branch with `test_filter=deform`,
+but GitHub returned HTTP 404: workflow `check.yml` not found on the default branch.
+The contents API confirms that exact file on remote main, while Actions lists no
+registered workflows or runs. Actions is enabled; no account/repository settings
+were changed. Main integration remains gated on hosted CI.
+
+Original weighted/unweighted keys created through CLI commands and the weighted
+mesh edited in the real native application each pass `scripts/check-runtime.mjs`
+against the external 4.3.13 runtime across both clips and all three skins:
+28,080 bone values, 29,120 region values and 5,200 mesh coordinates each.
+Maximum bone error is 0.00002654, region/mesh error 0.00003052, with zero UV
+error, against the unchanged 0.001 tolerance. Draw order, images and colors agree.
+
+Native mouse/key acceptance verifies an actual 24×16-pixel weighted vertex drag,
+unchanged document data with Auto Key off, pending Save exclusion, K keying,
+saved-file equality at native f32 precision, and Undo/Redo restoring pending/keyed
+states. The saved document validates and its export passes the runtime gate.
+Its saved deform key also survives reopening in the real native application.
+Synthetic UI checks separately cover unweighted edits, key/delete, release-position
+inclusion, fixed-baseline previews, Escape, focus/context changes and held-pointer
+blocking. See [evidence](evidence/deform-authoring.json) and
+[native capture](deform-authoring-editor.png).
+
+Installed Spine 4.3.26 accepts and re-exports the native-authored JSON. Comparing
+that re-export against our pre-editor data gives a maximum mesh difference of
+0.001586914, above 0.001; a fresh unchanged Weighted Lab baseline produces the
+exact same maximum. This preserves the previously recorded editor bind-coordinate
+quantization limitation, not a lossless editor-roundtrip pass. Reimporting the
+editor's authored data matches that data's runtime: 13,500 bone values (maximum
+0.00002644) and 2,500 mesh coordinates (maximum 0.00003052), within 0.001.
+
+The previously failing private training project now renders all 38 original loose
+images, including a 2059-pixel texture, and both clips were observed playing in
+the native editor. Its current-engine numerical check remains within 0.001:
+57,300 bone values (max 0.00096778) and 155,900 mesh coordinates (max 0.00061036).
+Archive/PSD source hashes remain unchanged. Detailed private evidence remains
+gitignored; no third-party artwork or skeletons are committed.
+
+Limits: exact mesh selection/key-control placement parity with the installed
+editor remains open, along with deform Dopesheet rows and multi-vertex/soft
+authoring. The stopped female-pose full verification was not restarted.
+
 Verified locally on macOS with Rust 1.99.1 and the locked dependencies:
 
 | Check | Result |

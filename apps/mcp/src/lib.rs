@@ -20,7 +20,7 @@ use std::{
 
 struct WorkingProject {
     session: Session,
-    source: PathBuf,
+    source: Option<PathBuf>,
     asset_root: PathBuf,
 }
 
@@ -47,12 +47,12 @@ impl State {
     fn project(&self) -> Result<&WorkingProject, String> {
         self.project
             .as_ref()
-            .ok_or_else(|| "Open a project first".into())
+            .ok_or_else(|| "Open or create a project first".into())
     }
     fn project_mut(&mut self) -> Result<&mut WorkingProject, String> {
         self.project
             .as_mut()
-            .ok_or_else(|| "Open a project first".into())
+            .ok_or_else(|| "Open or create a project first".into())
     }
 
     fn summary(&self) -> Value {
@@ -62,7 +62,7 @@ impl State {
             }
             Some(project) => {
                 let doc = project.session.document();
-                json!({"revision":self.revision,"open":true,"source":self.root.display(&project.source),"dirty":project.session.is_dirty(),"canUndo":project.session.can_undo(),"canRedo":project.session.can_redo(),"name":doc.name,"format":doc.format,"fps":doc.fps,"bones":doc.bones.len(),"slots":doc.slots.len(),"constraints":doc.constraints.len(),"skins":doc.skins.keys().collect::<Vec<_>>(),"animations":doc.animations.iter().enumerate().map(|(index,animation)|json!({"index":index,"name":animation.name,"duration":animation.duration()})).collect::<Vec<_>>()})
+                json!({"revision":self.revision,"open":true,"source":project.source.as_ref().map(|source|self.root.display(source)),"dirty":project.session.is_dirty(),"canUndo":project.session.can_undo(),"canRedo":project.session.can_redo(),"name":doc.name,"format":doc.format,"fps":doc.fps,"bones":doc.bones.len(),"slots":doc.slots.len(),"constraints":doc.constraints.len(),"skins":doc.skins.keys().collect::<Vec<_>>(),"animations":doc.animations.iter().enumerate().map(|(index,animation)|json!({"index":index,"name":animation.name,"duration":animation.duration()})).collect::<Vec<_>>()})
             }
         }
     }
@@ -113,6 +113,26 @@ struct OpenInput {
     /// Current revision from get_document; zero before the first open.
     expected_revision: u64,
     /// Explicitly discard an unsaved headless document when opening another. Defaults to false.
+    #[serde(default)]
+    discard_changes: bool,
+}
+
+fn default_fps() -> u32 {
+    30
+}
+
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct CreateInput {
+    expected_revision: u64,
+    /// Nonempty name for a new root-only native document; no finished rig is loaded.
+    name: String,
+    /// Frames per second, 1–240. Defaults to 30.
+    #[serde(default = "default_fps")]
+    fps: u32,
+    /// Existing directory within --root. Loose PNG references resolve through its images/ child.
+    asset_root: String,
+    /// Explicitly discard unsaved headless changes. Defaults to false.
     #[serde(default)]
     discard_changes: bool,
 }
@@ -192,6 +212,43 @@ impl AnimatorServer {
     }
 
     #[tool(
+        description = "Create a new root-only native document in the independent headless session, without importing a finished rig or writing files. asset_root must be an existing directory inside --root; image paths resolve through its images/ child. A dirty session requires explicit discard_changes=true. Append bones, slots and region/mesh attachments through apply_commands, then save_project to a fresh directory.",
+        annotations(
+            destructive_hint = true,
+            idempotent_hint = false,
+            open_world_hint = false
+        )
+    )]
+    fn create_project(&self, Parameters(input): Parameters<CreateInput>) -> CallToolResult {
+        self.access(|state| {
+            state.check_revision(input.expected_revision)?;
+            if state
+                .project
+                .as_ref()
+                .is_some_and(|project| project.session.is_dirty())
+                && !input.discard_changes
+            {
+                return Err(
+                    "Unsaved headless changes; save_project or explicitly set discard_changes=true"
+                        .into(),
+                );
+            }
+            let asset_root = state.root.existing(&input.asset_root)?;
+            if !asset_root.is_dir() {
+                return Err("asset_root must be an existing directory".into());
+            }
+            let document = peachy_document::Document::new(input.name, input.fps)?;
+            state.project = Some(WorkingProject {
+                session: Session::new(document)?,
+                source: None,
+                asset_root,
+            });
+            state.revision += 1;
+            Ok(state.summary())
+        })
+    }
+
+    #[tool(
         description = "Inspect a native or Spine JSON file without opening it or changing session history. Unsupported Spine features are reported, never discarded.",
         annotations(read_only_hint = true, idempotent_hint = true, open_world_hint = false)
     )]
@@ -240,7 +297,7 @@ impl AnimatorServer {
                 .to_owned();
             state.project = Some(WorkingProject {
                 session,
-                source: path,
+                source: Some(path),
                 asset_root,
             });
             state.revision += 1;
@@ -354,7 +411,7 @@ impl AnimatorServer {
                 return Err(error);
             }
             let project = state.project_mut()?;
-            project.source = path.clone();
+            project.source = Some(path.clone());
             project.asset_root = output;
             project.session.mark_saved();
             state.revision += 1;
@@ -391,6 +448,6 @@ impl AnimatorServer {
 #[tool_handler(
     name = "peachy-animator",
     version = "0.1.0",
-    instructions = "Independent headless Peachy Animator session, not a connection to the desktop. Call get_document for state/revision; inspect_file then open_project; use commands with expected_revision; evaluate_pose for checked geometry; save_project into a fresh directory. Paths and referenced images are confined to startup --root. Existing artist sources are never overwritten. Unsupported Spine features fail explicitly. No raster rendering or live GUI bridge yet."
+    instructions = "Independent headless Peachy Animator session, not a connection to the desktop. Call get_document for state/revision; create_project for a fresh root-only document, or inspect_file then open_project for an existing one; use commands with expected_revision; evaluate_pose for checked geometry; save_project into a fresh directory. Paths and referenced images are confined to startup --root. Existing artist sources are never overwritten. Unsupported Spine features fail explicitly. No raster rendering or live GUI bridge yet."
 )]
 impl ServerHandler for AnimatorServer {}

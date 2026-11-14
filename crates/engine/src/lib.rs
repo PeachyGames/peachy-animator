@@ -2,6 +2,7 @@
 mod authoring;
 mod clipping;
 mod commands;
+mod deform_authoring;
 mod ghosting;
 mod ik;
 mod ik_sampling;
@@ -22,7 +23,9 @@ mod transform_constraint;
 
 pub use authoring::{IkPoseEdit, KeyState, PoseEdits, transform_group};
 pub use clipping::ClippedGeometry;
-pub use commands::{Command, EditTarget, apply_command, ik_keyframe_at, keyframe_at};
+pub use commands::{
+    Command, EditTarget, apply_command, deform_keyframe_at, ik_keyframe_at, keyframe_at,
+};
 pub use ghosting::{
     GhostRange, GhostSample, GhostSampling, GhostSide, GhostSource, MAX_GHOST_SAMPLES,
     ghost_samples,
@@ -68,6 +71,10 @@ mod animation_tests;
 mod binding_tests;
 #[cfg(test)]
 mod clipping_tests;
+#[cfg(test)]
+mod creation_tests;
+#[cfg(test)]
+mod deform_authoring_tests;
 #[cfg(test)]
 mod deform_tests;
 #[cfg(test)]

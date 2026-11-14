@@ -13,6 +13,12 @@ pub struct PoseEdits {
     // A sequence rather than a map keeps diagnostics valid JSON (tuple map keys are not strings).
     values: Vec<PoseValue>,
     ik_values: Vec<IkPoseValue>,
+    deform_values: Vec<DeformPoseValue>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize)]
+struct DeformPoseValue {
+    attachment: AttachmentRef,
+    offsets: Vec<f32>,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase", deny_unknown_fields)]
@@ -90,7 +96,126 @@ pub fn transform_group(properties: &[Property]) -> Vec<Property> {
 
 impl PoseEdits {
     pub fn is_empty(&self) -> bool {
-        self.values.is_empty() && self.ik_values.is_empty()
+        self.values.is_empty() && self.ik_values.is_empty() && self.deform_values.is_empty()
+    }
+    /// `attachment` is a canonical deform target (Document::deform_target).
+    pub fn has_deform(&self, animation: usize, attachment: &AttachmentRef) -> bool {
+        self.animation == Some(animation)
+            && self
+                .deform_values
+                .iter()
+                .any(|value| value.attachment == *attachment)
+    }
+    pub fn deform_key_state(
+        &self,
+        doc: &Document,
+        animation: usize,
+        time: f32,
+        attachment: &AttachmentRef,
+    ) -> Result<KeyState, String> {
+        let (_, canonical, _) = crate::deform_authoring::mesh_target(doc, attachment)?;
+        let clip = doc.animations.get(animation).ok_or("Unknown animation")?;
+        if !time.is_finite() || time < 0. {
+            return Err("Pose time must be finite and nonnegative".into());
+        }
+        if self.has_deform(animation, &canonical) {
+            return Ok(KeyState::Edited);
+        }
+        let key = clip
+            .deform_tracks
+            .iter()
+            .find(|track| track.attachment == canonical)
+            .map(|track| crate::deform_keyframe_at(&track.keys, time))
+            .transpose()?
+            .flatten();
+        Ok(if key.is_some() {
+            KeyState::Keyed
+        } else {
+            KeyState::Absent
+        })
+    }
+    pub(crate) fn edit_deform(
+        &self,
+        doc: &Document,
+        animation: usize,
+        time: f32,
+        attachment: &AttachmentRef,
+        offsets: Vec<f32>,
+    ) -> Result<Self, String> {
+        let canonical = crate::deform_authoring::validate_offsets(doc, attachment, &offsets)?;
+        let sampled = sample_authored_pose(doc, Some(animation), time)?;
+        let base = crate::deform_authoring::offsets(doc, &sampled, &canonical)?;
+        let mut next = if self.animation == Some(animation) {
+            self.clone()
+        } else {
+            Self::default()
+        };
+        next.deform_values
+            .retain(|value| value.attachment != canonical);
+        if offsets != base {
+            next.deform_values.push(DeformPoseValue {
+                attachment: canonical,
+                offsets,
+            });
+        }
+        next.sort_deforms();
+        next.animation = if next.is_empty() {
+            None
+        } else {
+            Some(animation)
+        };
+        Ok(next)
+    }
+    fn sort_deforms(&mut self) {
+        self.deform_values.sort_by(|a, b| {
+            (
+                &a.attachment.skin,
+                &a.attachment.slot,
+                &a.attachment.placeholder,
+            )
+                .cmp(&(
+                    &b.attachment.skin,
+                    &b.attachment.slot,
+                    &b.attachment.placeholder,
+                ))
+        });
+    }
+    pub(crate) fn remove_deform(&mut self, animation: usize, attachment: &AttachmentRef) {
+        if self.animation == Some(animation) {
+            self.deform_values
+                .retain(|value| value.attachment != *attachment);
+            if self.is_empty() {
+                self.animation = None;
+            }
+        }
+    }
+    pub(crate) fn deform_targets(&self, animation: usize) -> Vec<AttachmentRef> {
+        if self.animation == Some(animation) {
+            self.deform_values
+                .iter()
+                .map(|value| value.attachment.clone())
+                .collect()
+        } else {
+            vec![]
+        }
+    }
+    pub(crate) fn after_document(
+        &self,
+        before: &Document,
+        after: &Document,
+    ) -> Result<Self, String> {
+        let mut next = self.clone();
+        for value in &mut next.deform_values {
+            value.attachment =
+                crate::deform_authoring::check_layout_transition(before, after, &value.attachment)?;
+            value.attachment = crate::deform_authoring::validate_offsets(
+                after,
+                &value.attachment,
+                &value.offsets,
+            )?;
+        }
+        next.sort_deforms();
+        Ok(next)
     }
     pub fn has_bone(&self, animation: usize, bone: usize) -> bool {
         self.animation == Some(animation) && self.values.iter().any(|v| v.bone == bone)
@@ -153,6 +278,12 @@ impl PoseEdits {
                     IkPoseEdit::Mix { value } => ik.mix = f64::from(value),
                     IkPoseEdit::BendPositive { value } => ik.bend_positive = value,
                 }
+            }
+            for value in &self.deform_values {
+                crate::deform_authoring::validate_offsets(doc, &value.attachment, &value.offsets)?;
+                pose.deforms.retain(|(key, _)| *key != value.attachment);
+                pose.deforms
+                    .push((value.attachment.clone(), value.offsets.clone()));
             }
         }
         Ok(pose)

@@ -1,6 +1,19 @@
 use super::*;
 
-const WEIGHT_EDIT_HINT: &str = "Use Weights [G] to manage bindings. Weighted vertex transforms and topology editing are not available yet.";
+const WEIGHT_EDIT_HINT: &str = "Use Weights [G] to manage bindings. Weighted Setup vertex transforms and topology editing are not available yet.";
+
+pub(super) struct DeformDrag {
+    pub attachment: AttachmentRef,
+    pub vertex: usize,
+    pub target: EditTarget,
+    pub auto_key: bool,
+    pub pointer: Pos2,
+    pub zoom: f32,
+}
+
+#[cfg(test)]
+#[path = "deform_authoring_tests.rs"]
+mod deform_authoring_tests;
 
 impl Editor {
     pub(super) fn enter_mesh_tool(&mut self) {
@@ -10,16 +23,12 @@ impl Editor {
         if !self.attachment_editable(key) {
             return;
         }
-        let Some(Attachment::Mesh(mesh)) = self.session.document().attachment(key) else {
+        let Some(Attachment::Mesh(_)) = self.session.document().attachment(key) else {
             return;
         };
-        let weighted = mesh.is_weighted();
         self.set_tool(Tool::Mesh);
-        // Weighted inspection works on the posed world vertices in either mode.
-        // Entering it must not discard the artist's pending animation pose.
-        if !weighted {
-            self.set_setup_mode(true);
-        }
+        // Vertices edits Setup geometry or the current Animate deform pose.
+        // Entering the tool never changes mode or discards a pending pose.
         self.playing = false;
     }
     pub(super) fn selected_mesh_is_weighted(&self) -> bool {
@@ -85,6 +94,10 @@ impl Editor {
         mesh.slot_local_positions()?.get(vertex).copied()
     }
     pub(super) fn begin_mesh_drag(&mut self, key: AttachmentRef, vertex: usize, pointer: Pos2) {
+        if !self.setup_mode {
+            self.begin_deform_drag(key, vertex, pointer);
+            return;
+        }
         if self.mesh_blocked || self.editable_mesh_position(&key, vertex).is_none() {
             return;
         }
@@ -100,6 +113,107 @@ impl Editor {
                 });
             }
             Err(error) => self.error = Some(error),
+        }
+    }
+    pub(super) fn deform_world_position(
+        &self,
+        key: &AttachmentRef,
+        vertex: usize,
+    ) -> Option<[f32; 2]> {
+        if self.setup_mode || !self.attachment_editable(key) {
+            return None;
+        }
+        self.scene_for_view()
+            .ok()?
+            .attachments
+            .iter()
+            .find(|draw| &draw.attachment == key && !self.hidden_slots.contains(&draw.slot))?
+            .vertices
+            .get(vertex)
+            .copied()
+    }
+    fn begin_deform_drag(&mut self, key: AttachmentRef, vertex: usize, pointer: Pos2) {
+        if self.mesh_blocked || self.deform_world_position(&key, vertex).is_none() {
+            return;
+        }
+        let target = EditTarget::Animate {
+            animation: self.animation,
+            time: self.time,
+        };
+        if let Err(error) = self.session.deform_offsets(&key, target) {
+            self.error = Some(error);
+            return;
+        }
+        self.cancel_gesture();
+        self.session.commit_transaction();
+        self.session.begin_transaction();
+        self.playing = false;
+        self.deform_drag = Some(DeformDrag {
+            attachment: key,
+            vertex,
+            target,
+            auto_key: self.auto_key,
+            pointer,
+            zoom: self.zoom,
+        });
+    }
+    pub(super) fn update_deform_drag(&mut self, pointer: Pos2) {
+        let Some(drag) = self.deform_drag.as_ref() else {
+            return;
+        };
+        let delta = [
+            (pointer.x - drag.pointer.x) / drag.zoom,
+            -(pointer.y - drag.pointer.y) / drag.zoom,
+        ];
+        let result = self.session.preview_translate_deform_vertex(
+            drag.attachment.clone(),
+            drag.vertex,
+            drag.target,
+            delta,
+            drag.auto_key,
+        );
+        match result {
+            Ok(()) => {
+                self.status = if drag.auto_key {
+                    "Keyed mesh deform".into()
+                } else {
+                    "Unkeyed mesh deform · K to key".into()
+                }
+            }
+            Err(error) => {
+                self.cancel_mesh_drag();
+                self.error = Some(error);
+            }
+        }
+    }
+    pub(super) fn nudge_deform_vertex(&mut self, key: AttachmentRef, delta: [f32; 2]) {
+        if self.deform_world_position(&key, self.mesh_vertex).is_none() {
+            return;
+        }
+        self.playing = false;
+        match self.session.translate_deform_vertex(
+            key,
+            self.mesh_vertex,
+            EditTarget::Animate {
+                animation: self.animation,
+                time: self.time,
+            },
+            delta,
+            self.auto_key,
+        ) {
+            Ok(()) => {
+                self.status = if self.auto_key {
+                    "Keyed mesh deform".into()
+                } else {
+                    "Unkeyed mesh deform · K to key".into()
+                }
+            }
+            Err(error) => self.error = Some(error),
+        }
+    }
+    pub(super) fn seal_deform_for_key(&mut self) {
+        if self.deform_drag.take().is_some() {
+            self.mesh_blocked = true;
         }
     }
     fn set_mesh_vertex(&mut self, key: AttachmentRef, vertex: usize, position: [f32; 2]) {
@@ -192,7 +306,9 @@ impl Editor {
                 let triangles = m.triangles.len() / 3;
                 let weighted = m.is_weighted();
                 ui.label(format!("{} vertices · {} triangles", count, triangles));
-                let vertices = ui.button("Vertices").on_hover_text(if weighted {
+                let vertices = ui.button("Vertices").on_hover_text(if !self.setup_mode {
+                    "Pose a mesh vertex in Animate; Auto Key saves a deform key, or press K to key the edited pose."
+                } else if weighted {
                     "Select weighted vertices to inspect their bone influences."
                 } else {
                     "Edit setup vertices."
@@ -216,7 +332,7 @@ impl Editor {
                 if soft.clicked() {
                     self.open_mesh_tools_view();
                 }
-                if self.setup_mode || weighted {
+                {
                     let vertex = ui.add(
                         egui::Slider::new(&mut self.mesh_vertex, 0..=count - 1).text("Vertex"),
                     );
@@ -226,7 +342,9 @@ impl Editor {
                     };
                     let position = m.slot_local_positions().map(|p| p[self.mesh_vertex]);
                     let uv = m.uvs[self.mesh_vertex];
-                    if let Some(mut position) = position {
+                    if !self.setup_mode {
+                        self.deform_panel(ui, &key);
+                    } else if let Some(mut position) = position {
                         let mut changed = false;
                         let mut stopped = false;
                         for (axis, label) in ["Local X", "Local Y"].into_iter().enumerate() {
@@ -303,15 +421,69 @@ impl Editor {
                         self.split_mesh_triangle(key);
                     }
                 }
-                ui.label(RichText::new(if weighted {
+                ui.label(RichText::new(if !self.setup_mode {
+                    "Drag or nudge one vertex to pose the mesh. Auto Key writes deform keys; K keys an unkeyed pose. Soft selection is available in Setup."
+                } else if weighted {
                     "Select vertices to inspect weights. Pose the influencing bones in Animate."
                 } else {
-                    "Drag setup vertices to deform the image. UV editing, weights and deform keys are later slices."
+                    "Drag setup vertices to deform the image. Switch to Animate to author deform keys. UV editing is not available yet."
                 }).small().color(MUTED));
             }
             Attachment::Clipping(_) | Attachment::Path(_) => unreachable!("returned above"),
         }
         ui.separator();
+    }
+    fn deform_panel(&mut self, ui: &mut egui::Ui, key: &AttachmentRef) {
+        let state = match self.session.pose_edits().deform_key_state(
+            self.session.document(),
+            self.animation,
+            self.time,
+            key,
+        ) {
+            Ok(state) => state,
+            Err(error) => {
+                ui.label(RichText::new(error).small().color(ACCENT));
+                return;
+            }
+        };
+        let visible = self.deform_world_position(key, self.mesh_vertex);
+        ui.horizontal(|ui| {
+            ui.label("Deform");
+            let key_button = ui.add_enabled_ui(visible.is_some(), |ui| {
+                super::animation::pose_key_button(ui, state)
+            }).inner.on_hover_text("Key this mesh's complete deform pose at the current frame.");
+            self.record_target("meshDeformKey", key_button.rect);
+            if key_button.clicked() {
+                self.request_pose_key(super::pose_key::PoseKeyAction::Deform {
+                    attachment: key.clone(),
+                });
+                ui.ctx().request_repaint();
+            }
+            let delete = ui.add_enabled(state == KeyState::Keyed,
+                egui::Button::new("Delete key"))
+                .on_hover_text("Delete this mesh's deform key at the current frame. Pending poses must be keyed or discarded first.");
+            self.record_target("meshDeformDelete", delete.rect);
+            if delete.clicked() {
+                self.cancel_gesture();
+                self.dispatch(Command::DeleteDeformKey {
+                    animation: self.animation, attachment: key.clone(), time: self.time,
+                });
+                ui.ctx().request_repaint();
+            }
+        });
+        if let Some([x, y]) = visible {
+            ui.label(
+                RichText::new(format!("World position: {x:.2}, {y:.2}"))
+                    .small()
+                    .color(MUTED),
+            );
+        } else {
+            ui.label(
+                RichText::new("Show this attachment at the current frame to pose its vertices.")
+                    .small()
+                    .color(MUTED),
+            );
+        }
     }
 }
 
@@ -579,9 +751,8 @@ mod tests {
     }
 
     #[test]
-    fn weighted_canvas_click_and_drag_select_without_replacing_a_pose_transaction() {
+    fn weighted_setup_canvas_inspection_does_not_replace_a_pose_transaction() {
         let (mut editor, _) = mesh_editor(true);
-        editor.set_setup_mode(false);
         editor.enter_mesh_tool();
         let original = editor.session.document().clone();
         // This canvas-only harness excludes the full app's idle commit policy.
@@ -638,7 +809,7 @@ mod tests {
         assert_eq!(editor.session.pose_edits(), &pending);
         assert!(editor.session.can_undo());
         assert!(!editor.session.is_dirty());
-        assert!(!editor.setup_mode);
+        assert!(editor.setup_mode);
         assert!(editor.error.is_none());
         editor.session.cancel_transaction();
         assert!(editor.session.pose_edits().is_empty());

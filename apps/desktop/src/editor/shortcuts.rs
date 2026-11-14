@@ -104,6 +104,15 @@ impl Editor {
             return;
         }
         if self.tool == Tool::Mesh {
+            if self.deform_drag.is_some() {
+                return;
+            }
+            if !self.setup_mode {
+                if let Some(key) = self.selected_attachment().cloned() {
+                    self.nudge_deform_vertex(key, delta);
+                }
+                return;
+            }
             if self.mesh_drag.is_none()
                 && let Some(key) = self.selected_attachment().cloned()
                 && self
@@ -328,7 +337,11 @@ impl Editor {
             self.deselect();
         }
         if ctx.input(|i| i.key_pressed(egui::Key::Escape)) {
-            if self.mesh_drag.is_some() || self.drag.is_some() || self.key_drag.is_some() {
+            if self.mesh_drag.is_some()
+                || self.deform_drag.is_some()
+                || self.drag.is_some()
+                || self.key_drag.is_some()
+            {
                 self.cancel_gesture();
             } else {
                 self.deselect();

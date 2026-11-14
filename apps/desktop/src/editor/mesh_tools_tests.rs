@@ -113,13 +113,28 @@ fn mesh_tools_menu_and_settings_are_session_only_and_restore_with_the_workspace(
             pointer(&mut editor, &ctx, position, pressed);
         }
     }
+    assert_eq!(editor.mesh_tools.settings.size, 0.);
+    click(&mut editor, &ctx, "meshSoftHull");
+    assert!(editor.mesh_tools.settings.hull_vertices);
+    assert_eq!(editor.session.document(), &original);
+    assert_eq!(editor.session.pose_edits(), &pending);
+    assert_eq!(editor.selection, selection);
+    editor.set_setup_mode(true);
+    settle(&mut editor, &ctx);
+    for name in ["meshSoftSize", "meshSoftFeather"] {
+        let [x, y, _, b] = editor.capture_targets[name];
+        let position = pos2(x + 45., (y + b) * 0.5);
+        for pressed in [true, false] {
+            pointer(&mut editor, &ctx, position, pressed);
+        }
+    }
     assert!(editor.mesh_tools.settings.size > 0.);
     assert!(editor.mesh_tools.settings.feather > 0. && editor.mesh_tools.settings.feather < 1.);
     click(&mut editor, &ctx, "meshSoftHull");
     assert!(!editor.mesh_tools.settings.hull_vertices);
     let settings = editor.mesh_tools.settings;
     assert_eq!(editor.session.document(), &original);
-    assert_eq!(editor.session.pose_edits(), &pending);
+    assert!(editor.session.pose_edits().is_empty());
     assert_eq!(editor.selection, selection);
     click(&mut editor, &ctx, "closeView:Mesh Tools");
     assert!(!editor.view_tabs.open.contains(&views::DockView::MeshTools));
