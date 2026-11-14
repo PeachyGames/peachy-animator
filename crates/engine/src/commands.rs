@@ -46,6 +46,16 @@ pub enum Command {
         constraint: usize,
         time: f32,
     },
+    SetDeformKey {
+        animation: usize,
+        attachment: AttachmentRef,
+        key: DeformKey,
+    },
+    DeleteDeformKey {
+        animation: usize,
+        attachment: AttachmentRef,
+        time: f32,
+    },
     MoveAnimationKeys {
         animation: usize,
         keys: Vec<AnimationKey>,
@@ -211,6 +221,15 @@ pub fn apply_command(document: &Document, command: Command) -> Result<Document, 
     // Linked meshes follow source geometry edits; editing one alone is refused
     // by validation.
     candidate.propagate_linked_geometry(document);
+    for animation in &document.animations {
+        for track in &animation.deform_tracks {
+            crate::deform_authoring::check_layout_transition(
+                document,
+                &candidate,
+                &track.attachment,
+            )?;
+        }
+    }
     candidate.validate()?;
     Ok(candidate)
 }
@@ -534,6 +553,20 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
             }
             clip.ik_tracks.retain(|t| !t.keys.is_empty());
         }
+        Command::SetDeformKey {
+            animation,
+            attachment,
+            key,
+        } => {
+            crate::deform_authoring::set_key(doc, animation, &attachment, key)?;
+        }
+        Command::DeleteDeformKey {
+            animation,
+            attachment,
+            time,
+        } => {
+            crate::deform_authoring::delete_key(doc, animation, &attachment, time)?;
+        }
         Command::MoveAnimationKeys {
             animation,
             keys,
@@ -620,6 +653,14 @@ pub fn ik_keyframe_at(keys: &[IkKeyframe], time: f32) -> Result<Option<IkKeyfram
         return Err("Key time must be finite and nonnegative".into());
     }
     key_index_by_time(keys, time, |key| key.time).map(|index| index.map(|index| keys[index]))
+}
+
+/// Exact imported deform-key identities take priority over nearby cursor times.
+pub fn deform_keyframe_at(keys: &[DeformKey], time: f32) -> Result<Option<&DeformKey>, String> {
+    if !time.is_finite() || time < 0. {
+        return Err("Key time must be finite and nonnegative".into());
+    }
+    key_index_by_time(keys, time, |key| key.time).map(|index| index.map(|index| &keys[index]))
 }
 
 pub(crate) fn snapped_time(fps: u32, time: f32) -> Result<f32, String> {

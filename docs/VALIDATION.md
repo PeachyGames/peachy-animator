@@ -1,5 +1,49 @@
 # First-slice validation — November 5, 2026
 
+## Animate deform authoring and texture startup — November 14, 2026
+
+Integrated checks use two Cargo workers and two test threads. Focused filters:
+engine `deform` (15), `binding` (20) and `pose` (42); desktop `mesh` (24) and
+`editor::textures::tests` (3); MCP `schema` (2). Filters overlap; these are not
+additive test totals. Format, all-target workspace Clippy with `-D warnings`,
+workspace build and the seven-crate architecture check pass locally.
+
+Original weighted/unweighted keys created through CLI commands and the weighted
+mesh edited in the real native application each pass `scripts/check-runtime.mjs`
+against the external 4.3.13 runtime across both clips and all three skins:
+28,080 bone values, 29,120 region values and 5,200 mesh coordinates each.
+Maximum bone error is 0.00002654, region/mesh error 0.00003052, with zero UV
+error, against the unchanged 0.001 tolerance. Draw order, images and colors agree.
+
+Native mouse/key acceptance verifies an actual 24×16-pixel weighted vertex drag,
+unchanged document data with Auto Key off, pending Save exclusion, K keying,
+saved-file equality at native f32 precision, and Undo/Redo restoring pending/keyed
+states. The saved document validates and its export passes the runtime gate.
+Its saved deform key also survives reopening in the real native application.
+Synthetic UI checks separately cover unweighted edits, key/delete, release-position
+inclusion, fixed-baseline previews, Escape, focus/context changes and held-pointer
+blocking. See [evidence](evidence/deform-authoring.json) and
+[native capture](deform-authoring-editor.png).
+
+Installed Spine 4.3.26 accepts and re-exports the native-authored JSON. Comparing
+that re-export against our pre-editor data gives a maximum mesh difference of
+0.001586914, above 0.001; a fresh unchanged Weighted Lab baseline produces the
+exact same maximum. This preserves the previously recorded editor bind-coordinate
+quantization limitation, not a lossless editor-roundtrip pass. Reimporting the
+editor's authored data matches that data's runtime: 13,500 bone values (maximum
+0.00002644) and 2,500 mesh coordinates (maximum 0.00003052), within 0.001.
+
+The previously failing private training project now renders all 38 original loose
+images, including a 2059-pixel texture, and both clips were observed playing in
+the native editor. Its current-engine numerical check remains within 0.001:
+57,300 bone values (max 0.00096778) and 155,900 mesh coordinates (max 0.00061036).
+Archive/PSD source hashes remain unchanged. Detailed private evidence remains
+gitignored; no third-party artwork or skeletons are committed.
+
+Limits: exact mesh selection/key-control placement parity with the installed
+editor remains open, along with deform Dopesheet rows and multi-vertex/soft
+authoring. The stopped female-pose full verification was not restarted.
+
 Verified locally on macOS with Rust 1.99.1 and the locked dependencies:
 
 | Check | Result |

@@ -274,9 +274,6 @@ impl Editor {
                 {
                     continue;
                 }
-                if self.tool == Tool::Mesh && !self.setup_mode && !mesh.is_weighted() {
-                    continue;
-                }
                 let selected = if self.tool == Tool::Weights {
                     self.weights.mesh.as_ref() == Some(&draw.attachment)
                 } else {
@@ -576,6 +573,8 @@ impl Editor {
                 "Weights · select a vertex to inspect bindings · G"
             } else if self.tool == Tool::Shear {
                 "Shear · drag X or Y handle · Z · Escape cancels"
+            } else if self.tool == Tool::Mesh && !self.setup_mode {
+                "Animate vertices · drag or nudge one vertex · K keys edited pose · Escape cancels"
             } else if self.tool == Tool::Mesh && self.selected_mesh_is_weighted() {
                 "Weighted vertices · select to inspect bone influences"
             } else if self.tool == Tool::Mesh {
@@ -619,9 +618,7 @@ impl Editor {
             }
             return;
         }
-        if self.tool == Tool::Weights
-            || (self.tool == Tool::Mesh && (self.setup_mode || self.selected_mesh_is_weighted()))
-        {
+        if matches!(self.tool, Tool::Weights | Tool::Mesh) {
             if (response.clicked() || response.drag_started_by(egui::PointerButton::Primary))
                 && let Some((key, vertex, _)) = nearest_vertex
             {
@@ -688,6 +685,12 @@ impl Editor {
                 }
             }
         }
+        if (response.dragged_by(egui::PointerButton::Primary) || response.drag_stopped())
+            && self.deform_drag.is_some()
+            && let Some(pointer) = response.interact_pointer_pos()
+        {
+            self.update_deform_drag(pointer);
+        }
         if response.dragged_by(egui::PointerButton::Primary)
             && self.viewport_transform_active()
             && let Some(pointer) = response.interact_pointer_pos()
@@ -704,7 +707,9 @@ impl Editor {
                 );
             }
             self.finish_viewport_transform();
-            if self.mesh_drag.take().is_some() {
+            let setup_mesh = self.mesh_drag.take().is_some();
+            let deform_mesh = self.deform_drag.take().is_some();
+            if setup_mesh || deform_mesh {
                 self.session.commit_transaction();
             }
         }

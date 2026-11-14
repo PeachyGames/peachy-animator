@@ -4,6 +4,27 @@ Written November 10, 2026, at the end of the import-parity push. Read this
 first, then `AGENTS.md`. The workspace rules in `../AGENTS.md` and `../CLAUDE.md`
 still apply.
 
+## November 14 authoring update
+
+Startup image loading now uses the actual WGPU device texture limit. The private
+training example that aborted above 2048 pixels now opens with all original images;
+both imported clips were observed playing in the native editor. No source artwork
+was changed. Local assessment/implementation evidence is in
+`.local/training-spine-20261114/`.
+
+Single-vertex weighted/unweighted **Animate deform authoring** is implemented:
+Vertices retains the current mode; drag/nudge, pending offsets, Auto Key, K,
+contextual Deform key/delete, undo/redo and guarded fixed-baseline previews share
+the engine. Native v22 remains. See [the contract](slices/deform-authoring.md)
+and [original-fixture evidence](evidence/deform-authoring.json).
+
+Next useful continuation: deform Dopesheet rows/curves and multi-vertex editing,
+then broader mesh/Auto/brush weights and multi-bone cycle Offset workflows.
+The tutorials' wind motion is hand-keyed; no wind rig was supplied. Physics
+simulation remains separate. The female-pose full-check cancellation below
+still applies. Manual CI requires an explicit focused test-name filter and
+caps Cargo/test workers at two.
+
 ## Where things stand
 
 - `main` at `6d67e5f` or later, pushed. Native format **v22**.

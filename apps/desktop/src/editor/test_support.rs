@@ -107,6 +107,7 @@ pub(super) fn editor_fixture() -> Editor {
         mesh_vertex: 0,
         mesh_triangle: 0,
         mesh_drag: None,
+        deform_drag: None,
         mesh_blocked: false,
         mesh_tools: Default::default(),
         capture_targets: BTreeMap::new(),

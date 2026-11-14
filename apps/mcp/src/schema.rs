@@ -67,8 +67,22 @@ pub fn command_schema() -> Value {
     let region = object(&["x", "y", "rotation", "scale_x", "scale_y"].map(|name| (name, number())));
     let attachment = object(&[("skin", text()), ("slot", text()), ("placeholder", text())]);
     let target = json!({"oneOf":[object(&[("mode",json!({"const":"setup","type":"string"}))]),object(&[("mode",json!({"const":"animate","type":"string"})),("animation",index()),("time",number())])]});
-    let curve = json!({"oneOf":[{"type":"string","enum":["linear","stepped"]},object(&[("bezier",json!({"type":"array","items":{"type":"number"},"minItems":4,"maxItems":4}))])]});
-    let key = object(&[("time", number()), ("value", number()), ("curve", curve)]);
+    let curve_handles = json!({"type":"array","items":{"type":"number"},"minItems":4,"maxItems":4});
+    let curve = json!({"oneOf":[
+        {"type":"string","enum":["linear","stepped"]},
+        object(&[("bezier",curve_handles.clone())]),
+        object(&[("bezierOffset",curve_handles)]),
+    ]});
+    let key = object(&[
+        ("time", number()),
+        ("value", number()),
+        ("curve", curve.clone()),
+    ]);
+    let deform_key = object(&[
+        ("time", number()),
+        ("curve", curve),
+        ("offsets", list(number())),
+    ]);
     let timeline_key = object(&[
         ("bone", index()),
         ("property", property.clone()),
@@ -210,6 +224,22 @@ pub fn command_schema() -> Value {
             &[
                 ("animation", index()),
                 ("constraint", index()),
+                ("time", number()),
+            ],
+        ),
+        command(
+            "setDeformKey",
+            &[
+                ("animation", index()),
+                ("attachment", attachment.clone()),
+                ("key", deform_key),
+            ],
+        ),
+        command(
+            "deleteDeformKey",
+            &[
+                ("animation", index()),
+                ("attachment", attachment.clone()),
                 ("time", number()),
             ],
         ),
@@ -419,6 +449,8 @@ mod tests {
             Command::SetPhysicsConstraint { .. } => "setPhysicsConstraint",
             Command::SetIkKey { .. } => "setIkKey",
             Command::DeleteIkKey { .. } => "deleteIkKey",
+            Command::SetDeformKey { .. } => "setDeformKey",
+            Command::DeleteDeformKey { .. } => "deleteDeformKey",
             Command::MoveAnimationKeys { .. } => "moveAnimationKeys",
             Command::DeleteAnimationKeys { .. } => "deleteAnimationKeys",
             Command::PasteAnimationKeys { .. } => "pasteAnimationKeys",
@@ -487,7 +519,7 @@ mod tests {
     fn every_published_shape_decodes_through_strict_engine_serde() {
         let schema = command_schema();
         let variants = schema["oneOf"].as_array().unwrap();
-        assert_eq!(variants.len(), 36);
+        assert_eq!(variants.len(), 38);
         for variant in variants {
             let payload = sample(variant);
             let command: CommandInput = serde_json::from_value(payload.clone()).unwrap();
@@ -497,5 +529,73 @@ mod tests {
             unknown_field["futureField"] = json!(true);
             assert!(serde_json::from_value::<CommandInput>(unknown_field).is_err());
         }
+    }
+
+    #[test]
+    fn deform_keys_publish_dense_offsets_and_every_native_curve_shape() {
+        let schema = command_schema();
+        let set = schema["oneOf"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|variant| variant["properties"]["command"]["const"] == "setDeformKey")
+            .unwrap();
+        let key_schema = &set["properties"]["key"];
+        assert_eq!(key_schema["additionalProperties"], false);
+        assert_eq!(key_schema["properties"]["offsets"]["type"], "array");
+        assert_eq!(
+            key_schema["properties"]["offsets"]["items"]["type"],
+            "number"
+        );
+        let curves = key_schema["properties"]["curve"]["oneOf"]
+            .as_array()
+            .unwrap();
+        for variant in curves {
+            if variant["type"] == "object" {
+                assert_eq!(variant["additionalProperties"], false);
+            }
+        }
+        for curve in [
+            json!("linear"),
+            json!("stepped"),
+            json!({"bezier":[0.25,0.0,0.75,1.0]}),
+            json!({"bezierOffset":[0.25,2.0,0.75,-1.0]}),
+        ] {
+            let payload = json!({
+                "command":"setDeformKey",
+                "animation":0,
+                "attachment":{"skin":"default","slot":"hand.R","placeholder":"hand.R"},
+                "key":{"time":0.5,"curve":curve,"offsets":[0.0,1.0,-2.0,3.0]},
+            });
+            let parsed: CommandInput = serde_json::from_value(payload.clone()).unwrap();
+            assert_eq!(wire_name(&parsed.0), "setDeformKey");
+            assert_eq!(serde_json::to_value(parsed.0).unwrap(), payload);
+            for field in ["offsets", "curve", "time"] {
+                let mut missing = payload.clone();
+                missing["key"].as_object_mut().unwrap().remove(field);
+                assert!(serde_json::from_value::<CommandInput>(missing).is_err());
+            }
+            let mut sparse = payload.clone();
+            sparse["key"]["offset"] = json!(2);
+            assert!(serde_json::from_value::<CommandInput>(sparse).is_err());
+            let mut nested_offsets = payload.clone();
+            nested_offsets["key"]["offsets"] = json!([[0.0, 1.0]]);
+            assert!(serde_json::from_value::<CommandInput>(nested_offsets).is_err());
+            let mut unknown_attachment = payload;
+            unknown_attachment["attachment"]["futureField"] = json!(true);
+            assert!(serde_json::from_value::<CommandInput>(unknown_attachment).is_err());
+        }
+        let delete = json!({
+            "command":"deleteDeformKey",
+            "animation":0,
+            "attachment":{"skin":"default","slot":"hand.R","placeholder":"hand.R"},
+            "time":0.5,
+        });
+        let parsed: CommandInput = serde_json::from_value(delete.clone()).unwrap();
+        assert_eq!(wire_name(&parsed.0), "deleteDeformKey");
+        assert_eq!(serde_json::to_value(parsed.0).unwrap(), delete);
+        let mut unknown = delete;
+        unknown["offsets"] = json!([0.0, 1.0]);
+        assert!(serde_json::from_value::<CommandInput>(unknown).is_err());
     }
 }

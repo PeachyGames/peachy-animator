@@ -69,6 +69,7 @@ impl WorkingState {
                         time,
                         BTreeMap::new(),
                         BTreeSet::from([constraint]),
+                        vec![],
                     )
                 } else {
                     Ok(candidate)
@@ -84,6 +85,7 @@ impl WorkingState {
         time: f32,
         bones: BTreeMap<usize, Vec<Property>>,
         iks: BTreeSet<usize>,
+        deforms: Vec<AttachmentRef>,
     ) -> Result<Self, String> {
         let target = EditTarget::Animate { animation, time };
         let authored = self.authored_pose(target)?;
@@ -129,6 +131,15 @@ impl WorkingState {
                 },
             });
         }
+        for attachment in &deforms {
+            commands.push(crate::deform_authoring::key_command(
+                &self.document,
+                animation,
+                time,
+                attachment.clone(),
+                crate::deform_authoring::offsets(&self.document, &authored, attachment)?,
+            )?);
+        }
         let mut candidate = Self {
             document: apply_command(&self.document, Command::Batch { commands })?,
             pose: self.pose.clone(),
@@ -138,6 +149,9 @@ impl WorkingState {
         }
         for &constraint in &iks {
             candidate.pose.remove_ik(animation, constraint);
+        }
+        for attachment in &deforms {
+            candidate.pose.remove_deform(animation, attachment);
         }
         if !iks.is_empty() {
             let before = checked_pose_from_authored(&self.document, &authored)?;
@@ -196,6 +210,51 @@ impl WorkingState {
                 }
                 Ok(candidate)
             }
+        }
+    }
+    fn edit_deform_pose(
+        &self,
+        attachment: AttachmentRef,
+        target: EditTarget,
+        offsets: Vec<f32>,
+        auto_key: bool,
+        skin: &str,
+    ) -> Result<Self, String> {
+        let EditTarget::Animate { animation, time } = target else {
+            return Err("Mesh deform poses require Animate mode".into());
+        };
+        let canonical =
+            crate::deform_authoring::validate_offsets(&self.document, &attachment, &offsets)?;
+        let posed = Self {
+            document: self.document.clone(),
+            pose: self
+                .pose
+                .edit_deform(&self.document, animation, time, &attachment, offsets)?,
+        };
+        let before = posed
+            .authored_pose(target)?
+            .with_skin(&posed.document, skin);
+        crate::deform_authoring::geometry(&posed.document, &before, &attachment)?;
+        if auto_key {
+            let candidate = posed.key_targets(
+                animation,
+                time,
+                BTreeMap::new(),
+                BTreeSet::new(),
+                vec![canonical],
+            )?;
+            crate::deform_authoring::check_key_continuity(
+                &posed.document,
+                &before,
+                &candidate.document,
+                &candidate
+                    .authored_pose(target)?
+                    .with_skin(&candidate.document, skin),
+                &[attachment],
+            )?;
+            Ok(candidate)
+        } else {
+            Ok(posed)
         }
     }
 }
@@ -269,10 +328,8 @@ impl Session {
     /// Apply to a candidate first. Failed commands change neither data nor history.
     pub fn dispatch(&mut self, command: Command) -> Result<(), String> {
         let document = apply_command(self.document(), command)?;
-        self.replace(WorkingState {
-            document,
-            pose: self.state.pose.clone(),
-        });
+        let pose = self.state.pose.after_document(self.document(), &document)?;
+        self.replace(WorkingState { document, pose });
         Ok(())
     }
     /// Read authored setup or Animate+pending data through the checked applied-pose stage.
@@ -286,6 +343,123 @@ impl Session {
             .state
             .authored_pose(target)?
             .with_skin(self.document(), &self.skin))
+    }
+    /// Dense sampled offsets, including pending mesh edits and linked-mesh following.
+    pub fn deform_offsets(
+        &self,
+        attachment: &AttachmentRef,
+        target: EditTarget,
+    ) -> Result<Vec<f32>, String> {
+        crate::deform_authoring::offsets(self.document(), &self.authored_pose(target)?, attachment)
+    }
+    /// Store an unkeyed mesh pose, or key it explicitly when Auto Key is enabled.
+    /// Setup geometry, UVs and binding data are never modified by this operation.
+    pub fn edit_deform_pose(
+        &mut self,
+        attachment: AttachmentRef,
+        target: EditTarget,
+        offsets: Vec<f32>,
+        auto_key: bool,
+    ) -> Result<(), String> {
+        let candidate = self
+            .state
+            .edit_deform_pose(attachment, target, offsets, auto_key, &self.skin)?;
+        self.replace(candidate);
+        Ok(())
+    }
+    pub fn preview_edit_deform_pose(
+        &mut self,
+        attachment: AttachmentRef,
+        target: EditTarget,
+        offsets: Vec<f32>,
+        auto_key: bool,
+    ) -> Result<(), String> {
+        let base = self.transaction.as_ref().ok_or("No active transaction")?;
+        let candidate = base.edit_deform_pose(attachment, target, offsets, auto_key, &self.skin)?;
+        self.state = candidate;
+        Ok(())
+    }
+    /// Move one posed vertex by a world delta through checked engine inverses.
+    pub fn translate_deform_vertex(
+        &mut self,
+        attachment: AttachmentRef,
+        vertex: usize,
+        target: EditTarget,
+        world_delta: [f32; 2],
+        auto_key: bool,
+    ) -> Result<(), String> {
+        let authored = self.authored_pose(target)?;
+        let offsets = crate::deform_authoring::translated_vertex(
+            self.document(),
+            &authored,
+            &attachment,
+            vertex,
+            world_delta,
+        )?;
+        self.edit_deform_pose(attachment, target, offsets, auto_key)
+    }
+    /// Recompute the entire drag from its transaction's frozen authored pose.
+    /// Callers freeze attachment, vertex, clip/time and Auto Key for the gesture.
+    pub fn preview_translate_deform_vertex(
+        &mut self,
+        attachment: AttachmentRef,
+        vertex: usize,
+        target: EditTarget,
+        world_delta: [f32; 2],
+        auto_key: bool,
+    ) -> Result<(), String> {
+        let base = self.transaction.as_ref().ok_or("No active transaction")?;
+        let authored = base
+            .authored_pose(target)?
+            .with_skin(&base.document, &self.skin);
+        let offsets = crate::deform_authoring::translated_vertex(
+            &base.document,
+            &authored,
+            &attachment,
+            vertex,
+            world_delta,
+        )?;
+        let candidate = base.edit_deform_pose(attachment, target, offsets, auto_key, &self.skin)?;
+        self.state = candidate;
+        Ok(())
+    }
+    pub fn key_deform_pose(
+        &mut self,
+        animation: usize,
+        time: f32,
+        attachment: AttachmentRef,
+    ) -> Result<(), String> {
+        let (_, canonical, _) = crate::deform_authoring::mesh_target(self.document(), &attachment)?;
+        let candidate = self.state.key_targets(
+            animation,
+            time,
+            BTreeMap::new(),
+            BTreeSet::new(),
+            vec![canonical.clone()],
+        )?;
+        self.check_deform_key_candidate(
+            &candidate,
+            EditTarget::Animate { animation, time },
+            &[canonical],
+        )?;
+        self.replace(candidate);
+        Ok(())
+    }
+    fn check_deform_key_candidate(
+        &self,
+        candidate: &WorkingState,
+        target: EditTarget,
+        deforms: &[AttachmentRef],
+    ) -> Result<(), String> {
+        crate::deform_authoring::check_key_continuity(
+            self.document(),
+            &self.authored_pose(target)?,
+            &candidate.document,
+            &candidate
+                .authored_pose(target)?
+                .with_skin(&candidate.document, &self.skin),
+            deforms,
+        )
     }
     pub fn edit_ik_pose(
         &mut self,
@@ -324,6 +498,7 @@ impl Session {
             time,
             BTreeMap::new(),
             BTreeSet::from([constraint]),
+            vec![],
         )?;
         self.replace(candidate);
         Ok(())
@@ -435,11 +610,12 @@ impl Session {
             time,
             BTreeMap::from([(bone, properties.to_vec())]),
             BTreeSet::new(),
+            vec![],
         )?;
         self.replace(candidate);
         Ok(())
     }
-    /// K keys every edited bone and IK constraint in one atomic transition.
+    /// K keys every edited bone, IK constraint and mesh deform in one atomic transition.
     /// A Tree bone's orange key button supplies an explicit bone instead.
     pub fn key_edited(
         &mut self,
@@ -453,7 +629,19 @@ impl Session {
         } else {
             BTreeSet::new()
         };
-        let candidate = self.state.key_targets(animation, time, targets, iks)?;
+        let deforms = if bone.is_none() {
+            self.state.pose.deform_targets(animation)
+        } else {
+            vec![]
+        };
+        let candidate = self
+            .state
+            .key_targets(animation, time, targets, iks, deforms.clone())?;
+        self.check_deform_key_candidate(
+            &candidate,
+            EditTarget::Animate { animation, time },
+            &deforms,
+        )?;
         self.replace(candidate);
         Ok(())
     }
@@ -499,10 +687,8 @@ impl Session {
     pub fn preview_transaction(&mut self, command: Command) -> Result<(), String> {
         let base = self.transaction.as_ref().ok_or("No active transaction")?;
         let document = apply_command(&base.document, command)?;
-        self.state = WorkingState {
-            document,
-            pose: base.pose.clone(),
-        };
+        let pose = base.pose.after_document(&base.document, &document)?;
+        self.state = WorkingState { document, pose };
         Ok(())
     }
     pub fn commit_transaction(&mut self) {

@@ -1,5 +1,22 @@
 # Spine workspace and interaction parity
 
+## Animate mesh vertices — November 14, 2026
+
+The public [mesh transform tools reference](https://esotericsoftware.com/spine-meshes#Transform-tools)
+separates Setup vertex movement from Animate deform keys. Vertices now stays
+in the current mode. In Animate, dragging or arrow-nudging one weighted or
+unweighted vertex changes its deform pose. Existing Auto Key and K controls
+apply; attachment properties show a colored Deform key and Delete key control.
+World position is read-only. Setup soft-selection controls are disabled in Animate.
+Escape/history/context cancellation follows the established gesture lifecycle.
+See [the exact scope](slices/deform-authoring.md).
+
+Remaining differences: explicit Vertices entry and contextual key/delete placement
+are provisional. Transform-tool vertex selection, multiple vertices, rotation/scale,
+deform Dopesheet rows/curves and Animate soft selection remain. The installed
+reference opened, but its exact mesh interaction was not established; the public
+guide is the behavioral reference. Runtime agreement is a separate gate.
+
 Chris's November 5 requirement is to reproduce Spine's visual layout, controls,
 terminology and interaction conventions so a Spine user can use familiar habits.
 UI parity is an acceptance criterion for every vertical slice. Match the reference

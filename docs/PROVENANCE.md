@@ -1,5 +1,17 @@
 # Implementation provenance
 
+## Animate mesh vertices and texture startup — November 14, 2026
+
+The public [mesh transform tools guide](https://esotericsoftware.com/spine-meshes#Transform-tools)
+provides the Setup/Animate and vertex-drag distinction. Dense offsets reuse the
+already verified native deform representation. Weighted translation is our own
+inverse-affine calculation, checked by a forward world-coordinate residual;
+no proprietary implementation was read. Runtime checks use the separately
+installed runtime only through public APIs. Native reference/interaction captures
+and private training inputs remain local; no third-party artwork is committed.
+Texture handling was derived from the locally installed MIT-licensed egui/eframe
+API and the actual WGPU device limit.
+
 Started November 5, 2026 for Team Peachy. This is an independently written implementation
 from public format facts, general animation mathematics and controlled observations.
 The development record is not a legal certification of a formal two-team clean room.

@@ -1,0 +1,76 @@
+{
+  "complete": true,
+  "screen_delta": [
+    24,
+    16
+  ],
+  "stages": [
+    "weighted Animate drag",
+    "pending document unchanged",
+    "Save excludes pending deform",
+    "K keys deform",
+    "Save file equals captured document at f32 precision",
+    "Undo restores pending pose",
+    "Redo restores keyed document"
+  ],
+  "pending_capture": "../deform-authoring-pending.png",
+  "keyed_capture": "../deform-authoring-editor.png",
+  "export_note": "Native export folder picker canceled; runtime checked separately using saved/CLI exports.",
+  "artwork": "Original Peach Bot",
+  "runtime": {
+    "physicsConstraints": 0,
+    "physicsValues": 0,
+    "physicsTimelines": 0,
+    "physicsFrames": 0,
+    "regionComparisons": 29120,
+    "maxRegionError": 3.0517578125e-05,
+    "meshComparisons": 5200,
+    "weightedMeshComparisons": 3120,
+    "maxMeshError": 3.0517578125e-05,
+    "uvComparisons": 10400,
+    "maxUVError": 0,
+    "runtime": "Spine 4.3 external oracle",
+    "bones": 15,
+    "slots": 14,
+    "skins": [
+      "default",
+      "mint",
+      "peach"
+    ],
+    "clips": [
+      {
+        "name": "idle",
+        "nativeEnd": 2,
+        "runtimeEnd": 2,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default",
+          "mint",
+          "peach"
+        ],
+        "maxWorldError": 1.9268052795951007e-05
+      },
+      {
+        "name": "wave",
+        "nativeEnd": 2.4000000953674316,
+        "runtimeEnd": 2.4000000953674316,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default",
+          "mint",
+          "peach"
+        ],
+        "maxWorldError": 2.6533745369761164e-05
+      }
+    ],
+    "tolerance": 0.001,
+    "maxWorldError": 2.6533745369761164e-05,
+    "comparisons": 28080,
+    "ikPoseComparisons": 0,
+    "maxIKMixError": 0,
+    "ikMixTolerance": 1e-06,
+    "drawOrderChecks": 312,
+    "imageChecks": 4160,
+    "colorComparisons": 16640
+  }
+}
