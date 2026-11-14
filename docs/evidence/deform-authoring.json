@@ -11,7 +11,8 @@
     "K keys deform",
     "Save file equals captured document at f32 precision",
     "Undo restores pending pose",
-    "Redo restores keyed document"
+    "Redo restores keyed document",
+    "saved deform survives native reopen"
   ],
   "pending_capture": "../deform-authoring-pending.png",
   "keyed_capture": "../deform-authoring-editor.png",
@@ -72,5 +73,28 @@
     "drawOrderChecks": 312,
     "imageChecks": 4160,
     "colorComparisons": 16640
+  },
+  "all_native_processes_closed": true,
+  "editorRoundtrip": {
+    "accepted": true,
+    "preEditorAgreementAtTolerance001": false,
+    "maxMeshError": 0.0015869140625,
+    "uneditedBaselineMaxMeshError": 0.0015869140625,
+    "existingQuantizationLimitation": true,
+    "reimportedEditorData": {
+      "skins": 3,
+      "activityChecks": 2250,
+      "inactiveSkipped": 0,
+      "comparisons": 13500,
+      "maxWorldError": 2.6437081885433145e-05,
+      "worst": "default wave t=1.90 hand.R.y",
+      "meshValues": 2500,
+      "meshMax": 3.0517578125e-05
+    }
+  },
+  "hostedCI": {
+    "status": "blocked",
+    "reason": "GitHub API returns HTTP404 for check.yml; no registered workflows despite file on remote default main",
+    "settingsChanged": false
   }
 }

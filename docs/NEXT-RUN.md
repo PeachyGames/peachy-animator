@@ -6,6 +6,13 @@ still apply.
 
 ## November 14 authoring update
 
+Prepared on `feat/training-deform-authoring`; **main integration awaits hosted
+CI**. The manual dispatch returns HTTP 404 (`check.yml` not found on the default
+branch), while the contents API confirms the file exists on remote main and
+Actions reports zero registered workflows/runs. Repository Actions is enabled;
+no settings were changed. Do not describe this as a hosted CI pass or silently
+waive the required gate.
+
 Startup image loading now uses the actual WGPU device texture limit. The private
 training example that aborted above 2048 pixels now opens with all original images;
 both imported clips were observed playing in the native editor. No source artwork

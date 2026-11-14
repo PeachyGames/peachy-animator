@@ -8,6 +8,12 @@ engine `deform` (15), `binding` (20) and `pose` (42); desktop `mesh` (24) and
 additive test totals. Format, all-target workspace Clippy with `-D warnings`,
 workspace build and the seven-crate architecture check pass locally.
 
+Hosted CI was requested on the pushed feature branch with `test_filter=deform`,
+but GitHub returned HTTP 404: workflow `check.yml` not found on the default branch.
+The contents API confirms that exact file on remote main, while Actions lists no
+registered workflows or runs. Actions is enabled; no account/repository settings
+were changed. Main integration remains gated on hosted CI.
+
 Original weighted/unweighted keys created through CLI commands and the weighted
 mesh edited in the real native application each pass `scripts/check-runtime.mjs`
 against the external 4.3.13 runtime across both clips and all three skins:
