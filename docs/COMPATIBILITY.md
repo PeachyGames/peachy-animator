@@ -12,6 +12,14 @@ excluded from saves/exports. Native format stays v22. See the
 multi-vertex editing remain pending. Startup image loading uses the actual
 renderer limit and refuses oversized images without resizing or aborting.
 
+Fresh headless authoring now starts with MCP `create_project`, then append-only
+bone/slot/region/mesh commands. Weighted bind points, topology, curves and deform
+keys use the same document validation and engine as the editor. These are MCP/core
+creation APIs; desktop image-import and freeform topology workflows remain gaps.
+The single-page atlas exporter now packs up to 4096×4096 without resizing source
+art (maximum image dimension 4092 with its two-pixel border). Multipage export
+remains unsupported. See [tutorial outcome scope](slices/training-recreation.md).
+
 Static IK is a bounded subset: one or two connected bones, unit positive scale
 and zero shear on their chain/ancestors, and a parent for the first bone. Chains
 may nest (a toe below a leg) and solve sequentially in constraint order; shared

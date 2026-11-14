@@ -17,7 +17,7 @@ work; `evaluate_pose` currently returns checked geometry and transforms.
 Build from the repository root:
 
 ```sh
-cargo build -p peachy-mcp --locked
+cargo build -p peachy-mcp --locked -j 2
 ```
 
 Configure an MCP client to launch the resulting executable with an explicit,
@@ -50,9 +50,10 @@ client's working directory. Absolute paths are accepted only inside that root.
 | Tool | Behavior |
 | --- | --- |
 | `get_document` | Complete native document, current revision, dirty flag, undo/redo availability, source and animation/skin inventory. Before Open it returns revision 0 and no document. |
+| `create_project` | New in-memory root-only native document with an empty default skin. Uses an existing asset directory within `--root`; no finished rig is loaded and no file is written. Source is null until Save. |
 | `inspect_file` | Read-only native validation or Spine capability report. Does not replace the working document. |
 | `open_project` | Load `.peachy` (including supported legacy migrations) or supported Spine 4.3 JSON into a new Session. Failed imports leave the current session intact. |
-| `get_command_schema` | Full JSON Schema for the 24 supported flat command variants; the same schema appears inline in `apply_commands` discovery. |
+| `get_command_schema` | Full JSON Schema for the 40 supported flat command variants; the same schema appears inline in `apply_commands` discovery. |
 | `apply_commands` | Apply a nonempty flat list through one engine Batch, atomically and as one undo step. No file writes. |
 | `history` | Undo or redo one complete edit using the shared Session history. |
 | `evaluate_pose` | Setup or a named animation at a nonnegative time in seconds, with optional skin. Returns authored locals, IK-applied locals, world matrices, textured vertex/UV/index buffers and bounds. |
@@ -64,6 +65,64 @@ MCP `tools/list`. Successful results include both `structuredContent` and matchi
 serialized text for older clients. Operational failures return `isError: true`
 with the current revision; malformed tool arguments use the SDK's protocol error.
 Read-only tools do not change session state.
+
+## Create from artwork
+
+For fresh rig authoring, place the prepared PNGs under an existing asset
+directory's `images/` child inside `--root`, then call `create_project`:
+
+```json
+{
+  "expected_revision": 0,
+  "name": "Tutorial recreation",
+  "fps": 30,
+  "asset_root": "art-input"
+}
+```
+
+The result is revision 1 with one neutral `root` bone, an empty `default` skin,
+and no slots, constraints or animations. FPS defaults to 30 and must be 1–240.
+The asset directory must exist and resolve inside the configured workspace;
+creation does not copy or alter it. Invalid arguments, an asset-root escape or a
+stale revision leave the current document intact. Replacing a dirty headless
+document requires explicit `discard_changes:true`, as with Open.
+
+Use `addBone` in parent-before-child order, then `addSlot` and `addAttachment`
+through `apply_commands`. New slots start with `attachment:null`. Attachments
+require an existing named skin and slot, and an unoccupied placeholder. No
+existing attachment is replaced and no skin is created implicitly. Use
+`setSlotAttachment` after insertion to activate the placeholder; the whole list
+can be one atomic undo step.
+
+`addAttachment.value` accepts native `region` or `mesh` data. Regions have an
+image path, source dimensions and region transform. Meshes may be authored with
+an arbitrary explicit hull, UVs and triangulation, using either slot-local
+positions or per-vertex bone-local influences. This creates new geometry; it
+does not reindex an existing animated mesh. The engine validates topology,
+influence references, finite values and the rest of the native contract before
+publishing the edit. Path/clipping creation and general topology replacement
+remain outside these commands.
+
+For example, a region can be added and displayed on the new root:
+
+```json
+{
+  "expected_revision": 1,
+  "commands": [
+    {"command":"addSlot","slot":{"name":"body","bone":0,"attachment":null,"color":[255,255,255,255]}},
+    {"command":"addAttachment","attachment":{"skin":"default","slot":"body","placeholder":"body"},"value":{"type":"region","path":"body","width":140,"height":148,"transform":{"x":0,"y":0,"rotation":0,"scale_x":1,"scale_y":1}}},
+    {"command":"setSlotAttachment","slot":0,"attachment":"body"},
+    {"command":"addAnimation","name":"idle","duration":0}
+  ]
+}
+```
+
+This references `art-input/images/body.png`. Add bone keys with `setKey` or
+`setPose`, IK through the existing constraint/key commands, and dense mesh keys
+with `setDeformKey`. These commands can author motion without opening/importing
+a finished project. `evaluate_pose`, Save and Export use the same engine and
+I/O boundary as existing-document edits. Prepared PNG artwork is still required;
+the MCP server does not separate Photoshop layers or paint missing artwork.
 
 ## Editing workflow
 
@@ -126,13 +185,13 @@ uses `kind:"json"` and a fresh `.json` output path instead.
 
 ## History and file boundaries
 
-Open, Apply, Undo, Redo and Save advance a monotonic revision. Each of those tools,
+Create, Open, Apply, Undo, Redo and Save advance a monotonic revision. Each of those tools,
 and Export, requires `expected_revision`; a stale value fails without side effects.
 Re-read state before retrying. Revisions belong to one server process and reset
 when it exits. Concurrent requests serialize around the same Session; independent
 server processes do not share documents or history.
 
-Opening another document refuses to discard unsaved edits unless the call
+Opening or creating another document refuses to discard unsaved edits unless the call
 explicitly supplies `discard_changes:true`. Successful Save marks the saved native
 document clean; Export preserves the native dirty baseline. Unsupported imports,
 invalid edits and failed output operations preserve the Session and revision.
@@ -156,7 +215,8 @@ supported Spine feature subset.
 ## Verification
 
 ```sh
-cargo test -p peachy-mcp --locked
+cargo test -p peachy-mcp --locked -j 2 stdio -- --test-threads=2
+cargo test -p peachy-mcp --locked -j 2 schema -- --test-threads=2
 cargo clippy -p peachy-mcp --all-targets --locked -- -D warnings
 python3 scripts/check-architecture.py
 ```
@@ -170,3 +230,11 @@ primary/output/image symlink escapes. A schema test decodes and reserializes eve
 published flat command shape using strict engine serde. Exact native GUI behavior
 and external runtime compatibility remain covered by their separate project
 acceptance checks; MCP does not establish additional Spine feature parity.
+
+The fresh-creation protocol case starts with the actual `create_project` tool,
+authors a region and a weighted triangulated mesh, adds bone/deform animation,
+checks failed-batch rollback and undo/redo, saves with unchanged image copies,
+exports JSON and an atlas bundle, and reopens the saved native project. It loads
+no finished rig as its starting document. This is a creation capability check;
+recreating a particular tutorial remains a separate artifact/visual acceptance
+task.

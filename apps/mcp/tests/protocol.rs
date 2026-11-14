@@ -103,7 +103,7 @@ async fn stdio_discovery_atomic_edit_history_save_and_export() {
     let original = fs::read(&source).unwrap();
     let client = start(&root.0).await;
     let tools = client.list_tools(Default::default()).await.unwrap().tools;
-    assert_eq!(tools.len(), 9);
+    assert_eq!(tools.len(), 10);
     assert!(tools.iter().all(|tool| !tool.input_schema.is_empty()));
     let apply = tools
         .iter()
@@ -255,6 +255,200 @@ async fn stdio_discovery_atomic_edit_history_save_and_export() {
 }
 
 #[tokio::test]
+async fn stdio_create_project_authors_region_and_weighted_mesh_without_importing() {
+    let root = Sandbox::new();
+    root.fixture();
+    let image = root.0.join("source/images/hand.png");
+    let source_image = fs::read(&image).unwrap();
+    let client = start(&root.0).await;
+    let created = success(
+        call(
+            &client,
+            "create_project",
+            json!({
+                "expected_revision":0,"name":"Fresh tutorial rig","asset_root":"source"
+            }),
+        )
+        .await,
+    );
+    assert_eq!(created["revision"], 1);
+    assert_eq!(created["fps"], 30);
+    assert_eq!(created["bones"], 1);
+    assert_eq!(created["slots"], 0);
+    assert!(created["source"].is_null());
+    let blank = doc(&client).await;
+    assert_eq!(blank["document"]["bones"][0]["name"], "root");
+    assert_eq!(blank["document"]["skins"], json!({"default":{}}));
+    assert_eq!(blank["document"]["animations"], json!([]));
+    let transform = json!({
+        "x":12.0,"y":20.0,"rotation":0.0,"scale_x":1.0,"scale_y":1.0,
+        "shear_x":0.0,"shear_y":0.0
+    });
+    let mesh = json!({
+        "type":"mesh","path":"hand","width":54.0,"height":56.0,
+        "vertices":{"mode":"weighted","influences":[
+            [{"bone":1,"position":[0.0,0.0],"weight":1.0}],
+            [{"bone":1,"position":[12.0,0.0],"weight":1.0}],
+            [{"bone":1,"position":[0.0,12.0],"weight":1.0}]
+        ]},
+        "uvs":[[0.0,0.0],[1.0,0.0],[0.0,1.0]],"triangles":[0,1,2],"hull":3
+    });
+    let commands = json!([
+        {"command":"addBone","bone":{
+            "name":"hair","parent":0,"length":30.0,"setup":transform,"inherit":"normal"
+        }},
+        {"command":"addSlot","slot":{"name":"body","bone":0,"attachment":null,"color":[255,255,255,255]}},
+        {"command":"addAttachment","attachment":{"skin":"default","slot":"body","placeholder":"body"},
+         "value":{"type":"region","path":"torso","width":140.0,"height":148.0,
+          "transform":{"x":0.0,"y":0.0,"rotation":0.0,"scale_x":1.0,"scale_y":1.0}}},
+        {"command":"setSlotAttachment","slot":0,"attachment":"body"},
+        {"command":"addSlot","slot":{"name":"hair","bone":1,"attachment":null,"color":[255,255,255,255]}},
+        {"command":"addAttachment","attachment":{"skin":"default","slot":"hair","placeholder":"hair"},"value":mesh},
+        {"command":"setSlotAttachment","slot":1,"attachment":"hair"},
+        {"command":"addAnimation","name":"wind","duration":0.0},
+        {"command":"setKey","animation":0,"bone":1,"property":"rotation","key":{"time":0.0,"value":0.0,"curve":"linear"}},
+        {"command":"setKey","animation":0,"bone":1,"property":"rotation","key":{"time":0.5,"value":18.0,"curve":"linear"}},
+        {"command":"setKey","animation":0,"bone":1,"property":"rotation","key":{"time":1.0,"value":0.0,"curve":"linear"}},
+        {"command":"setDeformKey","animation":0,"attachment":{"skin":"default","slot":"hair","placeholder":"hair"},
+         "key":{"time":0.5,"curve":"linear","offsets":[0.0,0.0,2.0,0.0,0.0,0.0]}}
+    ]);
+    let authored = success(
+        call(
+            &client,
+            "apply_commands",
+            json!({"expected_revision":1,"commands":commands}),
+        )
+        .await,
+    );
+    assert_eq!(authored["revision"], 2);
+    assert_eq!(authored["dirty"], true);
+    assert_eq!(authored["bones"], 2);
+    assert_eq!(authored["slots"], 2);
+    let authored_doc = doc(&client).await;
+    assert!(
+        error(
+            call(
+                &client,
+                "create_project",
+                json!({
+                    "expected_revision":2,"name":"Replacement","asset_root":"source"
+                })
+            )
+            .await
+        )["error"]
+            .as_str()
+            .unwrap()
+            .contains("Unsaved")
+    );
+    assert_eq!(doc(&client).await, authored_doc);
+    for invalid in [
+        json!({"expected_revision":2,"name":"","asset_root":"source","discard_changes":true}),
+        json!({"expected_revision":2,"name":"Replacement","fps":0,"asset_root":"source","discard_changes":true}),
+        json!({"expected_revision":2,"name":"Replacement","asset_root":"source/peach-bot.peachy","discard_changes":true}),
+        json!({"expected_revision":1,"name":"Replacement","asset_root":"source","discard_changes":true}),
+    ] {
+        error(call(&client, "create_project", invalid).await);
+        assert_eq!(doc(&client).await, authored_doc);
+    }
+    error(call(&client,"apply_commands",json!({"expected_revision":2,"commands":[
+        {"command":"renameBone","bone":0,"name":"must-rollback"},
+        {"command":"addAttachment","attachment":{"skin":"default","slot":"hair","placeholder":"hair"},"value":mesh}
+    ]})).await);
+    assert_eq!(doc(&client).await, authored_doc);
+    success(
+        call(
+            &client,
+            "history",
+            json!({"expected_revision":2,"action":"undo"}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await["document"], blank["document"]);
+    success(
+        call(
+            &client,
+            "history",
+            json!({"expected_revision":3,"action":"redo"}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await["document"], authored_doc["document"]);
+    let pose = success(
+        call(
+            &client,
+            "evaluate_pose",
+            json!({"animation":"wind","time":0.5}),
+        )
+        .await,
+    );
+    assert_eq!(pose["world"].as_array().unwrap().len(), 2);
+    assert_eq!(pose["attachments"].as_array().unwrap().len(), 2);
+    let saved = success(
+        call(
+            &client,
+            "save_project",
+            json!({"expected_revision":4,"directory":"created"}),
+        )
+        .await,
+    );
+    assert_eq!(saved["state"]["source"], "created/project.peachy");
+    assert_eq!(saved["state"]["dirty"], false);
+    let saved_document = peachy_io::load(&root.0.join("created/project.peachy")).unwrap();
+    assert_eq!(saved_document.bones.len(), 2);
+    assert_eq!(saved_document.animations[0].deform_tracks.len(), 1);
+    assert_eq!(
+        fs::read(root.0.join("created/images/hand.png")).unwrap(),
+        source_image
+    );
+    success(
+        call(
+            &client,
+            "export_project",
+            json!({"expected_revision":5,"kind":"json","path":"created.json"}),
+        )
+        .await,
+    );
+    let bundle = success(
+        call(
+            &client,
+            "export_project",
+            json!({"expected_revision":5,"kind":"bundle","path":"."}),
+        )
+        .await,
+    );
+    assert!(
+        root.0
+            .join(bundle["path"].as_str().unwrap())
+            .join("character.atlas")
+            .is_file()
+    );
+    let reopened = success(
+        call(
+            &client,
+            "open_project",
+            json!({"expected_revision":5,"path":"created/project.peachy"}),
+        )
+        .await,
+    );
+    assert_eq!(reopened["revision"], 6);
+    assert_eq!(doc(&client).await["document"], authored_doc["document"]);
+    let reset = success(
+        call(
+            &client,
+            "create_project",
+            json!({"expected_revision":6,"name":"Next","fps":24,"asset_root":"source"}),
+        )
+        .await,
+    );
+    assert_eq!(reset["fps"], 24);
+    assert_eq!(reset["bones"], 1);
+    assert_eq!(reset["canUndo"], false);
+    assert!(reset["source"].is_null());
+    assert_eq!(fs::read(&image).unwrap(), source_image);
+    client.cancel().await.unwrap();
+}
+
+#[tokio::test]
 async fn invalid_protocol_arguments_and_failed_opens_preserve_session() {
     let root = Sandbox::new();
     root.fixture();
@@ -352,6 +546,22 @@ async fn confines_primary_paths_output_parents_and_referenced_images() {
     symlink(outside.0.join("absent"), root.0.join("dangling.json")).unwrap();
     let client = start(&root.0).await;
     open(&client).await;
+    let original = doc(&client).await;
+    for asset_root in [
+        "../outside".to_owned(),
+        "escape".to_owned(),
+        outside.0.to_string_lossy().into_owned(),
+    ] {
+        error(
+            call(
+                &client,
+                "create_project",
+                json!({"expected_revision":1,"name":"Escape","asset_root":asset_root}),
+            )
+            .await,
+        );
+        assert_eq!(doc(&client).await, original);
+    }
     for path in ["../outside.json", "escape/protected.json"] {
         error(call(&client, "inspect_file", json!({"path":path})).await);
     }

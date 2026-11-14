@@ -1,5 +1,56 @@
 # First-slice validation — November 5, 2026
 
+## Fresh tutorial authoring through MCP — November 14, 2026
+
+A fresh native factory, append-only slot/region/mesh commands and MCP
+`create_project` enable authoring from prepared cutouts without importing a
+finished rig. Native v22 is unchanged. Focused engine `creation` (4), MCP
+`stdio` (2) and `schema` (4), and I/O `bundle` (1) checks pass with two Cargo
+workers and two test threads. Formatting, all-target workspace Clippy with
+warnings denied, workspace build and the seven-crate architecture check pass.
+An independent source review found no blocking validation, atomicity or path
+confinement issue. The final schema check also covers the optional IK stretch
+field used by reconstruction requests; it retains strict unknown-field rejection.
+Both original rig/motion batches were replayed through the updated MCP binary
+and produced documents identical to the saved, runtime-checked outputs.
+
+Actual stdio MCP calls authored two projects from one neutral root. Both pass
+atomic history restoration, native Save/reopen document equality, JSON and
+packed export, and unchanged source PNG hashes. Halloween has 79 bones, 37
+slots, 27 meshes, one IK constraint and three clips. Wind has 48 bones, seven
+weighted meshes, two clips and five independently measured technique cases.
+The single-page packer now handles up to 4096×4096; a focused original-image
+check preserves 2059-pixel art and rejects a 4093-pixel image before writing an
+output directory.
+
+| Actual authored output | External 4.3 runtime checks | Maximum world / mesh error |
+| --- | --- | --- |
+| Halloween | 73,944 bone values; 377,832 mesh values; 755,664 UV values; 156 IK samples | 0.00045153 / 0.00073242 |
+| Wind technique studies | 29,952 bone values; 105,248 weighted mesh values; 210,496 UV values | 0.00022056 / 0.00036622 |
+
+Both final native projects open with all textures (37 Halloween, seven Wind).
+All five clips advance in the actual editor with no evaluation errors. Fitted
+screenshots show the full character or five technique panels. Saved document
+data remains unchanged at native f32 precision, with no pending poses. Both
+verified owned editor processes were closed after review.
+
+All five clip endpoint residuals are zero. Every Wind case moves and loops with
+fixed roots; garment Y and sash X/Y translation engage. A separate MCP check
+removes Halloween bone keys temporarily: bone transforms remain exactly fixed
+while face, hat, cowl, torso and broom deforms move their meshes by 3.8–9 world
+units. Undo restores the full authored document before Save/export. Numerical
+agreement uses the unchanged 0.001 geometry tolerance and does not establish
+pixel equivalence or identical artist timing.
+
+See [the precise reference/recreation scope](slices/training-recreation.md) and
+[redacted scalar evidence](evidence/training-recreation.json). Full audio
+coverage found silent instructional portions; timestamped visual walkthroughs
+use 569 sampled frames across 31 sheets. The short Wind showcase speech remains
+unverified; its visible English subtitles are separate. Wind character source
+artwork was absent, so those cases use explicit proxies. Private artwork,
+projects, detailed MCP requests and review media remain gitignored. Hosted CI
+registration is still unresolved; this feature branch is not integrated into main.
+
 ## Animate deform authoring and texture startup — November 14, 2026
 
 Integrated checks use two Cargo workers and two test threads. Focused filters:

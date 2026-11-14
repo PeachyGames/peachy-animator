@@ -1,5 +1,29 @@
 # Implementation provenance
 
+## Fresh tutorial reconstruction — November 14, 2026
+
+Four user-supplied local training videos were decoded across their full audio
+ranges and examined through timestamped visual samples. The instructional
+portions are silent. The visual walkthrough uses 569 sampled frames and 31
+contact sheets; it is not a continuous frame-by-frame transcription. A brief
+Wind showcase outro has readable English subtitles; its spoken wording remains
+unverified, and rejected ASR hallucinations were not used as instructions.
+
+Reconstruction recipes use only the supplied raw PNG cutouts and the one-root,
+empty-animation Photoshop layout. Finished artist bone, mesh, weight and key data
+are excluded from recipe inputs. Bone placement, polygon hulls, triangulation,
+smooth weights and phased cubic motion were independently authored from artwork
+and observed actions. The Wind character source is absent; five technique studies
+use explicitly identified artwork proxies. This establishes bounded technique
+reproduction, not identical artist poses/timing or full Spine UI parity.
+
+Actual stdio MCP requests create the projects from one neutral root, apply rig
+and motion commands, undo/redo, save/reopen, and export. An offline preview shell
+rasterizes MCP-evaluated triangles; it does not implement another pose solver.
+The separately licensed runtime is used only through the existing external
+public-API harness. Private source artwork, projects, videos and detailed request
+logs remain gitignored. Source hashes are retained locally and unchanged.
+
 ## Animate mesh vertices and texture startup — November 14, 2026
 
 The public [mesh transform tools guide](https://esotericsoftware.com/spine-meshes#Transform-tools)

@@ -138,6 +138,15 @@ pub enum Command {
     AddBone {
         bone: Bone,
     },
+    /// Append an empty slot. Add its artwork explicitly before activating it.
+    AddSlot {
+        slot: Slot,
+    },
+    /// Insert new region/mesh artwork in an existing skin and slot. Never replaces.
+    AddAttachment {
+        attachment: AttachmentRef,
+        value: Attachment,
+    },
     AddAnimation {
         name: String,
         duration: f32,
@@ -422,6 +431,45 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
             *slot = Constraint::Physics(value);
         }
         Command::AddBone { bone } => doc.bones.push(bone),
+        Command::AddSlot { slot } => {
+            if slot.name.trim().is_empty()
+                || doc.slots.iter().any(|existing| existing.name == slot.name)
+                || slot.bone >= doc.bones.len()
+            {
+                return Err("New slot needs a unique nonempty name and an existing bone".into());
+            }
+            if slot.attachment.is_some() {
+                return Err(
+                    "New slot must be empty; add artwork then use SetSlotAttachment".into(),
+                );
+            }
+            doc.slots.push(slot);
+        }
+        Command::AddAttachment { attachment, value } => {
+            if !matches!(value, Attachment::Region(_) | Attachment::Mesh(_)) {
+                return Err(
+                    "Attachment creation currently supports regions and meshes only".into(),
+                );
+            }
+            if !doc.slots.iter().any(|slot| slot.name == attachment.slot) {
+                return Err("New attachment needs an existing slot".into());
+            }
+            if attachment.placeholder.trim().is_empty() {
+                return Err("New attachment placeholder must be nonempty".into());
+            }
+            value.validate()?;
+            let skin = doc
+                .skins
+                .get_mut(&attachment.skin)
+                .ok_or("New attachment needs an existing skin")?;
+            let entries = skin.entry(attachment.slot).or_default();
+            if entries.contains_key(&attachment.placeholder) {
+                return Err(
+                    "Attachment placeholder is occupied; creation never overwrites artwork".into(),
+                );
+            }
+            entries.insert(attachment.placeholder, value);
+        }
         Command::AddAnimation { name, duration } => {
             if !duration.is_finite() || duration < 0.0 {
                 return Err("Animation duration must be finite and nonnegative".into());

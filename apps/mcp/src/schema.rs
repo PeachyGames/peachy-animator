@@ -37,6 +37,22 @@ fn object(fields: &[(&str, Value)]) -> Value {
     json!({"type":"object","properties":properties,"required":fields.iter().map(|(k,_)|*k).collect::<Vec<_>>(),"additionalProperties":false})
 }
 
+fn with_optional(mut schema: Value, fields: &[(&str, Value)]) -> Value {
+    let properties = schema["properties"]
+        .as_object_mut()
+        .expect("Object schema has properties");
+    properties.extend(
+        fields
+            .iter()
+            .map(|(name, value)| ((*name).into(), value.clone())),
+    );
+    schema
+}
+
+fn nullable(schema: Value) -> Value {
+    json!({"oneOf":[{"type":"null"},schema]})
+}
+
 fn list(item: Value) -> Value {
     json!({"type":"array","items":item})
 }
@@ -66,6 +82,85 @@ pub fn command_schema() -> Value {
     );
     let region = object(&["x", "y", "rotation", "scale_x", "scale_y"].map(|name| (name, number())));
     let attachment = object(&[("skin", text()), ("slot", text()), ("placeholder", text())]);
+    let rgba = json!({"type":"array","items":{"type":"integer","minimum":0,"maximum":255},"minItems":4,"maxItems":4});
+    let vector = json!({"type":"array","items":{"type":"number"},"minItems":2,"maxItems":2});
+    let sequence = object(&[
+        ("count", json!({"type":"integer","minimum":1})),
+        ("start", index()),
+        ("digits", index()),
+        ("setup_index", index()),
+    ]);
+    let region_attachment = with_optional(
+        object(&[
+            ("type", json!({"type":"string","const":"region"})),
+            ("path", text()),
+            ("width", number()),
+            ("height", number()),
+            ("transform", region.clone()),
+        ]),
+        &[
+            ("name", nullable(text())),
+            ("color", rgba.clone()),
+            ("sequence", nullable(sequence.clone())),
+        ],
+    );
+    let mesh_vertices = json!({"oneOf":[
+        object(&[
+            ("mode",json!({"type":"string","const":"slotLocal"})),
+            ("positions",json!({"type":"array","items":vector.clone(),"minItems":3})),
+        ]),
+        object(&[
+            ("mode",json!({"type":"string","const":"weighted"})),
+            ("influences",json!({"type":"array","minItems":3,"items":{
+                "type":"array","minItems":1,"items":object(&[
+                    ("bone",index()),("position",vector.clone()),
+                    ("weight",json!({"type":"number","minimum":0,"maximum":1})),
+                ])
+            }})),
+        ]),
+    ]});
+    let mesh_link = object(&[
+        ("skin", text()),
+        ("source", text()),
+        ("timelines", json!({"type":"boolean"})),
+    ]);
+    let mesh_attachment = with_optional(
+        object(&[
+            ("type", json!({"type":"string","const":"mesh"})),
+            ("path", text()),
+            ("vertices", mesh_vertices),
+            ("uvs", json!({"type":"array","items":vector,"minItems":3})),
+            (
+                "triangles",
+                json!({"type":"array","items":index(),"minItems":3}),
+            ),
+            ("hull", json!({"type":"integer","minimum":3})),
+            ("width", number()),
+            ("height", number()),
+        ]),
+        &[
+            ("name", nullable(text())),
+            ("edges", list(index())),
+            ("color", rgba.clone()),
+            ("link", nullable(mesh_link)),
+            ("sequence", nullable(sequence)),
+        ],
+    );
+    let slot = with_optional(
+        object(&[
+            ("name", text()),
+            ("bone", index()),
+            (
+                "attachment",
+                json!({"type":"null","description":"New slots start empty. Activate an attachment afterward with setSlotAttachment."}),
+            ),
+            ("color", rgba),
+        ]),
+        &[(
+            "blend",
+            json!({"type":"string","enum":["normal","additive","multiply","screen"]}),
+        )],
+    );
     let target = json!({"oneOf":[object(&[("mode",json!({"const":"setup","type":"string"}))]),object(&[("mode",json!({"const":"animate","type":"string"})),("animation",index()),("time",number())])]});
     let curve_handles = json!({"type":"array","items":{"type":"number"},"minItems":4,"maxItems":4});
     let curve = json!({"oneOf":[
@@ -96,18 +191,21 @@ pub fn command_schema() -> Value {
         ])),
     )]);
     let bind_pose = object(&[("locals", list(transform.clone()))]);
-    let ik = object(&[
-        ("name", text()),
-        ("bones", list(index())),
-        ("target", index()),
-        (
-            "setup",
-            object(&[
-                ("mix", number()),
-                ("bend_positive", json!({"type":"boolean"})),
-            ]),
-        ),
-    ]);
+    let ik = with_optional(
+        object(&[
+            ("name", text()),
+            ("bones", list(index())),
+            ("target", index()),
+            (
+                "setup",
+                object(&[
+                    ("mix", number()),
+                    ("bend_positive", json!({"type":"boolean"})),
+                ]),
+            ),
+        ]),
+        &[("stretch", json!({"type":"boolean","default":false}))],
+    );
     let inherit = json!({"type":"string","enum":["normal","onlyTranslation","noRotationOrReflection","noScale","noScaleOrReflection"]});
     let settings = [
         "inertia", "strength", "damping", "mass", "wind", "gravity", "mix",
@@ -211,6 +309,17 @@ pub fn command_schema() -> Value {
         object(&[("type", tag("ik")), ("keys", list(ik_key.clone()))]),
     ]});
     let variants = vec![
+        command("addSlot", &[("slot", slot)]),
+        command(
+            "addAttachment",
+            &[
+                ("attachment", attachment.clone()),
+                (
+                    "value",
+                    json!({"oneOf":[region_attachment,mesh_attachment]}),
+                ),
+            ],
+        ),
         command(
             "setIkKey",
             &[
@@ -440,6 +549,8 @@ mod tests {
     // Exhaustive matching makes any new engine variant a schema review gate.
     fn wire_name(command: &Command) -> &'static str {
         match command {
+            Command::AddSlot { .. } => "addSlot",
+            Command::AddAttachment { .. } => "addAttachment",
             Command::AddIkConstraint { .. } => "addIkConstraint",
             Command::SetIkConstraint { .. } => "setIkConstraint",
             Command::AddTransformConstraint { .. } => "addTransformConstraint",
@@ -500,6 +611,13 @@ mod tests {
                 .as_object()
                 .unwrap()
                 .iter()
+                .filter(|(key, _)| {
+                    schema["required"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .any(|required| required.as_str() == Some(key.as_str()))
+                })
                 .map(|(key, value)| (key.clone(), sample(value)))
                 .collect(),
             "array" => Value::Array(
@@ -511,6 +629,7 @@ mod tests {
             "integer" => json!(0),
             "number" => json!(0.0),
             "boolean" => json!(true),
+            "null" => Value::Null,
             kind => panic!("Unmodeled schema type {kind}"),
         }
     }
@@ -519,7 +638,7 @@ mod tests {
     fn every_published_shape_decodes_through_strict_engine_serde() {
         let schema = command_schema();
         let variants = schema["oneOf"].as_array().unwrap();
-        assert_eq!(variants.len(), 38);
+        assert_eq!(variants.len(), 40);
         for variant in variants {
             let payload = sample(variant);
             let command: CommandInput = serde_json::from_value(payload.clone()).unwrap();
@@ -597,5 +716,122 @@ mod tests {
         let mut unknown = delete;
         unknown["offsets"] = json!([0.0, 1.0]);
         assert!(serde_json::from_value::<CommandInput>(unknown).is_err());
+    }
+
+    #[test]
+    fn attachment_creation_exposes_strict_regions_meshes_and_influence_payloads() {
+        let schema = command_schema();
+        let add = schema["oneOf"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|variant| variant["properties"]["command"]["const"] == "addAttachment")
+            .unwrap();
+        let variants = add["properties"]["value"]["oneOf"].as_array().unwrap();
+        assert_eq!(variants.len(), 2);
+        for variant in variants {
+            assert_eq!(variant["additionalProperties"], false);
+        }
+        let sequence = json!({"count":2,"start":0,"digits":1,"setup_index":0});
+        let region = json!({
+            "type":"region","name":"body-name","path":"body","width":10.0,"height":12.0,
+            "transform":{"x":0.0,"y":0.0,"rotation":0.0,"scale_x":1.0,"scale_y":1.0},
+            "color":[128,255,255,255],"sequence":sequence
+        });
+        let mut mesh = json!({
+            "type":"mesh","name":"mesh-name","path":"cloth","width":10.0,"height":12.0,
+            "vertices":{"mode":"slotLocal","positions":[[0.0,0.0],[2.0,0.0],[0.0,2.0]]},
+            "uvs":[[0.0,0.0],[1.0,0.0],[0.0,1.0]],"triangles":[0,1,2],"hull":3,
+            "edges":[0,2,2,4,4,0],"color":[128,255,255,255],
+            "link":{"skin":"default","source":"source","timelines":true},"sequence":sequence
+        });
+        let mut values = vec![region, mesh.clone()];
+        mesh["vertices"] = json!({"mode":"weighted","influences":[
+            [{"bone":0,"position":[0.0,0.0],"weight":0.5},{"bone":1,"position":[0.0,0.0],"weight":0.5}],
+            [{"bone":0,"position":[2.0,0.0],"weight":1.0}],
+            [{"bone":1,"position":[0.0,2.0],"weight":1.0}]
+        ]});
+        values.push(mesh);
+        for value in values {
+            let payload = json!({
+                "command":"addAttachment",
+                "attachment":{"skin":"default","slot":"body","placeholder":"body"},
+                "value":value
+            });
+            let parsed: CommandInput = serde_json::from_value(payload.clone()).unwrap();
+            assert_eq!(serde_json::to_value(parsed.0).unwrap(), payload);
+            let mut unknown = payload;
+            unknown["value"]["futureField"] = json!(true);
+            assert!(serde_json::from_value::<CommandInput>(unknown).is_err());
+        }
+    }
+
+    #[test]
+    fn ik_constraint_schema_exposes_optional_stretch_without_weakening_strict_fields() {
+        let schema = command_schema();
+        for (name, field) in [
+            ("addIkConstraint", "constraint"),
+            ("setIkConstraint", "value"),
+        ] {
+            let variant = schema["oneOf"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|variant| variant["properties"]["command"]["const"] == name)
+                .unwrap();
+            let constraint_schema = &variant["properties"][field];
+            assert_eq!(constraint_schema["additionalProperties"], false);
+            assert_eq!(
+                constraint_schema["properties"]["setup"]["additionalProperties"],
+                false
+            );
+            assert_eq!(
+                constraint_schema["properties"]["stretch"],
+                json!({"type":"boolean","default":false})
+            );
+            assert!(
+                constraint_schema["required"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .all(|required| required != "stretch")
+            );
+            for stretch in [None, Some(false), Some(true)] {
+                let mut constraint = json!({
+                    "name":"leg","bones":[0,1],"target":2,
+                    "setup":{"mix":1.0,"bend_positive":true}
+                });
+                if let Some(stretch) = stretch {
+                    constraint["stretch"] = json!(stretch);
+                }
+                let mut payload = json!({"command":name});
+                if name == "setIkConstraint" {
+                    payload["constraint"] = json!(0);
+                }
+                payload[field] = constraint;
+                let parsed: CommandInput = serde_json::from_value(payload.clone()).unwrap();
+                let actual = match &parsed.0 {
+                    Command::AddIkConstraint { constraint } => constraint.stretch,
+                    Command::SetIkConstraint { value, .. } => value.stretch,
+                    _ => panic!("Expected an IK constraint command"),
+                };
+                assert_eq!(actual, stretch.unwrap_or(false));
+                let canonical = serde_json::to_value(parsed.0).unwrap();
+                let mut expected = payload.clone();
+                if !actual {
+                    expected[field].as_object_mut().unwrap().remove("stretch");
+                }
+                assert_eq!(canonical, expected);
+                let reopened: CommandInput = serde_json::from_value(canonical.clone()).unwrap();
+                assert_eq!(serde_json::to_value(reopened.0).unwrap(), canonical);
+
+                let mut unknown = payload.clone();
+                unknown[field]["futureField"] = json!(true);
+                assert!(serde_json::from_value::<CommandInput>(unknown).is_err());
+                let mut invalid = payload;
+                invalid[field]["stretch"] = json!("true");
+                assert!(serde_json::from_value::<CommandInput>(invalid).is_err());
+            }
+        }
     }
 }

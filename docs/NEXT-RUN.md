@@ -6,6 +6,15 @@ still apply.
 
 ## November 14 authoring update
 
+Final private tutorial review: `.local/training-spine-20261114/recreation/index.html`.
+The timestamped visual action transcript and full audio-coverage records are
+linked there. Both recreated projects were built through actual MCP calls from
+raw cutouts and the empty source layout; the finished rig is excluded from
+recipe inputs. Halloween has 79 bones, 27 meshes, one IK constraint and three
+clips; Wind has five explicitly qualified technique cases, seven weighted
+meshes and two clips. Both pass the external runtime checks. See
+[training recreation](slices/training-recreation.md).
+
 Prepared on `feat/training-deform-authoring`; **main integration awaits hosted
 CI**. The manual dispatch returns HTTP 404 (`check.yml` not found on the default
 branch), while the contents API confirms the file exists on remote main and
@@ -24,6 +33,19 @@ Vertices retains the current mode; drag/nudge, pending offsets, Auto Key, K,
 contextual Deform key/delete, undo/redo and guarded fixed-baseline previews share
 the engine. Native v22 remains. See [the contract](slices/deform-authoring.md)
 and [original-fixture evidence](evidence/deform-authoring.json).
+
+Fresh tutorial outcomes are now built through actual stdio MCP calls from a
+root-only `create_project`, using raw cutouts and the source Photoshop layout.
+The finished artist rig is excluded from recipe inputs. Shared commands append
+slots and region/weighted mesh attachments; single-page packed export supports
+4096×4096. See [scope and evidence](slices/training-recreation.md).
+
+Audio coverage of all four videos is complete. Instructional portions are silent;
+visual action transcripts use 569 frames across 31 contact sheets. The Wind
+showcase's last 16.4 seconds contain speech whose wording remains unverified;
+visible English subtitles are transcribed. Wind source artwork was not supplied,
+so its five technique cases use explicit proxies. Do not call this an exact
+character recreation or full tutorial workflow/UI parity.
 
 Next useful continuation: deform Dopesheet rows/curves and multi-vertex editing,
 then broader mesh/Auto/brush weights and multi-bone cycle Offset workflows.
@@ -80,8 +102,11 @@ caps Cargo/test workers at two.
 - Commits use the trailer `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
   This repo's workflow: feature branch, fast-forward `main`, `git push origin main`.
   (The game repo's "no Co-Authored-By" rule does not apply here.)
-- Disk: stop below 15 GB free (28 GB at the end of this session). `target/` is
-  about 14 GB; don't create a second target directory.
+- Disk: run `python3 /Users/chris/.local/bin/codex-disk-check --path "$PWD" --json`
+  and include `--expected-write-gb` before a large write. Keep 15 decimal GB of
+  verified available capacity after the write; report raw free and native macOS
+  available capacity separately. Follow the helper's verified/raw-free fallback
+  policy; a low `df` alone is not a block. Reuse the existing Cargo target.
 - Tests: `-j 2` and `-- --test-threads=2`. Vitest is banned for the game only.
 
 ## Tooling

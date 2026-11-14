@@ -720,6 +720,32 @@ impl Curve {
 }
 
 impl Document {
+    /// Start an authored scene without importing a rig or any animation data.
+    /// The default skin is present for explicit attachment creation; it is empty.
+    pub fn new(name: String, fps: u32) -> Result<Self, String> {
+        let document = Self {
+            format: FORMAT_VERSION,
+            name,
+            fps,
+            bones: vec![Bone {
+                name: "root".into(),
+                parent: None,
+                length: 0.0,
+                setup: Transform::default(),
+                inherit: Inherit::Normal,
+            }],
+            constraints: vec![],
+            slots: vec![],
+            skins: BTreeMap::from([("default".into(), BTreeMap::new())]),
+            skin_scope: SkinScope::default(),
+            events: vec![],
+            reference_scale: 100.0,
+            animations: vec![],
+        };
+        document.validate()?;
+        Ok(document)
+    }
+
     pub fn validate(&self) -> Result<(), String> {
         if self.format != FORMAT_VERSION {
             return Err(format!("Unsupported project format {}", self.format));

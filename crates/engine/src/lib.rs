@@ -72,6 +72,8 @@ mod binding_tests;
 #[cfg(test)]
 mod clipping_tests;
 #[cfg(test)]
+mod creation_tests;
+#[cfg(test)]
 mod deform_authoring_tests;
 #[cfg(test)]
 mod deform_tests;
