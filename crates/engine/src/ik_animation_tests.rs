@@ -397,7 +397,9 @@ fn typed_ik_clipboard_owns_absolute_settings_and_rejects_wrong_kind_and_collapse
         );
         assert_eq!(document, before);
     }
-    assert!(copy_animation_keys(&document, 0, &[selection[0], selection[0]]).is_err());
+    assert!(
+        copy_animation_keys(&document, 0, &[selection[0].clone(), selection[0].clone()]).is_err()
+    );
 }
 
 #[test]

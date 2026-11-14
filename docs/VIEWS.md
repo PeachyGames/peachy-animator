@@ -1,5 +1,13 @@
 # Views audit and implemented scope
 
+Installed-reference update (November 14): the actual Spine 4.3.26 Views menu
+contains 17 entries, including Metrics. Peachy's current 15 views lack Curves and
+Problems, and `Slot Color` still needs the broader `Color` behavior and name.
+Earlier inventory claims below describe the bounded implementation at that
+checkpoint, not complete current-editor parity. See the
+[official-update/native inventory audit](slices/spine-blog-audit-20261114.md).
+
+
 Implementation progress: **15 of 15 views implemented**. The latest completed
 view is **Audio**. Every named view now has functional controls within the
 explicit scope below. Feature-level parity gaps remain listed; this is not a
@@ -18,9 +26,9 @@ availability and bounded feature scopes are explicit below.
 | --- | --- |
 | Animations | New searchable animation list in Animate. Click activates without changing the current bone selection; right-click selects its Tree properties without activation; double-click opens the existing Rename dialog. |
 | Audio | New session-only WAV waveform and independent audition view: Load, Play/Pause/Stop, seek, zoom/pan, Loop, Volume and Mute. Native macOS output uses the validated byte snapshot. Audio event timelines, animation synchronization and audio Save/export remain pending. |
-| Dopesheet | Existing supported bone-transform keys, curves, selection, clipboard and retiming. |
+| Dopesheet | Typed bone/IK and attachment-owned Deform keys, exact/row/shown selection, retime/copy/delete, clipboard and curve controls. Final integrated native acceptance of the new Deform workflow is pending. |
 | Ghosting | New Animate onion-skin view: fractional Frames and exact Key Frames, Current keyed-pose comparison, per-side colors, Images/Solid display and opacity, Anchor, On top, Loop, per-frame offsets and typed bone Selection with Lock/Refresh. Renders checked region/mesh/IK poses in the main viewport. |
-| Graph | New editable scalar graph for the selected bone and seven supported transform properties. Exact-key picker, engine-sampled curves, vertical value dragging, Fit and Zoom Keys. Existing key times/curves stay fixed; tangents, retiming and multiple curves remain pending. |
+| Graph | Scalar bone-value graph plus selected-attachment Deform progress graph. Exact-key selection, engine sampling, Fit/Zoom Keys; Deform adds curve presets, numeric and draggable tangent handles, and shared timeline clipboard/delete routing. Scalar tangents and multiple curves remain pending; final integrated Deform native acceptance is pending. |
 | Mesh Tools | New soft-selection view with Size, Feather and Hull vertices. Affects neighboring vertices during unweighted Setup vertex drags and arrow nudges, with falloff colors and radius rings. Weighted/Animate transforms and multi-vertex selection remain pending. |
 | Metrics | New counts for bones, constraints, slots, all attachments, visible attachments, visible vertices and triangles. Animate additionally shows native scalar-track and key counts. |
 | Outline | New clean secondary display of the current evaluated pose, including pending unkeyed edits and static IK. Fit, right/middle drag pan, wheel zoom, and click to center the main viewport. |
@@ -34,7 +42,7 @@ availability and bounded feature scopes are explicit below.
 
 All 15 views now have bounded implementations; no view remains a disabled placeholder.
 
-Animations, Audio, Ghosting, Graph, Mesh Tools, Metrics, Outline, Playback, Preview, Skins, Slot Color and Weights use a resizable tabbed panel in the right rail.
+Animations, Audio, Ghosting, Mesh Tools, Metrics, Outline, Playback, Preview, Skins, Slot Color and Weights use a resizable tabbed panel in the right rail. Graph and Dopesheet now share tabs in the bottom animation area, including when Tree is closed.
 With the Tree closed, they use that rail's full height. Opening an already open
 entry focuses its tab. Individual close buttons are present on these views, Tree
 and Dopesheet; they reopen from Views. F9 stores/restores all view visibility,
@@ -145,11 +153,11 @@ poses stay unchanged. Hue-only changes on white/gray retain the chosen UI hue
 without rewriting RGBA or creating history. The picker never roundtrips native
 bytes through premultiplied Color32 simply to display them.
 
-Graph displays the selected bone's existing Rotation, X/Y, Scale X/Y or Shear X/Y
-track. Values are native Setup offsets (degrees/units) or scale multipliers, not
+For a selected bone, Graph displays its existing Rotation, X/Y, Scale X/Y or
+Shear X/Y track. Values are native Setup offsets (degrees/units) or scale multipliers, not
 pending pose values. The orange playhead shares the main clip/time,
-while Graph's selected key is presentation-only and never redirects Dopesheet
-clipboard/Delete operations. Missing tracks are read-only; no phantom keys appear.
+while scalar Graph's selected key is presentation-only and never redirects
+Dopesheet clipboard/Delete operations. Missing tracks are read-only; no phantom keys appear.
 
 Choose overlapping/close native keys independently from the exact-key picker,
 then use Zoom Keys. Drag a marker vertically to edit its value. The exact time,
@@ -164,9 +172,44 @@ Curves use engine sampling with bounded render work (at most 257 markers and
 about 1,024 sampled points); native keys are never merged or deleted for display.
 The virtualized picker retains every exact time. Fit and Zoom Keys change only
 presentation. Main pose-evaluation errors do not prevent correcting finite key
-values. Tangent handles, key creation/retiming, clipboard editing, general pan/zoom,
-multiple curves and absolute posed-value display remain pending. Dopesheet keeps
-its current curve/timing tools; exact installed Graph parity is not claimed.
+values. For these scalar bone tracks, tangent handles, key creation/retiming,
+clipboard editing, general pan/zoom, multiple curves and absolute posed-value
+display remain pending. The Deform workflow below has its own scope; exact
+installed Graph parity is not claimed.
+
+For a selected deformable attachment, the Deform Dopesheet shows one typed
+`Deform: <attachment>` row. Linked attachments that share timelines resolve to
+their source owner, while independent links retain their own keys. Exact/row/
+shown selection, retime/copy gestures, Delete and Copy/Cut/Paste use the shared
+engine timeline and Session history. Clipboard data retains complete dense
+values and curves; compatibility checks per-vertex offset segmentation rather
+than only flat vector length. Unweighted and one-influence-per-vertex weighted
+layouts can exchange the same values without converting geometry or bindings.
+
+The selected attachment's Graph shows normalized progress between consecutive
+Deform poses: 0–100% per interval with a reset at each key, rather than vertex
+X/Y values. It offers an exact-key picker, Linear/Stepped/Bezier presets,
+draggable tangent handles, numeric handle entry, Fit and Zoom Keys. Handle times
+are normalized to their interval and numeric handle values use percentages;
+finite overshoot remains representable. These operations change only outgoing
+interpolation, preserving key times and dense offsets. The Deform Graph shares
+its typed key selection and clipboard/Delete routing with Dopesheet; the scalar
+bone Graph retains its independent selection policy above.
+
+Tangent drags freeze the exact attachment/key, chart mapping and pose/context,
+preview from one Session baseline, and commit one history step on release.
+Escape, focus/context/view/file/history changes cancel the preview and block a
+held pointer from restarting until release. Numeric fields reject nonfinite
+input; graph rendering is bounded while the exact-key picker retains source
+identities. Pending poses remain separate from stored keys and exports.
+
+Focused engine, desktop Deform/scalar/views and actual MCP stdio checks pass.
+Actual native placement, key retiming, tangent drag, percentage typing, keyboard
+clipboard/delete, one-step history, Escape cancellation, playback and fresh-process
+persistence pass. Both native- and MCP-authored exports match the external runtime. Multi-vertex
+shape editing, all-bone row hierarchy, arbitrary multi-curve Graph selection,
+advanced Offset and full docking/styling parity remain separate work. See the
+[Deform timeline contract](slices/deform-timeline.md).
 
 Preview chooses its own animation and skin and evaluates committed keys through
 the same checked region/mesh/static-IK engine. It does not display pending unkeyed

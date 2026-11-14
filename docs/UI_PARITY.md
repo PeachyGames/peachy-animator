@@ -1,5 +1,25 @@
 # Spine workspace and interaction parity
 
+## Deform timeline comparison — November 14, 2026
+
+Matched 1500×960 client-area captures from an owned installed Spine 4.3.26 window
+show blue `Deform: <attachment>` rows under bones, full-width bottom
+Graph/Dopesheet tabs beneath the Tree, and cyan 0–100 transitions resetting at
+each key on a frame-based Graph axis. The continuing implementation follows
+those observations through shared typed keys, clipboard operations and curve
+commands. Native verification is recorded in [the slice](slices/deform-timeline.md).
+Actual native acceptance passes key retiming, tangent drag, numeric percentage
+entry, keyboard clipboard/delete, atomic history, Escape cancellation, playback
+and fresh-process persistence. See the [review gallery](evidence/deform-timeline.html).
+Reference captures remain private; committed screenshots use only Peachy and
+original Peach Bot art.
+
+The actual Views menu has 17 entries. Peachy currently implements 15: Curves and
+Problems are missing, and Slot Color does not yet establish current Color-view
+behavior. This supersedes older claims of a complete 15-view reference inventory.
+See [the current update audit](slices/spine-blog-audit-20261114.md).
+
+
 ## Animate mesh vertices — November 14, 2026
 
 The public [mesh transform tools reference](https://esotericsoftware.com/spine-meshes#Transform-tools)
@@ -13,7 +33,7 @@ See [the exact scope](slices/deform-authoring.md).
 
 Remaining differences: explicit Vertices entry and contextual key/delete placement
 are provisional. Transform-tool vertex selection, multiple vertices, rotation/scale,
-deform Dopesheet rows/curves and Animate soft selection remain. The installed
+Animate soft selection remain; Deform timeline/Graph is covered above. The installed
 reference opened, but its exact mesh interaction was not established; the public
 guide is the behavioral reference. Runtime agreement is a separate gate.
 
@@ -36,11 +56,11 @@ The baseline is the documented default workspace; user layouts/hotkeys can diffe
 | Reference convention | Current alignment |
 | --- | --- |
 | Menu and file/history shortcuts at top left | Compact Peachy menu, Open/Save/Undo/Redo; export in menu and Cmd/Ctrl+E |
-| Views selector at top right | Full 15-view public-guide inventory, seven bounded working views, explicit disabled gaps, close/reopen, workspace restore and F9 |
+| Views selector at top right | 15 bounded implemented views, close/reopen, workspace restore and F9; installed 4.3.26 has 17 views, with Curves and Problems still missing |
 | Viewport left, Tree right | Right-side Tree; item properties below it; resizable panes |
 | Setup/Animate at viewport's upper left | Mode switch there; Dopesheet appears in Animate |
 | Main transform tools below viewport | Rotate/Translate selectors; numeric rotation, translation and scale |
-| Animation views below viewport | Frame-based Dopesheet below main tools, beside the full-height Tree |
+| Animation views below viewport | Frame-based Graph/Dopesheet tabs across the bottom beneath the Tree; exact styling and arbitrary docking remain |
 | Dense neutral dark UI, orange emphasis | Initial independent styling; detailed metrics/icons remain to align |
 | C / V / X tools | Rotate / Translate / Scale; right-click switches the last two tools, right-drag pans |
 | D playback; R / F frames | Forward play/stop, next/previous frame; Shift advances ten frames |
@@ -62,8 +82,8 @@ attachment properties. Interpolation labels are Linear, Stepped and Bezier.
   or reparenting. Exact glyphs, spacing and every Tree preference remain to align.
 - Complete main tool organization with Shear/Pose/Create, full Weights editing and compensation.
   Rotate/Translate/Scale and the axis selectors now cover the supported transform subset.
-- Add movable tabs, docking, saved workspace state and the Graph view. Tree and
-  Dopesheet currently provide resizers/visibility controls only.
+- Add movable tabs, arbitrary docking and saved workspace state. Graph/Dopesheet
+  share bottom tabs with resizers and visibility controls.
 - Add multiple/box selection and complete view-dependent input focus/navigation
   preferences. Extend Auto Key/unkeyed editing to new keyable types
   as their model and adapters are implemented.

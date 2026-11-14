@@ -7,9 +7,18 @@ Compatibility applies to the subset below, not every 4.3 project or future patch
 Current authoring addition (November 14): unweighted/weighted mesh deform keys
 can be created through single-vertex Animate drags/nudges, Auto Key, K or the
 attachment key control, and deleted at the current key. Pending offsets are
-excluded from saves/exports. Native format stays v22. See the
-[authoring scope and guards](slices/deform-authoring.md); deform Dopesheet and
-multi-vertex editing remain pending. Startup image loading uses the actual
+excluded from saves/exports. Native format stays v22. Attachment-owned Deform
+Dopesheet rows now support exact retime/copy/delete and Copy/Cut/Paste through
+the same engine/MCP commands. Deform Graph edits normalized transition progress
+with curve presets, tangent dragging and numeric handles; it preserves stored
+vertex offsets and exact key times. Clipboard compatibility follows per-vertex
+offset segmentation, including unweighted ↔ one-influence-per-vertex weighted
+pastes; equal flat lengths alone are insufficient. See the
+[timeline scope](slices/deform-timeline.md) and
+[vertex-authoring guards](slices/deform-authoring.md). Actual native key/curve/clipboard edits, cancellation, playback and fresh-process
+persistence pass; both native- and MCP-authored exports match the external
+runtime at the existing 0.001 tolerance. Multi-vertex and
+Animate soft editing remain gaps. Startup image loading uses the actual
 renderer limit and refuses oversized images without resizing or aborting.
 
 Fresh headless authoring now starts with MCP `create_project`, then append-only

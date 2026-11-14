@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Deform timeline and Graph — Peachy Animator</title>
+<style>
+:root{color-scheme:dark;font:16px/1.5 system-ui;background:#202226;color:#e9eaec}body{max-width:1500px;margin:auto;padding:24px}h1{font-size:1.7rem}h2{font-size:1.2rem}a{color:#a5d7fa}input{font:inherit;padding:10px;width:min(90%,600px);background:#30343b;color:inherit;border:1px solid #7b818e;border-radius:5px}.pair{display:grid;grid-template-columns:1fr 1fr;gap:16px}article{border:1px solid #515865;border-radius:8px;margin:24px 0;padding:16px}figure{margin:0}img{width:100%;height:auto;display:block}figcaption{padding:8px 0;color:#d3d5d9}table{border-collapse:collapse;width:100%}td,th{text-align:left;vertical-align:top;border-bottom:1px solid #515865;padding:8px}@media(max-width:900px){.pair{grid-template-columns:1fr}}
+</style>
+<h1>Deform timeline and Graph authoring</h1>
+<p>November 14, 2026 · Actual native captures with original Peach Bot artwork. Select an image for the full-size PNG.</p>
+<p>The installed Spine 4.3.26 comparison establishes blue Deform rows, bottom Graph/Dopesheet tabs beneath the Tree,
+and frame-based 0–100 pose transitions. Reference screenshots remain private. These captures show Peachy's independently implemented controls.</p>
+<label for="search">Filter evidence</label><br><input id="search" type="search" placeholder="Try native, graph, MCP, clipboard…">
+<article data-search="native dopesheet before after row layout blue retime">
+<h2>Dopesheet · Before and after</h2>
+<p>Inspection: rendered native captures at 1500×960. Before has no Deform timeline row; after shows attachment-owned keys and a full-width bottom dock.</p>
+<div class="pair">
+<figure><a href="deform-timeline-before.png"><img src="deform-timeline-before.png" alt="Earlier Peachy editor without an attachment Deform row" loading="lazy"></a><figcaption>Before: selected mesh has no editable timeline row.</figcaption></figure>
+<figure><a href="deform-timeline-after.png"><img src="deform-timeline-after.png" alt="Peachy editor showing a blue Deform hand row across the bottom" loading="lazy"></a><figcaption>After: exact typed Deform keys support retiming, copy, cut, paste and deletion.</figcaption></figure>
+</div></article>
+<article data-search="native graph curves tangent percentage handles undo cancellation">
+<h2>Graph · Deform pose transitions</h2>
+<p>Inspection: actual mouse/keyboard input and resulting document equality. The Graph edits interpolation between dense mesh poses, preserving every stored vertex offset.</p>
+<figure><a href="deform-timeline-graph.png"><img src="deform-timeline-graph.png" alt="Full-width Deform Graph with cyan 0 to 100 progress transitions and tangent handles" loading="lazy"></a><figcaption>Frame-based transitions, exact-key selection, tangent handles and numeric percentage entry; adjacent Dopesheet tab.</figcaption></figure>
+</article>
+<article data-search="verification mcp runtime stdio clipboard native save reopen limits parity">
+<h2>Verification and limits</h2>
+<table><thead><tr><th>Level</th><th>Verified behavior</th><th>Limit</th></tr></thead><tbody>
+<tr><td>Shared core and shell</td><td>Focused engine timeline, desktop Deform/Graph/views/layout and strict MCP schema/protocol checks; formatting, Clippy, build and architecture pass.</td><td>Focused local checks, not a full-suite or hosted-CI pass.</td></tr>
+<tr><td>Native input</td><td>Key retime, tangent drag, percentage typing, one-step history, keyboard clipboard/delete, Escape cancellation, playback and fresh-process persistence.</td><td>Selected-owner workflow; full all-bone row hierarchy and mixed-owner curves remain open.</td></tr>
+<tr><td>Actual stdio MCP</td><td>Read-only typed copying, retime, cross-attachment/clip paste, exact curve editing, atomic history, Save/reopen and export.</td><td>Independent headless session; no live desktop bridge.</td></tr>
+<tr><td>External Spine runtime</td><td>Both MCP- and native-authored outputs match across both clips and all three skins; max mesh error 0.00003052 at 0.001 tolerance.</td><td>Finite sampled data compatibility; no pixel-equivalence or full Spine compatibility claim.</td></tr>
+<tr><td>Installed editor</td><td>Native clipboard probes establish compatible and rejected offset layouts; same-layout positive control succeeds.</td><td>Arbitrary docking, multi-vertex tools, advanced Offset, complete styling and broader features remain.</td></tr>
+</tbody></table>
+<p><a href="deform-timeline.json">Scalar evidence</a> · <a href="../slices/deform-timeline.md">Contract and exact scope</a> · <a href="../slices/spine-blog-audit-20261114.md">Official-update backlog</a></p>
+</article>
+<script>
+document.querySelector('#search').addEventListener('input',event=>{const words=event.target.value.toLowerCase().trim().split(/\s+/);for(const article of document.querySelectorAll('article')){const text=(article.dataset.search+' '+article.textContent).toLowerCase();article.hidden=!words.every(word=>text.includes(word));}});
+</script>
+</html>

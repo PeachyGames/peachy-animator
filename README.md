@@ -1,5 +1,12 @@
 # Peachy Animator
 
+Deform keys now have named Dopesheet rows, exact retiming and clipboard editing,
+and a frame-based Graph with 0–100% transitions and editable tangents. Graph and
+Dopesheet share bottom tabs beneath the Tree. MCP exposes the same typed key
+operations, a read-only `copy_animation_keys` tool, and `setDeformCurve`.
+See [the Deform timeline contract](docs/slices/deform-timeline.md) and
+[the current Spine update audit](docs/slices/spine-blog-audit-20261114.md).
+
 Animate mesh vertices now supports weighted/unweighted single-vertex dragging and
 nudging, Auto Key, pending poses, K, explicit Deform key/delete and undo. See the
 [authoring contract](docs/slices/deform-authoring.md) and
@@ -230,9 +237,11 @@ seek, zoom/pan, Loop, Volume and Mute. Playback uses native macOS output; other
 platforms support waveform inspection. Audio events, synchronization and export
 remain pending; audition data does not become part of the project.
 
-**Views → Graph** shows the selected bone's keyed transform values and edits them
-with vertical key dragging. Exact-key selection preserves close native times;
-timing and curves stay fixed. Tangents, retiming and multiple curves remain pending.
+**Views → Graph** shares bottom tabs with Dopesheet. For a selected bone it
+shows keyed transform values with vertical key editing. A selected Deform
+attachment shows all its transitions on a frame axis with 0–100% progress,
+exact-key selection, curve presets, numeric handles and tangent dragging.
+Multiple-owner/mixed Graph curves and general docking remain pending.
 
 **Views → Preview** plays a keyed animation and skin on an independent clock while
 you edit Setup or another pose. It has its own transport, speed, pan/zoom and Fit;
@@ -437,7 +446,7 @@ cargo build -p peachy-mcp --locked
 ```
 
 It communicates over stdio and exposes project inspection, validated command
-batches, undo/redo, pose evaluation and new-output saves/exports through the same
+batches, typed key copying, undo/redo, pose evaluation and new-output saves/exports through the same
 engine as the desktop. Each server owns an independent session; it does not
 control an existing editor window. See [MCP setup, tools and limits](docs/MCP.md)
 for client configuration and a complete workflow.

@@ -56,8 +56,9 @@ that attempt; the public guide is this slice's behavioral reference.
 
 This is a bounded interaction, not full Spine UI parity. **Vertices** remains an
 explicit entry point, with key/delete in attachment properties. Deform Dopesheet
-rows, clipboard/retiming/curve UI, multiple vertices, rotation/scale and Animate
-soft selection remain pending. Path/clipping vertices and weighted Setup
+rows, clipboard/retiming and curve editing are covered by the subsequent
+[Deform timeline slice](deform-timeline.md). Multiple vertices, rotation/scale
+and Animate soft selection remain pending. Path/clipping vertices and weighted Setup
 positions remain read-only. Auto/brush weights and freeform mesh/UV construction
 are separate slices.
 

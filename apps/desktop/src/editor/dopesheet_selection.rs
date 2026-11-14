@@ -8,12 +8,14 @@ pub(super) type KeyId = AnimationKey;
 pub(super) enum TimelineRow {
     Bone(Property),
     Ik,
+    Deform,
 }
 impl TimelineRow {
     pub fn matches(self, key: AnimationKey) -> bool {
         match (self, key) {
             (Self::Bone(a), AnimationKey::Bone { property: b, .. }) => a == b,
             (Self::Ik, AnimationKey::Ik { .. }) => true,
+            (Self::Deform, AnimationKey::Deform { .. }) => true,
             _ => false,
         }
     }
@@ -22,6 +24,7 @@ pub(super) fn rows(owner: Option<KeyOwner>) -> Vec<TimelineRow> {
     match owner {
         Some(KeyOwner::Bone { .. }) => Property::ALL.into_iter().map(TimelineRow::Bone).collect(),
         Some(KeyOwner::Ik { .. }) => vec![TimelineRow::Ik],
+        Some(KeyOwner::Deform { .. }) => vec![TimelineRow::Deform],
         None => vec![],
     }
 }
@@ -64,6 +67,20 @@ pub(super) fn row_keys(
                     })
                     .collect()
             }),
+        (KeyOwner::Deform { attachment }, TimelineRow::Deform) => clip
+            .deform_tracks
+            .iter()
+            .find(|track| track.attachment == attachment)
+            .map_or_else(Vec::new, |track| {
+                track
+                    .keys
+                    .iter()
+                    .map(|key| AnimationKey::Deform {
+                        attachment: attachment.clone(),
+                        time: key.time,
+                    })
+                    .collect()
+            }),
         _ => vec![],
     }
 }
@@ -89,7 +106,7 @@ impl KeySelection {
         animation: Option<usize>,
         owner: Option<KeyOwner>,
     ) {
-        let context = (animation, owner);
+        let context = (animation, owner.clone());
         if self.context != context {
             self.clear();
             self.context = context;
@@ -97,9 +114,9 @@ impl KeySelection {
         let shown: Vec<_> = animation
             .zip(owner)
             .map_or_else(Vec::new, |(animation, owner)| {
-                rows(Some(owner))
+                rows(Some(owner.clone()))
                     .into_iter()
-                    .flat_map(|row| row_keys(document, animation, owner, row))
+                    .flat_map(|row| row_keys(document, animation, owner.clone(), row))
                     .collect()
             });
         let previous_len = self.keys.len();
@@ -111,7 +128,7 @@ impl KeySelection {
     pub fn select(&mut self, key: AnimationKey, toggle: bool) {
         self.expansion = SelectionScope::None;
         if toggle {
-            if let Some(index) = self.keys.iter().position(|selected| *selected == key) {
+            if let Some(index) = self.keys.iter().position(|selected| selected == &key) {
                 self.keys.remove(index);
             } else {
                 self.keys.push(key);
@@ -147,14 +164,14 @@ impl KeySelection {
         owner: Option<KeyOwner>,
         shown_rows: &[TimelineRow],
     ) -> SelectionScope {
-        self.reconcile(document, animation, owner);
+        self.reconcile(document, animation, owner.clone());
         let Some((animation, owner)) = animation.zip(owner) else {
             self.clear();
             return SelectionScope::None;
         };
         let mut shown = Vec::new();
         for &row in shown_rows {
-            for key in row_keys(document, animation, owner, row) {
+            for key in row_keys(document, animation, owner.clone(), row) {
                 if !shown.contains(&key) {
                     shown.push(key);
                 }
@@ -179,7 +196,11 @@ impl KeySelection {
             .filter(|key| {
                 scope == SelectionScope::Shown
                     || shown_rows.iter().any(|&row| {
-                        row.matches(*key) && self.keys.iter().any(|selected| row.matches(*selected))
+                        row.matches(key.clone())
+                            && self
+                                .keys
+                                .iter()
+                                .any(|selected| row.matches(selected.clone()))
                     })
             })
             .collect();
@@ -193,11 +214,11 @@ impl KeySelection {
         self.keys.len()
     }
     pub fn deletion(&self) -> Option<Command> {
-        let (Some(animation), Some(_)) = self.context else {
+        let (Some(animation), Some(_)) = &self.context else {
             return None;
         };
         (!self.keys.is_empty()).then(|| Command::DeleteAnimationKeys {
-            animation,
+            animation: *animation,
             keys: self.keys.clone(),
         })
     }
@@ -227,10 +248,10 @@ mod tests {
             false,
         );
         let owner = Some(KeyOwner::Ik { constraint: 1 });
-        selection.reconcile(document, Some(0), owner);
+        selection.reconcile(document, Some(0), owner.clone());
         assert!(selection.is_empty());
         assert_eq!(
-            selection.select_all(document, Some(0), owner, &rows(owner)),
+            selection.select_all(document, Some(0), owner.clone(), &rows(owner)),
             SelectionScope::Shown
         );
         assert_eq!(

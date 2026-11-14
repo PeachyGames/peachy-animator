@@ -1,5 +1,23 @@
 # Implementation provenance
 
+## Deform timeline and installed-editor comparison — November 14, 2026
+
+The [official Spine 4.3 announcement](https://esotericsoftware.com/blog/Spine-4.3-released),
+[Keys clipboard guide](https://esotericsoftware.com/spine-keys#Clipboard-buttons),
+and permitted black-box observations of installed 4.3.26 informed this work.
+Original Peach Bot exports were opened in isolated owned editor windows; matched
+1500×960 client-area screenshots established Deform row labels, bottom tabs,
+full-frame Graph transitions and 0–100 progress. A tiny independently constructed
+mesh fixture established cross-attachment clipboard behavior, including a
+retained one-influence weighted mesh accepting unweighted keys. Only generated
+editor outputs and public APIs were examined; no proprietary implementation,
+bundled art or UI assets were read or copied into the source.
+
+Deform key timing/clipboard operations extend our existing independent command
+and Session logic. Curve display samples the shared engine; it does not create
+a second evaluator. MCP exposes the same typed keys and engine operations.
+Detailed native reference captures and probe projects remain gitignored.
+
 ## Fresh tutorial reconstruction — November 14, 2026
 
 Four user-supplied local training videos were decoded across their full audio

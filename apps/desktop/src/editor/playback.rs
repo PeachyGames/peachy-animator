@@ -29,15 +29,26 @@ impl Editor {
     pub(super) fn playback_panel(&mut self, ui: &mut egui::Ui) {
         self.record_target("playbackPanelClip", ui.clip_rect());
         let fps = self.session.document().fps;
+        let name = self
+            .session
+            .document()
+            .animations
+            .get(self.animation)
+            .map_or("No animation", |animation| animation.name.as_str())
+            .to_owned();
         ui.horizontal(|ui| {
             ui.label("Timeline FPS");
             ui.label(RichText::new(fps.to_string()).monospace())
                 .on_hover_text("Project frame rate. Changing timeline FPS is not available yet.");
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                ui.add(egui::Label::new(RichText::new(&name).color(ACCENT)).truncate())
+                    .on_hover_text(&name);
+            });
         });
         ui.add_space(4.);
-        ui.label("Speed");
         let mut percent = self.playback_speed * 100.;
         ui.horizontal(|ui| {
+            ui.label("Speed");
             ui.spacing_mut().slider_width = (ui.available_width() - 80.).clamp(50., 180.);
             let slider = ui.add(
                 egui::Slider::new(&mut percent, 1.0..=200.0)
@@ -78,13 +89,6 @@ impl Editor {
             }
         });
         ui.separator();
-        let name = self
-            .session
-            .document()
-            .animations
-            .get(self.animation)
-            .map_or("No animation", |animation| animation.name.as_str());
-        ui.label(RichText::new(name).color(ACCENT));
         ui.horizontal_wrapped(|ui| {
             for (direction, name, hint) in [
                 (

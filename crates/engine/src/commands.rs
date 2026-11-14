@@ -56,6 +56,13 @@ pub enum Command {
         attachment: AttachmentRef,
         time: f32,
     },
+    /// Change only the outgoing interpolation of one exact deform key.
+    SetDeformCurve {
+        animation: usize,
+        attachment: AttachmentRef,
+        time: f32,
+        curve: Curve,
+    },
     MoveAnimationKeys {
         animation: usize,
         keys: Vec<AnimationKey>,
@@ -614,6 +621,14 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
             time,
         } => {
             crate::deform_authoring::delete_key(doc, animation, &attachment, time)?;
+        }
+        Command::SetDeformCurve {
+            animation,
+            attachment,
+            time,
+            curve,
+        } => {
+            crate::timeline::set_deform_curve(doc, animation, &attachment, time, curve)?;
         }
         Command::MoveAnimationKeys {
             animation,

@@ -10,7 +10,7 @@ impl Editor {
     }
     pub(super) fn dopesheet_has_focus(&self, ctx: &egui::Context) -> bool {
         !self.setup_mode
-            && self.show_dopesheet
+            && self.dopesheet_visible()
             && self.error.is_none()
             && self.rename.is_none()
             && self.duplicate_animation.is_none()
@@ -25,10 +25,13 @@ impl Editor {
             .reconcile(self.session.document(), animation, owner);
     }
     pub(super) fn timeline_owner(&self) -> Option<peachy_engine::KeyOwner> {
-        match self.selection {
-            Some(TreeItem::Bone(bone)) => Some(peachy_engine::KeyOwner::Bone { bone }),
-            Some(TreeItem::Constraint(constraint)) => {
-                Some(peachy_engine::KeyOwner::Ik { constraint })
+        match self.selection.as_ref() {
+            Some(TreeItem::Bone(bone)) => Some(peachy_engine::KeyOwner::Bone { bone: *bone }),
+            Some(TreeItem::Constraint(constraint)) => Some(peachy_engine::KeyOwner::Ik {
+                constraint: *constraint,
+            }),
+            Some(TreeItem::Attachment(attachment)) if self.attachment_editable(attachment) => {
+                peachy_engine::deform_key_owner(self.session.document(), attachment).ok()
             }
             _ => None,
         }
@@ -41,13 +44,8 @@ impl Editor {
             self.dispatch(command);
         }
     }
-    pub(super) fn timeline(&mut self, ui: &mut egui::Ui) {
-        self.reconcile_dopesheet_selection();
-        let view_rect = ui.max_rect();
-        self.record_target("dopesheet", view_rect);
-        self.record_target("dopesheetClip", ui.clip_rect());
+    pub(super) fn animation_controls(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
-            icons::heading(ui, Icon::Dopesheet, "Dopesheet");
             self.timeline_clipboard_toolbar(ui);
             for (direction, name) in [
                 (PlayDirection::Backward, "playBackward"),
@@ -105,12 +103,44 @@ impl Editor {
                 .color(ACCENT),
             );
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                let close =
-                    icons::toolbar_button(ui, Icon::Delete, "Close Dopesheet view", "", true);
-                self.record_target("closeView:Dopesheet", close.rect);
+                let close = icons::toolbar_button(
+                    ui,
+                    Icon::Delete,
+                    if self.graph_visible() {
+                        "Close Graph view"
+                    } else {
+                        "Close Dopesheet view"
+                    },
+                    "",
+                    true,
+                );
+                self.record_target(
+                    if self.graph_visible() {
+                        "closeView:Graph"
+                    } else {
+                        "closeView:Dopesheet"
+                    },
+                    close.rect,
+                );
                 if close.clicked() {
                     self.cancel_gesture();
-                    self.show_dopesheet = false;
+                    if self.graph_visible() {
+                        self.view_tabs.open.remove(&super::views::DockView::Graph);
+                        self.view_tabs.animation_view = super::views::AnimationView::Dopesheet;
+                        if self.show_dopesheet {
+                            ui.memory_mut(|memory| memory.request_focus(Self::dopesheet_id()));
+                        } else {
+                            ui.memory_mut(|memory| memory.surrender_focus(Self::graph_id()));
+                        }
+                    } else {
+                        self.show_dopesheet = false;
+                        if self.view_tabs.open.contains(&super::views::DockView::Graph) {
+                            self.view_tabs.animation_view = super::views::AnimationView::Graph;
+                            ui.memory_mut(|memory| memory.request_focus(Self::graph_id()));
+                        } else {
+                            ui.memory_mut(|memory| memory.surrender_focus(Self::dopesheet_id()));
+                        }
+                    }
                 }
                 ui.label(
                     RichText::new("A / D: play · W / S: keys · R / F: frames")
@@ -119,8 +149,16 @@ impl Editor {
                 );
             });
         });
+    }
+
+    pub(super) fn timeline(&mut self, ui: &mut egui::Ui) {
+        self.reconcile_dopesheet_selection();
+        let view_rect = ui.max_rect();
+        self.record_target("dopesheet", view_rect);
+        self.record_target("dopesheetClip", ui.clip_rect());
+        self.animation_controls(ui);
         ui.add_space(5.0);
-        let label_width = 160.0;
+        let label_width = 240.0;
         let pitch = layout::timeline_row_pitch(ui);
         let (_, rect) = ui.allocate_space(vec2(
             ui.available_width(),
@@ -185,7 +223,7 @@ impl Editor {
             );
         }
         let owner = self.timeline_owner();
-        let rows = dopesheet_selection::rows(owner);
+        let rows = dopesheet_selection::rows(owner.clone());
         let mut key_targets = Vec::new();
         for (i, row) in rows.into_iter().enumerate() {
             let y = rect.top() + 26.0 + pitch * (i as f32 + 0.5);
@@ -211,7 +249,7 @@ impl Editor {
                     )
                 }
                 dopesheet_selection::TimelineRow::Ik => {
-                    let Some(peachy_engine::KeyOwner::Ik { constraint }) = owner else {
+                    let Some(peachy_engine::KeyOwner::Ik { constraint }) = &owner else {
                         continue;
                     };
                     (
@@ -219,6 +257,23 @@ impl Editor {
                         None,
                         format!("timelineRow:ik:{constraint}"),
                         MINT,
+                    )
+                }
+                dopesheet_selection::TimelineRow::Deform => {
+                    let Some(peachy_engine::KeyOwner::Deform { attachment }) = &owner else {
+                        continue;
+                    };
+                    let name = self
+                        .session
+                        .document()
+                        .attachment(attachment)
+                        .and_then(|value| value.name().or_else(|| value.path()))
+                        .unwrap_or(&attachment.placeholder);
+                    (
+                        format!("Deform: {name}"),
+                        None,
+                        "timelineRow:deform".to_owned(),
+                        Color32::from_rgb(45, 165, 235),
                     )
                 }
             };
@@ -244,7 +299,11 @@ impl Editor {
                 };
                 label.on_hover_text(format!("Select {name} tool · {shortcut}"))
             } else {
-                label.on_hover_text("IK constraint keys group Mix and Positive")
+                label.on_hover_text(if row == dopesheet_selection::TimelineRow::Deform {
+                    &name
+                } else {
+                    "IK constraint keys group Mix and Positive"
+                })
             };
             label.widget_info(|| {
                 egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), &name)
@@ -257,7 +316,7 @@ impl Editor {
                 ui.ctx()
                     .memory_mut(|memory| memory.request_focus(Self::dopesheet_id()));
             }
-            painter.text(
+            ui.painter_at(label_rect).text(
                 pos2(rect.left() + 12.0, y),
                 egui::Align2::LEFT_CENTER,
                 name,
@@ -268,16 +327,17 @@ impl Editor {
                     MUTED
                 },
             );
-            let keys = owner.map_or_else(Vec::new, |owner| {
+            let keys = owner.clone().map_or_else(Vec::new, |owner| {
                 dopesheet_selection::row_keys(self.session.document(), self.animation, owner, row)
             });
             for (index, key_id) in keys.into_iter().enumerate() {
                 let p = pos2(geometry.x_at(key_id.time()), y);
                 let key_rect = egui::Rect::from_center_size(p, vec2(9., 9.));
-                key_targets.push((key_id, p));
-                let target = match key_id {
+                key_targets.push((key_id.clone(), p));
+                let target = match &key_id {
                     KeyId::Bone { property, .. } => format!("timelineKey:{property:?}:{index}"),
                     KeyId::Ik { constraint, .. } => format!("timelineKey:ik:{constraint}:{index}"),
+                    KeyId::Deform { .. } => format!("timelineKey:deform:{index}"),
                 };
                 self.record_target(&target, key_rect);
                 painter.rect_filled(
@@ -305,7 +365,7 @@ impl Editor {
                 .iter()
                 .filter(|(_, point)| point.distance(pointer) < 9.)
                 .min_by(|(_, a), (_, b)| a.distance(pointer).total_cmp(&b.distance(pointer)))
-                .map(|(key, _)| *key)
+                .map(|(key, _)| key.clone())
         };
         let (press_event, release_event) = ui.input(|input| {
             (
@@ -377,7 +437,7 @@ impl Editor {
                     self.cancel_gesture();
                     self.dispatch(Command::DeleteAnimationKeys {
                         animation: self.animation,
-                        keys: vec![key],
+                        keys: vec![key.clone()],
                     });
                 } else {
                     self.key_selection.select(key, toggle);

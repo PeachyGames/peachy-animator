@@ -61,6 +61,7 @@ struct GraphEdit {
 }
 
 pub(super) struct GraphView {
+    pub(super) deform: super::deform_curves::DeformCurveView,
     property: Property,
     context: Option<GraphContext>,
     selected: Option<f32>,
@@ -77,6 +78,7 @@ pub(super) struct GraphView {
 impl Default for GraphView {
     fn default() -> Self {
         Self {
+            deform: Default::default(),
             property: Property::Rotation,
             context: None,
             selected: None,
@@ -274,10 +276,11 @@ impl Editor {
     }
 
     pub(super) fn graph_edit_active(&self) -> bool {
-        self.graph.edit.is_some()
+        self.graph.edit.is_some() || self.deform_curve_edit_active()
     }
 
     pub(super) fn cancel_graph_edit(&mut self) {
+        self.cancel_deform_curve_edit();
         if self.graph.edit.take().is_some() {
             self.session.cancel_transaction();
             self.graph.blocked = true;
@@ -285,6 +288,7 @@ impl Editor {
     }
 
     pub(super) fn reconcile_graph_input(&mut self, ctx: &egui::Context) {
+        self.reconcile_deform_curve_input(ctx);
         if !ctx.input(|input| input.pointer.primary_down()) {
             self.graph.blocked = false;
         }
@@ -317,6 +321,7 @@ impl Editor {
 
     pub(super) fn settle_graph_input(&mut self, ctx: &egui::Context) {
         self.reconcile_graph_input(ctx);
+        self.settle_deform_curve_input(ctx);
         if !ctx.input(|input| input.pointer.primary_down())
             && self
                 .graph
@@ -329,8 +334,9 @@ impl Editor {
         }
     }
 
-    /// Called after global file/history/tool routing. Graph canvas focus never
-    /// turns Delete, clipboard chords, arrows or transport letters into rig edits.
+    /// Called after global file/history/tool routing. Deform Graph keys use the
+    /// typed timeline clipboard. Scalar Graph keeps its independent selection;
+    /// neither canvas redirects shortcuts to viewport bone/vertex edits.
     pub(super) fn graph_shortcuts(&mut self, ctx: &egui::Context) -> bool {
         if !self.graph_visible()
             || !ctx.input(|input| input.focused)
@@ -344,7 +350,7 @@ impl Editor {
             return false;
         }
         if ctx.input_mut(|input| input.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
-            if self.graph.edit.is_some() {
+            if self.graph_edit_active() {
                 self.cancel_graph_edit();
             } else {
                 self.graph.selected = None;
@@ -352,6 +358,9 @@ impl Editor {
         }
         if ctx.input_mut(|input| input.consume_key(egui::Modifiers::NONE, egui::Key::F9)) {
             self.toggle_views();
+        }
+        if self.deform_graph_has_focus(ctx) {
+            self.timeline_clipboard_shortcuts(ctx);
         }
         true
     }
@@ -517,6 +526,10 @@ impl Editor {
         self.reconcile_graph_input(ui.ctx());
         self.graph.rendered_keys = 0;
         self.graph.rendered_points = 0;
+        if self.deform_graph_panel(ui) {
+            return;
+        }
+        self.animation_controls(ui);
         let previous = self.graph.property;
         let picker = egui::ComboBox::from_id_salt("graph-property")
             .selected_text(previous.label())
@@ -647,7 +660,9 @@ impl Editor {
             }
             return;
         };
-        let height = (ui.clip_rect().bottom() - ui.cursor().top()).clamp(100., 360.);
+        // Content bounds exclude the frame margin, keeping the frozen plot
+        // stable when Graph fills the shared bottom animation panel.
+        let height = ui.available_height().clamp(100., 360.);
         let (_, rect) = ui.allocate_space(vec2(ui.available_width(), height));
         self.record_target("graphCanvas", rect);
         self.record_target("graphClip", ui.clip_rect());
@@ -813,6 +828,7 @@ impl Editor {
     pub(super) fn graph_diagnostic(&self) -> serde_json::Value {
         serde_json::json!({
             "visible":self.graph_visible(), "property":self.graph.property,
+            "deform":self.deform_curve_diagnostic(),
             "context":self.graph.context.map(|context|serde_json::json!({"animation":context.animation,"bone":context.bone,"property":context.property})),
             "selectedTime":self.graph.selected,"blocked":self.graph.blocked,"error":self.graph.error,
             "bounds":self.graph.bounds.map(|bounds|[bounds.time_min,bounds.time_max,bounds.value_min,bounds.value_max]),

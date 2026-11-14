@@ -103,7 +103,7 @@ async fn stdio_discovery_atomic_edit_history_save_and_export() {
     let original = fs::read(&source).unwrap();
     let client = start(&root.0).await;
     let tools = client.list_tools(Default::default()).await.unwrap().tools;
-    assert_eq!(tools.len(), 10);
+    assert_eq!(tools.len(), 11);
     assert!(tools.iter().all(|tool| !tool.input_schema.is_empty()));
     let apply = tools
         .iter()
@@ -627,5 +627,167 @@ async fn confines_primary_paths_output_parents_and_referenced_images() {
     );
     assert!(!outside.0.join("saved").exists());
     assert!(!outside.0.join("new.json").exists());
+    client.cancel().await.unwrap();
+}
+
+#[tokio::test]
+async fn stdio_deform_timeline_copy_curve_retime_paste_and_persistence() {
+    let root = Sandbox::new();
+    root.fixture();
+    let source = root.0.join("source/deform-bot.peachy");
+    let original = fs::read(&source).unwrap();
+    let client = start(&root.0).await;
+    let tools = client.list_tools(Default::default()).await.unwrap().tools;
+    let copy_tool = tools
+        .iter()
+        .find(|t| t.name == "copy_animation_keys")
+        .unwrap();
+    assert_eq!(
+        copy_tool.annotations.as_ref().unwrap().read_only_hint,
+        Some(true)
+    );
+    assert!(
+        serde_json::to_value(&copy_tool.input_schema)
+            .unwrap()
+            .to_string()
+            .contains("deform")
+    );
+    success(
+        call(
+            &client,
+            "open_project",
+            json!({"expected_revision":0,"path":"source/deform-bot.peachy"}),
+        )
+        .await,
+    );
+    let baseline = doc(&client).await;
+    let track = &baseline["document"]["animations"][0]["deform_tracks"][0];
+    let reference = track["attachment"].clone();
+    let first = track["keys"][0]["time"].clone();
+    let second = track["keys"][1]["time"].clone();
+    let identities = json!([
+        {"type":"deform","attachment":reference,"time":first},
+        {"type":"deform","attachment":reference,"time":second}
+    ]);
+    let copied = success(
+        call(
+            &client,
+            "copy_animation_keys",
+            json!({"expected_revision":1,"animation":0,"keys":identities}),
+        )
+        .await,
+    );
+    assert_eq!(copied["revision"], 1);
+    let clipboard = copied["clipboard"].clone();
+    assert_eq!(clipboard["type"], "deform");
+    assert_eq!(clipboard["layout"]["type"], "weighted");
+    assert_eq!(clipboard["keys"][0]["time"], 0.0);
+    assert_eq!(clipboard["keys"][0]["offsets"], track["keys"][0]["offsets"]);
+    assert_eq!(clipboard["keys"][1]["curve"], track["keys"][1]["curve"]);
+    assert_eq!(doc(&client).await, baseline);
+    let changed=success(call(&client,"apply_commands",json!({"expected_revision":1,"commands":[
+        {"command":"setDeformCurve","animation":0,"attachment":reference,"time":second,"curve":"stepped"},
+        {"command":"moveAnimationKeys","animation":0,"keys":[{"type":"deform","attachment":reference,"time":first}],"delta":0.25,"copy":true},
+        {"command":"pasteAnimationKeys","animation":1,"target":{"type":"deform","attachment":reference},"time":0.5,"clipboard":clipboard}
+    ]})).await);
+    assert_eq!(changed["revision"], 2);
+    let edited = doc(&client).await;
+    let keys = edited["document"]["animations"][0]["deform_tracks"][0]["keys"]
+        .as_array()
+        .unwrap();
+    let curve_key = keys.iter().find(|k| k["time"] == second).unwrap();
+    assert_eq!(curve_key["curve"], "stepped");
+    assert_eq!(curve_key["offsets"], track["keys"][1]["offsets"]);
+    assert!(
+        keys.iter()
+            .any(|k| k["time"] == 0.25 && k["offsets"] == track["keys"][0]["offsets"])
+    );
+    let pasted = &edited["document"]["animations"][1]["deform_tracks"][0]["keys"];
+    assert_eq!(pasted[0]["time"], 0.5);
+    assert_eq!(pasted[0]["offsets"], clipboard["keys"][0]["offsets"]);
+    let stale = error(
+        call(
+            &client,
+            "copy_animation_keys",
+            json!({"expected_revision":1,"animation":0,"keys":identities}),
+        )
+        .await,
+    );
+    assert!(stale["error"].as_str().unwrap().contains("Stale revision"));
+    let mut incompatible = clipboard.clone();
+    incompatible["layout"]["influence_counts"][0] = json!(999);
+    error(call(&client,"apply_commands",json!({"expected_revision":2,"commands":[
+        {"command":"renameBone","bone":0,"name":"must-rollback"},
+        {"command":"pasteAnimationKeys","animation":0,"target":{"type":"deform","attachment":reference},"time":3.0,"clipboard":incompatible}
+    ]})).await);
+    assert_eq!(doc(&client).await, edited);
+    error(call(&client,"apply_commands",json!({"expected_revision":2,"commands":[
+        {"command":"setDeformCurve","animation":0,"attachment":reference,"time":9.0,"curve":"linear"}
+    ]})).await);
+    assert_eq!(doc(&client).await, edited);
+    success(
+        call(
+            &client,
+            "history",
+            json!({"expected_revision":2,"action":"undo"}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await["document"], baseline["document"]);
+    success(
+        call(
+            &client,
+            "history",
+            json!({"expected_revision":3,"action":"redo"}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await["document"], edited["document"]);
+    success(call(&client,"apply_commands",json!({"expected_revision":4,"commands":[
+        {"command":"deleteAnimationKeys","animation":0,"keys":[{"type":"deform","attachment":reference,"time":0.25}]}
+    ]})).await);
+    assert!(
+        !doc(&client).await["document"]["animations"][0]["deform_tracks"][0]["keys"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|k| k["time"] == 0.25)
+    );
+    success(
+        call(
+            &client,
+            "history",
+            json!({"expected_revision":5,"action":"undo"}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await["document"], edited["document"]);
+    success(
+        call(
+            &client,
+            "save_project",
+            json!({"expected_revision":6,"directory":"deform-edited"}),
+        )
+        .await,
+    );
+    success(
+        call(
+            &client,
+            "open_project",
+            json!({"expected_revision":7,"path":"deform-edited/project.peachy"}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await["document"], edited["document"]);
+    let pose = success(
+        call(
+            &client,
+            "evaluate_pose",
+            json!({"animation":"idle","time":0.75,"skin":"peach"}),
+        )
+        .await,
+    );
+    assert!(!pose["attachments"].as_array().unwrap().is_empty());
+    assert_eq!(fs::read(source).unwrap(), original);
     client.cancel().await.unwrap();
 }

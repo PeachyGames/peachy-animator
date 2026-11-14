@@ -1,7 +1,10 @@
-//! Exact typed key identities and shared timing transitions for bone/IK tracks.
-use peachy_document::{Document, IkKeyframe, IkTrack, Keyframe, Property, Track};
+//! Exact typed key identities and shared timing transitions for bone/IK/deform tracks.
+use peachy_document::{
+    Attachment, AttachmentRef, Constraint, Curve, DeformKey, DeformTrack, Document, IkKeyframe,
+    IkTrack, Keyframe, MeshVertices, Property, Track,
+};
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeSet;
+use std::{cmp::Ordering, collections::BTreeSet};
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -22,13 +25,40 @@ pub struct KeyClipboard {
     pub keys: Vec<ClipboardKey>,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase", deny_unknown_fields)]
 pub enum KeyOwner {
     Bone { bone: usize },
     Ik { constraint: usize },
+    Deform { attachment: AttachmentRef },
 }
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+impl KeyOwner {
+    fn ordering_key(&self) -> (u8, usize, &str, &str, &str) {
+        match self {
+            Self::Bone { bone } => (0, *bone, "", "", ""),
+            Self::Ik { constraint } => (1, *constraint, "", "", ""),
+            Self::Deform { attachment } => (
+                2,
+                0,
+                &attachment.skin,
+                &attachment.slot,
+                &attachment.placeholder,
+            ),
+        }
+    }
+}
+impl Ord for KeyOwner {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.ordering_key().cmp(&other.ordering_key())
+    }
+}
+impl PartialOrd for KeyOwner {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase", deny_unknown_fields)]
 pub enum AnimationKey {
     Bone {
@@ -40,25 +70,34 @@ pub enum AnimationKey {
         constraint: usize,
         time: f32,
     },
+    Deform {
+        attachment: AttachmentRef,
+        time: f32,
+    },
 }
 impl AnimationKey {
-    pub fn owner(self) -> KeyOwner {
+    pub fn owner(&self) -> KeyOwner {
         match self {
-            Self::Bone { bone, .. } => KeyOwner::Bone { bone },
-            Self::Ik { constraint, .. } => KeyOwner::Ik { constraint },
+            Self::Bone { bone, .. } => KeyOwner::Bone { bone: *bone },
+            Self::Ik { constraint, .. } => KeyOwner::Ik {
+                constraint: *constraint,
+            },
+            Self::Deform { attachment, .. } => KeyOwner::Deform {
+                attachment: attachment.clone(),
+            },
         }
     }
-    pub fn time(self) -> f32 {
+    pub fn time(&self) -> f32 {
         match self {
-            Self::Bone { time, .. } | Self::Ik { time, .. } => time,
+            Self::Bone { time, .. } | Self::Ik { time, .. } | Self::Deform { time, .. } => *time,
         }
     }
-    fn id(self) -> (KeyOwner, Option<Property>, u32) {
+    fn id(&self) -> (KeyOwner, Option<Property>, u32) {
         (
             self.owner(),
             match self {
-                Self::Bone { property, .. } => Some(property),
-                Self::Ik { .. } => None,
+                Self::Bone { property, .. } => Some(*property),
+                Self::Ik { .. } | Self::Deform { .. } => None,
             },
             time_id(self.time()),
         )
@@ -73,14 +112,82 @@ impl From<TimelineKey> for AnimationKey {
         }
     }
 }
+
+/// Dense offsets belong to logical vertices, or ordered influences within each
+/// vertex. Equal flat lengths alone do not establish a compatible target layout.
+/// Clipboard values remain local to their target's vertex/binding axes. A
+/// one-influence-per-vertex weighted layout also accepts the corresponding
+/// unweighted offsets verbatim (and vice versa), as observed in Spine 4.3.26.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "camelCase", deny_unknown_fields)]
+pub enum DeformLayout {
+    Unweighted { vertices: usize },
+    Weighted { influence_counts: Vec<usize> },
+}
+impl DeformLayout {
+    fn from_vertices(vertices: &MeshVertices) -> Self {
+        match vertices {
+            MeshVertices::SlotLocal { positions } => Self::Unweighted {
+                vertices: positions.len(),
+            },
+            MeshVertices::Weighted { influences } => Self::Weighted {
+                influence_counts: influences.iter().map(Vec::len).collect(),
+            },
+        }
+    }
+    fn compatible_with(&self, target: &Self) -> bool {
+        match (self, target) {
+            (Self::Unweighted { vertices: a }, Self::Unweighted { vertices: b }) => a == b,
+            (
+                Self::Weighted {
+                    influence_counts: a,
+                },
+                Self::Weighted {
+                    influence_counts: b,
+                },
+            ) => a == b,
+            (Self::Unweighted { vertices }, Self::Weighted { influence_counts })
+            | (Self::Weighted { influence_counts }, Self::Unweighted { vertices }) => {
+                *vertices == influence_counts.len()
+                    && influence_counts.iter().all(|&count| count == 1)
+            }
+        }
+    }
+    fn offset_len(&self) -> Result<usize, String> {
+        let count = match self {
+            Self::Unweighted { vertices } if *vertices > 0 => *vertices,
+            Self::Weighted { influence_counts }
+                if !influence_counts.is_empty() && !influence_counts.contains(&0) =>
+            {
+                influence_counts
+                    .iter()
+                    .try_fold(0usize, |total, &count| total.checked_add(count))
+                    .ok_or("Deform clipboard layout exceeds the offset range")?
+            }
+            _ => return Err("Deform clipboard needs a nonempty vertex/influence layout".into()),
+        };
+        count
+            .checked_mul(2)
+            .ok_or_else(|| "Deform clipboard layout exceeds the offset range".into())
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase", deny_unknown_fields)]
 pub enum AnimationKeyClipboard {
-    Bone { keys: Vec<ClipboardKey> },
-    Ik { keys: Vec<IkKeyframe> },
+    Bone {
+        keys: Vec<ClipboardKey>,
+    },
+    Ik {
+        keys: Vec<IkKeyframe>,
+    },
+    Deform {
+        layout: DeformLayout,
+        keys: Vec<DeformKey>,
+    },
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 enum OwnedKey {
     Bone {
         bone: usize,
@@ -91,21 +198,29 @@ enum OwnedKey {
         constraint: usize,
         key: IkKeyframe,
     },
+    Deform {
+        attachment: AttachmentRef,
+        key: DeformKey,
+    },
 }
 impl OwnedKey {
-    fn identity(self) -> AnimationKey {
+    fn identity(&self) -> AnimationKey {
         match self {
             Self::Bone {
                 bone,
                 property,
                 key,
             } => AnimationKey::Bone {
-                bone,
-                property,
+                bone: *bone,
+                property: *property,
                 time: key.time,
             },
             Self::Ik { constraint, key } => AnimationKey::Ik {
-                constraint,
+                constraint: *constraint,
+                time: key.time,
+            },
+            Self::Deform { attachment, key } => AnimationKey::Deform {
+                attachment: attachment.clone(),
                 time: key.time,
             },
         }
@@ -125,6 +240,10 @@ impl OwnedKey {
                 constraint,
                 key: IkKeyframe { time, ..key },
             },
+            Self::Deform { attachment, key } => Self::Deform {
+                attachment,
+                key: DeformKey { time, ..key },
+            },
         }
     }
 }
@@ -137,13 +256,40 @@ fn checked_time(time: f32) -> Result<f32, String> {
     }
     Ok(time)
 }
-fn validate_owner(document: &Document, owner: KeyOwner) -> Result<(), String> {
-    match owner {
-        KeyOwner::Bone { bone } if bone >= document.bones.len() => Err("Unknown bone".into()),
-        KeyOwner::Ik { constraint } if constraint >= document.constraints.len() => {
+
+/// Resolve an explicitly selected deformable attachment to the owner of its
+/// timeline. Linked meshes with shared timelines use their source attachment;
+/// fallback skins must be resolved by the caller before constructing this ref.
+pub fn deform_key_owner(
+    document: &Document,
+    attachment: &AttachmentRef,
+) -> Result<KeyOwner, String> {
+    document
+        .attachment(attachment)
+        .and_then(Attachment::vertices)
+        .ok_or("Deform timeline needs an existing mesh, path or clipping attachment")?;
+    let canonical = document.deform_target(attachment);
+    document
+        .attachment(&canonical)
+        .and_then(Attachment::vertices)
+        .ok_or("Deform timeline source is missing or not deformable")?;
+    Ok(KeyOwner::Deform {
+        attachment: canonical,
+    })
+}
+fn canonical_owner(document: &Document, owner: KeyOwner) -> Result<KeyOwner, String> {
+    match &owner {
+        KeyOwner::Bone { bone } if *bone >= document.bones.len() => Err("Unknown bone".into()),
+        KeyOwner::Ik { constraint }
+            if !matches!(
+                document.constraints.get(*constraint),
+                Some(Constraint::Ik(_))
+            ) =>
+        {
             Err("Unknown IK constraint".into())
         }
-        _ => Ok(()),
+        KeyOwner::Deform { attachment } => deform_key_owner(document, attachment),
+        _ => Ok(owner),
     }
 }
 fn sources(
@@ -160,13 +306,20 @@ fn sources(
     }
     let mut identities = BTreeSet::new();
     keys.iter()
-        .map(|&source| {
-            checked_time(source.time())?;
-            validate_owner(document, source.owner())?;
-            if !identities.insert(source.id()) {
+        .map(|source| {
+            let time = checked_time(source.time())?;
+            let owner = canonical_owner(document, source.owner())?;
+            let canonical = match &owner {
+                KeyOwner::Deform { attachment } => AnimationKey::Deform {
+                    attachment: attachment.clone(),
+                    time,
+                },
+                _ => source.clone(),
+            };
+            if !identities.insert(canonical.id()) {
                 return Err("Duplicate source key".into());
             }
-            match source {
+            match canonical {
                 AnimationKey::Bone {
                     bone,
                     property,
@@ -189,11 +342,19 @@ fn sources(
                     .and_then(|t| t.keys.iter().find(|k| k.time == time))
                     .copied()
                     .map(|key| OwnedKey::Ik { constraint, key }),
+                AnimationKey::Deform { attachment, time } => clip
+                    .deform_tracks
+                    .iter()
+                    .find(|t| t.attachment == attachment)
+                    .and_then(|t| t.keys.iter().find(|k| k.time == time))
+                    .cloned()
+                    .map(|key| OwnedKey::Deform { attachment, key }),
             }
             .ok_or_else(|| "Unknown exact source key".into())
         })
         .collect()
 }
+
 /// Capture owned values/curves from one typed owner; relative times start at zero.
 pub fn copy_animation_keys(
     document: &Document,
@@ -211,7 +372,7 @@ pub fn copy_animation_keys(
         .map(|s| s.identity().time())
         .min_by(f32::total_cmp)
         .ok_or("No keys")?;
-    let clipboard = match owner {
+    let clipboard = match &owner {
         KeyOwner::Bone { .. } => {
             let mut keys = vec![];
             for source in sources {
@@ -246,8 +407,27 @@ pub fn copy_animation_keys(
             keys.sort_by(|a, b| a.time.total_cmp(&b.time));
             AnimationKeyClipboard::Ik { keys }
         }
+        KeyOwner::Deform { attachment } => {
+            let layout = DeformLayout::from_vertices(
+                document
+                    .attachment(attachment)
+                    .and_then(Attachment::vertices)
+                    .ok_or("Unknown deform target")?,
+            );
+            let mut keys = vec![];
+            for source in sources {
+                if let OwnedKey::Deform { key, .. } = source {
+                    keys.push(DeformKey {
+                        time: key.time - first,
+                        ..key
+                    });
+                }
+            }
+            keys.sort_by(|a, b| a.time.total_cmp(&b.time));
+            AnimationKeyClipboard::Deform { layout, keys }
+        }
     };
-    clipboard_sources(&clipboard, owner)?;
+    clipboard_sources(&clipboard, &owner)?;
     Ok(clipboard)
 }
 /// Backwards-compatible bone-only entry point, using the same resolver/arithmetic.
@@ -268,7 +448,7 @@ pub fn copy_keys(
 }
 fn clipboard_sources(
     clipboard: &AnimationKeyClipboard,
-    owner: KeyOwner,
+    owner: &KeyOwner,
 ) -> Result<Vec<OwnedKey>, String> {
     let sources: Vec<_> = match (clipboard, owner) {
         (AnimationKeyClipboard::Bone { keys }, KeyOwner::Bone { bone }) => {
@@ -282,7 +462,7 @@ fn clipboard_sources(
                     return Err("Clipboard Bezier handles must be finite".into());
                 }
                 result.push(OwnedKey::Bone {
-                    bone,
+                    bone: *bone,
                     property: entry.property,
                     key: entry.key,
                 });
@@ -293,7 +473,30 @@ fn clipboard_sources(
             let mut result = vec![];
             for &key in keys {
                 key.validate()?;
-                result.push(OwnedKey::Ik { constraint, key });
+                result.push(OwnedKey::Ik {
+                    constraint: *constraint,
+                    key,
+                });
+            }
+            result
+        }
+        (AnimationKeyClipboard::Deform { layout, keys }, KeyOwner::Deform { attachment }) => {
+            let length = layout.offset_len()?;
+            let mut result = vec![];
+            for key in keys {
+                checked_time(key.time)?;
+                if !key.curve.handles_valid() {
+                    return Err("Clipboard Bezier handles must be finite".into());
+                }
+                if key.offsets.len() != length || key.offsets.iter().any(|v| !v.is_finite()) {
+                    return Err(format!(
+                        "Deform clipboard needs {length} finite offsets per key"
+                    ));
+                }
+                result.push(OwnedKey::Deform {
+                    attachment: attachment.clone(),
+                    key: key.clone(),
+                });
             }
             result
         }
@@ -313,8 +516,10 @@ fn clipboard_sources(
 fn checked_targets(keys: &[OwnedKey], offset: f32) -> Result<Vec<OwnedKey>, String> {
     let mut identities = BTreeSet::new();
     keys.iter()
-        .map(|&source| {
-            let target = source.at(checked_time(source.identity().time() + offset)?);
+        .map(|source| {
+            let target = source
+                .clone()
+                .at(checked_time(source.identity().time() + offset)?);
             if !identities.insert(target.identity().id()) {
                 return Err("Key times collapse at this offset".into());
             }
@@ -371,6 +576,26 @@ fn insert_keys(document: &mut Document, animation: usize, keys: Vec<OwnedKey>) {
                 }
                 keys.sort_by(|a, b| a.time.total_cmp(&b.time));
             }
+            OwnedKey::Deform { attachment, key } => {
+                let index = clip
+                    .deform_tracks
+                    .iter()
+                    .position(|t| t.attachment == attachment)
+                    .unwrap_or_else(|| {
+                        clip.deform_tracks.push(DeformTrack {
+                            attachment,
+                            keys: vec![],
+                        });
+                        clip.deform_tracks.len() - 1
+                    });
+                let keys = &mut clip.deform_tracks[index].keys;
+                if let Some(existing) = keys.iter_mut().find(|k| k.time == key.time) {
+                    *existing = key;
+                } else {
+                    keys.push(key);
+                }
+                keys.sort_by(|a, b| a.time.total_cmp(&b.time));
+            }
         }
     }
 }
@@ -394,6 +619,17 @@ fn remove_sources(document: &mut Document, animation: usize, sources: &[OwnedKey
             !identities.contains(
                 &AnimationKey::Ik {
                     constraint: track.constraint,
+                    time: key.time,
+                }
+                .id(),
+            )
+        });
+    }
+    for track in &mut clip.deform_tracks {
+        track.keys.retain(|key| {
+            !identities.contains(
+                &AnimationKey::Deform {
+                    attachment: track.attachment.clone(),
                     time: key.time,
                 }
                 .id(),
@@ -429,6 +665,7 @@ pub(super) fn delete_animation_keys(
     let clip = &mut document.animations[animation];
     clip.tracks.retain(|t| !t.keys.is_empty());
     clip.ik_tracks.retain(|t| !t.keys.is_empty());
+    clip.deform_tracks.retain(|t| !t.keys.is_empty());
     Ok(())
 }
 pub(super) fn paste_animation_keys(
@@ -443,10 +680,52 @@ pub(super) fn paste_animation_keys(
         .animations
         .get(animation)
         .ok_or("Unknown animation")?;
-    validate_owner(document, owner)?;
-    let sources = clipboard_sources(clipboard, owner)?;
+    let owner = canonical_owner(document, owner)?;
+    if let (AnimationKeyClipboard::Deform { layout, .. }, KeyOwner::Deform { attachment }) =
+        (clipboard, &owner)
+    {
+        let actual = DeformLayout::from_vertices(
+            document
+                .attachment(attachment)
+                .and_then(Attachment::vertices)
+                .ok_or("Unknown deform target")?,
+        );
+        if !layout.compatible_with(&actual) {
+            return Err(
+                "Deform clipboard vertex/influence layout does not match the paste target".into(),
+            );
+        }
+    }
+    let sources = clipboard_sources(clipboard, &owner)?;
     let targets = checked_targets(&sources, time)?;
     insert_keys(document, animation, targets);
+    Ok(())
+}
+
+pub(super) fn set_deform_curve(
+    document: &mut Document,
+    animation: usize,
+    attachment: &AttachmentRef,
+    time: f32,
+    curve: Curve,
+) -> Result<(), String> {
+    checked_time(time)?;
+    if !curve.handles_valid() {
+        return Err("Deform curve handles must be finite".into());
+    }
+    let KeyOwner::Deform { attachment } = deform_key_owner(document, attachment)? else {
+        unreachable!()
+    };
+    let key = document
+        .animations
+        .get_mut(animation)
+        .ok_or("Unknown animation")?
+        .deform_tracks
+        .iter_mut()
+        .find(|t| t.attachment == attachment)
+        .and_then(|t| t.keys.iter_mut().find(|k| k.time == time))
+        .ok_or("Unknown exact deform key")?;
+    key.curve = curve;
     Ok(())
 }
 pub(super) fn move_keys(

@@ -2,6 +2,7 @@ mod animation;
 mod animation_management;
 mod audio;
 mod audio_output;
+mod deform_curves;
 mod dopesheet;
 mod dopesheet_selection;
 mod ghosting;
@@ -513,9 +514,9 @@ impl Editor {
         self.reconcile_weight_edit();
         if self.key_drag.as_ref().is_some_and(|drag| {
             self.setup_mode
-                || !self.show_dopesheet
+                || !self.dopesheet_visible()
                 || self.animation != drag.animation
-                || self.timeline_owner() != Some(drag.owner)
+                || self.timeline_owner() != Some(drag.owner.clone())
         }) {
             self.cancel_dopesheet_drag();
         }
@@ -830,6 +831,18 @@ impl Editor {
                     );
                 });
             });
+        if self.animation_views_open() {
+            let height = layout::animation_panel_height(ui);
+            egui::Panel::bottom("animation-views")
+                .default_size(height)
+                .min_size(layout::timeline_panel_height(ui) + 28.)
+                .max_size(
+                    (ui.available_height() - layout::main_tools_height(ui) - 110.).max(height),
+                )
+                .resizable(true)
+                .frame(egui::Frame::new().fill(PANEL).inner_margin(6))
+                .show(ui, |ui| self.animation_views(ui));
+        }
         if self.show_tree || self.has_dock_views() {
             egui::Panel::right("tree")
                 .default_size(310.0)
@@ -838,22 +851,41 @@ impl Editor {
                 .frame(egui::Frame::new().fill(PANEL).inner_margin(6))
                 .show(ui, |ui| {
                     if self.show_tree {
+                        let auxiliary = self.has_dock_views();
+                        let properties_max = if auxiliary {
+                            (ui.available_height() - self.auxiliary_min_height() - 90. - 12.)
+                                .clamp(64., 350.)
+                        } else {
+                            (ui.available_height() - 100.).max(120.)
+                        };
                         egui::Panel::bottom("item-properties")
-                            .default_size(350.0)
-                            .min_size(160.0)
+                            .default_size(
+                                (ui.available_height() * if auxiliary { 0.35 } else { 0.45 })
+                                    .clamp(64., 350.)
+                                    .min(properties_max),
+                            )
+                            .min_size(if auxiliary { 64. } else { 120. })
+                            .max_size(properties_max)
                             .resizable(true)
                             .frame(egui::Frame::new().fill(PANEL).inner_margin(6))
                             .show(ui, |ui| {
                                 egui::ScrollArea::vertical()
                                     .id_salt("properties-scroll")
+                                    .min_scrolled_height(0.)
                                     .auto_shrink([false, false])
                                     .show(ui, |ui| self.inspector(ui));
                             });
                     }
                     if self.show_tree && self.has_dock_views() {
                         egui::Panel::bottom("auxiliary-view-panel")
-                            .default_size(260.0)
-                            .min_size(160.0)
+                            .default_size(
+                                (ui.available_height() * 0.65)
+                                    .clamp(self.auxiliary_min_height(), 260.),
+                            )
+                            .min_size(self.auxiliary_min_height())
+                            .max_size(
+                                (ui.available_height() - 80.).max(self.auxiliary_min_height()),
+                            )
                             .resizable(true)
                             .frame(egui::Frame::new().fill(PANEL).inner_margin(6))
                             .show(ui, |ui| self.auxiliary_dock(ui));
@@ -868,15 +900,6 @@ impl Editor {
                             }
                         });
                 });
-        }
-        if !self.setup_mode && self.show_dopesheet {
-            let height = layout::timeline_panel_height(ui);
-            egui::Panel::bottom("dopesheet")
-                .default_size(height)
-                .min_size(height)
-                .resizable(true)
-                .frame(egui::Frame::new().fill(PANEL).inner_margin(6))
-                .show(ui, |ui| self.timeline(ui));
         }
         if !self.setup_mode && self.show_timeline {
             let height = layout::compact_timeline_height(ui);

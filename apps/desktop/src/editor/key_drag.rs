@@ -82,7 +82,7 @@ impl KeyDrag {
         let keys = if selected.contains(&pressed) {
             selected.to_vec()
         } else {
-            vec![pressed]
+            vec![pressed.clone()]
         };
         Some(Self {
             animation,
@@ -142,18 +142,22 @@ impl KeyDrag {
     fn selection_at(&self, offset: f32) -> Vec<KeyId> {
         self.sources
             .iter()
-            .map(|key| match *key {
+            .map(|key| match key {
                 AnimationKey::Bone {
                     bone,
                     property,
                     time,
                 } => AnimationKey::Bone {
-                    bone,
-                    property,
+                    bone: *bone,
+                    property: *property,
                     time: time + offset,
                 },
                 AnimationKey::Ik { constraint, time } => AnimationKey::Ik {
-                    constraint,
+                    constraint: *constraint,
+                    time: time + offset,
+                },
+                AnimationKey::Deform { attachment, time } => AnimationKey::Deform {
+                    attachment: attachment.clone(),
                     time: time + offset,
                 },
             })
@@ -251,12 +255,12 @@ mod tests {
             constraint: 1,
             time: 1.,
         };
-        editor.key_selection.replace(vec![selected]);
+        editor.key_selection.replace(vec![selected.clone()]);
         let original = editor.session.document().clone();
         editor.key_drag = KeyDrag::new(
             0,
-            selected,
-            &[selected],
+            selected.clone(),
+            std::slice::from_ref(&selected),
             ChartGeometry {
                 start: 0.,
                 width: 200.,
@@ -376,7 +380,7 @@ mod tests {
         selected.select(key(0.), false);
         let mut drag = KeyDrag::new(
             0,
-            pressed,
+            pressed.clone(),
             selected.keys(),
             geometry(),
             position.x,
@@ -391,7 +395,7 @@ mod tests {
             session.preview_transaction(drag.command(offset)).unwrap();
             selected.replace(drag.selection_at(offset));
         }
-        selected.select(pressed, drag.toggle);
+        selected.select(pressed.clone(), drag.toggle);
         assert_eq!(selected.keys(), &[key(0.), pressed]);
         assert_eq!(session.document(), &document);
         assert!(!session.can_undo());

@@ -111,7 +111,7 @@ impl Editor {
                                 path.vertex_count() / 3 - usize::from(!path.closed),
                                 if path.closed { " · closed" } else { "" }
                             ))
-                            .on_hover_text("Path constraints move bones along this curve. Editing paths is not supported yet.");
+                            .on_hover_text("Path constraints move bones along this curve. Editing path vertices is not supported yet.");
                         }
                         Attachment::Clipping(clip) => {
                             let end = clip.end.map_or("the last slot".to_owned(), |end| {
@@ -120,9 +120,9 @@ impl Editor {
                             ui.label(format!("Clipping · {} points", clip.vertex_count()));
                             ui.label(format!("Cuts slots drawn after this one, through {end}"))
                                 .on_hover_text(if clip.convex {
-                                    "Uses the polygon's convex hull. Editing clipping polygons is not supported yet."
+                                    "Uses the polygon's convex hull. Editing clipping polygon vertices is not supported yet."
                                 } else {
-                                    "Editing clipping polygons is not supported yet."
+                                    "Editing clipping polygon vertices is not supported yet."
                                 });
                         }
                         Attachment::Region(r) => {
@@ -149,6 +149,9 @@ impl Editor {
                     }
                 }
                 self.attachment_panel(ui);
+                if !self.setup_mode {
+                    self.deform_curve_properties(ui, &key);
+                }
                 if !self.setup_mode && !self.selected_mesh_is_weighted() {
                     ui.label(
                         RichText::new("Attachment transforms and vertices are edited in Setup.")

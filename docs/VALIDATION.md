@@ -1,5 +1,48 @@
 # First-slice validation — November 5, 2026
 
+## Deform timeline, Graph and MCP clipboard — November 14, 2026
+
+The integrated shared-engine, native and actual stdio MCP slice passes focused
+checks with two Cargo workers and test threads: engine `timeline` 25 (including
+10 Deform checks), desktop Deform 19, scalar Graph 9, views 8 and layout 1, MCP
+schema 5 and stdio 3. Filters overlap; these are not additive full-suite totals.
+Formatting, workspace all-target Clippy with warnings denied, workspace build
+and the seven-crate architecture check pass. Independent review found and fixed
+large-time zoom bounds, clipped handle hits, background edits during blocked
+input and deletion of the final Deform track from the Graph toolbar.
+
+Installed Spine 4.3.26 captures establish full-width bottom Graph/Dopesheet tabs,
+blue attachment Deform rows and frame-based 0–100 pose-transition curves.
+Original native clipboard probes accept unweighted-to-unweighted and
+unweighted-to-one-influence-weighted offsets verbatim; incompatible dense counts
+and equal flat lengths with different per-vertex influence segmentation do not
+paste. A same-owner weighted paste succeeds as the positive control. Reverse
+cross-mode paste is covered by the engine's symmetric check, not a separate
+native observation.
+
+Actual native mouse/key input verifies a weighted key retime from 0.75 to 0.9,
+a tangent drag with exact whole-document one-step Undo/Redo, numeric entry of
+25%, Graph Copy and Dopesheet Paste/Delete, clipboard history, Escape cancellation
+without held-pointer rearming, playback, exact saved-file state and fresh-process
+persistence. Every original dense offset remains unchanged. All ten textures
+load; no evaluation error occurs. Owned editor/reference processes are closed.
+
+Actual MCP requests separately verify read-only typed key copying, weighted
+retime, exact curve edits, compatible cross-attachment/clip paste, atomic rejection,
+Undo/Redo, Save/reopen, exports and unchanged source bytes. The independent MCP
+session has 11 tools and 41 strict flat command variants; it is not a live desktop
+bridge. Both native- and MCP-authored exports pass the external 4.3 runtime over
+two clips and all three skins: 28,080 bone values (max 0.00002654), 29,120 region
+values and 5,200 mesh coordinates (max 0.00003052), plus 10,400 UV values with
+zero error at the unchanged 0.001 geometry tolerance.
+
+See the [review gallery](evidence/deform-timeline.html),
+[scalar evidence](evidence/deform-timeline.json) and
+[contract/limits](slices/deform-timeline.md). Full all-bone row hierarchy,
+mixed-owner curves, multi-vertex tools, advanced Offset and complete docking/style
+remain gaps. Hosted CI registration still reports zero workflows; required CI
+is not waived and this feature is not integrated into main.
+
 ## Fresh tutorial authoring through MCP — November 14, 2026
 
 A fresh native factory, append-only slot/region/mesh commands and MCP

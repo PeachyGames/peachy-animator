@@ -56,8 +56,8 @@ pub use scene::{
 };
 pub use session::Session;
 pub use timeline::{
-    AnimationKey, AnimationKeyClipboard, ClipboardKey, KeyClipboard, KeyOwner, TimelineKey,
-    copy_animation_keys, copy_keys,
+    AnimationKey, AnimationKeyClipboard, ClipboardKey, DeformLayout, KeyClipboard, KeyOwner,
+    TimelineKey, copy_animation_keys, copy_keys, deform_key_owner,
 };
 pub use tools::{
     Axes, TransformGesture, TransformTool, drag_transform, drag_transform_in_frame,
@@ -77,6 +77,8 @@ mod creation_tests;
 mod deform_authoring_tests;
 #[cfg(test)]
 mod deform_tests;
+#[cfg(test)]
+mod deform_timeline_tests;
 #[cfg(test)]
 mod direct_weight_tests;
 #[cfg(test)]

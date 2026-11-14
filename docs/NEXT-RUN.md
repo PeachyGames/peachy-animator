@@ -4,6 +4,33 @@ Written November 10, 2026, at the end of the import-parity push. Read this
 first, then `AGENTS.md`. The workspace rules in `../AGENTS.md` and `../CLAUDE.md`
 still apply.
 
+## November 14 Deform timeline continuation
+
+Deform Dopesheet rows, exact retime/copy/delete and typed clipboards now share
+engine commands with native controls and MCP. Graph edits normalized 0–100
+pose-transition curves with presets, draggable tangents and numeric percentages.
+Graph/Dopesheet tabs span the bottom beneath Tree, matching observed 4.3.26
+placement. Native v22 remains unchanged; MCP now has 11 tools / 41 commands,
+including read-only `copy_animation_keys` and exact `setDeformCurve`.
+
+Integrated native mouse/key, clipboard/history, Escape, playback and Save/reopen
+acceptance passes; both native- and MCP-authored projects match the external
+runtime. Local focused checks, formatting, Clippy, build and architecture pass.
+See [review gallery](evidence/deform-timeline.html),
+[contract](slices/deform-timeline.md) and
+[official update backlog](slices/spine-blog-audit-20261114.md). The actual installed
+Views menu has 17 entries, not 15; Curves/Problems and broader Color remain open.
+Owned native/reference processes are closed. Private comparison/projects/MCP
+logs remain in `.local/training-spine-20261114/timeline/`; redundant F12 captures
+and helpers retire after the verified commit. The shared Cargo target is retained
+for continuing parity development; no second target/worktree was created.
+
+Continue through bounded slices: Animate slot attachment/RGBA color authoring
+(image swaps/fades used in the 4.3 blog), then multi-vertex/Auto/brush tools,
+all-keyed bone hierarchy/mixed Graph and Offset. Hosted CI still lists no registered
+workflows as of this check; keep feature PR draft and do not integrate main until
+the required hosted check passes. Female-pose full verification remains canceled.
+
 ## November 14 authoring update
 
 Final private tutorial review: `.local/training-spine-20261114/recreation/index.html`.
@@ -47,8 +74,8 @@ visible English subtitles are transcribed. Wind source artwork was not supplied,
 so its five technique cases use explicit proxies. Do not call this an exact
 character recreation or full tutorial workflow/UI parity.
 
-Next useful continuation: deform Dopesheet rows/curves and multi-vertex editing,
-then broader mesh/Auto/brush weights and multi-bone cycle Offset workflows.
+Deform Dopesheet rows/curves are covered by the continuation above. Remaining
+mesh work includes multi-vertex editing, Auto/brush weights and multi-bone cycle Offset workflows.
 The tutorials' wind motion is hand-keyed; no wind rig was supplied. Physics
 simulation remains separate. The female-pose full-check cancellation below
 still applies. Manual CI requires an explicit focused test-name filter and

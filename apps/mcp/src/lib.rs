@@ -8,7 +8,7 @@ use rmcp::{
     ServerHandler, handler::server::wrapper::Parameters, model::CallToolResult, tool, tool_handler,
     tool_router,
 };
-use schema::CommandInput;
+use schema::{AnimationKeyInput, CommandInput};
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde_json::{Value, json};
@@ -179,6 +179,15 @@ struct EvaluateInput {
 
 #[derive(Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
+struct CopyAnimationKeysInput {
+    expected_revision: u64,
+    animation: usize,
+    /// Exact typed identities from one bone, IK constraint or deform attachment.
+    keys: Vec<AnimationKeyInput>,
+}
+
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 struct SaveInput {
     expected_revision: u64,
     /// Fresh directory to create under --root. Its parent must exist. Writes project.peachy and loose images, never overwrites.
@@ -316,6 +325,27 @@ impl AnimatorServer {
     }
 
     #[tool(
+        description = "Copy exact bone, IK or Deform animation keys from one owner into a portable typed clipboard without changing history, revision or the document. Relative times start at zero. Deform clipboards include dense offsets, curves and vertex/influence layout for compatible cross-attachment pasteAnimationKeys commands.",
+        annotations(read_only_hint = true, idempotent_hint = true, open_world_hint = false)
+    )]
+    fn copy_animation_keys(
+        &self,
+        Parameters(input): Parameters<CopyAnimationKeysInput>,
+    ) -> CallToolResult {
+        self.access(|state| {
+            state.check_revision(input.expected_revision)?;
+            let project = state.project()?;
+            let keys = input.keys.into_iter().map(|key| key.0).collect::<Vec<_>>();
+            let clipboard = peachy_engine::copy_animation_keys(
+                project.session.document(),
+                input.animation,
+                &keys,
+            )?;
+            Ok(json!({"revision":state.revision,"clipboard":clipboard}))
+        })
+    }
+
+    #[tool(
         description = "Apply a flat list of native engine commands as one atomic, undoable edit. Requires the latest revision; any failed command preserves document, revision and history. No file is written.",
         annotations(
             destructive_hint = false,
@@ -448,6 +478,6 @@ impl AnimatorServer {
 #[tool_handler(
     name = "peachy-animator",
     version = "0.1.0",
-    instructions = "Independent headless Peachy Animator session, not a connection to the desktop. Call get_document for state/revision; create_project for a fresh root-only document, or inspect_file then open_project for an existing one; use commands with expected_revision; evaluate_pose for checked geometry; save_project into a fresh directory. Paths and referenced images are confined to startup --root. Existing artist sources are never overwritten. Unsupported Spine features fail explicitly. No raster rendering or live GUI bridge yet."
+    instructions = "Independent headless Peachy Animator session, not a connection to the desktop. Call get_document for state/revision; create_project for a fresh root-only document, or inspect_file then open_project for an existing one; use commands with expected_revision; copy_animation_keys for portable typed clipboards; evaluate_pose for checked geometry; save_project into a fresh directory. Paths and referenced images are confined to startup --root. Existing artist sources are never overwritten. Unsupported Spine features fail explicitly. No raster rendering or live GUI bridge yet."
 )]
 impl ServerHandler for AnimatorServer {}

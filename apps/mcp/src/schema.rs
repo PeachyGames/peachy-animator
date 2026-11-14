@@ -29,6 +29,31 @@ impl JsonSchema for CommandInput {
     }
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(transparent)]
+pub struct AnimationKeyInput(pub peachy_engine::AnimationKey);
+
+impl JsonSchema for AnimationKeyInput {
+    fn schema_name() -> Cow<'static, str> {
+        "PeachyAnimationKey".into()
+    }
+    fn json_schema(_: &mut SchemaGenerator) -> Schema {
+        Schema::try_from(animation_key_schema()).expect("Animation key schema is an object")
+    }
+}
+
+pub fn animation_key_schema() -> Value {
+    let property =
+        json!({"type":"string","enum":["x","y","rotation","scaleX","scaleY","shearX","shearY"]});
+    let reference = object(&[("skin", text()), ("slot", text()), ("placeholder", text())]);
+    let tag = |name: &str| json!({"const":name,"type":"string"});
+    json!({"oneOf":[
+        object(&[("type",tag("bone")),("bone",index()),("property",property),("time",number())]),
+        object(&[("type",tag("ik")),("constraint",index()),("time",number())]),
+        object(&[("type",tag("deform")),("attachment",reference),("time",number())]),
+    ]})
+}
+
 fn object(fields: &[(&str, Value)]) -> Value {
     let properties: Map<String, Value> = fields
         .iter()
@@ -175,7 +200,7 @@ pub fn command_schema() -> Value {
     ]);
     let deform_key = object(&[
         ("time", number()),
-        ("curve", curve),
+        ("curve", curve.clone()),
         ("offsets", list(number())),
     ]);
     let timeline_key = object(&[
@@ -299,14 +324,17 @@ pub fn command_schema() -> Value {
     let key_owner = json!({"oneOf":[
         object(&[("type", tag("bone")), ("bone", index())]),
         object(&[("type", tag("ik")), ("constraint", index())]),
+        object(&[("type", tag("deform")), ("attachment", attachment.clone())]),
     ]});
-    let animation_key = json!({"oneOf":[
-        object(&[("type", tag("bone")), ("bone", index()), ("property", property.clone()), ("time", number())]),
-        object(&[("type", tag("ik")), ("constraint", index()), ("time", number())]),
+    let animation_key = animation_key_schema();
+    let deform_layout = json!({"oneOf":[
+        object(&[("type",tag("unweighted")),("vertices",index())]),
+        object(&[("type",tag("weighted")),("influence_counts",list(index()))]),
     ]});
     let animation_clipboard = json!({"oneOf":[
         object(&[("type", tag("bone")), ("keys", clipboard["properties"]["keys"].clone())]),
         object(&[("type", tag("ik")), ("keys", list(ik_key.clone()))]),
+        object(&[("type",tag("deform")),("layout",deform_layout),("keys",list(deform_key.clone()))]),
     ]});
     let variants = vec![
         command("addSlot", &[("slot", slot)]),
@@ -342,6 +370,15 @@ pub fn command_schema() -> Value {
                 ("animation", index()),
                 ("attachment", attachment.clone()),
                 ("key", deform_key),
+            ],
+        ),
+        command(
+            "setDeformCurve",
+            &[
+                ("animation", index()),
+                ("attachment", attachment.clone()),
+                ("time", number()),
+                ("curve", curve),
             ],
         ),
         command(
@@ -562,6 +599,7 @@ mod tests {
             Command::DeleteIkKey { .. } => "deleteIkKey",
             Command::SetDeformKey { .. } => "setDeformKey",
             Command::DeleteDeformKey { .. } => "deleteDeformKey",
+            Command::SetDeformCurve { .. } => "setDeformCurve",
             Command::MoveAnimationKeys { .. } => "moveAnimationKeys",
             Command::DeleteAnimationKeys { .. } => "deleteAnimationKeys",
             Command::PasteAnimationKeys { .. } => "pasteAnimationKeys",
@@ -638,7 +676,7 @@ mod tests {
     fn every_published_shape_decodes_through_strict_engine_serde() {
         let schema = command_schema();
         let variants = schema["oneOf"].as_array().unwrap();
-        assert_eq!(variants.len(), 40);
+        assert_eq!(variants.len(), 41);
         for variant in variants {
             let payload = sample(variant);
             let command: CommandInput = serde_json::from_value(payload.clone()).unwrap();
@@ -833,5 +871,50 @@ mod tests {
                 assert!(serde_json::from_value::<CommandInput>(invalid).is_err());
             }
         }
+    }
+    #[test]
+    fn deform_timeline_schema_preserves_dense_clipboards_and_strict_typed_owners() {
+        let schema = command_schema();
+        let reference = json!({"skin":"peach","slot":"body","placeholder":"body"});
+        let identity = json!({"type":"deform","attachment":reference,"time":0.5});
+        let mut commands = vec![
+            json!({"command":"moveAnimationKeys","animation":0,"keys":[identity.clone()],"delta":0.25,"copy":false}),
+            json!({"command":"deleteAnimationKeys","animation":0,"keys":[identity],}),
+        ];
+        for layout in [
+            json!({"type":"unweighted","vertices":3}),
+            json!({"type":"weighted","influence_counts":[1,2]}),
+        ] {
+            commands.push(json!({"command":"pasteAnimationKeys","animation":1,
+                "target":{"type":"deform","attachment":reference},"time":1.0,
+                "clipboard":{"type":"deform","layout":layout,"keys":[
+                    {"time":0.0,"curve":{"bezier":[0.2f32,0.0,0.8f32,1.0]},"offsets":[0.0,1.0,2.0,3.0,4.0,5.0]}
+                ]}}));
+        }
+        for curve in [
+            json!("linear"),
+            json!("stepped"),
+            json!({"bezier":[0.2f32,0.0,0.8f32,1.0]}),
+        ] {
+            commands.push(json!({"command":"setDeformCurve","animation":0,"attachment":reference,"time":0.5,"curve":curve}));
+        }
+        for value in commands {
+            let variant = schema["oneOf"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|v| v["properties"]["command"]["const"] == value["command"])
+                .unwrap();
+            assert_eq!(variant["additionalProperties"], false);
+            let parsed: CommandInput = serde_json::from_value(value.clone()).unwrap();
+            assert_eq!(serde_json::to_value(parsed.0).unwrap(), value);
+            let mut bad = value;
+            bad["extra"] = json!(true);
+            assert!(serde_json::from_value::<CommandInput>(bad).is_err());
+        }
+        let bad = json!({"command":"pasteAnimationKeys","animation":0,"time":0.0,
+            "target":{"type":"deform","attachment":reference},
+            "clipboard":{"type":"deform","layout":{"type":"weighted","influence_counts":[1],"future":true},"keys":[]}});
+        assert!(serde_json::from_value::<CommandInput>(bad).is_err());
     }
 }

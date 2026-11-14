@@ -53,8 +53,9 @@ client's working directory. Absolute paths are accepted only inside that root.
 | `create_project` | New in-memory root-only native document with an empty default skin. Uses an existing asset directory within `--root`; no finished rig is loaded and no file is written. Source is null until Save. |
 | `inspect_file` | Read-only native validation or Spine capability report. Does not replace the working document. |
 | `open_project` | Load `.peachy` (including supported legacy migrations) or supported Spine 4.3 JSON into a new Session. Failed imports leave the current session intact. |
-| `get_command_schema` | Full JSON Schema for the 40 supported flat command variants; the same schema appears inline in `apply_commands` discovery. |
+| `get_command_schema` | Full JSON Schema for the 41 supported flat command variants; the same schema appears inline in `apply_commands` discovery. |
 | `apply_commands` | Apply a nonempty flat list through one engine Batch, atomically and as one undo step. No file writes. |
+| `copy_animation_keys` | Read-only capture of exact keys from one bone, IK constraint or Deform attachment. Returns relative times, curves and values; Deform includes vertex/influence layout for compatible cross-attachment paste. Requires the current revision. |
 | `history` | Undo or redo one complete edit using the shared Session history. |
 | `evaluate_pose` | Setup or a named animation at a nonnegative time in seconds, with optional skin. Returns authored locals, IK-applied locals, world matrices, textured vertex/UV/index buffers and bounds. |
 | `save_project` | Create a new directory containing `project.peachy` and the required loose `images/`; marks the headless Session saved. |
@@ -182,6 +183,30 @@ desktop. Save advances revision to 3. Export a packed runtime bundle with:
 
 The response identifies the new timestamped bundle directory. JSON-only export
 uses `kind:"json"` and a fresh `.json` output path instead.
+
+## Deform timeline editing
+
+Deform keys now use the same typed timeline identities as bone and IK keys:
+
+```json
+{"type":"deform","attachment":{"skin":"default","slot":"hand.R","placeholder":"hand.R"},"time":0.6}
+```
+
+Use exact times returned by `get_document`, including fractional values. Pass
+identities to `copy_animation_keys` with `expected_revision`, the animation index
+and `keys`. Copy preserves revision/history and returns a typed `clipboard` with
+relative times. Deform layouts distinguish unweighted vertex counts from weighted
+per-vertex influence counts; paste validates compatible offset segmentation.
+`pasteAnimationKeys` accepts a Deform target on another compatible attachment
+or clip. Linked attachments resolve to their shared timeline owner.
+
+The same identities work with `moveAnimationKeys` (`copy:false` for retiming,
+`copy:true` for duplication) and `deleteAnimationKeys`. Those commands preserve
+complete dense offsets and curves, and apply atomically. `setDeformCurve` takes
+`animation`, `attachment`, exact `time`, and `curve`; it changes interpolation
+without replacing the key's geometry. All existing curve shapes remain native
+values. Clipboard compatibility is a documented engine policy, not a claim that
+every installed-editor weighted binding combination has been verified.
 
 ## History and file boundaries
 

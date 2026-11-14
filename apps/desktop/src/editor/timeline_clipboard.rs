@@ -21,6 +21,7 @@ pub(super) fn clipboard_len(clipboard: &AnimationKeyClipboard) -> usize {
     match clipboard {
         AnimationKeyClipboard::Bone { keys } => keys.len(),
         AnimationKeyClipboard::Ik { keys } => keys.len(),
+        AnimationKeyClipboard::Deform { keys, .. } => keys.len(),
     }
 }
 
@@ -45,8 +46,12 @@ fn pasted_keys(
                 time: key.time + time,
             })
             .collect()),
+        (AnimationKeyClipboard::Deform { keys, .. }, KeyOwner::Deform { attachment }) => Ok(keys
+            .iter().map(|key| KeyId::Deform {
+                attachment: attachment.clone(), time: key.time + time,
+            }).collect()),
         _ => Err(
-            "Copied keys and target must have the same kind: bone transforms or IK constraint."
+            "Copied keys and target must have the same kind: bone transforms, IK constraint or mesh deform."
                 .into(),
         ),
     }
@@ -169,7 +174,7 @@ impl Editor {
         let scope = self.key_selection.select_all(
             self.session.document(),
             animation,
-            owner,
+            owner.clone(),
             &dopesheet_selection::rows(owner),
         );
         let count = self.key_selection.len();
@@ -182,7 +187,7 @@ impl Editor {
 
     fn clipboard_context_available(&self) -> bool {
         !self.setup_mode
-            && self.show_dopesheet
+            && (self.dopesheet_visible() || self.graph_visible())
             && self.timeline_owner().is_some()
             && self
                 .session
@@ -256,7 +261,8 @@ impl Editor {
     }
 
     pub(super) fn timeline_clipboard_shortcuts(&mut self, ctx: &egui::Context) {
-        let focused = self.dopesheet_has_focus(ctx) && ctx.input(|input| input.focused);
+        let focused = (self.dopesheet_has_focus(ctx) || self.deform_graph_has_focus(ctx))
+            && ctx.input(|input| input.focused);
         let actions = ctx.input_mut(|input| {
             take_timeline_actions(&mut input.events, focused, &mut self.timeline_input)
         });
@@ -301,7 +307,7 @@ impl Editor {
             return false;
         };
         let time = self.time;
-        let selected = match pasted_keys(&clipboard, target, time) {
+        let selected = match pasted_keys(&clipboard, target.clone(), time) {
             Ok(keys) => keys,
             Err(error) => {
                 self.status = error;
@@ -839,7 +845,7 @@ mod tests {
             property: Property::X,
             time: 0.,
         };
-        editor.key_selection.replace(vec![selected]);
+        editor.key_selection.replace(vec![selected.clone()]);
         let geometry = super::super::key_drag::ChartGeometry {
             start: 0.,
             width: 240.,
