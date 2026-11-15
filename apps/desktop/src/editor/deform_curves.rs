@@ -130,6 +130,7 @@ impl Editor {
             && self.error.is_none()
             && self.rename.is_none()
             && self.duplicate_animation.is_none()
+            && self.export_dialog.is_none()
             && !egui::Popup::is_any_open(ctx)
     }
 

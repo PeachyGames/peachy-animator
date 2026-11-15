@@ -202,6 +202,7 @@ impl Editor {
             || self.error.is_some()
             || self.rename.is_some()
             || self.duplicate_animation.is_some()
+            || self.export_dialog.is_some()
             || egui::Popup::is_any_open(ctx)
         {
             self.preview.playing = false;

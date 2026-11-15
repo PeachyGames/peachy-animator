@@ -3,6 +3,7 @@ use super::*;
 
 impl Editor {
     pub(super) fn cancel_gesture(&mut self) {
+        self.export_dialog = None;
         self.cancel_timeline_interaction();
         self.cancel_graph_edit();
         self.cancel_slot_color_edit();
@@ -215,6 +216,9 @@ impl Editor {
                 .as_nanos();
             self.capture = Some(self.capture_directory.join(format!("editor-{stamp}.png")));
             ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
+        }
+        if self.export_dialog_shortcuts(ctx) {
+            return;
         }
         if self.slot_color_shortcuts(ctx)
             || self.ik_shortcuts(ctx)

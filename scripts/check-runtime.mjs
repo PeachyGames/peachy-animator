@@ -55,7 +55,7 @@ const cli = process.env.PEACHY_CLI ?? resolve(root, 'target/debug/peachy-cli');
 const source = process.argv[5] ? resolve(process.argv[5]) : resolve(root, 'examples/peach-bot/peach-bot.peachy');
 const exportPath = process.argv[3] ? resolve(process.argv[3]) : resolve(root, '.local/peach-bot.json');
 const atlasPath = process.argv[4] ? resolve(process.argv[4]) : resolve(root, 'examples/peach-bot/peach-bot.atlas');
-if (!existsSync(exportPath)) execFileSync(cli, ['export', source, exportPath]);
+if (!existsSync(exportPath)) execFileSync(cli, ['export', source, exportPath, '--target', 'runtime43']);
 const atlas = new TextureAtlas(readFileSync(atlasPath, 'utf8'));
 for (const page of atlas.pages) {
   const imagePath=resolve(dirname(atlasPath),page.name);

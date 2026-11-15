@@ -4,6 +4,34 @@ Written November 10, 2026, at the end of the import-parity push. Read this
 first, then `AGENTS.md`. The workspace rules in `../AGENTS.md` and `../CLAUDE.md`
 still apply.
 
+## November 14 export-target continuation
+
+Native, CLI and MCP export now share explicit Spine Editor 4.3 / Runtime 4.3
+consumer targets. Editor is the default and rejects unsafe default name overrides
+before writing; Runtime preserves independent names, placeholders, skin fallback,
+slot keys, Deform and linked references. Native v22 and 45 commands/11 tools stay.
+Actual native pending/history/cancel/rejection/export, CLI and stdio MCP checks
+pass. Three bundle files are identical across native/MCP/CLI. Four accepted Editor
+controls survive installed 4.3.26 import/re-export; region and minimal linked-mesh
+Runtime fixtures pass the external oracle. Focused checks, formatting, Clippy,
+build and architecture pass. See [gallery](evidence/export-targets.html),
+[contract](slices/export-targets.md) and [scalar evidence](evidence/export-targets.json).
+
+The previous naming gap is bounded by an explicit consumer policy; this is not
+silent normalization or a complete .spine converter. All owned GUI is closed.
+Private original inputs, reports, selected captures and final bundles remain in
+`.local/training-spine-20261114/names-contract/` until review or supersession.
+Task-owned raw captures, Cocoa/input diagnostics, invalid probes and redundant
+CLI outputs retire at closure; shared target remains required by ongoing parity.
+
+Next: probe the installed Graph's already-Bezier reset and single final-key
+previous-interval behavior, then close scalar curve-only engine/MCP edits and
+the observed Curves workflow. Continue multi-vertex Direct/Auto/brush weights,
+cross-property transform mapping, sliders and Animate draw-order authoring.
+Use [the refreshed official blog audit](slices/spine-blog-audit-20261114.md).
+Hosted CI still gates main; keep the feature PR draft. The canceled female-pose
+full check remains canceled.
+
 ## November 14 slot authoring continuation
 
 Slot swaps/hiding and RGBA fades now have native/MCP authoring, shared float
@@ -23,9 +51,8 @@ authored projects and MCP logs remain in
 invalid probes, redundant captures and verified duplicate Save backups retire at
 closure. The shared Cargo target remains needed for continuing parity work.
 
-Next concrete gap found by this work: default-skin attachment name overrides can
-be renamed by Spine's JSON importer, clearing attachment keys. Design a compatible
-export/import naming contract without discarding valid native/runtime metadata.
+The default-skin name-override gap found here is now handled by the explicit
+Editor/Runtime export contract above, preserving valid native/runtime metadata.
 Then continue multi-vertex/Auto/brush tools, all-keyed row hierarchy/mixed Graph,
 Offset, broader Color and current blog features. Byte sampling ties/extreme-time
 fallback remain explicit limits. Hosted workflow registration still returns zero;

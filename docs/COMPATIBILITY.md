@@ -4,6 +4,13 @@ Target: Spine **4.3.x JSON**, with export metadata `4.3.26`. The initial externa
 oracle is separately installed `@esotericsoftware/spine-core` **4.3.13**.
 Compatibility applies to the subset below, not every 4.3 project or future patch.
 
+Export targets (November 14): native, CLI and MCP export share explicit Editor
+and Runtime policies. Editor remains the default and rejects default-skin name
+overrides that the installed importer can rename while clearing Setup and swap
+keys. Runtime preserves both identities and skips only Editor naming restrictions.
+No native data is renamed or removed; all other feature guards remain. See the
+[observed cases and precise contract](slices/export-targets.md).
+
 Slot authoring addition (November 14): native controls and MCP now key attachment
 swaps/hiding and RGBA colors, with shared pending poses, Auto Key/K, typed
 retime/copy/delete/clipboard actions and exact four-channel curves. The selected
@@ -13,7 +20,7 @@ outputs pass the external runtime, while native input and fresh-process
 persistence pass separately. Native v22 stays unchanged. Persistent colors remain
 bytes; the established sampler can differ from the editor at half-byte ties.
 Extreme-time split fallback is outside native calibration. Default-attachment
-name overrides also have a recorded editor-import interchange gap. See the
+name overrides require the explicit Runtime target; Editor export refuses them. See the
 [precise scope and evidence](slices/slot-authoring.md); this does not add separate
 RGB/alpha, dark tint or the broader Color view's Setup targets.
 

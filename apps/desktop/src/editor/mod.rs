@@ -5,6 +5,7 @@ mod audio_output;
 mod deform_curves;
 mod dopesheet;
 mod dopesheet_selection;
+mod export_dialog;
 mod ghosting;
 mod graph;
 mod icons;
@@ -164,6 +165,7 @@ pub(crate) struct Editor {
     new_bone: String,
     rename: Option<rename::RenameState>,
     duplicate_animation: Option<animation_management::DuplicateAnimationState>,
+    export_dialog: Option<export_dialog::ExportDialog>,
     capture: Option<PathBuf>,
     capture_directory: PathBuf,
     frames: usize,
@@ -292,6 +294,7 @@ impl Editor {
             new_bone: String::new(),
             rename: None,
             duplicate_animation: None,
+            export_dialog: None,
             capture,
             capture_directory,
             frames: 0,
@@ -308,6 +311,7 @@ impl Editor {
     }
 
     fn dispatch(&mut self, command: Command) -> bool {
+        self.export_dialog = None;
         self.cancel_slot_color_edit();
         self.cancel_graph_edit();
         self.cancel_ik_edit();
@@ -740,27 +744,7 @@ impl Editor {
     }
 
     fn export(&mut self) {
-        self.cancel_gesture();
-        self.pause_audio_for_modal();
-        if let Some(folder) = rfd::FileDialog::new()
-            .set_title("Choose parent folder for a new Spine export")
-            .pick_folder()
-        {
-            match files::export_bundle(&folder, self.session.document(), &self.asset_root) {
-                Ok(path) => {
-                    self.status = format!(
-                        "Spine 4.3 export saved to {}{}",
-                        path.display(),
-                        if self.session.pose_edits().is_empty() {
-                            ""
-                        } else {
-                            "; unkeyed pose excluded — press K to key it"
-                        }
-                    )
-                }
-                Err(e) => self.error = Some(e),
-            }
-        }
+        self.begin_export();
     }
 }
 
@@ -782,6 +766,9 @@ impl Editor {
         self.reconcile_graph_input(&ctx);
         self.reconcile_slot_color_input(&ctx);
         self.shortcuts(&ctx);
+        if self.export_dialog.is_some() {
+            ui.disable();
+        }
         self.advance_preview(&ctx);
         self.advance_audio(&ctx);
         self.observe_timeline_input(&ctx);
@@ -937,6 +924,9 @@ impl Editor {
         self.observe_graph_focus(&ctx);
         self.observe_slot_color_focus(&ctx);
         self.slot_color_dialog(&ctx);
+        if let Some(target) = self.export_target_dialog(&ctx) {
+            self.export_to_target(target);
+        }
         if let Some(error) = self.error.clone() {
             egui::Window::new("Project needs attention")
                 .collapsible(false)
@@ -1005,6 +995,7 @@ impl Editor {
                 report["audio"] = self.audio_diagnostic();
                 report["graph"] = self.graph_diagnostic();
                 report["slotColor"] = self.slot_color_diagnostic();
+                report["exportDialog"] = self.export_dialog_diagnostic();
                 report["playbackSpeed"] = self.playback_speed.into();
                 report["status"] = self.status.clone().into();
                 report["timelineOwner"] = serde_json::json!(self.timeline_owner());

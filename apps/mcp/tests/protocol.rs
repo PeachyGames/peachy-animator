@@ -1028,7 +1028,7 @@ async fn stdio_slot_authoring_mixed_clipboard_curves_and_persistence() {
         call(
             &client,
             "export_project",
-            json!({"expected_revision":11,"kind":"json","path":"slot-edited.json"}),
+            json!({"expected_revision":11,"kind":"json","path":"slot-edited.json","target":"runtime43"}),
         )
         .await,
     );
@@ -1036,6 +1036,113 @@ async fn stdio_slot_authoring_mixed_clipboard_curves_and_persistence() {
         serde_json::from_slice(&fs::read(root.0.join("slot-edited.json")).unwrap()).unwrap();
     assert!(exported["animations"]["idle"]["slots"]["hand.L"]["attachment"].is_array());
     assert!(exported["animations"]["idle"]["slots"]["hand.L"]["rgba"].is_array());
+    assert_eq!(fs::read(source).unwrap(), original);
+    client.cancel().await.unwrap();
+}
+
+#[tokio::test]
+async fn stdio_export_targets_protect_editor_refs_and_preserve_runtime_identity() {
+    let root = Sandbox::new();
+    root.fixture();
+    let source = root.0.join("source/slot-bot.peachy");
+    let original = fs::read(&source).unwrap();
+    let client = start(&root.0).await;
+    let tools = client.list_tools(Default::default()).await.unwrap().tools;
+    let schema = serde_json::to_value(
+        &tools
+            .iter()
+            .find(|tool| tool.name == "export_project")
+            .unwrap()
+            .input_schema,
+    )
+    .unwrap();
+    assert!(schema.to_string().contains("spineEditor43"));
+    assert!(schema.to_string().contains("runtime43"));
+    assert!(
+        !schema["required"]
+            .as_array()
+            .unwrap()
+            .contains(&json!("target"))
+    );
+    success(
+        call(
+            &client,
+            "open_project",
+            json!({
+                "path":"source/slot-bot.peachy","expected_revision":0
+            }),
+        )
+        .await,
+    );
+    let before = doc(&client).await;
+    for args in [
+        json!({"expected_revision":1,"kind":"json","path":"unsafe.json"}),
+        json!({"expected_revision":1,"kind":"json","path":"unsafe-explicit.json","target":"spineEditor43"}),
+        json!({"expected_revision":1,"kind":"bundle","path":".","target":"spineEditor43"}),
+    ] {
+        let failed = error(call(&client, "export_project", args).await);
+        assert!(failed["error"].as_str().unwrap().contains("hand.L fist"));
+        assert_eq!(failed["revision"], 1);
+        assert_eq!(doc(&client).await, before);
+        assert_eq!(fs::read_dir(&root.0).unwrap().count(), 1);
+    }
+    let exported = success(
+        call(
+            &client,
+            "export_project",
+            json!({
+                "expected_revision":1,"kind":"json","path":"runtime.json","target":"runtime43"
+            }),
+        )
+        .await,
+    );
+    assert_eq!(exported["exportTarget"], "runtime43");
+    let value: Value =
+        serde_json::from_slice(&fs::read(root.0.join("runtime.json")).unwrap()).unwrap();
+    let native: peachy_document::Document =
+        serde_json::from_value(before["document"].clone()).unwrap();
+    let restored = peachy_spine::import_json(&value, &native.name).unwrap();
+    assert_eq!(restored.slots, native.slots);
+    assert_eq!(restored.skins, native.skins);
+    for clip in &native.animations {
+        let imported = restored
+            .animations
+            .iter()
+            .find(|a| a.name == clip.name)
+            .unwrap();
+        assert_eq!(imported.attachment_tracks, clip.attachment_tracks);
+    }
+    let bundle = success(
+        call(
+            &client,
+            "export_project",
+            json!({
+                "expected_revision":1,"kind":"bundle","path":".","target":"runtime43"
+            }),
+        )
+        .await,
+    );
+    assert_eq!(bundle["exportTarget"], "runtime43");
+    let bundle_path = root.0.join(bundle["path"].as_str().unwrap());
+    let bundled: Value =
+        serde_json::from_slice(&fs::read(bundle_path.join("character.json")).unwrap()).unwrap();
+    assert_eq!(bundled, value);
+    assert!(bundle_path.join("character.atlas").exists());
+    assert!(bundle_path.join("character.png").exists());
+    assert_eq!(doc(&client).await, before);
+    let failed = error(
+        call(
+            &client,
+            "export_project",
+            json!({
+                "expected_revision":0,"kind":"json","path":"stale.json","target":"runtime43"
+            }),
+        )
+        .await,
+    );
+    assert!(failed["error"].as_str().unwrap().contains("Stale revision"));
+    assert!(!root.0.join("stale.json").exists());
+    assert_eq!(doc(&client).await, before);
     assert_eq!(fs::read(source).unwrap(), original);
     client.cancel().await.unwrap();
 }

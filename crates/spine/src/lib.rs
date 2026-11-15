@@ -18,6 +18,15 @@ use std::collections::{BTreeMap, BTreeSet};
 
 pub const TARGET_VERSION: &str = "4.3.26";
 
+/// Runtime JSON preserves independent attachment names and lookup placeholders.
+/// The editor target additionally refuses known destructive import cases.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum ExportTarget {
+    #[default]
+    SpineEditor43,
+    Runtime43,
+}
+
 fn timeline_properties(name: &str) -> Option<&'static [(Property, &'static str)]> {
     match name {
         "rotate" => Some(&[(Property::Rotation, "value")]),
@@ -516,9 +525,15 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
 }
 
 pub fn export_json(doc: &Document) -> Result<Value, String> {
+    export_json_for(doc, ExportTarget::SpineEditor43)
+}
+
+pub fn export_json_for(doc: &Document, target: ExportTarget) -> Result<Value, String> {
     doc.validate()?;
     constraints::validate_source(doc)?;
-    validate_export_names(doc)?;
+    if target == ExportTarget::SpineEditor43 {
+        validate_export_names(doc)?;
+    }
     let bones: Vec<_> = doc
         .bones
         .iter()
@@ -963,9 +978,23 @@ fn array(value: &Value) -> &[Value] {
 
 /// Spine Editor interchange restrictions belong to this adapter, not our model.
 /// Installed 4.3.26 imports reused attachment names across skins, slots and the
-/// default skin (November 9 probes; shipped game exports reuse them), so only the
-/// observed named-skin/default placeholder collision is refused.
+/// default skin (November 9 probes; shipped game exports reuse them). November
+/// 14 original probes also confirmed that default-skin name overrides rename
+/// placeholders and clear Setup/slot keys; named-skin overrides preserve them.
 fn validate_export_names(doc: &Document) -> Result<(), String> {
+    if let Some(skin) = doc.skins.get("default") {
+        for (slot, attachments) in skin {
+            for (placeholder, attachment) in attachments {
+                if let Some(name) = attachment.name()
+                    && name != placeholder
+                {
+                    return Err(format!(
+                        "Spine Editor export: attachment default/{slot}/{placeholder} has explicit name {name:?} different from placeholder {placeholder:?}; export as Runtime43 to preserve both identities"
+                    ));
+                }
+            }
+        }
+    }
     for (skin_name, skin) in &doc.skins {
         for (slot, attachments) in skin {
             for placeholder in attachments.keys() {

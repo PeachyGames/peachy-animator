@@ -201,6 +201,30 @@ enum ExportKind {
     Bundle,
 }
 
+#[derive(Clone, Copy, Default, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+enum ExportTarget {
+    #[default]
+    SpineEditor43,
+    Runtime43,
+}
+
+impl ExportTarget {
+    fn adapter(self) -> peachy_io::ExportTarget {
+        match self {
+            Self::SpineEditor43 => peachy_io::ExportTarget::SpineEditor43,
+            Self::Runtime43 => peachy_io::ExportTarget::Runtime43,
+        }
+    }
+
+    fn name(self) -> &'static str {
+        match self {
+            Self::SpineEditor43 => "spineEditor43",
+            Self::Runtime43 => "runtime43",
+        }
+    }
+}
+
 #[derive(Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 struct ExportInput {
@@ -208,6 +232,9 @@ struct ExportInput {
     kind: ExportKind,
     /// For json: a new .json file. For bundle: an existing parent directory; a new timestamped bundle is created within it.
     path: String,
+    /// Defaults to spineEditor43, which validates Editor naming restrictions. runtime43 preserves independent names/placeholders for runtime consumers; it is not an Editor interchange guarantee.
+    #[serde(default)]
+    target: ExportTarget,
 }
 
 #[tool_router]
@@ -451,7 +478,7 @@ impl AnimatorServer {
     }
 
     #[tool(
-        description = "Export the current headless document as new Spine 4.3 JSON or a packed JSON/atlas/PNG bundle. This does not publish a game, change the saved baseline or overwrite files. Bundle images must resolve inside --root.",
+        description = "Export the current headless document as new Spine 4.3 JSON or a packed JSON/atlas/PNG bundle. target defaults to spineEditor43 and rejects unsafe Editor naming; runtime43 preserves independent attachment names/placeholders. Neither target rewrites native identities. This does not publish a game, change the saved baseline or overwrite files. Bundle images must resolve inside --root.",
         annotations(
             destructive_hint = false,
             idempotent_hint = false,
@@ -463,15 +490,15 @@ impl AnimatorServer {
             state.check_revision(input.expected_revision)?;
             let project=state.project()?;
             let path=match input.kind {
-                ExportKind::Json=>{let path=state.root.fresh(&input.path)?;peachy_io::export_json(&path,project.session.document())?;path},
+                ExportKind::Json=>{let path=state.root.fresh(&input.path)?;peachy_io::export_json_for(&path,project.session.document(),input.target.adapter())?;path},
                 ExportKind::Bundle=>{
                     let parent=state.root.existing(&input.path)?;
                     if !parent.is_dir(){return Err("Bundle path must be an existing directory".into());}
                     state.root.check_assets(project.session.document(),&project.asset_root)?;
-                    peachy_io::export_bundle(&parent,project.session.document(),&project.asset_root)?
+                    peachy_io::export_bundle_for(&parent,project.session.document(),&project.asset_root,input.target.adapter())?
                 },
             };
-            Ok(json!({"path":state.root.display(&path),"revision":state.revision,"targetVersion":peachy_spine::TARGET_VERSION}))
+            Ok(json!({"path":state.root.display(&path),"revision":state.revision,"targetVersion":peachy_spine::TARGET_VERSION,"exportTarget":input.target.name()}))
         })
     }
 }

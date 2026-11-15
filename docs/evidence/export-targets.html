@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Explicit export targets — Peachy Animator</title>
+<style>
+:root{color-scheme:dark;font:16px/1.5 system-ui;background:#202226;color:#e9eaec}body{max-width:1500px;margin:auto;padding:24px}h1{font-size:1.7rem}h2{font-size:1.2rem}a{color:#a5d7fa}input{font:inherit;padding:10px;width:min(90%,600px);background:#30343b;color:inherit;border:1px solid #7b818e;border-radius:5px}article{border:1px solid #515865;border-radius:8px;margin:24px 0;padding:16px}.pair{display:grid;grid-template-columns:1fr 1fr;gap:16px}figure{margin:0}img{width:100%;height:auto;display:block}figcaption{padding:8px 0;color:#d3d5d9}table{border-collapse:collapse;width:100%}td,th{text-align:left;vertical-align:top;border-bottom:1px solid #515865;padding:8px}@media(max-width:900px){.pair{grid-template-columns:1fr}}
+</style>
+<h1>Explicit Spine Editor and Runtime export targets</h1>
+<p>November 14, 2026 · Actual native captures, original Peach Bot artwork. Select any image for the full-size PNG. The native controls, real CLI calls and actual MCP requests use one adapter policy.</p>
+<p><a href="../slices/export-targets.md">Contract and reference cases</a> · <a href="export-targets.json">Scalar evidence</a> · <a href="../MCP.md">MCP usage</a> · <a href="../slices/spine-blog-audit-20261114.md">Current Spine blog audit</a></p>
+<label for="search">Filter evidence</label><br><input id="search" type="search" placeholder="Try native, runtime, keys, MCP, reference…">
+<article data-search="reference spine before after naming placeholder keys">
+<h2>Reference behavior · Before and after</h2>
+<p>Inspection: installed Spine 4.3.26 CLI import/re-export of independently authored controls, followed by comparison of actual output references. These are data observations; no exact export-dialog styling parity is claimed.</p>
+<table><thead><tr><th>Case</th><th>Earlier single exporter / installed import</th><th>Explicit target behavior</th></tr></thead><tbody>
+<tr><td>Default lookup <code>ph</code>, actual name <code>pretty</code></td><td>Spine imports successfully but renames the direct attachment and clears Setup/swap references to <code>ph</code>.</td><td>Editor rejects before writing. Runtime preserves both identities and all references.</td></tr>
+<tr><td>Default name equal/omitted; named-skin override</td><td>Positive controls preserve lookup and visible/hide keys.</td><td>Editor remains eligible; four adapter-produced controls survive actual Spine re-import/re-export.</td></tr>
+<tr><td>Default source mesh name override</td><td>Spine also moves Deform and linked source references while clearing visible slot keys.</td><td>Runtime retains original Deform/link ownership. Editor refuses the unsafe default override.</td></tr>
+</tbody></table></article>
+<article data-search="native choice runtime editor cancel escape pending history">
+<h2>Native target choice</h2>
+<p>Inspection: actual mouse/key input. Each export starts with Editor selected; Runtime is explicit. Cancel and Escape preserve the document, pending pose and history. Authoring keys stay blocked behind the chooser.</p>
+<div class="pair"><figure><a href="export-targets-choice.png"><img src="export-targets-choice.png" alt="Native export consumer choice defaults to Spine Editor 4.3" loading="lazy"></a><figcaption>Default Editor policy validates known naming restrictions.</figcaption></figure><figure><a href="export-targets-runtime.png"><img src="export-targets-runtime.png" alt="Explicit native Runtime choice with a pending rotation excluded from export" loading="lazy"></a><figcaption>Runtime preserves names and placeholders. The warning explains that pending poses are excluded.</figcaption></figure></div></article>
+<article data-search="native rejection no output pending redo runtime successful">
+<h2>Unsafe Editor export · Explicit rejection</h2>
+<p>Inspection: actual native chooser plus task-owned Cocoa folder controls. The rejected export creates no output. The same document exports successfully for Runtime; its JSON, atlas and PNG are byte-identical to MCP and CLI output. Pending rotation 13.5 and Undo/Redo remain intact; Redo still restores 14.5 after export.</p>
+<figure><a href="export-targets-rejection.png"><img src="export-targets-rejection.png" alt="Native error identifies the unsafe original attachment name while the pending pose remains visible" loading="lazy"></a><figcaption>The native document is preserved. No attachment is silently renamed, removed or retargeted.</figcaption></figure></article>
+<article data-search="verification tests mcp cli runtime limits compatibility">
+<h2>Verification and limits</h2>
+<table><thead><tr><th>Level</th><th>Verified</th><th>Limit</th></tr></thead><tbody>
+<tr><td>Adapter / I/O</td><td>Five naming/reference cases plus no-write/no-overwrite filesystem checks; linked-mesh regressions pass.</td><td>Known Editor naming gates, not arbitrary lossless project conversion.</td></tr>
+<tr><td>Native</td><td>Six focused chooser checks plus actual selection, cancellation, pending poses, history, rejection and successful export. Owned process closed.</td><td>Cocoa folder confirmation used accessibility controls after keyboard delivery failed safely; no live desktop MCP bridge.</td></tr>
+<tr><td>CLI / actual MCP</td><td>Strict/default target handling, failed-output preservation, stale revision, unchanged sources/history and identical Runtime bundles. Seven MCP protocol workflows pass.</td><td>45 commands / 11 tools remain; this adds an export option rather than a new command.</td></tr>
+<tr><td>External runtime</td><td>Three-clip/all-skin Slot Lab: 42,120 bone, 49,032 region and 24,516 color values. Additional unweighted mesh naming/fallback fixture: 168 mesh, 336 UV and 224 region values; zero mesh/UV error.</td><td>Finite samples and existing 0.001 geometry tolerance. No pixel or full-feature equivalence.</td></tr>
+<tr><td>Integration</td><td>Formatting, all-target workspace Clippy, build and architecture pass locally, with two test workers.</td><td>Required hosted CI still gates main integration. Broader Curves, weights, sliders and workspace parity remain open.</td></tr>
+</tbody></table></article>
+<script>
+document.querySelector('#search').addEventListener('input',event=>{const words=event.target.value.toLowerCase().trim().split(/\s+/);for(const article of document.querySelectorAll('article')){const text=(article.dataset.search+' '+article.textContent).toLowerCase();article.hidden=!words.every(word=>text.includes(word));}});
+</script>
+</html>

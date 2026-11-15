@@ -1,5 +1,25 @@
 # First-slice validation — November 5, 2026
 
+## Explicit Editor/Runtime export targets — November 14, 2026
+
+Focused two-worker checks pass: adapter targets 5, I/O 1, actual MCP target 1
+(included in protocol 7), desktop chooser 6 and Color regressions 17, linked mesh 2.
+Formatting, all-target workspace Clippy, build and architecture pass. These are
+bounded checks with overlapping filters, not a full-suite or hosted CI pass.
+
+Actual native choice/cancel/Escape, typed pending rotation, blocked authoring
+keys, rejected Editor output and successful Runtime output preserve document,
+pending poses, saved baseline and the redo branch. Owned Cocoa controls confirm
+the folder path after keyboard input failed safely; the native process is closed.
+CLI/MCP strict/default target handling, no-write failures, unchanged revision and
+source hashes pass. Native/MCP/CLI JSON, atlas and PNG bytes are identical.
+Four accepted Editor controls survive installed 4.3.26 re-import/re-export with
+Setup/swap identities; the mesh control retains Deform ownership. Slot Lab and a
+minimal naming/fallback/linked mesh fixture pass the external runtime at unchanged
+0.001 geometry tolerance. No full project conversion or pixel parity is claimed.
+See [gallery](evidence/export-targets.html), [scalar evidence](evidence/export-targets.json)
+and [contract](slices/export-targets.md). Main integration still requires hosted CI.
+
 ## Slot attachment/RGBA authoring, Graph and MCP — November 14, 2026
 
 Integrated checks pass with two Cargo workers/test threads: engine slot filter

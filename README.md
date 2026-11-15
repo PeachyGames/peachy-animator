@@ -8,6 +8,11 @@ calibrated Spine behavior. See the [review gallery](docs/evidence/slot-authoring
 and [slot contract](docs/slices/slot-authoring.md). MCP exposes 45 strict commands
 and raw slot poses, including hidden slots; native format remains v22.
 
+Export now offers explicit Spine Editor 4.3 and Runtime 4.3 targets in the native
+app, CLI and MCP. Editor export rejects unsafe default attachment names before
+writing; runtime export preserves independent names and placeholder references.
+See [the export contract](docs/slices/export-targets.md).
+
 Deform keys now have named Dopesheet rows, exact retiming and clipboard editing,
 and a frame-based Graph with 0–100% transitions and editable tangents. Graph and
 Dopesheet share bottom tabs beneath the Tree. MCP exposes the same typed key

@@ -118,6 +118,7 @@ pub(super) fn editor_fixture() -> Editor {
         new_bone: String::new(),
         rename: None,
         duplicate_animation: None,
+        export_dialog: None,
         capture: None,
         capture_directory: PathBuf::new(),
         frames: 0,

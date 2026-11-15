@@ -1,0 +1,308 @@
+{
+  "scope": "Explicit SpineEditor43/Runtime43 export choice, bounded naming preservation; not full Spine compatibility",
+  "createdUtc": "2026-11-15T00:44:17.034777+00:00",
+  "baseline": "f345fdd",
+  "nativeFormat": 22,
+  "commands": 45,
+  "tools": 11,
+  "native": {
+    "passed": true,
+    "actualNative": true,
+    "targetDefaultsEditorEachTime": true,
+    "runtimeExplicit": true,
+    "numericPendingRotation": 13.5,
+    "cancelAndEscapePreserve": true,
+    "blocksKAndFrame": true,
+    "editorRejectionNoOutput": true,
+    "documentPendingHistorySavedBaselinePreserved": true,
+    "redoAfterExportWorks": true,
+    "pendingExcludedFromBundle": true,
+    "allBundleFilesIdenticalToMcp": true,
+    "imageCount": 10,
+    "folderPanel": "Owned Cocoa controls; exact absolute path confirmed, no unrelated input",
+    "nativeUiInput": "Actual owned foreground mouse/keys; Cocoa path field/confirmation used accessibility after keyboard delivery failed safely."
+  },
+  "actualMcp": {
+    "passed": true,
+    "actualStdio": true,
+    "toolCount": 11,
+    "commandCount": 45,
+    "defaultEditorRejections": 4,
+    "invalidTargetRejections": 3,
+    "nativeIdentityPreserved": true,
+    "documentRevisionHistoryPreserved": true,
+    "redoStillWorks": true,
+    "sourceHashesUnchanged": 11,
+    "editorErrors": [
+      {
+        "error": "Spine Editor export: attachment default/hand.L/fist has explicit name \"hand.L fist\" different from placeholder \"fist\"; export as Runtime43 to preserve both identities",
+        "revision": 3
+      },
+      {
+        "error": "Spine Editor export: attachment default/hand.L/fist has explicit name \"hand.L fist\" different from placeholder \"fist\"; export as Runtime43 to preserve both identities",
+        "revision": 3
+      },
+      {
+        "error": "Spine Editor export: attachment default/hand.L/fist has explicit name \"hand.L fist\" different from placeholder \"fist\"; export as Runtime43 to preserve both identities",
+        "revision": 3
+      },
+      {
+        "error": "Spine Editor export: attachment default/hand.L/fist has explicit name \"hand.L fist\" different from placeholder \"fist\"; export as Runtime43 to preserve both identities",
+        "revision": 3
+      }
+    ]
+  },
+  "actualCli": {
+    "passed": true,
+    "rejections": [
+      {
+        "case": "default",
+        "error": "Spine Editor export: attachment default/hand.L/fist has explicit name \"hand.L fist\" different from placeholder \"fist\"; export as Runtime43 to preserve both identities"
+      },
+      {
+        "case": "editor",
+        "error": "Spine Editor export: attachment default/hand.L/fist has explicit name \"hand.L fist\" different from placeholder \"fist\"; export as Runtime43 to preserve both identities"
+      },
+      {
+        "case": "unknown",
+        "error": "Export target must be spine-editor43 or runtime43"
+      },
+      {
+        "case": "missing",
+        "error": "Expected optional --target spine-editor43|runtime43"
+      },
+      {
+        "case": "extra",
+        "error": "Expected optional --target spine-editor43|runtime43"
+      },
+      {
+        "case": "repeat",
+        "error": "Expected optional --target spine-editor43|runtime43"
+      }
+    ],
+    "runtimeJsonIdenticalToMcp": true,
+    "runtimeBundleIdenticalToMcp": true,
+    "sourceUnchanged": true
+  },
+  "editorImportAcceptance": {
+    "passed": true,
+    "referenceVersion": "4.3.26",
+    "cases": [
+      {
+        "case": "default-equal",
+        "importExit": 0,
+        "exportExit": 0,
+        "setupAndSwapRefsPreserved": true,
+        "nameAndPlaceholderPreserved": true,
+        "deformRefPreserved": false
+      },
+      {
+        "case": "default-implicit",
+        "importExit": 0,
+        "exportExit": 0,
+        "setupAndSwapRefsPreserved": true,
+        "nameAndPlaceholderPreserved": true,
+        "deformRefPreserved": false
+      },
+      {
+        "case": "named-override",
+        "importExit": 0,
+        "exportExit": 0,
+        "setupAndSwapRefsPreserved": true,
+        "nameAndPlaceholderPreserved": true,
+        "deformRefPreserved": false
+      },
+      {
+        "case": "default-mesh-plain-equal",
+        "importExit": 0,
+        "exportExit": 0,
+        "setupAndSwapRefsPreserved": true,
+        "nameAndPlaceholderPreserved": true,
+        "deformRefPreserved": true
+      }
+    ],
+    "scope": "Identity/key preservation of adapter-produced accepted controls; not a full .spine or image-size converter"
+  },
+  "runtimeSlotLab": {
+    "physicsConstraints": 0,
+    "physicsValues": 0,
+    "physicsTimelines": 0,
+    "physicsFrames": 0,
+    "regionComparisons": 49032,
+    "maxRegionError": 3.0517578125e-05,
+    "meshComparisons": 0,
+    "weightedMeshComparisons": 0,
+    "maxMeshError": 0,
+    "uvComparisons": 0,
+    "maxUVError": 0,
+    "runtime": "Spine 4.3 external oracle",
+    "bones": 15,
+    "slots": 14,
+    "skins": [
+      "default",
+      "mint",
+      "peach"
+    ],
+    "clips": [
+      {
+        "name": "idle",
+        "nativeEnd": 2.5,
+        "runtimeEnd": 2.5,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default",
+          "mint",
+          "peach"
+        ],
+        "maxWorldError": 1.897810622608631e-05
+      },
+      {
+        "name": "slot-authoring",
+        "nativeEnd": 1.5,
+        "runtimeEnd": 1.5,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default",
+          "mint",
+          "peach"
+        ],
+        "maxWorldError": 1.3480708318525103e-05
+      },
+      {
+        "name": "wave",
+        "nativeEnd": 2.4000000953674316,
+        "runtimeEnd": 2.4000000953674316,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default",
+          "mint",
+          "peach"
+        ],
+        "maxWorldError": 2.6533745369761164e-05
+      }
+    ],
+    "tolerance": 0.001,
+    "maxWorldError": 2.6533745369761164e-05,
+    "comparisons": 42120,
+    "ikPoseComparisons": 0,
+    "maxIKMixError": 0,
+    "ikMixTolerance": 1e-06,
+    "drawOrderChecks": 468,
+    "imageChecks": 6129,
+    "colorComparisons": 24516
+  },
+  "runtimeMeshNames": {
+    "physicsConstraints": 0,
+    "physicsValues": 0,
+    "physicsTimelines": 0,
+    "physicsFrames": 0,
+    "regionComparisons": 224,
+    "maxRegionError": 0,
+    "meshComparisons": 168,
+    "weightedMeshComparisons": 0,
+    "maxMeshError": 0,
+    "uvComparisons": 336,
+    "maxUVError": 0,
+    "runtime": "Spine 4.3 external oracle",
+    "bones": 1,
+    "slots": 1,
+    "skins": [
+      "default",
+      "variant"
+    ],
+    "clips": [
+      {
+        "name": "swap",
+        "nativeEnd": 1,
+        "runtimeEnd": 1,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default",
+          "variant"
+        ],
+        "maxWorldError": 2.832769475542897e-16
+      }
+    ],
+    "tolerance": 0.001,
+    "maxWorldError": 2.832769475542897e-16,
+    "comparisons": 624,
+    "ikPoseComparisons": 0,
+    "maxIKMixError": 0,
+    "ikMixTolerance": 1e-06,
+    "drawOrderChecks": 104,
+    "imageChecks": 56,
+    "colorComparisons": 224
+  },
+  "checks": [
+    {
+      "name": "fmt",
+      "exit": 0,
+      "testResults": []
+    },
+    {
+      "name": "desktop-export",
+      "exit": 0,
+      "testResults": [
+        "6/6 passed, including final full-workspace target-selection regression"
+      ]
+    },
+    {
+      "name": "desktop-color",
+      "exit": 0,
+      "testResults": [
+        "test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 242 filtered out; finished in 2.40s"
+      ]
+    },
+    {
+      "name": "linked-adapter",
+      "exit": 0,
+      "testResults": [
+        "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "name": "mcp-protocol",
+      "exit": 0,
+      "testResults": [
+        "test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.88s"
+      ]
+    },
+    {
+      "name": "clippy",
+      "exit": 0,
+      "testResults": []
+    },
+    {
+      "name": "build",
+      "exit": 0,
+      "testResults": []
+    },
+    {
+      "name": "fmt-check",
+      "exit": 0,
+      "testResults": []
+    }
+  ],
+  "additionalChecks": {
+    "adapterExportTargets": 5,
+    "ioExportTargets": 1,
+    "mcpTargetStdio": 1,
+    "architectureCrates": 7,
+    "workers": 2,
+    "fullSuite": false
+  },
+  "bundleFilesIdenticalAcrossNativeMcpCli": true,
+  "allOwnedGuiClosed": true,
+  "hostedCi": {
+    "passed": false,
+    "status": "Zero registered workflows; last manual dispatch HTTP404",
+    "mainIntegration": false
+  },
+  "limits": [
+    "Default override gate is conservative across supported attachment kinds; native control cases directly cover regions/plain and linked meshes.",
+    "Accepted Editor control checks concern references; missing-image bounds and full .spine project fidelity are not established.",
+    "Runtime samples are finite; SlotLab is region-only and the additional mesh fixture is unweighted.",
+    "The target chooser is a consumer-safety control; no exact Spine export-dialog layout parity is claimed.",
+    "Original/native review inputs remain private; no artist artwork was used or modified."
+  ]
+}

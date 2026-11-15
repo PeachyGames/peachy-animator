@@ -729,3 +729,17 @@ Runtime checks use the separately installed official runtime as an external
 black box through its public API. No official code/dependency is added here.
 Native/reference screenshots remain private; committed captures contain Peachy
 and original Peach Bot artwork only. See [the scope](slices/slot-authoring.md).
+
+
+## Explicit export targets — November 14, 2026
+
+Original minimal region/mesh inputs were imported and re-exported through the
+installed Spine 4.3.26 CLI. Default implicit/equal names and a named-skin override
+serve as positive controls. Default overrides rename placeholders and clear
+Setup/swap references; valid mesh controls also move Deform/link references.
+An initial invalid linked-parent probe is excluded. The adapter adds a bounded
+Editor safety gate and explicit Runtime path rather than projecting identities.
+The public JSON format guide supplies terminology; observed current inputs and
+outputs determine this policy. See [the contract](slices/export-targets.md).
+No proprietary source, vendor example art or artist files were inspected or
+modified for these probes. Native screenshots use original Peach Bot only.

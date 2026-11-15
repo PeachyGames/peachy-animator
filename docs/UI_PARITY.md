@@ -868,3 +868,17 @@ Dash length, stroke widths and hover presentation are bounded local choices;
 this is not pixel parity. Spine's CLI enables `convex` on the Clip Lab import,
 so the original runtime-validated native polygon remains the geometry reference.
 Installed-editor screenshots stay under `.local/overlays-20261110/`.
+
+
+## Export consumer choice — November 14, 2026
+
+The native Export action now opens an explicit Editor 4.3 / Runtime 4.3 chooser
+before the directory panel. This is a consumer-safety control required by observed
+name/placeholder import behavior, not a claim to match Spine's complete export
+dialog layout. Each invocation defaults to Editor; Runtime retains independent
+identities. Cancel/Escape and background input guards preserve pending edits and
+history; a rejected Editor export creates no output. Actual native input and owned
+Cocoa controls confirm the resulting export, plus preserved pending rotation and
+redo. Native/MCP/CLI bundles match byte for byte. See the [review gallery](evidence/export-targets.html)
+and [precise reference/acceptance contract](slices/export-targets.md). Broader
+workspace, curve and current Color parity remain open in the blog audit.

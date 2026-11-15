@@ -59,13 +59,37 @@ client's working directory. Absolute paths are accepted only inside that root.
 | `history` | Undo or redo one complete edit using the shared Session history. |
 | `evaluate_pose` | Setup or a named animation at a nonnegative time in seconds, with optional skin. Returns authored locals, IK-applied locals, world matrices, raw `slotAttachments`/`slotColors`, textured vertex/UV/index buffers and bounds. |
 | `save_project` | Create a new directory containing `project.peachy` and the required loose `images/`; marks the headless Session saved. |
-| `export_project` | New Spine JSON file, or a fresh packed JSON/atlas/PNG directory inside an existing parent. Does not mark the native document saved. |
+| `export_project` | New Spine JSON file, or a fresh packed JSON/atlas/PNG directory inside an existing parent. Optional `target` defaults to `spineEditor43`; use `runtime43` to retain independent attachment names/placeholders for runtime consumers. Does not mark the native document saved. |
 
 These 11 tools publish parameter schemas, descriptions and behavior annotations through
 MCP `tools/list`. Successful results include both `structuredContent` and matching
 serialized text for older clients. Operational failures return `isError: true`
 with the current revision; malformed tool arguments use the SDK's protocol error.
 Read-only tools do not change session state.
+
+`export_project.target` accepts only `spineEditor43` or `runtime43`. Editor
+export rejects default-skin attachment name overrides and named/default
+placeholder collisions before writing an output. The error identifies the
+unsafe attachment. Runtime export preserves valid names, placeholder references
+and skin fallback without applying those Editor-only restrictions; all other
+supported-feature validation remains. Neither target rewrites the native
+document or changes revision/history. A runtime export is not an Editor import
+guarantee. Successful responses include `exportTarget` and `targetVersion`.
+
+For example, export runtime data from the current revision into a fresh file:
+
+```json
+{
+  "expected_revision": 1,
+  "kind": "json",
+  "path": "exports/runtime.json",
+  "target": "runtime43"
+}
+```
+
+The `exports` directory must already exist inside `--root`. The same target
+field applies to `kind: "bundle"`. See [the export-target contract](slices/export-targets.md)
+for installed-editor observations and the corresponding native/CLI controls.
 
 ## Create from artwork
 

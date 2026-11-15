@@ -686,9 +686,15 @@ pub fn create_project(path: &Path, doc: &Document) -> Result<(), String> {
     )
 }
 
+pub use peachy_spine::ExportTarget;
+
 pub fn export_json(path: &Path, doc: &Document) -> Result<(), String> {
+    export_json_for(path, doc, ExportTarget::SpineEditor43)
+}
+
+pub fn export_json_for(path: &Path, doc: &Document, target: ExportTarget) -> Result<(), String> {
     require_extension(path, "json")?;
-    let value = peachy_spine::export_json(doc)?;
+    let value = peachy_spine::export_json_for(doc, target)?;
     write_new(
         path,
         &serde_json::to_vec_pretty(&value).map_err(|e| e.to_string())?,
@@ -802,8 +808,17 @@ pub fn save(path: &Path, doc: &Document, asset_root: &Path) -> Result<(), String
 }
 
 pub fn export_bundle(parent: &Path, doc: &Document, asset_root: &Path) -> Result<PathBuf, String> {
+    export_bundle_for(parent, doc, asset_root, ExportTarget::SpineEditor43)
+}
+
+pub fn export_bundle_for(
+    parent: &Path,
+    doc: &Document,
+    asset_root: &Path,
+    target: ExportTarget,
+) -> Result<PathBuf, String> {
     const MAX_SIDE: u32 = 4096;
-    let value = peachy_spine::export_json(doc)?;
+    let value = peachy_spine::export_json_for(doc, target)?;
     let mut regions = vec![];
     let mut x = 2;
     let mut y = 2;
