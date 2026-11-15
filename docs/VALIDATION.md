@@ -1,14 +1,15 @@
 # First-slice validation — November 5, 2026
 
-## Grouped clipboard code-push checkpoint — November 15, 2026 (native partial)
+## Verified bounded grouped clipboard — November 15, 2026 follow-up
 
 Native v23 is unchanged at **64 commands /19 tools**. Four focused MCP unit and
 two actual-stdio cases pass. Final source checks05 pass Desktop Dopesheet 29,
 grouped clipboard 13 and leaf 15, fmt/all-target Clippy/workspace build and
 seven-crate architecture. Durable check06 adds engine group 7/timeline 28
 (overlapping) and repeats MCP four-unit/two-stdio on unchanged source. Native
-authoring/history checks pass; full native acceptance remains partial pending
-minimum-window and Save/fresh reopen. All owned processes are closed.
+authoring/history checks and the subsequent minimum/persistence follow-up pass on
+unchanged Desktop87ee; bounded native acceptance is verified. All owned processes
+are closed. The historical `da1a1da` code push was partial at the user's request.
 Actual `group-mcp-authoring-02` passes
 57 requests from a blank root/one PNG and 25 construction commands, including a
 nonzero first entry/global zero in the second, nine negative atomic cases,
@@ -49,9 +50,20 @@ bone paste keeps Tree selection and original 2/4 targets, with readonly no-shown
 key Cut/Delete; cross-animation 1 paste retains source 0 bindings, leaves clip 0
 unchanged and undoes exactly. The independent leaf-v2 native control passes Copy 2,
 retained original selection on Paste, Cut of originals and two-Undo exact recovery.
-The native baseline is fully restored. The user directed finishing checks and
-pushing first; minimum-window and Save/fresh reopen remain pending, not process
-closure. See
+The later replay starts from original baseline88e, copies four keys, seeks 50 and
+pastes to eight keys in clip 0. At 1120×740 all eight key rectangles lie inside
+RowsClip, with the full original PNG loaded/fitted and actual OS-window evidence.
+Native CmdS leaves dirty false. A fresh process reopens the exact complete typed
+Document from preclose F12, with empty Undo/Redo/clipboard, one image and an
+inspected OS-window capture.
+
+The public [native result](../examples/peach-bot/group-clipboard-native-result.peachy)
+SHA256 is `194418f07951345927cbff588a9ba867a8b957713cfc16330200493d82cf0ae3`.
+Its clip 0 paste is a different case from MCPd833's clip 1 paste; MCPd833 is unchanged.
+Saved-file versus preclose diagnostic JSON differs at 12 numeric spellings, all
+identical in f32 bits. Fresh native reload establishes exact typed Document
+equality; no raw JSON byte equality is claimed. Both owned follow-up processes
+are verified closed. This closes the two native gates left partial at `da1a1da`. See
 [scope](slices/grouped-clipboard.md), [review](evidence/grouped-clipboard.html) and
 [scalar evidence](evidence/grouped-clipboard.json).
 

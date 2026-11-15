@@ -16,6 +16,8 @@
     "constructionCommands": 25,
     "portablePaste": "examples/peach-bot/group-clipboard-paste-commands.json",
     "portablePasteSha256": "45e61dcaf97d7120969fdf25ec1ea394f66d597ec250bd826e4082fbb7b08702",
+    "nativeSavedProject": "examples/peach-bot/group-clipboard-native-result.peachy",
+    "nativeSavedSha256": "194418f07951345927cbff588a9ba867a8b957713cfc16330200493d82cf0ae3",
     "imageSha256": "6e8f281942e95b5a77774e683622dac99ea2aef706c99f3627dad968d6c2120f"
   },
   "binaries": {
@@ -296,8 +298,9 @@
   "testCountsOverlap": true,
   "cleanup": {
     "retiredTaskOwnedFiles": 121,
+    "nativeCompletionRetiredFiles": 27,
     "ownedProcessesClosed": true,
-    "retainedNativeHelpersUntil": "Minimum-window and native Save/fresh-reopen acceptance, or supersession",
+    "retainedNativeHelpersUntil": "Currently active leaf clipboard native acceptance, or supersession",
     "retainedProofUntil": "Active PR integration or supersession",
     "sharedCargoTarget": "Required by the continuing parity goal",
     "reclaimedCapacityClaim": false
@@ -345,7 +348,7 @@
   },
   "native": {
     "owner": "/root",
-    "accepted": false,
+    "accepted": true,
     "binarySha256": "87ee7d48cc92337937eef0e1cf44da517f986c1c3d2914f469df2d80339dee59",
     "actualNativeInput": true,
     "sourceOwners": [
@@ -374,13 +377,27 @@
     "undoClearsTransientKeySelection": true,
     "nativePendingBaselineEmpty": true,
     "nonemptyPendingCoverage": "Focused real-pointer and core tests only",
-    "minimumWindowPending": true,
-    "persistencePending": true,
+    "minimumWindowPending": false,
+    "persistencePending": false,
     "ownedProcessesClosed": true,
     "interruptedInputs": "Foreground guards stopped before unowned input; interrupted batches are not acceptance cases",
-    "removalCondition": "Retain selected native state/window witnesses until active PR integration or supersession; retire scratch/helpers at checkpoint",
+    "removalCondition": "Selected native proof retained until active PR integration or supersession; controls retire after bounded acceptance promotion",
     "userSteering": "Finish code checks and push first",
-    "acceptedAuthoring": true
+    "acceptedAuthoring": true,
+    "minimumInnerSize": [
+      1120,
+      740
+    ],
+    "allEightKeyTargetsInsideVisibleClip": true,
+    "nativeSaveAndFreshReopen": true,
+    "wholeTypedDocumentExact": true,
+    "exactExpectedGroupMutation": true,
+    "emptyFreshHistory": true,
+    "freshClipboardReset": true,
+    "imageCount": 1,
+    "nativeSavedProject": "examples/peach-bot/group-clipboard-native-result.peachy",
+    "nativeSavedSha256": "194418f07951345927cbff588a9ba867a8b957713cfc16330200493d82cf0ae3",
+    "nativeSaveDecimalRepresentation": "Shortest f32 JSON spellings differ from expanded capture numbers; all raw differences have identical f32 bits and fresh native whole-document equality passes"
   },
   "actualMcp": {
     "passed": true,
@@ -537,6 +554,16 @@
       "path": "grouped-clipboard-leaf.png",
       "sha256": "0d4eef1b6caae780bc3a813dc08889139cb2c15a8e6670f205b9a74c2c4a6dd8",
       "inspection": "Native input + exact document/history"
+    },
+    {
+      "path": "grouped-clipboard-minimum.png",
+      "sha256": "d23d5bef2a87994119c0b886725451a3f6062d37a94b1ec67b4916ee1335aa55",
+      "inspection": "Native visible-target inspection"
+    },
+    {
+      "path": "grouped-clipboard-reopened.png",
+      "sha256": "ad6747d2387467507666f43b8419352038971470601dbb08fcc26fc60e31d001",
+      "inspection": "Native persistence + exact document"
     }
   ],
   "limits": [

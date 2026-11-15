@@ -4,7 +4,7 @@ Target: Spine **4.3.x JSON**, with export metadata `4.3.26`. The initial externa
 oracle is separately installed `@esotericsoftware/spine-core` **4.3.13**.
 Compatibility applies to the subset below, not every 4.3 project or future patch.
 
-## Grouped clipboard — November 15, 2026 (code-push checkpoint; native partial)
+## Grouped clipboard — November 15, 2026 (bounded acceptance passed)
 
 Current native v23 has **64 commands /19 tools**. Portable grouped entries share
 one global origin, with separate source-owner receipts and complete explicit
@@ -16,9 +16,14 @@ pass. Separate other-target and cross-animation exports each pass 104 runtime
 poses at unchanged 0.001, 208 total. World maxima are 1.200913195020803e−5 and
 1.1076360095785276e−5 respectively; both region maxima are 1.52587890625e−5.
 Final source checks05/06 and bounded native authoring pass, including a leaf-v2
-selection/Cut positive control. Full native acceptance remains partial for
-minimum-window and Save/fresh reopen. All owned processes are closed; code checks/
-push precede those remaining checks at the user's direction.
+selection/Cut positive control. Minimum 1120×740 and actual Save/fresh-process
+typed Document recovery now pass on the unchanged binary, with empty history/
+clipboard and one image. All owned processes are closed. The earlier `da1a1da`
+code push left those gates partial at the user's direction; this follow-up closes
+them. The [native result](../examples/peach-bot/group-clipboard-native-result.peachy)
+is clip 0 paste; MCPd833 is clip 1. Saved-file versus preclose diagnostic JSON has
+twelve numeric spelling differences with identical f32 bits; no raw-byte equality
+is claimed.
 
 Installed observations distinguish original-owner fallback, unchanged identity
 when the same bones are reselected in reverse, and ordered mapping onto two

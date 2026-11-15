@@ -4,7 +4,7 @@ Written November 10, 2026, at the end of the import-parity push. Read this
 first, then `AGENTS.md`. The workspace rules in `../AGENTS.md` and `../CLAUDE.md`
 still apply.
 
-## Grouped clipboard code-push checkpoint — November 15, 2026 (native partial)
+## Verified bounded grouped clipboard — November 15, 2026 follow-up
 
 Current inventory is **64 commands /19 tools**, native v23 unchanged. Shared
 group copy/paste, one global origin and explicit complete owner maps are
@@ -15,16 +15,22 @@ at 0.001; maximum world errors are 1.200913195020803e−5 /1.1076360095785276e�
 both region maxima are 1.52587890625e−5. Four MCP unit/two actual-stdio tests pass.
 Final checks05/06 pass Dopesheet 29/grouped 13/leaf 15, engine group 7/timeline 28
 (overlapping) and MCP four-unit/two-stdio, plus fmt/Clippy/build/architecture 7.
-Native authoring is accepted; **full native acceptance remains partial**. See [scope](slices/grouped-clipboard.md),
+**Bounded native acceptance now passes**, including the minimum/persistence
+follow-up on the same Desktop87ee. See [scope](slices/grouped-clipboard.md),
 [review](evidence/grouped-clipboard.html) and [scalar evidence](evidence/grouped-clipboard.json).
 
 Native authoring now passes Copy/Paste/Cut, original IDs/primary preservation,
 whole-document history, another Tree bone and cross-animation binding cases.
-The user directed: **finish code checks and push first**. All owned native/MCP/
-Spine processes are now closed and the native baseline is restored. The leaf-v2
+At historical `da1a1da`, the user directed **finish code checks and push first**;
+minimum/Save/reopen were then partial. The unchanged binary now passes 1120×740
+with all eight key targets inside RowsClip/full original image, CmdS clean state
+and fresh-process complete typed Document equality, empty history/clipboard and
+one image. All owned native/MCP/Spine processes are closed. The leaf-v2
 native control also passes Copy 2, original-selection preservation on Paste and
-Cut/two-Undo recovery. **Next native checks after the code push:** minimum-window
-and Save/fresh reopen.
+Cut/two-Undo recovery. The [native saved result](../examples/peach-bot/group-clipboard-native-result.peachy)
+uses clip 0 paste; public MCPd833 uses clip 1, so their bytes are intentionally distinct.
+**Next action:** calibrate one-owner leaf fallback from all-owner/no-Tree context;
+general Tree target selection and Shift/Offset remain separate work.
 Final source checks pass; installed paste preserves original-owner
 identity even when those same bones are reselected in reverse order. Two other
 selected parents map in the measured order; MCP explicit maps reproduce it, but
@@ -35,11 +41,16 @@ claiming a complete native flow; Shift/Offset and Lock/Sync follow separately.
 The group checkpoint retires **121 enumerated task-owned disposable files** in
 `group-cleanup.json`: generated runtime bundles/scratch, superseded MCP01 outputs,
 duplicate MCP02 saved assets and redundant captures/bytecode/export helper.
-Selected final states/two OS window proofs and MCP02 recipe/requests/scalars stay
-for active PR review until integration or supersession. Reference goldens remain
-for the next Tree/Offset calibration. Two owned native-control helpers and the
-evidence builder remain for minimum/Save/fresh-reopen gates and retire when those
-gates finish or are superseded; shared Cargo target serves the continuing goal.
+The native-completion follow-up retires **27 further enumerated files** in
+`group-native-completion-cleanup.json`, after its saved result was copied byte-
+exact to the public native1944 project: private scratch, redundant persistence
+captures and logs. Six accepted F12 JSON witnesses/two OS windows with metadata,
+selected earlier states and MCP02 recipes/requests/scalars stay for active PR
+review until integration or supersession. Reference goldens remain for Tree/
+Offset calibration. Both native-control helpers and the evidence builder are
+explicitly reassigned to active leaf-clipboard implementation/native QA and
+retire after that unit is accepted or superseded; minimum/persistence is complete.
+All owned processes are closed. Shared Cargo target serves the continuing goal.
 No reclaimed-space amount is claimed. Final workspace build07 after focused
 tests restores the accepted Desktop/MCP/CLI hashes recorded in the evidence.
 

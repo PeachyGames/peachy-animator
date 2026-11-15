@@ -143,10 +143,13 @@ Source-owner bindings stay outside portable data. Preserve original key selectio
 after paste; accepted incoming IDs are diagnostics, not automatic selection.
 Actual MCP run02 passes 57 requests and separate other-target/cross-animation
 exports pass 208 runtime poses at 0.001; these do not accept native interaction.
-Final checks05/06 pass; bounded native authoring and leaf-v2 selection/Cut checks
-pass, but full native acceptance remains partial pending minimum-window and
-Save/fresh reopen. User steering is to finish code checks and push first. All
-owned processes are closed and the native baseline is restored. General
+Final checks05/06 and bounded native acceptance pass, including grouped/leaf-v2
+selection/Cut, minimum-window and actual Save/fresh reopen on unchanged Desktop87ee.
+Fresh typed Document equality is exact with empty history/clipboard and one image;
+raw JSON decimal spelling is not a byte-equality contract. The earlier `da1a1da`
+code push was partial at the user's request; its two native gates are now closed.
+All owned processes are closed. See the [native result](examples/peach-bot/group-clipboard-native-result.peachy).
+General
 Tree target multi-selection, no-Tree single-leaf fallback, Shift/Offset, Lock/Sync
 and unsupported families remain. See docs/slices/grouped-clipboard.md.
 

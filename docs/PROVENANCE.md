@@ -29,9 +29,15 @@ The observer remains an external oracle, not an application dependency or copied
 implementation. MCP run02 uses binary `0f659abb…9d112`; CLI is `a414e845…18ab6`.
 Four new MCP unit/two actual-stdio cases and final checks05/06 pass. Owned native
 input verifies grouped authoring/history and a separate leaf-v2 Copy/Paste/Cut
-selection control; complete native acceptance remains partial for minimum-window
-and Save/fresh reopen. At the user's request, code checks/push come first. All
-owned native/Spine/MCP processes are closed and the native baseline is restored.
+selection control. At the user's request, `da1a1da` first pushed code with native
+minimum/persistence explicitly partial. The later unchanged-binary follow-up
+passes 1120×740/full image/eight visible key targets, actual CmdS and exact fresh
+typed-Document recovery with empty history/clipboard and one image. Public
+[native result](../examples/peach-bot/group-clipboard-native-result.peachy) SHA256
+is `194418f07951345927cbff588a9ba867a8b957713cfc16330200493d82cf0ae3`;
+it pastes in clip 0, while the unchanged MCPd833 case pastes in clip 1. Twelve
+saved-file/diagnostic decimal-spelling differences are f32-bit equal; no raw
+JSON byte equality is inferred. All owned native/Spine/MCP processes are closed.
 General Tree multi-target UI and leaf
 fallback without a Tree owner remain gaps. Those finite geometry comparisons
 establish no broader clipboard interaction or pixel equivalence. See [scope](slices/grouped-clipboard.md) and

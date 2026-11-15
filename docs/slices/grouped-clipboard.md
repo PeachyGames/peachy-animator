@@ -1,8 +1,9 @@
 # Grouped timeline clipboard — November 15, 2026
 
-**Code-push checkpoint: source/MCP/runtime checks and bounded native authoring
-pass; full native acceptance is PARTIAL pending minimum-window and Save/fresh
-reopen.** The user directed finishing code checks and pushing first. Current
+**Bounded source/MCP/runtime and native acceptance verified**, including minimum
+layout and native Save/fresh-process reopen on the unchanged Desktop binary.
+The earlier `da1a1da` code push was explicitly partial at the user's request;
+this follow-up closes its two native gates. Current
 inventory is **64 commands /19 tools**, native v23 unchanged. This extends the
 verified [ordinary multi-owner checkpoint](multi-owner-timeline.md) at `b45d18d`;
 it does not implement Shift/Offset, general Tree multi-selection or a complete
@@ -109,8 +110,8 @@ see the [review](../evidence/grouped-clipboard.html),
 [explicit portable-paste example](../../examples/peach-bot/group-clipboard-paste-commands.json).
 Four new MCP unit/two actual-stdio tests and final affected source/build checks
 pass. Durable check06 also passes engine group 7/timeline 28 (overlapping) and
-repeats the MCP cases on unchanged source. Native authoring passes; full native
-acceptance remains partial for minimum-window and Save/fresh reopen.
+repeats the MCP cases on unchanged source. Bounded native authoring, minimum-window
+and persistence acceptance now pass.
 
 Separately, runtime 4.3.13 comparisons pass 104 poses for other-target output and
 104 for cross-animation output: 208 total at unchanged 0.001 tolerance. Combined
@@ -155,19 +156,49 @@ A separate version 2 leaf control verifies Copy 2, original selection retained o
 Paste, Cut removing originals and exact two-Undo recovery. This does not resolve
 the no-Tree fallback gap below.
 
-The user chose **finish code checks and push first**. The native working document
-is fully restored to its baseline, the owned Peachy window is closed by verified
-exact PID, and all owned Spine/MCP children are closed. **Minimum-window and
-native Save/fresh reopen remain pending**; process closure is verified.
+At historical `da1a1da`, the user chose **finish code checks and push first**.
+Native authoring was accepted and its baseline restored/owned processes closed;
+minimum-window and Save/fresh reopen were explicitly partial at that checkpoint.
+
+The later follow-up uses the exact same Desktop
+`87ee7d48cc92337937eef0e1cf44da517f986c1c3d2914f469df2d80339dee59`, without a source
+change or rebuild. It opens baseline88e, copies four keys, seeks Frame 50 and
+pastes to eight keys in animation 0. At 1120×740 every key rectangle lies inside
+RowsClip, with the full original PNG loaded/fitted and an inspected OS-window
+capture. Actual native CmdS leaves the document clean.
+
+A fresh process reopens the **complete typed Document exactly equal** to the
+preclose F12 document, with empty Undo/Redo/clipboard, one image and an inspected
+OS-window capture. The public
+[native saved result](../../examples/peach-bot/group-clipboard-native-result.peachy)
+has SHA256 `194418f07951345927cbff588a9ba867a8b957713cfc16330200493d82cf0ae3`.
+That case pastes into `clipboard` animation 0; the unchanged public MCPd833 case
+pastes into `retime` animation 1. They are separate accepted results, not a
+native-versus-MCP byte-equality comparison.
+
+Saved-file versus preclose diagnostic JSON has 12 numeric spelling differences;
+every differing value has identical f32 bits. Fresh native reload establishes
+typed-data equality. **No raw JSON byte equality is claimed.** Both follow-up
+owned processes and all earlier owned Spine/MCP children are verified closed.
+These results close the bounded minimum/persistence gates without claiming
+general Tree target mapping, pixel parity or the broader feature backlog.
+The native pending baseline is empty; nonempty pending preservation has focused
+event/core coverage only.
 
 The code-push checkpoint retires **121 enumerated disposable task files** under
 the existing `group-cleanup.json` lifecycle record, including generated bundles,
 scratch, superseded/duplicate MCP outputs and redundant captures/helpers.
-Selected final native states/two OS window proofs and MCP02 recipes/requests/
-scalars remain for active PR review until integration or supersession. Original
-reference goldens remain for next Tree/Offset calibration. The two owned native
-control helpers and evidence builder remain for minimum/Save/fresh-reopen QA and
-retire at those gates' completion or supersession. Shared Cargo target supports
+The native-completion follow-up retires **27 more enumerated task files** in
+`group-native-completion-cleanup.json`. Its private saved result first matches
+the new public native1944 project byte-for-byte; duplicate scratch, persistence
+captures and logs then retire. Six accepted F12 JSON witnesses and two OS-window
+proofs/metadata, selected earlier states and MCP02 recipes/requests/scalars remain
+for active PR review until integration or supersession. Original reference goldens
+remain for next Tree/Offset calibration. Both native-control helpers and the
+evidence builder are explicitly reassigned to active leaf-clipboard implementation/
+native QA, retiring after that unit is accepted or superseded. This retention
+does not imply leaf implementation acceptance; grouped minimum/persistence gates
+are complete and all owned processes are closed. Shared Cargo target supports
 the ongoing goal. Logical cleanup counts are not reclaimed-space measurements.
 
 General Tree multi-selection is absent, so native two-other-bone target mapping

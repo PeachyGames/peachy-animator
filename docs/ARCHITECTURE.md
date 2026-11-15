@@ -282,9 +282,11 @@ system clipboard is not an engine dependency or native-project field.
 The new editor-local grouped path uses a version 3 OS envelope and separate
 original-owner bindings; leaf version 2 remains unchanged. Paste keeps existing
 selection and records accepted IDs as diagnostics, not automatic selection.
-Final checks05/06 and bounded grouped/leaf-v2 native authoring pass; full native
-acceptance is partial for minimum-window and Save/fresh reopen. Owned processes
-are closed. General Tree multi-target
+Final checks05/06 and bounded grouped/leaf-v2 native acceptance pass, including
+the unchanged-binary minimum-window and Save/fresh-process follow-up. Typed
+Document recovery is exact; diagnostic/file decimal spelling is not raw-byte
+equality. The [native result](../examples/peach-bot/group-clipboard-native-result.peachy)
+is distinct from the MCP clip1 case. Owned processes are closed. General Tree multi-target
 mapping and a source receipt for single-leaf no-Tree fallback remain absent.
 Actual MCP run02 and separate 208-pose runtime geometry checks validate the shared
 data path; they do not close native input acceptance. The exact pointer regression

@@ -1,6 +1,6 @@
 # Spine workspace and interaction parity
 
-## Grouped clipboard code-push checkpoint — November 15, 2026 (native partial)
+## Verified bounded grouped clipboard — November 15, 2026 follow-up
 
 Current inventory is **64 commands /19 tools**, native v23 unchanged. Desktop
 group Copy/Cut/Paste uses portable globally relative entries and editor-session
@@ -9,8 +9,8 @@ remain unchanged. Shared engine/MCP paste accepts explicit complete target maps.
 Actual MCP run02 passes 57 requests and focused four-unit/two-stdio checks.
 Separate target/cross-animation exports pass 208 runtime poses at 0.001; that
 geometry evidence does not establish mouse/keyboard behavior.
-Final checks05/06 pass; **native authoring is accepted while full native acceptance
-is partial pending minimum-window and Save/fresh reopen**.
+Final checks05/06 and **bounded native acceptance pass**, including the subsequent
+minimum-window and Save/fresh-reopen checks on unchanged Desktop87ee.
 
 Final Desktop `87ee7d48…dee59` now passes four-key/two-entry Copy, Cmd-toggle and
 ruler Frame 50 selection/primary retention. Paste creates 50/70 and 57/80 while retaining
@@ -22,9 +22,15 @@ Tree selection; Cut/Delete without shown selected keys do not edit. Cross-
 animation paste retains source 0 bindings, leaves clip 0 unchanged and undoes
 exactly. A separate leaf-v2 control passes Copy2, original selection retention on
 Paste, Cut of the originals and exact recovery after two Undo operations.
-All owned processes are closed and the native baseline is restored. At the user's
-direction code checks/push precede native minimum-window and Save/fresh reopen;
-those two checks remain pending.
+At 1120×740 all eight key rectangles are inside RowsClip and full original artwork
+is loaded/fitted, with actual OS-window proof. Native CmdS clears dirty state;
+fresh-process reopen matches the preclose typed Document exactly, with empty
+Undo/Redo/clipboard and one image. The [native saved result](../examples/peach-bot/group-clipboard-native-result.peachy)
+pastes in clip 0; the MCP fixture pastes in clip 1. Saved-file versus preclose
+diagnostic JSON has twelve decimal-spelling differences with identical f32 bits,
+so raw-byte JSON equality is not claimed.
+All owned processes are closed. The earlier `da1a1da` code-push checkpoint was
+explicitly partial; this follow-up closes its two remaining native gates.
 
 Installed group paste keeps original selected keys. Paste at 50 followed by Cut
 removes the four original keys, leaving only driver 50/70 and follower 57/80.

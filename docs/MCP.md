@@ -8,9 +8,10 @@ evaluation and file services as the desktop. It uses the official
 
 The current native format is **v23**, with **64 commands / 19 tools**. Shared
 grouped clipboard copy/paste adds one global origin and explicit target mapping.
-Actual MCP, final checks05/06 and bounded native authoring pass. This code-push
-checkpoint leaves full native acceptance partial for minimum-window and Save/
-fresh reopen; all owned processes are closed. Earlier ordinary acceptance remains verified. Shift/Offset,
+Actual MCP, final checks05/06 and bounded native acceptance pass, including the
+later minimum-window and native Save/fresh-reopen checks on the same binary.
+The earlier `da1a1da` push was partial; those gates are now closed. All owned
+processes are closed. Earlier ordinary acceptance remains verified. Shift/Offset,
 Lock/Sync, general Tree target multi-selection and no-Tree leaf fallback remain open.
 
 Each server process owns an independent headless document and history. It does
@@ -143,7 +144,8 @@ five rejected read-only queries, exact mixed movement/history/reopen and 12 pose
 samples. Baseline and moved exports each pass 104 external-runtime poses at 0.001.
 Separate native ordinary-move acceptance passes. At that historical 63/18
 checkpoint mixed Copy explicitly refused; the grouped continuation below now adds
-shared copy/paste, with its native acceptance pending. Shift/Offset, Lock/Sync
+shared copy/paste, with bounded native minimum/persistence acceptance verified.
+Shift/Offset, Lock/Sync
 and general Tree multi-selection remain open. See
 [scope](slices/multi-owner-timeline.md), [review](evidence/multi-owner-timeline.html)
 and [scalar evidence](evidence/multi-owner-timeline.json).
@@ -193,8 +195,11 @@ pose queries. Separate other-target/cross-animation exports pass 104 external
 runtime poses each, 208 total at 0.001 (world maxima 1.200913195020803e−5 /
 1.1076360095785276e−5; both region maxima 1.52587890625e−5). Four new unit/two
 actual-stdio tests and final checks05/06 pass. Native authoring passes, including
-the leaf-v2 selection/Cut control; minimum-window and Save/fresh reopen remain
-pending. All owned processes are closed. The user requested code checks/push first. The public
+the leaf-v2 selection/Cut control. The subsequent 1120×740 and native Save/fresh-
+reopen proof verifies complete typed Document equality with empty history/
+clipboard and one image. The [native clip0 result](../examples/peach-bot/group-clipboard-native-result.peachy)
+differs from the MCP clip1 case; raw JSON byte equality is not claimed. All owned
+processes are closed. The earlier `da1a1da` code-push partial state is historical. The public
 [Grouped Clipboard Lab](../examples/peach-bot/group-clipboard-bot.peachy),
 [scope](slices/grouped-clipboard.md), [review](evidence/grouped-clipboard.html) and
 [scalar evidence](evidence/grouped-clipboard.json) distinguish implementation

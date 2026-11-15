@@ -6,10 +6,13 @@ explicit entry-to-target mappings through the engine and MCP. The actual blank-
 root/one-PNG run02 passes **57 requests**, nine negative atomic cases, history/
 reopen and 12 pose queries. Separate other-target/cross-animation exports pass
 **208 runtime poses** at 0.001; region error is at most 1.52587890625e−5.
-**Code-push checkpoint:** final source checks and native Copy/Paste/Cut/selection/
-history cases pass. All owned processes are closed. At the user's request, code
-checks/push come first; **native minimum layout and Save/fresh reopen remain
-pending**. See [scope](docs/slices/grouped-clipboard.md),
+**Bounded native acceptance now passes**, including minimum 1120×740, actual Save
+and fresh-process exact typed-document recovery with empty history/clipboard and
+one image. All owned processes are closed. The earlier `da1a1da` code push left
+those two gates pending at the user's request; this follow-up closes them on the
+same binary. The [native result](examples/peach-bot/group-clipboard-native-result.peachy)
+pastes in clip 0; the MCP lab pastes in clip 1. Raw JSON byte equality is not claimed.
+See [scope](docs/slices/grouped-clipboard.md),
 [review](docs/evidence/grouped-clipboard.html) and
 [scalar evidence](docs/evidence/grouped-clipboard.json). General Tree target
 multi-selection, leaf fallback without a Tree owner, Shift/Offset and Lock/Sync
@@ -346,7 +349,8 @@ committed edit is one undo step.
 The bounded all-owner continuation shows represented keyed owners together when
 no editable Tree owner is selected. Ordinary typed-key moves can cross owners;
 the earlier leaf clipboard remains unchanged while grouped copy/paste is now
-implemented with native acceptance pending. Shift currently bypasses snapping;
+implemented with bounded native minimum/persistence acceptance verified.
+Shift currently bypasses snapping;
 Spine-style Shift ripple and cycle Offset remain separate unimplemented controls.
 
 The workspace follows Spine’s default arrangement: viewport left, Tree and item
