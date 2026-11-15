@@ -1111,8 +1111,9 @@ the saved document exactly. Canonical Cocoa Open loads one image/empty history,
 recalls source Min8 and Undo restores canonical bytes/no dirty state. Final
 presentation fits all original art at180% with four fields visible. Edited cleared
 and canonical editor/minimum images are labeled as different acceptance states.
-A changed held-range preview was not established (the native field stayed8);
-only ten headless event cases claim that cancellation coverage. Foreground guards
+The earlier November 15 held-range attempt stayed8 and is excluded from native
+cancellation evidence; the later follow-up below closes that specific gap.
+Ten headless event cases remain independent coverage. Foreground guards
 remained active without other-app input. All owned processes are closed and
 reference bounds restored.
 
@@ -1130,7 +1131,8 @@ hardened `6b638bb1…be3f` independently reopens the canonical public project in
 normal foreground window, with one image/empty history/no error, unchanged source
 and verified close; its report SHA256 is
 `03db6462eaf67516a55b5338821dade4e5d0799bd60964f037d25cef0ea303ea`.
-No additional interactive replay is claimed. Final MCP binary SHA256 is
+That reopening was read-only; the subsequent held-range interaction is recorded
+separately below. Final MCP binary SHA256 is
 `fa9525d4abfb2ce9edb565fc03a004d3ffe253e8e0bf2d0a61756520c2ea83ed`;
 run04 report SHA256 is
 `b4049a31cd03b2a1e8a19d32234586b6fdc9997d29221017f76d1be04f8f6e94`.
@@ -1138,4 +1140,32 @@ The10-request final wire report SHA256 is
 `3f0f56f0322384d1905c2ef1760aa2e58db1ce34c73bf72288252bc8955c3593`.
 Final CLI `8a0ad781…0768d` repeats both104-pose geometry checks with unchanged
 errors. Run04 exports are byte-identical to run03, so the installed oracle input
-is unchanged; this does not erase strict authored loss or native QA limits.
+is unchanged; this does not erase strict authored loss or broader native QA limits.
+
+### Slider held-range native follow-up — November 15, 2026, 19:58 UTC
+
+An actual guarded native run on commit `63eb72590cb76dba39654772b5cf78a1d5a94c87`,
+binary `6b638bb1236deb03e3c22515193078eb30ade65c6ae9033446fb4f17fe3bbe3f`,
+starts with an unfocused Source Min field. Staged absolute pointer moves change
+the document preview **10→13**, with `active.numeric=false`; hidden manual Time,
+Mix, pending poses and selection remain unchanged. Escape while held restores
+the exact document and redo. Continued movement is blocked until Primary Up;
+a fresh drag/release commits and has exact one-step Undo/Redo. Final document
+and source file retain SHA256
+`60b75a59d56d4df1b41120dbb9e3d29abe187e3a0ceff7a1c287aa32f220b109`.
+
+The private `source-workflow/held-range-native-report.json` SHA256 is
+`209175998f59bbf9501fdb499dd089b7c20e0ee3e5f530b5e606b6d651bceba6`.
+Public original-art captures are
+[the changed preview](evidence/slider-range-drag.png), SHA256
+`93813e434176ababc5174835add518873088d63d9a33ddc33ba49351e40259cd`,
+and [Escape restoration](evidence/slider-range-escape.png), SHA256
+`3e753298a0b7974e80ca0d23e1793753179d327650aa0402f2c7982e1343c228`.
+The earlier unchanged field8 trial stays historical and is not retroactively
+counted. Acceptance uses changed model state and exact restoration, not raw CG
+button-state observations alone. Exact process identity, foreground and normal
+window guards remain active; the owned process is closed. Three owned scratch/
+helper/bytecode files are retired under `held-range-task.json`; selected scalar,
+window and image witnesses remain for active PR review until integration or
+supersession. No editor/runtime implementation was inspected, no Rust code or
+API count changed, and no full Spine, pixel or lossless conversion is claimed.

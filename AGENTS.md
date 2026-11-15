@@ -102,8 +102,9 @@ Native v23 adds strict Slider constraints and required `Animation.slider_tracks`
 The v22 decoder inserts empty lists in memory; keep historical public fixtures'
 bytes unchanged. The verified manual checkpoint has 58 commands /14 MCP tools;
 the source/creation continuation has 63/17. Actual MCP/source geometry checks
-and bounded native creation/source checks pass. A genuinely changed held-range
-preview still has headless coverage only. Slider
+and bounded native creation/source checks pass. Native held-range Source Min
+10→13, Escape restoration of document/redo, continued-held blocking, release
+and fresh-gesture one-step Undo/Redo also pass on the final wire-hardened build. Slider
 Time/Mix authoring shares Session pending/history and typed timeline/curve
 operations. One ordered
 `AppliedState` holds effective bones, inheritance, constraints and slot domains;

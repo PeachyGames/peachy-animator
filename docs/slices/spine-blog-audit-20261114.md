@@ -5,10 +5,22 @@ Public sources were checked November 14 after the slot authoring commit
 global draw-order and November 15 multi-vertex Direct continuations below.
 The bounded November 15 world X-to-Rotate continuation also passes native/MCP/
 runtime/Editor acceptance; its remaining feature and resize limits stay explicit.
-The later Slider checkpoint adds native v23,58 commands/14 tools, manual
-authoring and ordered evaluation; actual native/MCP and sampled geometry checks
-pass within the [measured scope](slider-constraints.md). Creation/source workflow,
-precision failures and lossy authored interchange remain open.
+The later Slider checkpoints use native v23 and now63 commands/17 tools.
+Manual/source authoring, semantic prepend/remapping, range memory and ordered
+evaluation pass within the [measured scope](slider-constraints.md). Native changed
+range preview10→13, held Escape/block/release and one-step commit/Undo/Redo are
+also verified. The earlier58/14 evidence remains historical. Precision failures
+and lossy authored interchange remain open.
+
+The November15 primary-source refresh still lists4.3.27 Unreleased and4.3.26 as
+the installed release baseline; no newer release is evidenced. The next tutorial
+artist workflow is multi-owner Dopesheet timing from Wind, including measured
+Shift/Offset and group clipboard behavior. Raw mixed-owner Move/Delete already
+exist; single-owner native selection/drag/copy boundaries still limit this flow.
+The [Dopesheet](https://esotericsoftware.com/spine-dopesheet) and
+[Keys](https://esotericsoftware.com/spine-keys#Offset) guides distinguish uniform
+retiming from wrapping Offset/seam insertion and selection-scoped original-key
+memory. Installed-editor calibration is required before implementing Offset.
 The November 15 update reconciles accepted local evidence without a new web
 fetch. This is a backlog and reference record, not a claim of full Spine parity.
 Installed-editor observations and native screenshots are recorded

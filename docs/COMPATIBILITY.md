@@ -45,12 +45,17 @@ typed endpoints, property-cache restoration, Local/Clear and genuine Mix/Clear
 capture pass. Minimum1120×740 SourceMax edit/Undo, draft99/Save/shared decode,
 canonical Cocoa Open/one image/empty history and exact canonical Undo also pass.
 The final minimum presentation fits the full original art. All owned processes
-are closed and reference bounds are restored. A changed held-range preview is
-not established natively; ten headless event cases provide that coverage.
+are closed and reference bounds are restored. A separate final-build native
+held-range check changes Source Min10→13 with a nontext drag, preserves hidden
+Time/Mix/pending/selection, and verifies exact Escape/redo restoration while held,
+continued movement blocking, release and fresh-gesture one-step Undo/Redo. The
+source project remains unchanged. The earlier November 15 field-stayed8 attempt
+is retained as an unchanged trial, not cancellation evidence.
 
 The final wire-hardened desktop performs a fresh read-only canonical reopen with
 one image/empty history/no error and closes without changing the source. This is
-separate from the detailed earlier interactive replay. Final104-pose runtime and
+separate from the detailed earlier interactive replay and the later held-range
+check. Final104-pose runtime and
 returned checks pass with the same errors; run04 Editor/Runtime JSON is byte-
 identical to run03, preserving the installed-editor oracle input.
 

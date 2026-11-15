@@ -471,7 +471,7 @@
       "interpretation": "Returned geometry passes unchanged tolerance, while hidden manual baseline, target minimum, Mix Bezier control and document name change. Current geometry does not establish later Clear behavior or exact authored interchange."
     },
     "native": {
-      "status": "Passed for the stated bounded native cases; changed held-range preview not established",
+      "status": "Passed for the stated bounded native cases, including the separate changed held-range cancellation/commit follow-up",
       "actualOSInput": true,
       "firstBuildCreationUndoRedoAndSelectionClear": true,
       "firstBuildTypedFrame45": true,
@@ -495,7 +495,41 @@
       "minimumActualSourceMax2UndoExact": true,
       "numericDraft99SaveExcluded": true,
       "savedDocumentSharedMcpDecodeExact": true,
-      "heldCancellation": {"headlessEventCases": 10, "nativeChangedRangePreviewEstablished": false, "nativeAttemptFieldStayedAt": 8},
+      "heldCancellation": {
+        "headlessEventCases": 10,
+        "nativeChangedRangePreviewEstablished": true,
+        "earlierAttempt": {
+          "date": "2026-11-15",
+          "fieldStayedAt": 8,
+          "changedPreviewEstablished": false,
+          "countedAsCancellationPass": false
+        },
+        "nativeFollowup": {
+          "observedAtUtc": "2026-11-15T19:58:25Z",
+          "startingCommit": "63eb72590cb76dba39654772b5cf78a1d5a94c87",
+          "binarySha256": "6b638bb1236deb03e3c22515193078eb30ade65c6ae9033446fb4f17fe3bbe3f",
+          "reportSha256": "209175998f59bbf9501fdb499dd089b7c20e0ee3e5f530b5e606b6d651bceba6",
+          "actualOSInput": true,
+          "stagedAbsolutePointerMoves": true,
+          "baselineFrom": 10.0,
+          "changedPreviewFrom": 13.0,
+          "numericDragMode": false,
+          "setupTimeUnchanged": true,
+          "mixAndPendingAndSelectionUnchanged": true,
+          "escapeRestoresExactDocumentAndRedo": true,
+          "continuedHeldMovementBlocked": true,
+          "primaryReleaseClearsBlock": true,
+          "freshGestureCommitOneUndo": true,
+          "redoRestoresExactCommittedDocument": true,
+          "finalDocumentRestored": true,
+          "sourceFileUnchanged": true,
+          "projectSha256": "60b75a59d56d4df1b41120dbb9e3d29abe187e3a0ceff7a1c287aa32f220b109",
+          "rawCgButtonStateWasNotAcceptanceEvidence": true,
+          "ownedProcessClosed": true,
+          "codeOrApiInventoryChanged": false,
+          "passed": true
+        }
+      },
       "freshFinalReopen": true,
       "actualOwnedCocoaOpen": true,
       "freshOpenImages": 1,
@@ -542,7 +576,9 @@
     "screenshots": [
       {"file": "slider-source-editor.png", "publicationPending": false, "sha256": "61d3a9e049062877732190abffe91c866404d0d55d72b9d0fe014bb61ca62a84", "state": "Canonical Rotate10..100 to Frames20..90"},
       {"file": "slider-source-cleared.png", "publicationPending": false, "sha256": "061442ea1d9a6eaaf1c61896a14184a915c16bc33a061987d8251ad1b9790869", "state": "Separate edited Local-false Clear case, baseline Frame35.56"},
-      {"file": "slider-source-minimum.png", "publicationPending": false, "sha256": "608de48eb075dbc6fee20127226ab5dade0e10c5a6495d523e1477a4f25f4d51", "state": "Canonical fitted180 percent minimum presentation; actual edit/Undo has separate witness"}
+      {"file": "slider-source-minimum.png", "publicationPending": false, "sha256": "608de48eb075dbc6fee20127226ab5dade0e10c5a6495d523e1477a4f25f4d51", "state": "Canonical fitted180 percent minimum presentation; actual edit/Undo has separate witness"},
+      {"file": "slider-range-drag.png", "publicationPending": false, "sha256": "93813e434176ababc5174835add518873088d63d9a33ddc33ba49351e40259cd", "state": "Actual held document preview Source Min10 to13; active.numeric=false; hidden Time/Mix/pending/selection unchanged"},
+      {"file": "slider-range-escape.png", "publicationPending": false, "sha256": "3e753298a0b7974e80ca0d23e1793753179d327650aa0402f2c7982e1343c228", "state": "Escape while held restores exact document/redo and Source Min10; continued movement blocked until Primary Up"}
     ],
     "inspection": {
       "staticGallery": true,
@@ -573,6 +609,8 @@
     },
     "cleanup": {
       "taskOwnedFilesRetired": 25,
+      "heldRangeFollowupRetiredFiles": 3,
+      "heldRangeFollowupRetiredScope": "Task-owned scratch project, native input helper and its owned bytecode; selected scalar/window/image witnesses retained for active PR review",
       "retiredScope": "Duplicate native input/edited acceptance copy+backup, unused run04 acceptance copy, native helpers+owned bytecode, failed-run bulk replies reduced to exact selected rejection witnesses, duplicate step captures",
       "retainedDependency": "Selected final recipe/transcript/scalars/original calibration/native/runtime/interchange evidence for active PR review",
       "retentionEnd": "Integration or supersession",
@@ -580,7 +618,7 @@
       "allOwnedProcessesClosed": true
     },
     "limits": [
-      "A genuinely changed held-range preview is not established by native input; ten headless event cases cover cancellation",
+      "Multi-owner Dopesheet group timing and Wind Offset/Shift semantics await separate native calibration and integration",
       "Hidden manual Time is lost by installed interchange; geometry success is not future editing equivalence",
       "Two manual adversarial precision failures and measured Loop/Sequence refusals remain open",
       "Physics/events and remaining Deform/Sequence attachment cases remain guarded",

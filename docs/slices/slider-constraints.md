@@ -80,8 +80,8 @@ probe shows Frame **27** although a later Transform leaves the source rotation a
 the final pose. Shared own-turn metadata distinguishes incoming/applied settings,
 sample time and eligibility without another solve. The current continuation's
 native layout, typed input, history, Save/Open and minimum size pass within the
-stated scope. A changed held-range preview remains unproven with native input;
-its cancellation coverage is headless only. No full-parity claim follows.
+stated scope. The separate native held-range follow-up below also proves a
+changed preview and its cancellation/commit lifecycle. No full-parity claim follows.
 
 ### Current source-study results
 
@@ -134,9 +134,10 @@ edited native acceptance case showing baseline Frame35.56.
 
 Foreground guards stopped earlier misfocused attempts without input to another
 app. Exact owned-PID/key-window activation and native frame pacing remain required.
-The held-range attempt did not establish a changed preview (the field stayed8),
-so it is not counted as a native Escape pass; ten headless event cases cover that
-lifecycle. All owned reference/native/MCP processes are closed and reference
+The earlier November 15 held-range attempt did not establish a changed preview
+(the field stayed8), so it remains excluded from native Escape evidence. The
+later follow-up below closes that gap; ten headless event cases remain independent
+coverage. All owned reference/native/MCP processes are closed and reference
 bounds are restored. Cleanup retires25 task-owned helpers, duplicate inputs and
 redundant outputs; selected original cases, transcripts and witnesses remain for
 active PR review until integration/supersession. The shared target supports the
@@ -148,8 +149,27 @@ empty history, no evaluation error, unchanged project and verified close. Detail
 interactive checks above belong to binary `61db0591…5a867`; only source-range
 wire decoding changed afterward. Final MCP binary is `fa9525d4…a83ed` and CLI is
 `8a0ad781…0768d`. Run04 source exports are byte-identical to run03; both104-pose
-runtime and returned-geometry checks pass again with the same errors. This does
-not imply an additional interactive replay or native changed-held-preview pass.
+runtime and returned-geometry checks pass again with the same errors. That
+read-only reopening does not itself establish the separate held-range replay.
+
+### Changed held-range native follow-up — November 15, 2026
+
+On the final wire-hardened binary `6b638bb1…be3f`, fresh unfocused native input
+changes Source Min **10→13** in the document preview, with
+`active.numeric=false`. Hidden manual Time, Mix, pending poses and selection
+remain unchanged. Escape while Primary is still held restores the exact document
+and redo; continued held movement is blocked. Primary Up clears the block, and a
+fresh drag/release commits with exact one-step Undo and Redo. The final document
+returns to the canonical source hash and its source file is unchanged.
+
+The paired [changed preview](../evidence/slider-range-drag.png) and
+[Escape restoration](../evidence/slider-range-escape.png) captures show this
+specific actual OS-input case. The retained scalar report SHA256 is
+`209175998f59bbf9501fdb499dd089b7c20e0ee3e5f530b5e606b6d651bceba6`.
+The exact owned process is closed; its scratch project, input helper and owned
+bytecode are retired. Selected scalar/window/image witnesses remain for active
+PR review. No Rust change, new command/tool, format migration, pixel comparison
+or lossless-interchange claim follows from this QA checkpoint.
 
 The source-study installed roundtrip compares104 geometry poses at0.001, maximum
 world error1.3513448465118927e−5 and region error1.52587890625e−5. Strict equality
@@ -439,8 +459,8 @@ nor tolerance is weakened to make the strict report pass.
 
 ## Open acceptance and feature obligations
 
-- Native evidence of a genuinely changed held-range preview and its cancellation;
-  current coverage for that interaction is headless only.
+- Multi-owner Dopesheet group timing and the Wind tutorial's Offset/Shift behavior
+  need their own native calibration and shared/UI integration.
 - Physics settings/resets and events through referenced animations; no simulation
   or event-firing claim follows from existing data-only support.
 - Linked/path/clipping Deform and attachment switches with incoming Deform;

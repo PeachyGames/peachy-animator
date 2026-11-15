@@ -32,20 +32,27 @@ fixed with object-only decoding; totals are63 engine Slider,33 desktop,16 schema
 Final run04 repeats141 requests/15 samples and the same canonical hash after wire
 hardening. A separate10-request check proves array rejection preserves document/
 history/revision and valid-object Undo is exact. Final read-only native reopen
-also passes on `6b638bb1…be3f`; detailed interactions remain the `61db0591…5a867`
-evidence. Both104-pose geometry checks rerun with unchanged errors. All owned processes are closed
+also passes on `6b638bb1…be3f`; detailed source interactions remain the `61db0591…5a867`
+evidence. A separate final-build native held-range check now proves Source Min
+**10→13**, `active.numeric=false`, unchanged hidden Time/Mix/pending/selection,
+exact held Escape/redo restoration, continued movement blocking, release and a
+fresh committed gesture with exact one-step Undo/Redo. The source hash stays
+unchanged. Both104-pose geometry checks retain their earlier unchanged errors. All owned processes are closed
 and reference bounds restored; no other-app input occurred. Final fitted
 1120×740 presentation has one image/empty history/full original art.
 
-Next feature action is native-only QA for a genuinely changed held-range preview
-and cancellation, or a bounded calibrated remaining Deform/event reference-domain
-slice. The existing native held attempt stayed unchanged and is not a pass;
-ten headless event checks cover that lifecycle. Do not reopen creation/source as
-generically pending. Source interchange geometry passes104 poses, but four strict
+**Next feature action: calibrate multi-owner Dopesheet group selection/timing and
+the Wind tutorial's Offset/Shift behavior in the installed editor.** The shared
+foundation is separate ongoing work; do not infer accepted UI or Offset semantics
+from it. Remaining Deform/event reference-domain transitions follow later.
+The earlier November 15 held attempt stayed at8 and remains an excluded trial;
+the subsequent native replay closes changed-preview cancellation. Do not reopen
+creation/source as generically pending. Source interchange geometry passes104 poses, but four strict
 authored differences include loss of hidden manual Time. Preserve that failure,
 two raw `1e30` precision failures, Loop/counter refusals and Physics/events/remaining
 Deform guards. Do not repeat hosted-CI dispatch, restart the canceled female
-fullcheck or run LM Studio. Cleanup records25 retired disposable task files;
+fullcheck or run LM Studio. Cleanup records25 original disposable task files plus
+three held-range helper/scratch files retired after verified closure;
 selected recipes/transcripts/original calibration/native/runtime/interchange
 witnesses retain an active PR-review dependency until integration/supersession.
 The shared target remains needed by the continuing goal. No new task folder,

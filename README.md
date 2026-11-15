@@ -13,8 +13,12 @@ the manual baseline; changing Mix to 25% captures the observed 1.5-second
 fallback. Open retains the remembered ScaleX range, and Save cancels an owned
 draft while preserving accepted data. At 1120×740, the four endpoints remain
 reachable and an endpoint edit/Undo passes. Final Fit/reopen has one image and
-empty history; the public project stays unchanged. Held range-preview behavior
-has headless event coverage only; a changed native held preview was not established.
+empty history; the public project stays unchanged. A separate native held-range
+check changes Source Min **10→13**, then Escape restores the exact document and
+redo while the pointer remains held. Continued movement stays blocked until
+release; a fresh drag commits with exact one-step Undo/Redo. See the paired
+[changed preview](docs/evidence/slider-range-drag.png) and
+[Escape restoration](docs/evidence/slider-range-escape.png).
 
 The actual **141-request / 15-pose-query** MCP workflow produces the original
 [Slider Source Lab](examples/peach-bot/slider-source-bot.peachy).

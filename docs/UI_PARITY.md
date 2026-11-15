@@ -37,8 +37,14 @@ Rotate10..100 → Frames20..90; the [cleared capture](evidence/slider-source-cle
 shows a separate edited Local-false clear/baseline35.56 case. The
 [fitted minimum capture](evidence/slider-source-minimum.png) shows full original
 art at180%, one image and empty history. It is separate from the endpoint-edit
-witness. A changed native held-range preview was not established; ten headless
-event cases cover cancellation. Foreground guards remain active, no other-app
+witness. A separate final-build native held-range check now changes Source Min
+**10→13** with `active.numeric=false`, preserving hidden Time, Mix, pending poses
+and selection. Escape while held restores the exact document and redo;
+continued movement stays blocked until Primary Up. A fresh gesture commits with
+exact one-step Undo/Redo. The [changed preview](evidence/slider-range-drag.png)
+and [Escape restoration](evidence/slider-range-escape.png) pair records those
+states. The earlier November 15 field-stayed8 attempt remains an excluded,
+unchanged trial. Foreground guards remain active, no other-app
 input occurred, all owned windows are closed and reference bounds are restored.
 Current checks are63 engine/33 desktop/16 schema/6 stdio, plus overlapping Session
 checks and fmt/Clippy/build/architecture. Exact styling and broader parity remain
@@ -47,8 +53,9 @@ open. Source interchange geometry passes but strict authored equality fails.
 After final object-only range-wire hardening, a fresh native read-only reopen on
 binary `6b638bb1…be3f` verifies the normal foreground window, one image, empty
 history, no evaluation error, unchanged public project and exact owned closure.
-Detailed interactive checks were on `61db0591…5a867`; no new changed held-range
-preview or broad interactive replay is inferred. Final MCP run04 repeats141
+Detailed source interactions were on `61db0591…5a867`. The separate held-range
+replay on `6b638bb1…be3f` closes that specific input gap; it does not imply a
+broad interactive replay or pixel parity. Final MCP run04 repeats141
 requests/15 samples and the same canonical hash; a separate10-request range-wire
 test proves strict rejection and exact valid-object Undo.
 
