@@ -827,7 +827,7 @@ pub(crate) fn read_keys(
                 }
                 let delta = next_value - value;
                 if delta.abs() < 1e-8 {
-                    flat_curve(time, next_time, value, [h[0], h[1], h[2], h[3]])?
+                    retained_flat_curve(time, next_time, value, [h[0], h[1], h[2], h[3]])?
                 } else {
                     Curve::Bezier([
                         normalized_control(time, next_time, h[0])?,
@@ -885,22 +885,8 @@ fn checked_curve_coordinate(value: f64, context: &str) -> Result<f32, String> {
     Ok(native)
 }
 
-/// A curve between equal values: linear when its value handles sit on the
-/// value, otherwise an offset Bezier (normalized time, absolute value offsets).
-pub(crate) fn flat_curve(
-    time: f32,
-    next_time: f32,
-    value: f32,
-    handles: [f32; 4],
-) -> Result<Curve, String> {
-    if (handles[1] - value).abs() <= 1e-5 && (handles[3] - value).abs() <= 1e-5 {
-        return Ok(Curve::Linear);
-    }
-    retained_flat_curve(time, next_time, value, handles)
-}
-
 /// Keep an explicitly authored flat Bezier's time handles and even tiny value
-/// offsets. Slot Graph authoring/key insertion needs this source information.
+/// offsets. Scalar/slot curve editing needs this source information.
 pub(crate) fn retained_flat_curve(
     time: f32,
     next_time: f32,

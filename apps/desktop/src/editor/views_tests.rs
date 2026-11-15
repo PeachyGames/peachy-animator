@@ -43,6 +43,7 @@ fn full_view_inventory_is_discoverable_and_setup_rejects_animate_panels() {
     for name in [
         "Animations",
         "Audio",
+        "Curves",
         "Dopesheet",
         "Ghosting",
         "Graph",
@@ -92,6 +93,14 @@ fn full_view_inventory_is_discoverable_and_setup_rejects_animate_panels() {
     assert!(!editor.show_timeline);
     click(&mut editor, &ctx, "viewGraph", egui::PointerButton::Primary);
     assert!(!editor.has_dock_views());
+    click(
+        &mut editor,
+        &ctx,
+        "viewCurves",
+        egui::PointerButton::Primary,
+    );
+    assert!(!editor.curves_visible());
+    assert!(!editor.view_tabs.open.contains(&DockView::Curves));
     click(
         &mut editor,
         &ctx,

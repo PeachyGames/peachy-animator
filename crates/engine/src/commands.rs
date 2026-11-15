@@ -1,5 +1,6 @@
 use crate::{
-    AnimationKey, AnimationKeyClipboard, KeyClipboard, KeyOwner, MeshBindPose, TimelineKey,
+    AnimationKey, AnimationKeyClipboard, CurvePreset, CurveSelection, KeyClipboard, KeyOwner,
+    MeshBindPose, TimelineKey,
 };
 use peachy_document::*;
 use serde::{Deserialize, Serialize};
@@ -40,6 +41,13 @@ pub enum Command {
         animation: usize,
         constraint: usize,
         key: IkKeyframe,
+    },
+    /// Preserve Mix, bend and exact identity while replacing its typed curve.
+    SetIkCurve {
+        animation: usize,
+        constraint: usize,
+        time: f32,
+        curve: IkCurve,
     },
     DeleteIkKey {
         animation: usize,
@@ -146,6 +154,29 @@ pub enum Command {
         bone: usize,
         property: Property,
         key: Keyframe,
+    },
+    /// Change only the outgoing curve of one exact existing scalar key.
+    SetKeyCurve {
+        animation: usize,
+        bone: usize,
+        property: Property,
+        time: f32,
+        curve: Curve,
+    },
+    ApplyCurvePreset {
+        animation: usize,
+        selection: Vec<CurveSelection>,
+        preset: CurvePreset,
+        separate: bool,
+    },
+    EditCurveHandle {
+        animation: usize,
+        selection: Vec<CurveSelection>,
+        primary: CurveSelection,
+        handle: usize,
+        point: [f64; 2],
+        match_curves: bool,
+        separate: bool,
     },
     DeleteKey {
         animation: usize,
@@ -564,6 +595,69 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
             duplicate.name = name;
             doc.animations.push(duplicate);
         }
+        Command::ApplyCurvePreset {
+            animation,
+            selection,
+            preset,
+            separate,
+        } => {
+            let commands = crate::curve_editing::preset_commands(
+                doc, animation, &selection, preset, separate,
+            )?;
+            for command in commands {
+                apply(doc, command)?;
+            }
+        }
+        Command::EditCurveHandle {
+            animation,
+            selection,
+            primary,
+            handle,
+            point,
+            match_curves,
+            separate,
+        } => {
+            let commands = crate::curve_editing::handle_commands(
+                doc,
+                crate::curve_editing::HandleRequest {
+                    animation,
+                    selection: &selection,
+                    primary: &primary,
+                    handle,
+                    point,
+                    match_curves,
+                    separate,
+                },
+            )?;
+            for command in commands {
+                apply(doc, command)?;
+            }
+        }
+        Command::SetKeyCurve {
+            animation,
+            bone,
+            property,
+            time,
+            curve,
+        } => {
+            if !time.is_finite() || time < 0. {
+                return Err("Key time must be finite and nonnegative".into());
+            }
+            if !curve.handles_valid() {
+                return Err("Scalar curve handles must be finite".into());
+            }
+            doc.bones.get(bone).ok_or("Unknown bone")?;
+            let key = doc
+                .animations
+                .get_mut(animation)
+                .ok_or("Unknown animation")?
+                .tracks
+                .iter_mut()
+                .find(|track| track.bone == bone && track.property == property)
+                .and_then(|track| track.keys.iter_mut().find(|key| key.time == time))
+                .ok_or("Unknown exact scalar key")?;
+            key.curve = curve;
+        }
         Command::SetKey {
             animation,
             bone,
@@ -599,6 +693,35 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
                 keys.push(key);
             }
             keys.sort_by(|a, b| a.time.total_cmp(&b.time));
+        }
+        Command::SetIkCurve {
+            animation,
+            constraint,
+            time,
+            curve,
+        } => {
+            if !time.is_finite() || time < 0. {
+                return Err("Key time must be finite and nonnegative".into());
+            }
+            curve.validate()?;
+            if doc
+                .constraints
+                .get(constraint)
+                .and_then(Constraint::as_ik)
+                .is_none()
+            {
+                return Err("Unknown IK constraint".into());
+            }
+            let key = doc
+                .animations
+                .get_mut(animation)
+                .ok_or("Unknown animation")?
+                .ik_tracks
+                .iter_mut()
+                .find(|track| track.constraint == constraint)
+                .and_then(|track| track.keys.iter_mut().find(|key| key.time == time))
+                .ok_or("Unknown exact IK key")?;
+            key.curve = curve;
         }
         Command::SetIkKey {
             animation,

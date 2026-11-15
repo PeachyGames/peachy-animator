@@ -4,6 +4,16 @@ Target: Spine **4.3.x JSON**, with export metadata `4.3.26`. The initial externa
 oracle is separately installed `@esotericsoftware/spine-core` **4.3.13**.
 Compatibility applies to the subset below, not every 4.3 project or future patch.
 
+Curves authoring addition (November 14): exact scalar/IK curve-only setters and
+shared interval presets/handle actions are available natively and through MCP
+(49 commands / 11 tools; native v22). Scalar import retains flat Bezier controls.
+Curves fits relative handles and keeps flat plots blank; absolute Graph retains
+their excursions. Native interaction, fresh-process persistence and both authored
+runtime comparisons pass. Separate-off adjacent selected intervals, Custom with
+Bezier neighbors, and extreme/vertical/outside-time/flat-linked live coupling
+remain explicitly refused. Stored presets, Last chosen and grouped native
+properties remain open. See [the measured contract](slices/curves-authoring.md).
+
 Export targets (November 14): native, CLI and MCP export share explicit Editor
 and Runtime policies. Editor remains the default and rejects default-skin name
 overrides that the installed importer can rename while clearing Setup and swap
@@ -70,7 +80,7 @@ Input-only obsolete integer `order` is validated and omitted, never used to sort
 | Slots | Setup attachment, exact RGBA tint, normal/additive/multiply/screen blend modes | Dark/two-color tint |
 | Skins | Region/mesh maps, explicit attachment names, default-skin fallback; skin-required bones and IK/transform/physics constraints with per-skin activation | Skin path-constraint lists, a unified skin `constraints` list, non-required bones under required parents |
 | Animation | Path position and spacing keys; draw order keys (offsets as written); event keys with per-key overrides; slot attachment and RGBA color keys; mesh deform keys (unweighted and weighted); bone rotation, translation, scale and shear; combined or scalar input timelines; grouped IK Mix/Positive timelines; physics setting and reset timelines, including global (`""`) timelines | Draw order folders; transform, path and other slot (rgb, alpha, dark tint, sequence) timelines |
-| Curves | Linear, stepped, normalized cubic handles (time handles may cross or leave the key interval); overshoot between equal values as offset handles | Nonfinite controls; overshooting curves between equal values |
+| Curves | Linear, stepped, normalized cubic handles (time handles may cross or leave the key interval); overshoot between equal values as offset handles | Nonfinite controls; interactive coupled actions have the separate bounded authoring limits above |
 | Constraints | One-/two-bone normal IK with keyed Mix/Positive, two-bone Positive, nested chains in list order, off-axis child offsets; animated targets. Physics constraints as data: every setting, Scale Y mode and Global flag, in unified constraint order. World transform constraints: identity Rotate, X/Y mappings with offsets, scale and clamping; IK under any transformed ancestors | Advanced IK settings, shared-bone or cross-target chains, transformed chains; skin-required physics; transform, path, slider and other constraints |
 | Images | Loose PNGs for editing; one untrimmed atlas page for desktop export | Packed-atlas import, rotated/trimmed atlas regions, multipage export |
 | Files | `.peachy` v22; in-memory v1–v21 migration; Spine JSON adapter; event definitions and `skeleton.referenceScale` stored as data | Native `.spine` projects and binary `.skel` |

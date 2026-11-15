@@ -1,7 +1,7 @@
 //! Exact typed key identities and shared timing transitions for bone/IK/deform/slot tracks.
 use peachy_document::{
-    Attachment, AttachmentKey, AttachmentRef, ColorKey, Constraint, Curve, DeformKey, DeformTrack,
-    Document, IkKeyframe, IkTrack, Keyframe, MeshVertices, Property, Track,
+    Animation, Attachment, AttachmentKey, AttachmentRef, ColorKey, Constraint, Curve, DeformKey,
+    DeformTrack, Document, IkCurve, IkKeyframe, IkTrack, Keyframe, MeshVertices, Property, Track,
 };
 use serde::{Deserialize, Serialize};
 use std::{cmp::Ordering, collections::BTreeSet};
@@ -85,6 +85,30 @@ pub enum AnimationKey {
         time: f32,
     },
 }
+
+/// A presentation curve interval, separate from the selected source key.
+#[derive(Clone, Debug, PartialEq)]
+pub struct CurveTarget {
+    pub key: AnimationKey,
+    pub next_time: f32,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum CurveData {
+    Standard(Curve),
+    Ik(IkCurve),
+}
+
+/// Raw channel data in its native value domain, with no flat normalization,
+/// preset defaults or handle-coupling policy applied by this read-only query.
+#[derive(Clone, Debug, PartialEq)]
+pub struct CurveChannel {
+    pub target: CurveTarget,
+    pub channel: usize,
+    pub values: [f64; 2],
+    pub curve: CurveData,
+}
+
 impl AnimationKey {
     pub fn owner(&self) -> KeyOwner {
         match self {
@@ -109,7 +133,18 @@ impl AnimationKey {
             | Self::SlotColor { time, .. } => *time,
         }
     }
-    fn id(&self) -> (KeyOwner, u8, Option<Property>, u32) {
+    pub(crate) fn at(&self, time: f32) -> Self {
+        let mut key = self.clone();
+        match &mut key {
+            Self::Bone { time: at, .. }
+            | Self::Ik { time: at, .. }
+            | Self::Deform { time: at, .. }
+            | Self::SlotAttachment { time: at, .. }
+            | Self::SlotColor { time: at, .. } => *at = time,
+        }
+        key
+    }
+    pub(crate) fn id(&self) -> (KeyOwner, u8, Option<Property>, u32) {
         (
             self.owner(),
             match self {
@@ -348,6 +383,270 @@ fn canonical_owner(document: &Document, owner: KeyOwner) -> Result<KeyOwner, Str
         _ => Ok(owner),
     }
 }
+
+pub(crate) fn canonical_key(
+    document: &Document,
+    key: &AnimationKey,
+) -> Result<AnimationKey, String> {
+    let time = checked_time(key.time())?;
+    match canonical_owner(document, key.owner())? {
+        KeyOwner::Deform { attachment } => Ok(AnimationKey::Deform { attachment, time }),
+        _ => Ok(key.clone()),
+    }
+}
+
+fn exact_interval<T>(
+    keys: Option<&[T]>,
+    time: f32,
+    read: fn(&T) -> f32,
+    single: bool,
+) -> Result<Option<(f32, f32)>, String> {
+    let keys = keys.ok_or("Unknown exact source key")?;
+    let index = exact_index(keys, time, read)?;
+    if let Some(next) = keys.get(index + 1) {
+        Ok(Some((read(&keys[index]), read(next))))
+    } else if single && index > 0 {
+        Ok(Some((read(&keys[index - 1]), read(&keys[index]))))
+    } else {
+        Ok(None)
+    }
+}
+
+pub(crate) fn exact_index<T>(keys: &[T], time: f32, read: fn(&T) -> f32) -> Result<usize, String> {
+    keys.binary_search_by(|key| {
+        let at = read(key);
+        if at == time {
+            Ordering::Equal
+        } else {
+            at.total_cmp(&time)
+        }
+    })
+    .map_err(|_| "Unknown exact source key".into())
+}
+
+fn exact_pair<T>(
+    keys: Option<&[T]>,
+    time: f32,
+    next_time: f32,
+    read: fn(&T) -> f32,
+) -> Result<(&T, &T), String> {
+    let keys = keys.ok_or("Unknown exact source key")?;
+    let index = exact_index(keys, time, read)?;
+    let next = keys
+        .get(index + 1)
+        .filter(|next| read(next) == next_time)
+        .ok_or("Stale curve interval; resolve the exact adjacent keys again")?;
+    Ok((&keys[index], next))
+}
+
+/// Resolve Curves presentation without changing selection, cursor or data.
+/// Canonical duplicate identities count once. Only a single logical selection
+/// can use its previous interval when the selected key is terminal. Attachment
+/// keys participate in that count but have no interpolated curve themselves.
+pub fn curve_targets(
+    document: &Document,
+    animation: usize,
+    selected: &[AnimationKey],
+) -> Result<Vec<CurveTarget>, String> {
+    document.validate()?;
+    let clip = document
+        .animations
+        .get(animation)
+        .ok_or("Unknown animation")?;
+    let mut identities = BTreeSet::new();
+    let mut canonical = vec![];
+    for key in selected {
+        let key = canonical_key(document, key)?;
+        if identities.insert(key.id()) {
+            canonical.push(key);
+        }
+    }
+    let single = canonical.len() == 1;
+    let mut result = vec![];
+    for key in canonical {
+        let interval = match &key {
+            AnimationKey::Bone {
+                bone,
+                property,
+                time,
+            } => exact_interval(
+                clip.tracks
+                    .iter()
+                    .find(|t| t.bone == *bone && t.property == *property)
+                    .map(|t| t.keys.as_slice()),
+                *time,
+                |k| k.time,
+                single,
+            )?,
+            AnimationKey::Ik { constraint, time } => exact_interval(
+                clip.ik_tracks
+                    .iter()
+                    .find(|t| t.constraint == *constraint)
+                    .map(|t| t.keys.as_slice()),
+                *time,
+                |k| k.time,
+                single,
+            )?,
+            AnimationKey::Deform { attachment, time } => exact_interval(
+                clip.deform_tracks
+                    .iter()
+                    .find(|t| t.attachment == *attachment)
+                    .map(|t| t.keys.as_slice()),
+                *time,
+                |k| k.time,
+                single,
+            )?,
+            AnimationKey::SlotColor { slot, time } => exact_interval(
+                clip.color_tracks
+                    .iter()
+                    .find(|t| t.slot == *slot)
+                    .map(|t| t.keys.as_slice()),
+                *time,
+                |k| k.time,
+                single,
+            )?,
+            AnimationKey::SlotAttachment { slot, time } => {
+                exact_interval(
+                    clip.attachment_tracks
+                        .iter()
+                        .find(|t| t.slot == *slot)
+                        .map(|t| t.keys.as_slice()),
+                    *time,
+                    |k| k.time,
+                    false,
+                )?;
+                None
+            }
+        };
+        if let Some((time, next_time)) = interval {
+            result.push(CurveTarget {
+                key: key.at(time),
+                next_time,
+            });
+        }
+    }
+    Ok(result)
+}
+
+/// Inspect exact adjacent source keys without replacing values or converting
+/// IK's f64 controls. A stale or fabricated end time is rejected explicitly.
+pub fn curve_channels(
+    document: &Document,
+    animation: usize,
+    target: &CurveTarget,
+) -> Result<Vec<CurveChannel>, String> {
+    curve_channels_for_targets(document, animation, std::slice::from_ref(target))
+}
+
+/// Read a bounded render snapshot after one shared validation. Callers retain
+/// the complete selection and choose rendering targets before this query.
+pub fn curve_channels_for_targets(
+    document: &Document,
+    animation: usize,
+    targets: &[CurveTarget],
+) -> Result<Vec<CurveChannel>, String> {
+    document.validate()?;
+    let clip = document
+        .animations
+        .get(animation)
+        .ok_or("Unknown animation")?;
+    let mut result = vec![];
+    for target in targets {
+        result.extend(channels_for_target(document, clip, target)?);
+    }
+    Ok(result)
+}
+
+pub(crate) fn channels_for_target(
+    document: &Document,
+    clip: &Animation,
+    target: &CurveTarget,
+) -> Result<Vec<CurveChannel>, String> {
+    checked_time(target.next_time)?;
+    let target = CurveTarget {
+        key: canonical_key(document, &target.key)?,
+        next_time: target.next_time,
+    };
+    let time = target.key.time();
+    let channel = |values, curve| {
+        vec![CurveChannel {
+            target: target.clone(),
+            channel: 0,
+            values,
+            curve,
+        }]
+    };
+    match &target.key {
+        AnimationKey::Bone { bone, property, .. } => {
+            let (left, right) = exact_pair(
+                clip.tracks
+                    .iter()
+                    .find(|t| t.bone == *bone && t.property == *property)
+                    .map(|t| t.keys.as_slice()),
+                time,
+                target.next_time,
+                |k| k.time,
+            )?;
+            Ok(channel(
+                [f64::from(left.value), f64::from(right.value)],
+                CurveData::Standard(left.curve),
+            ))
+        }
+        AnimationKey::Ik { constraint, .. } => {
+            let (left, right) = exact_pair(
+                clip.ik_tracks
+                    .iter()
+                    .find(|t| t.constraint == *constraint)
+                    .map(|t| t.keys.as_slice()),
+                time,
+                target.next_time,
+                |k| k.time,
+            )?;
+            Ok(channel(
+                [f64::from(left.mix), f64::from(right.mix)],
+                CurveData::Ik(left.curve),
+            ))
+        }
+        AnimationKey::Deform { attachment, .. } => {
+            let (left, _) = exact_pair(
+                clip.deform_tracks
+                    .iter()
+                    .find(|t| t.attachment == *attachment)
+                    .map(|t| t.keys.as_slice()),
+                time,
+                target.next_time,
+                |k| k.time,
+            )?;
+            Ok(channel([0., 1.], CurveData::Standard(left.curve)))
+        }
+        AnimationKey::SlotColor { slot, .. } => {
+            let (left, right) = exact_pair(
+                clip.color_tracks
+                    .iter()
+                    .find(|t| t.slot == *slot)
+                    .map(|t| t.keys.as_slice()),
+                time,
+                target.next_time,
+                |k| k.time,
+            )?;
+            Ok((0..4)
+                .map(|channel| CurveChannel {
+                    target: target.clone(),
+                    channel,
+                    values: [
+                        f64::from(left.color[channel]) / 255.,
+                        f64::from(right.color[channel]) / 255.,
+                    ],
+                    curve: CurveData::Standard(left.curves[channel]),
+                })
+                .collect())
+        }
+        AnimationKey::SlotAttachment { .. } => {
+            Err("Attachment keys have no interpolated curve".into())
+        }
+    }
+}
+
 fn sources(
     document: &Document,
     animation: usize,
@@ -363,15 +662,7 @@ fn sources(
     let mut identities = BTreeSet::new();
     keys.iter()
         .map(|source| {
-            let time = checked_time(source.time())?;
-            let owner = canonical_owner(document, source.owner())?;
-            let canonical = match &owner {
-                KeyOwner::Deform { attachment } => AnimationKey::Deform {
-                    attachment: attachment.clone(),
-                    time,
-                },
-                _ => source.clone(),
-            };
+            let canonical = canonical_key(document, source)?;
             if !identities.insert(canonical.id()) {
                 return Err("Duplicate source key".into());
             }

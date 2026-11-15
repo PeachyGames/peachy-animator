@@ -220,6 +220,21 @@ impl Editor {
         if self.export_dialog_shortcuts(ctx) {
             return;
         }
+        if self.shared_curve_edit_active()
+            || self.deform_curve_edit_active()
+            || self.slot_curve_edit_active()
+        {
+            if !ctx.text_edit_focused() {
+                self.file_history_shortcuts(ctx);
+            }
+            if ctx.input_mut(|input| input.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
+                self.cancel_graph_edit();
+            }
+            if ctx.input_mut(|input| input.consume_key(egui::Modifiers::NONE, egui::Key::F9)) {
+                self.toggle_views();
+            }
+            return;
+        }
         if self.slot_color_shortcuts(ctx)
             || self.ik_shortcuts(ctx)
             || self.transform_shortcuts(ctx)

@@ -3,6 +3,7 @@ mod authoring;
 mod clipping;
 mod color_curve_split;
 mod commands;
+mod curve_editing;
 mod deform_authoring;
 mod ghosting;
 mod ik;
@@ -28,6 +29,7 @@ pub use clipping::ClippedGeometry;
 pub use commands::{
     Command, EditTarget, apply_command, deform_keyframe_at, ik_keyframe_at, keyframe_at,
 };
+pub use curve_editing::{CurvePreset, CurveSelection, curve_edit_targets};
 pub use ghosting::{
     GhostRange, GhostSample, GhostSampling, GhostSide, GhostSource, MAX_GHOST_SAMPLES,
     ghost_samples,
@@ -59,8 +61,10 @@ pub use scene::{
 pub use session::Session;
 pub use slot_authoring::{SlotPose, SlotPoseEdit, SlotProperty, slot_color_bytes, slot_key_time};
 pub use timeline::{
-    AnimationKey, AnimationKeyClipboard, ClipboardKey, DeformLayout, KeyClipboard, KeyOwner,
-    TimelineKey, copy_animation_keys, copy_keys, deform_key_owner, pasted_animation_keys,
+    AnimationKey, AnimationKeyClipboard, ClipboardKey, CurveChannel, CurveData, CurveTarget,
+    DeformLayout, KeyClipboard, KeyOwner, TimelineKey, copy_animation_keys, copy_keys,
+    curve_channels, curve_channels_for_targets, curve_targets, deform_key_owner,
+    pasted_animation_keys,
 };
 pub use tools::{
     Axes, TransformGesture, TransformTool, drag_transform, drag_transform_in_frame,
@@ -76,6 +80,10 @@ mod binding_tests;
 mod clipping_tests;
 #[cfg(test)]
 mod creation_tests;
+#[cfg(test)]
+mod curve_action_tests;
+#[cfg(test)]
+mod curve_target_tests;
 #[cfg(test)]
 mod deform_authoring_tests;
 #[cfg(test)]
@@ -108,6 +116,8 @@ mod path_tests;
 mod physics_tests;
 #[cfg(test)]
 mod pose_preview_tests;
+#[cfg(test)]
+mod scalar_curve_tests;
 #[cfg(test)]
 mod scene_checks_tests;
 #[cfg(test)]

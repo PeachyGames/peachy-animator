@@ -1,5 +1,12 @@
 # Views audit and implemented scope
 
+Curves continuation (November 14): the separate Animate relative-transition pane
+now shares typed Dopesheet selection and engine actions with Scalar/Deform/RGBA
+Graph. Fitted handles, Match/Separate, exact presets, scalar tangents and numeric
+entry have bounded native/MCP acceptance. Preset management is disabled; Last
+chosen, grouped properties and uncalibrated coupling remain. See
+[the measured scope](slices/curves-authoring.md) and [review](evidence/curves-authoring.html).
+
 Slot continuation (November 14): Slot Color now edits sampled/pending Animate
 poses as well as Setup. Properties opens the observed Color dialog with explicit
 OK/Cancel, HSB/RGBA/hex fields and adjacent key control. The RGBA Graph overlays
@@ -11,17 +18,16 @@ See [the verified slot contract](slices/slot-authoring.md) and
 [review gallery](evidence/slot-authoring.html).
 
 Installed-reference update (November 14): the actual Spine 4.3.26 Views menu
-contains 17 entries, including Metrics. Peachy's current 15 views lack Curves and
-Problems, and `Slot Color` still needs the broader `Color` behavior and name.
+contains 17 entries, including Metrics. Peachy's current 16 views lack Problems,
+and `Slot Color` still needs the broader `Color` behavior and name.
 Earlier inventory claims below describe the bounded implementation at that
 checkpoint, not complete current-editor parity. See the
 [official-update/native inventory audit](slices/spine-blog-audit-20261114.md).
 
 
-Implementation progress: **15 of 15 views implemented**. The latest completed
-view is **Audio**. Every named view now has functional controls within the
-explicit scope below. Feature-level parity gaps remain listed; this is not a
-claim that every Spine feature is supported.
+Implementation progress: **16 of the installed editor's 17 views have bounded
+implementations**. The older November 6 guide inventory had 15 entries; Audio
+completed that earlier list. Feature-level parity gaps remain explicit below.
 
 The old selector contained only **Tree, Dopesheet and Weights** because those were
 the only implemented panels. It was not an installation, license or rendering
@@ -36,9 +42,10 @@ availability and bounded feature scopes are explicit below.
 | --- | --- |
 | Animations | New searchable animation list in Animate. Click activates without changing the current bone selection; right-click selects its Tree properties without activation; double-click opens the existing Rename dialog. |
 | Audio | New session-only WAV waveform and independent audition view: Load, Play/Pause/Stop, seek, zoom/pan, Loop, Volume and Mute. Native macOS output uses the validated byte snapshot. Audio event timelines, animation synchronization and audio Save/export remain pending. |
+| Curves | Separate Animate relative-transition pane; primary/gray curves, fitted handles, Match/Separate and shared engine/MCP presets/handle edits. Flat data stays intact with a blank relative plot. Native/MCP acceptance passes within the calibrated scope; stored presets/default preferences and uncalibrated coupling remain. |
 | Dopesheet | Typed bone/IK and attachment-owned Deform keys, exact/row/shown selection, retime/copy/delete, clipboard and curve controls. Final integrated native acceptance of the new Deform workflow is pending. |
 | Ghosting | New Animate onion-skin view: fractional Frames and exact Key Frames, Current keyed-pose comparison, per-side colors, Images/Solid display and opacity, Anchor, On top, Loop, per-frame offsets and typed bone Selection with Lock/Refresh. Renders checked region/mesh/IK poses in the main viewport. |
-| Graph | Scalar bone-value graph plus selected-attachment Deform progress graph. Exact-key selection, engine sampling, Fit/Zoom Keys; Deform adds curve presets, numeric and draggable tangent handles, and shared timeline clipboard/delete routing. Scalar tangents and multiple curves remain pending; final integrated Deform native acceptance is pending. |
+| Graph | Scalar bone-value, Deform progress and RGBA value graphs share exact typed selection, presets, numeric/draggable handles and one preview controller. Native interaction/persistence and authored runtime checks pass. General mixed/all-owner curves and navigation remain bounded. |
 | Mesh Tools | New soft-selection view with Size, Feather and Hull vertices. Affects neighboring vertices during unweighted Setup vertex drags and arrow nudges, with falloff colors and radius rings. Weighted/Animate transforms and multi-vertex selection remain pending. |
 | Metrics | New counts for bones, constraints, slots, all attachments, visible attachments, visible vertices and triangles. Animate additionally shows native scalar-track and key counts. |
 | Outline | New clean secondary display of the current evaluated pose, including pending unkeyed edits and static IK. Fit, right/middle drag pan, wheel zoom, and click to center the main viewport. |

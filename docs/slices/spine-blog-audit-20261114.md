@@ -1,7 +1,7 @@
 # Official Spine update audit — November 14, 2026
 
 Rechecked November 14 after the slot authoring commit, against Peachy Animator
-`f345fdd` plus the verified export-target continuation below. This is a current
+`f345fdd` plus verified export-target and Curves continuations below. This is a current
 backlog and reference record, not a claim of full Spine parity.
 Installed-editor observations and native screenshots are recorded
 in [UI parity](../UI_PARITY.md) and the linked slice acceptance records.
@@ -23,15 +23,15 @@ Curves, Dopesheet, Ghosting, Graph, Playback, Timeline, Audio, Metrics, Outline,
 Preview, Problems and Tree. Metrics is visibly present between Audio and
 Outline; it must not be counted as a Peachy-only view.
 
-Peachy's current 15-entry inventory contains Metrics but lacks **Curves** and
-**Problems**, and still labels its bounded color panel **Slot Color**.
+Peachy's current 16-entry inventory contains Metrics and the bounded **Curves**
+view, lacks **Problems**, and still labels its bounded color panel **Slot Color**.
 The earlier 15-view guide inventory is therefore not the complete inventory
 of the installed reference.
 
 | Installed reference | Peachy observation | Remaining parity gate |
 | --- | --- | --- |
 | Color | Slot Color: Setup/Animate float slot pose, inline chooser, Properties modal, keying and RGBA Graph | Broader Setup targets, separate RGB/alpha and dark tint remain. A label-only rename is insufficient. See [accepted slot scope](slot-authoring.md). |
-| Curves | No separate view | Observe its normalized transition editing, presets, selection and relationship with Graph; expose persistent semantic edits through the engine/MCP where applicable. |
+| Curves | Separate fitted relative-transition pane, exact shared selection, Match/Separate and engine/MCP preset/handle actions | Native/MCP/runtime acceptance passes within the [measured scope](curves-authoring.md). Stored presets, Last chosen, native property groups and several coupled domains remain. |
 | Problems | No view | Observe issue discovery, navigation and supported fixes; any document-changing fixes need shared commands, undo and MCP access. |
 | Metrics | Present in both | Verify content and behavior separately; presence alone does not prove parity. |
 
@@ -60,32 +60,34 @@ The former immediate gaps are now closed within their documented bounds:
   default-name overrides before writing; Runtime preserves lookup/name metadata.
   Actual CLI/MCP/native exports, four accepted Editor import controls and the
   region/mesh/linked runtime checks pass. Hosted CI remains a separate gate.
+- [Curves and scalar interpolation](curves-authoring.md): exact scalar/IK
+  setters, shared typed Graph selection/tangents, fitted relative curves,
+  repeated reset/final-key semantics and calibrated Match/Separate actions.
+  Native input/persistence and both authored runtime comparisons pass.
 
-MCP now exposes 45 strict commands / 11 tools, including value-preserving
+MCP now exposes 49 strict commands / 11 tools, including value-preserving
 `setDeformCurve`, `setSlotColorCurves`, float `insertSlotColorKey` and read-only
-typed copying. This does not complete all Graph/Curves semantics. Source
-inspection at `f345fdd` shows scalar Graph edits key values but has no tangent
-controls; its selection remains separate from the typed Dopesheet selection.
-There is no Curves view or scalar curve-only command: MCP can replace a full
-`setKey` payload, which is different from a semantic edit that preserves value
-and time.
+typed copying, plus exact `setKeyCurve`/`setIkCurve` and shared
+`applyCurvePreset`/`editCurveHandle`. Source at the earlier `f345fdd` lacked
+scalar tangents/typed synchronization and Curves; those bounded gaps now have
+the linked native/MCP acceptance. Stored preset/default preferences, grouped
+properties and several coupled domains remain open.
 
-Two concrete reference cases need installed-editor probes next:
+Two former reference gaps now have installed-editor probes and acceptance:
 
 1. The [current Graph guide](https://esotericsoftware.com/spine-graph) describes
    resetting default handles by clicking Bezier again on an existing Bezier
-   selection. Current slot/Deform preset handlers ignore an already-selected
-   curve type, so this reset gesture is absent.
+   selection. Shared Curves/Graph actions now reset it; native tests verify
+   repeated reset and preserved values/times.
 2. The [4.3 changelog](https://esotericsoftware.com/spine-changelog), 4.3.24
    (September 6, 2026), limits use of the preceding curve to a single selected
    last key. The earlier 4.3.65-beta entry (April 11) introduces that behavior.
-   Current slot/Deform controls edit the selected final key's unused outgoing
-   curve. Probe exact last-key and multi-selection behavior before changing the
-   shared resolver; raw commands should retain explicit exact-key meaning.
+   A shared resolver now redirects a single final key to its preceding interval,
+   while multiple final selections disable controls and preserve redo. Raw
+   commands retain explicit exact-key meaning.
 
-These are open interaction semantics, not retrospective failures of the
-specific accepted tangent/value workflows. No new native probe was performed
-for this audit refresh.
+Those bounded semantics are measured; remaining cases are listed in the Curves
+contract rather than inferred from the release post or screenshots alone.
 
 ### Cross-attachment clipboard behavior
 
@@ -129,7 +131,8 @@ been exhaustively observed.
 | Rank | Bounded next slice | Shared UI / engine / MCP path and acceptance |
 | --- | --- | --- |
 | 0: verified interchange prerequisite | Explicit Editor versus Runtime export targets | The shared adapter now rejects confirmed lossy default-name overrides for Editor output and preserves metadata for Runtime output. Native/CLI/MCP and bounded editor/runtime acceptance pass; see [the contract](export-targets.md). Arbitrary conversion and hosted CI remain separate gates. |
-| 1: next authoring feature | Selected-owner Curves and scalar interpolation editing | Probe the two cases above, then add normalized transition authoring for exact scalar keys through a curve-only engine command and strict MCP schema. Reuse guarded Session previews. Wire Curves discovery and Dopesheet selection; preserve values, fractional times, pending poses and redo. Probe flat-endpoint offset curves before defining their normalized display. |
+| 1: accepted bounded continuation | Selected-owner Curves and scalar interpolation editing | Native/MCP/runtime acceptance covers shared exact setters/actions, typed selection, fitted relative handles, repeated reset, final-key rules and calibrated normal coupling. Stored presets/defaults, grouped properties and uncalibrated coupling remain; see [contract](curves-authoring.md). |
+| 2: next blog-linked authoring slice | Global Animate draw-order editing | The Look around demo uses draw-order changes alongside slot swaps/fades. Existing raw data/evaluation lacks pending/key/Delete, typed clipboard and MCP authoring. Probe Tree drag/+/-/Shift and Auto Key against original four-slot data, then add shared commands and full hidden-slot order queries. Per-folder keys require a later identity/model slice. |
 | 2: weight workflow foundation | Multiple selected vertices, one mesh/bone, Direct mode | Replace the retained single vertex with explicit selection and native box/additive/select-all controls. Apply one frozen, atomic Batch through existing per-vertex weight commands; MCP already accepts explicit batches. Preserve untouched influences/positions and pending poses. Auto/brush algorithms, locks and multi-mesh painting require later shared operations. |
 | 3: major 4.3 rigging gap | One world-space cross-property transform mapping | Existing data and MCP add/set constraint payloads are present, but evaluation refuses translation-to-rotation/scale mappings used by the announcement. Calibrate one mapping, implement it in the engine, expose real mapping controls and evaluate an MCP-authored rig against the external oracle. Local/additive modes remain separate. |
 | 4: larger new model | A manually driven slider constraint | Add explicit animation/frame/mix ownership, model validation, shared evaluation, adapter, creation/key controls and strict MCP commands. Detect self-reference/cycles and unsupported timeline domains. A copied pose or an ordinary slot fade is not slider evaluation. Bone-driven sliders extend this slice later. |
@@ -153,7 +156,7 @@ not complete this broader objective.
 
 | Public update area | Current gap and required native/MCP work |
 | --- | --- |
-| Dopesheet-centric synchronization and curve refinements | Deform/slot selection and curve commands work; scalar shared selection/tangents, reset/final-key semantics, Curves presets, default curve preferences and generalized handle adjustment remain. |
+| Dopesheet-centric synchronization and curve refinements | Shared scalar/Deform/slot selection and bounded Curves/Graph actions pass native/MCP/runtime acceptance. Stored preset library, default curve preferences, native grouping and uncalibrated/generalized handle adjustment remain. |
 | Sliders | No native model, evaluation, import/export or creation workflow; add shared commands and strict schemas with independently derived behavior. |
 | Transform property mapping and local/world choices | Data is modeled, but evaluation is restricted and mapping editing is pending; do not equate accepted data with working constrained motion. |
 | Multiple-mesh tracing and weight workflows | Explicit payload creation exists through MCP; native topology generation, multi-selection and Auto/brush workflows remain. |

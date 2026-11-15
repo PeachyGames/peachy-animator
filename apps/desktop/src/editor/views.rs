@@ -6,6 +6,7 @@ use super::*;
 pub(super) enum DockView {
     Animations,
     Audio,
+    Curves,
     Ghosting,
     Graph,
     MeshTools,
@@ -23,9 +24,10 @@ pub(super) enum DockView {
 mod tests;
 
 impl DockView {
-    const ALL: [Self; 12] = [
+    const ALL: [Self; 13] = [
         Self::Animations,
         Self::Audio,
+        Self::Curves,
         Self::Ghosting,
         Self::Graph,
         Self::MeshTools,
@@ -41,6 +43,7 @@ impl DockView {
         match self {
             Self::Animations => "Animations",
             Self::Audio => "Audio",
+            Self::Curves => "Curves",
             Self::Ghosting => "Ghosting",
             Self::Graph => "Graph",
             Self::MeshTools => "Mesh Tools",
@@ -57,6 +60,7 @@ impl DockView {
         match self {
             Self::Animations => Icon::Animations,
             Self::Audio => Icon::Audio,
+            Self::Curves => Icon::Curves,
             Self::Ghosting => Icon::Ghosting,
             Self::Graph => Icon::Graph,
             Self::MeshTools => Icon::MeshTools,
@@ -73,7 +77,7 @@ impl DockView {
     fn available_in_setup(self) -> bool {
         !matches!(
             self,
-            Self::Animations | Self::Ghosting | Self::Graph | Self::Playback
+            Self::Animations | Self::Curves | Self::Ghosting | Self::Graph | Self::Playback
         )
     }
 }
@@ -150,7 +154,7 @@ impl Editor {
     pub(super) fn has_dock_views(&self) -> bool {
         self.visible_dock_views()
             .iter()
-            .any(|view| *view != DockView::Graph)
+            .any(|view| !matches!(view, DockView::Graph | DockView::Curves))
     }
 
     pub(super) fn focus_weights_tab(&mut self) {
@@ -168,7 +172,7 @@ impl Editor {
         }
         if view == DockView::Graph {
             self.view_tabs.animation_view = AnimationView::Graph;
-        } else {
+        } else if view != DockView::Curves {
             self.view_tabs.active = view;
         }
     }
@@ -191,6 +195,13 @@ impl Editor {
 
     pub(super) fn open_graph_view(&mut self) {
         self.open_dock_view(DockView::Graph);
+    }
+
+    pub(super) fn open_curves_view(&mut self) {
+        self.open_dock_view(DockView::Curves);
+    }
+    pub(super) fn curves_visible(&self) -> bool {
+        !self.setup_mode && self.dock_view_open(DockView::Curves)
     }
 
     pub(super) fn graph_visible(&self) -> bool {
@@ -302,6 +313,8 @@ impl Editor {
                     self.open_slot_color_view();
                 } else if view == DockView::Graph {
                     self.open_graph_view();
+                } else if view == DockView::Curves {
+                    self.open_curves_view();
                 } else if view == DockView::Preview {
                     self.open_preview_view();
                 } else {
@@ -375,7 +388,7 @@ impl Editor {
         let visible: Vec<_> = self
             .visible_dock_views()
             .into_iter()
-            .filter(|view| *view != DockView::Graph)
+            .filter(|view| !matches!(view, DockView::Graph | DockView::Curves))
             .collect();
         if !visible.contains(&self.view_tabs.active) {
             let Some(&view) = visible.first() else { return };
@@ -443,6 +456,7 @@ impl Editor {
                     DockView::Graph => {
                         unreachable!("Graph shares the animation dock with Dopesheet")
                     }
+                    DockView::Curves => unreachable!("Curves has its own vertical pane"),
                     DockView::MeshTools => self.mesh_tools_panel(ui),
                     DockView::Metrics => self.metrics_panel(ui),
                     DockView::Playback => self.playback_panel(ui),

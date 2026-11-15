@@ -1,4 +1,5 @@
 //! Mesh curves describe progress between shapes, independently of their vertex offsets.
+use super::curve_gesture::CurveInputOwner;
 use super::*;
 use peachy_engine::{AnimationKey, KeyOwner};
 
@@ -32,35 +33,8 @@ struct CurveContext {
     time: f32,
 }
 
-struct CurveDraft {
-    context: CurveContext,
-    source: Curve,
-    text: [String; 4],
-    changed: bool,
-}
-
-struct CurveEdit {
-    context: CurveContext,
-    source: DeformKey,
-    curve: Curve,
-    handle: usize,
-    interval_end: f32,
-    rect: egui::Rect,
-    bounds: [f64; 4],
-    cursor: f32,
-    skin: String,
-    tool: Tool,
-    axes: Axes,
-    auto_key: bool,
-    pose_generation: u64,
-    pose: peachy_engine::PoseEdits,
-    finish_pending: bool,
-}
-
 #[derive(Default)]
 pub(super) struct DeformCurveView {
-    edit: Option<CurveEdit>,
-    draft: Option<CurveDraft>,
     blocked: bool,
     error: Option<String>,
     context: Option<CurveContext>,
@@ -73,14 +47,6 @@ fn curve_handles(curve: Curve) -> Option<[f32; 4]> {
     match curve {
         Curve::Bezier(handles) | Curve::BezierOffset(handles) => Some(handles),
         _ => None,
-    }
-}
-
-fn with_handles(curve: Curve, handles: [f32; 4]) -> Curve {
-    if matches!(curve, Curve::BezierOffset(_)) {
-        Curve::BezierOffset(handles)
-    } else {
-        Curve::Bezier(handles)
     }
 }
 
@@ -178,6 +144,25 @@ impl Editor {
                 .find(|key| key.time == self.time)
                 .map(|key| key.time)
         })?;
+        let fallback = vec![AnimationKey::Deform {
+            attachment: attachment.clone(),
+            time,
+        }];
+        let selection = if self.key_selection.is_empty() {
+            fallback.as_slice()
+        } else {
+            self.key_selection.keys()
+        };
+        let time = peachy_engine::curve_targets(self.session.document(), self.animation, selection)
+            .ok()?
+            .into_iter()
+            .find_map(|target| match target.key {
+                AnimationKey::Deform {
+                    attachment: owner,
+                    time,
+                } if owner == attachment => Some(time),
+                _ => None,
+            })?;
         Some(CurveContext {
             animation: self.animation,
             attachment,
@@ -207,59 +192,23 @@ impl Editor {
     }
 
     pub(super) fn deform_curve_edit_active(&self) -> bool {
-        self.graph.deform.edit.is_some()
+        self.shared_curve_owner() == Some(CurveInputOwner::DeformGraph)
     }
 
     pub(super) fn cancel_deform_curve_edit(&mut self) {
-        if self.graph.deform.edit.take().is_some() {
-            self.session.cancel_transaction();
+        if self.deform_curve_edit_active() {
+            self.cancel_shared_curve_edit();
             self.graph.deform.blocked = true;
         }
-        self.graph.deform.draft = None;
     }
 
     pub(super) fn reconcile_deform_curve_input(&mut self, ctx: &egui::Context) {
         if !ctx.input(|input| input.pointer.primary_down()) {
             self.graph.deform.blocked = false;
         }
-        if self.graph.deform.edit.as_ref().is_some_and(|edit| {
-            !self.graph_visible()
-                || !self.deform_curve_input_available(ctx)
-                || self.timeline_owner()
-                    != Some(KeyOwner::Deform {
-                        attachment: edit.context.attachment.clone(),
-                    })
-                || self.animation != edit.context.animation
-                || self.time.to_bits() != edit.cursor.to_bits()
-                || self.skin != edit.skin
-                || self.tool != edit.tool
-                || self.axes != edit.axes
-                || self.auto_key != edit.auto_key
-                || self.pose_view_generation != edit.pose_generation
-                || self.session.pose_edits() != &edit.pose
-                || self
-                    .deform_curve_key(&edit.context)
-                    .is_none_or(|key| key.curve != edit.curve || key.offsets != edit.source.offsets)
-                || ctx.text_edit_focused()
-        }) {
-            self.cancel_deform_curve_edit();
-        }
     }
 
-    pub(super) fn settle_deform_curve_input(&mut self, ctx: &egui::Context) {
-        if !ctx.input(|input| input.pointer.primary_down())
-            && self
-                .graph
-                .deform
-                .edit
-                .as_ref()
-                .is_some_and(|edit| edit.finish_pending)
-        {
-            self.graph.deform.edit = None;
-            self.session.commit_transaction();
-        }
-    }
-
+    #[cfg(test)]
     pub(super) fn set_deform_key_curve(
         &mut self,
         attachment: AttachmentRef,
@@ -316,23 +265,42 @@ impl Editor {
         let enabled = self.deform_curve_input_available(ui.ctx());
         ui.horizontal(|ui| {
             for (label, value, selected) in [
-                ("Linear", Curve::Linear, curve == Curve::Linear),
-                ("Stepped", Curve::Stepped, curve == Curve::Stepped),
+                (
+                    "Linear",
+                    peachy_engine::CurvePreset::Linear,
+                    curve == Curve::Linear,
+                ),
+                (
+                    "Stepped",
+                    peachy_engine::CurvePreset::Stepped,
+                    curve == Curve::Stepped,
+                ),
                 (
                     "Bezier",
-                    Curve::Bezier([0.42, 0., 0.58, 1.]),
+                    peachy_engine::CurvePreset::Bezier,
                     curve_handles(curve).is_some(),
                 ),
             ] {
                 let response = ui.add_enabled(enabled, egui::Button::selectable(selected, label));
                 self.record_target(&format!("{prefix}:{label}"), response.rect);
-                if response.clicked() && !selected {
+                if response.clicked() {
                     chosen = Some(value);
                 }
             }
         });
-        if let Some(curve) = chosen {
-            self.set_deform_key_curve(context.attachment.clone(), context.time, curve);
+        if let Some(preset) = chosen {
+            let selection = if self.key_selection.is_empty() {
+                vec![peachy_engine::CurveSelection {
+                    key: AnimationKey::Deform {
+                        attachment: context.attachment.clone(),
+                        time: context.time,
+                    },
+                    channel: 0,
+                }]
+            } else {
+                self.curve_preset_selection()
+            };
+            self.apply_curve_preset_request(selection, preset);
         }
     }
 
@@ -358,117 +326,26 @@ impl Editor {
         }
     }
 
-    fn deform_curve_numbers(&mut self, ui: &mut egui::Ui, context: &CurveContext, curve: Curve) {
-        let Some(handles) = curve_handles(curve) else {
-            return;
-        };
-        let enabled = self.deform_curve_input_available(ui.ctx());
-        if !enabled {
-            self.graph.deform.draft = None;
-        }
-        let replace = self
-            .graph
-            .deform
-            .draft
-            .as_ref()
-            .is_none_or(|draft| draft.context != *context || draft.source != curve);
-        if replace {
-            self.graph.deform.draft = Some(CurveDraft {
-                context: context.clone(),
-                source: curve,
-                text: std::array::from_fn(|index| {
-                    if index % 2 == 0 {
-                        handles[index].to_string()
-                    } else {
-                        (f64::from(handles[index]) * 100.).to_string()
-                    }
-                }),
-                changed: false,
+    fn deform_curve_numbers(&mut self, ui: &mut egui::Ui, context: &CurveContext, _curve: Curve) {
+        let next = self.session.document().animations[context.animation]
+            .deform_tracks
+            .iter()
+            .find(|track| track.attachment == context.attachment)
+            .and_then(|track| {
+                let index = track.keys.partition_point(|key| key.time <= context.time);
+                track.keys.get(index).map(|key| key.time)
             });
-        }
-        let mut apply = false;
-        let mut cancel = false;
-        let mut targets = Vec::new();
-        if let Some(draft) = self.graph.deform.draft.as_mut() {
-            let horizontal = ui.available_width() >= 650.;
-            egui::Grid::new("deform-curve-handles")
-                .num_columns(if horizontal { 8 } else { 2 })
-                .show(ui, |ui| {
-                    for (index, label) in ["Time 1", "Value 1 (%)", "Time 2", "Value 2 (%)"]
-                        .iter()
-                        .enumerate()
-                    {
-                        ui.label(*label);
-                        let response = ui.add_enabled(
-                            enabled,
-                            egui::TextEdit::singleline(&mut draft.text[index])
-                                .id_salt(("deform-curve-number", index))
-                                .event_filter(egui::EventFilter {
-                                    horizontal_arrows: true,
-                                    vertical_arrows: true,
-                                    escape: true,
-                                    ..Default::default()
-                                })
-                                .desired_width(90.),
-                        );
-                        targets.push((format!("graphDeformValue:{index}"), response.rect));
-                        draft.changed |= response.changed();
-                        if response.has_focus()
-                            && ui.input_mut(|input| {
-                                input.consume_key(egui::Modifiers::NONE, egui::Key::Escape)
-                            })
-                        {
-                            cancel = true;
-                            response.surrender_focus();
-                        }
-                        apply |= draft.changed && response.lost_focus();
-                        if !horizontal {
-                            ui.end_row();
-                        }
-                    }
-                    if horizontal {
-                        ui.end_row();
-                    }
-                });
-        }
-        for (name, rect) in targets {
-            self.record_target(&name, rect);
-        }
-        if cancel || !self.deform_curve_input_available(ui.ctx()) {
-            self.graph.deform.draft = None;
-            return;
-        }
-        if apply {
-            let values: Option<Vec<_>> = self
-                .graph
-                .deform
-                .draft
-                .as_ref()
-                .unwrap()
-                .text
-                .iter()
-                .map(|text| text.parse::<f64>().ok().filter(|value| value.is_finite()))
-                .collect();
-            let handles = values
-                .map(|values| {
-                    [
-                        values[0] as f32,
-                        (values[1] / 100.) as f32,
-                        values[2] as f32,
-                        (values[3] / 100.) as f32,
-                    ]
-                })
-                .filter(|handles| handles.iter().all(|value| value.is_finite()));
-            if let Some(handles) = handles {
-                self.graph.deform.error = None;
-                self.set_deform_key_curve(
-                    context.attachment.clone(),
-                    context.time,
-                    with_handles(curve, handles),
-                );
-            } else {
-                self.graph.deform.error = Some("Bezier handles must be finite numbers.".into());
-            }
+        if let Some(next_time) = next
+            && let Some(channel) = self.graph_curve_channel(
+                AnimationKey::Deform {
+                    attachment: context.attachment.clone(),
+                    time: context.time,
+                },
+                next_time,
+                0,
+            )
+        {
+            self.graph_curve_numeric_controls(ui, CurveInputOwner::DeformGraph, &channel);
         }
     }
 
@@ -483,7 +360,7 @@ impl Editor {
         if self.graph.deform.owner.as_ref() != Some(&owner) {
             self.graph.deform.owner = Some(owner);
             self.graph.deform.bounds = None;
-            self.graph.deform.draft = None;
+            self.curves.draft = None;
             self.graph.deform.context = None;
         }
         let Some(track) = self
@@ -603,7 +480,7 @@ impl Editor {
             .map(CurveTrack::from)
         else {
             self.graph.deform.context = None;
-            self.graph.deform.draft = None;
+            self.curves.draft = None;
             self.graph.deform.bounds = None;
             ui.label("This mesh has no deform keys.");
             return true;
@@ -635,15 +512,13 @@ impl Editor {
             }
             self.graph.deform.bounds = Some(bounds);
         }
-        let bounds = self
-            .graph
-            .deform
-            .edit
-            .as_ref()
-            .map_or(self.graph.deform.bounds.unwrap(), |edit| edit.bounds);
+        let bounds = self.graph.deform.bounds.unwrap();
         // The clip rect includes the panel's frame margin. Use its content
         // bounds so filling the canvas cannot grow the panel on every frame.
-        let footer = if self.graph.deform.error.is_some() || track.keys.len() > 257 {
+        let footer = if self.graph.deform.error.is_some()
+            || self.curves.error.is_some()
+            || track.keys.len() > 257
+        {
             ui.text_style_height(&egui::TextStyle::Small) + ui.spacing().item_spacing.y
         } else {
             0.
@@ -675,15 +550,6 @@ impl Editor {
         response.widget_info(|| {
             egui::WidgetInfo::labeled(egui::WidgetType::Other, true, "Deform progress graph")
         });
-        if self
-            .graph
-            .deform
-            .edit
-            .as_ref()
-            .is_some_and(|edit| edit.rect != rect)
-        {
-            self.cancel_deform_curve_edit();
-        }
         let painter = ui.painter_at(canvas_rect);
         painter.rect_filled(canvas_rect, 4., Color32::from_rgb(21, 26, 33));
         let name = self
@@ -890,35 +756,29 @@ impl Editor {
                 }
             }
         }
-        let mut handles_position = Vec::new();
-        let mut interval_end = None;
         if let Some(context) = &context
             && let Some(index) = track.keys.iter().position(|key| key.time == context.time)
             && let Some(next) = track.keys.get(index + 1)
-            && let Some(handles) = curve_handles(track.keys[index].curve)
+            && let Some(channel) = self.graph_curve_channel(
+                AnimationKey::Deform {
+                    attachment: context.attachment.clone(),
+                    time: context.time,
+                },
+                next.time,
+                0,
+            )
         {
-            interval_end = Some(next.time);
-            let duration = f64::from(next.time) - f64::from(context.time);
-            for (index, anchor) in [[f64::from(context.time), 0.], [f64::from(next.time), 1.]]
-                .into_iter()
-                .enumerate()
-            {
-                let time = f64::from(context.time) + f64::from(handles[index * 2]) * duration;
-                let point = curve_point(rect, bounds, [time, f64::from(handles[index * 2 + 1])]);
-                if !point.is_finite() || !rect.contains(point) {
-                    continue;
-                }
-                plot_painter.line_segment(
-                    [curve_point(rect, bounds, anchor), point],
-                    Stroke::new(1., color),
-                );
-                plot_painter.circle_filled(point, 4., color);
-                self.record_target(
-                    &format!("graphDeformHandle:{index}"),
-                    egui::Rect::from_center_size(point, vec2(12., 12.)),
-                );
-                handles_position.push((index, point));
-            }
+            self.curve_handles_on_surface(
+                ui,
+                &channel,
+                curve_controller::CurveSurface {
+                    owner: CurveInputOwner::DeformGraph,
+                    rect,
+                    bounds,
+                    normalized: false,
+                    color,
+                },
+            );
         }
         let playhead = curve_point(rect, bounds, [f64::from(self.time), 0.]).x;
         if playhead.is_finite() {
@@ -928,8 +788,9 @@ impl Editor {
             );
         }
         let press = ui.input(|input| super::key_drag::primary_pointer_event(&input.events, true));
-        if self.graph.deform.edit.is_none()
+        if !self.shared_curve_edit_active()
             && !self.graph.deform.blocked
+            && !self.curve_gesture_blocked(ui.ctx())
             && self.deform_curve_input_available(ui.ctx())
             && ui.is_enabled()
             && let Some((pointer, modifiers)) = press
@@ -938,34 +799,6 @@ impl Editor {
         {
             response.request_focus();
             if rect.contains(pointer)
-                && let Some((handle, _)) = handles_position
-                    .iter()
-                    .find(|(_, point)| point.distance(pointer) <= 9.)
-                && let (Some(context), Some(interval_end)) = (&context, interval_end)
-                && let Some(source) = self.deform_curve_key(context).cloned()
-            {
-                self.cancel_gesture();
-                self.session.commit_transaction();
-                self.session.begin_transaction();
-                self.playing = false;
-                self.graph.deform.edit = Some(CurveEdit {
-                    context: context.clone(),
-                    source: source.clone(),
-                    curve: source.curve,
-                    handle: *handle,
-                    interval_end,
-                    rect,
-                    bounds,
-                    cursor: self.time,
-                    skin: self.skin.clone(),
-                    tool: self.tool,
-                    axes: self.axes,
-                    auto_key: self.auto_key,
-                    pose_generation: self.pose_view_generation,
-                    pose: self.session.pose_edits().clone(),
-                    finish_pending: false,
-                });
-            } else if rect.contains(pointer)
                 && let Some((time, _)) = key_positions
                     .iter()
                     .filter(|(_, point)| point.distance(pointer) <= 9.)
@@ -982,22 +815,13 @@ impl Editor {
                 );
             }
         }
-        let release =
-            ui.input(|input| super::key_drag::primary_pointer_event(&input.events, false));
-        if self.graph.deform.edit.is_some() && (response.dragged() || release.is_some()) {
-            if let Some(pointer) = release
-                .map(|(point, _)| point)
-                .or_else(|| response.interact_pointer_pos())
-            {
-                self.update_deform_curve_handle(pointer);
-            }
-            if release.is_some()
-                && let Some(edit) = self.graph.deform.edit.as_mut()
-            {
-                edit.finish_pending = true;
-            }
-        }
-        if let Some(error) = &self.graph.deform.error {
+        if let Some(error) = self
+            .graph
+            .deform
+            .error
+            .as_ref()
+            .or(self.curves.error.as_ref())
+        {
             ui.colored_label(ACCENT, error);
         }
         if visible.len() > 256 {
@@ -1006,57 +830,11 @@ impl Editor {
         true
     }
 
-    fn update_deform_curve_handle(&mut self, pointer: Pos2) {
-        let Some(mut edit) = self.graph.deform.edit.take() else {
-            return;
-        };
-        if !valid_curve_geometry(edit.rect, edit.bounds) || !pointer.is_finite() {
-            self.session.cancel_transaction();
-            self.graph.deform.blocked = true;
-            return;
-        }
-        let Some(mut handles) = curve_handles(edit.source.curve) else {
-            self.session.cancel_transaction();
-            return;
-        };
-        let x = edit.bounds[0]
-            + (f64::from(pointer.x) - f64::from(edit.rect.left())) / f64::from(edit.rect.width())
-                * (edit.bounds[1] - edit.bounds[0]);
-        let y = edit.bounds[2]
-            + (f64::from(edit.rect.bottom()) - f64::from(pointer.y))
-                / f64::from(edit.rect.height())
-                * (edit.bounds[3] - edit.bounds[2]);
-        if !(x as f32).is_finite() || !(y as f32).is_finite() {
-            self.session.cancel_transaction();
-            self.graph.deform.blocked = true;
-            return;
-        }
-        handles[edit.handle * 2] = ((x - f64::from(edit.context.time))
-            / (f64::from(edit.interval_end) - f64::from(edit.context.time)))
-            as f32;
-        handles[edit.handle * 2 + 1] = y as f32;
-        edit.curve = with_handles(edit.source.curve, handles);
-        let command = Command::SetDeformCurve {
-            animation: edit.context.animation,
-            attachment: edit.context.attachment.clone(),
-            time: edit.context.time,
-            curve: edit.curve,
-        };
-        match self.session.preview_transaction(command) {
-            Ok(()) => self.graph.deform.edit = Some(edit),
-            Err(error) => {
-                self.session.cancel_transaction();
-                self.graph.deform.blocked = true;
-                self.graph.deform.error = Some(error);
-            }
-        }
-    }
-
     pub(super) fn deform_curve_diagnostic(&self) -> serde_json::Value {
         serde_json::json!({"context": self.graph.deform.context.as_ref().map(|context|
             serde_json::json!({"animation":context.animation,"attachment":context.attachment,"time":context.time})),
-            "bounds":self.graph.deform.bounds,"active":self.graph.deform.edit.is_some(),"blocked":self.graph.deform.blocked,
-            "error":self.graph.deform.error,"renderedPoints":self.graph.deform.rendered_points})
+            "bounds":self.graph.deform.bounds,"active":self.deform_curve_edit_active(),"blocked":self.graph.deform.blocked,
+            "error":self.graph.deform.error.as_ref().or(self.curves.error.as_ref()),"renderedPoints":self.graph.deform.rendered_points})
     }
 }
 

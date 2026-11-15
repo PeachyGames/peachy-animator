@@ -1,5 +1,37 @@
 # First-slice validation — November 5, 2026
 
+## Curves, scalar Graph and shared MCP actions — November 14, 2026
+
+Focused checks pass with two Cargo workers/test threads: engine curve filter 33
+(shared actions 8), desktop curves 47, adapter curve ranges 3, MCP schema 8 and
+actual stdio curve workflows 6. Filters overlap. Formatting, all-target workspace
+Clippy, build and seven-crate architecture checks pass. No full-suite or hosted
+CI pass is claimed.
+
+Installed 4.3.26 original-data probes establish twelve middle-key resets, four
+incoming reset cases, two normal live coupling directions, Match copying only
+one handle, repeated Bezier reset and single-/multiple-final semantics. Actual
+exports prove unchanged values/times/outer data. Reset tolerance is 0.00002;
+normal live native angle drift uses 0.0002, while exact raw metadata is preserved.
+Extreme/adjacent coupling remains bounded by explicit failures.
+
+Actual native input verifies vertical placement, typed selection, drag/history,
+an observed held preview canceled by Escape, numeric Escape, repeated presets
+and terminal handling. Typed pending rotation 13.5 survives numeric handle 6.5
+and normal live edits. Save excludes the pose; a fresh final-binary process loads
+the exact document with ten images and advances playback without errors. All
+owned editor/reference processes are closed.
+
+Actual MCP creates a fresh project from one original cutout: 168 requests,
+23 accepted commands, 121 retained samples, atomic failures, history and
+Save/reopen/export pass. Its external runtime check compares 312 world, 320
+region and 160 color values. The final native-authored three-clip/all-three-skin
+project passes 468 poses: 42,120 world values (max 0.00002282), 43,680 region
+values, 7,800 mesh values (4,680 weighted; max 0.00003052), 15,600 UV values
+(zero error) and 24,960 colors. Geometry tolerance remains 0.001. Original
+project and ten PNG hashes are unchanged. See [review](evidence/curves-authoring.html),
+[scalar evidence](evidence/curves-authoring.json) and [scope](slices/curves-authoring.md).
+
 ## Explicit Editor/Runtime export targets — November 14, 2026
 
 Focused two-worker checks pass: adapter targets 5, I/O 1, actual MCP target 1

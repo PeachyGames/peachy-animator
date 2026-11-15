@@ -38,6 +38,8 @@ fn fixture() -> (Editor, egui::Context) {
     editor.time = 0.3;
     editor.reconcile_selection();
     editor.key_selection.replace(vec![color_key(0.3)]);
+    // These regressions exercise independent handles and unchanged neighbors.
+    editor.curves.separate = true;
     editor.open_graph_view();
     let ctx = editor_context();
     settle(&mut editor, &ctx);
@@ -360,7 +362,7 @@ fn slot_graph_numeric_escape_keeps_slot_key_channel_pending_pose_and_redo() {
             ],
         );
         assert!(ctx.text_edit_focused());
-        assert!(editor.graph.slot.draft.as_ref().unwrap().changed);
+        assert_eq!(editor.curve_handle_diagnostic()["draft"]["changed"], true);
         workspace_frame(&mut editor, &ctx, vec![key_event(egui::Key::Escape)]);
         settle(&mut editor, &ctx);
         assert!(!ctx.text_edit_focused());

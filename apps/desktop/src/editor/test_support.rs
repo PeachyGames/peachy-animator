@@ -100,6 +100,8 @@ pub(super) fn editor_fixture() -> Editor {
         preview: Default::default(),
         audio: Default::default(),
         graph: Default::default(),
+        curve_interaction: Default::default(),
+        curves: Default::default(),
         slot_color: Default::default(),
         drag: None,
         transform_blocked: false,

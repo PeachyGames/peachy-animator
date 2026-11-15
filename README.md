@@ -1,11 +1,22 @@
 # Peachy Animator
 
+Curves now has a separate relative-transition view, fitted handles, Match/Separate
+controls and shared Dopesheet selection. Scalar Graph adds tangent and numeric
+editing. Exact scalar/IK curve setters and shared preset/handle actions are also
+available through MCP: 49 strict commands / 11 tools, with native v22 unchanged.
+Native input, persistence and both authored runtime comparisons pass. Preset
+library/default preferences and uncalibrated coupling cases remain explicit gaps.
+See the [review gallery](docs/evidence/curves-authoring.html) and
+[measured contract](docs/slices/curves-authoring.md).
+Open [the original three-clip Curves Lab](examples/peach-bot/curves-bot.peachy)
+to inspect the saved scalar, RGBA and weighted Deform transitions.
+
 Slot attachment swaps and RGBA fades now support Animate editing, pending poses,
 Auto Key and K through the same engine and MCP. Native Properties opens a Color
 dialog; typed Attach/RGBA rows and a four-channel Graph provide key, clipboard
 and curve editing. New color keys subdivide existing curves using independently
 calibrated Spine behavior. See the [review gallery](docs/evidence/slot-authoring.html)
-and [slot contract](docs/slices/slot-authoring.md). MCP exposes 45 strict commands
+and [slot contract](docs/slices/slot-authoring.md). MCP exposes 49 strict commands
 and raw slot poses, including hidden slots; native format remains v22.
 
 Export now offers explicit Spine Editor 4.3 and Runtime 4.3 targets in the native

@@ -32,6 +32,7 @@ pub(super) enum Icon {
     Audio,
     Ghosting,
     Graph,
+    Curves,
     MeshTools,
     Skins,
     SlotColor,
@@ -386,6 +387,18 @@ fn paint(ui: &Ui, rect: Rect, icon: Icon, response: &Response) {
                 green,
                 Stroke::NONE,
             ));
+        }
+        Icon::Curves => {
+            box_at([1., 1.], [15., 15.], ink);
+            line(&[[2., 13.], [6., 13.]], blue);
+            line(&[[10., 3.], [14., 3.]], blue);
+            let points = (0..=16)
+                .map(|index| {
+                    let t = index as f32 / 16.;
+                    p(2. + 12. * t, 13. - 10. * t * t * (3. - 2. * t))
+                })
+                .collect();
+            painter.add(Shape::line(points, stroke(blue)));
         }
         Icon::Graph => {
             line(&[[2., 2.], [2., 14.], [15., 14.]], ink);

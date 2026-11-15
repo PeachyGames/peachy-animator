@@ -4,6 +4,38 @@ Written November 10, 2026, at the end of the import-parity push. Read this
 first, then `AGENTS.md`. The workspace rules in `../AGENTS.md` and `../CLAUDE.md`
 still apply.
 
+## November 14 Curves continuation
+
+Curves now has a separate fitted relative-transition pane and shares exact
+Dopesheet selection with Scalar Graph. Scalar tangents/numerics, raw scalar/IK
+curve setters and shared preset/handle actions bring MCP to 49 commands / 11
+tools; native v22 stays. Installed 4.3.26 reset/live matrices, actual native
+typing/cancel/history/persistence and both authored external runtime checks pass.
+Focused two-worker checks, formatting, Clippy, build and architecture pass.
+See [review](evidence/curves-authoring.html), [scope](slices/curves-authoring.md)
+and [scalar evidence](evidence/curves-authoring.json).
+
+Stored preset management is disabled. Last chosen, native property grouping,
+flat Match destinations and several Separate-off coupled domains remain open;
+unsupported operations fail explicitly. The current Views count is 16 of the
+installed editor's 17; Problems and broader Color remain. Full parity is not
+claimed. Required hosted CI still gates main; keep the feature PR draft.
+
+Next bounded blog-linked authoring slice: global Animate draw-order editing,
+pending/key/Delete/clipboard through engine/MCP. The 4.3 Look around demo uses
+it alongside completed slot swaps/fades. The original four-slot fixture and
+implementation questions are prepared privately in
+`.local/training-spine-20261114/draw-order-authoring/`; native +/-/Shift/Auto Key
+probes are next. Per-folder keys need a later identity/model slice. Continue
+Curves library/defaults, multi-vertex weights, cross-property mappings and sliders
+as documented in [the official audit](slices/spine-blog-audit-20261114.md).
+
+Owned Curves native/reference processes are closed. Final original projects,
+reports and selected captures remain in `curves-authoring/` until review or
+supersession; temporary helpers/raw captures retire at the verified checkpoint.
+Shared Cargo target remains required by continuing parity work; no second target
+or checkout was created. The canceled female-pose full check remains canceled.
+
 ## November 14 export-target continuation
 
 Native, CLI and MCP export now share explicit Spine Editor 4.3 / Runtime 4.3
@@ -24,10 +56,9 @@ Private original inputs, reports, selected captures and final bundles remain in
 Task-owned raw captures, Cocoa/input diagnostics, invalid probes and redundant
 CLI outputs retire at closure; shared target remains required by ongoing parity.
 
-Next: probe the installed Graph's already-Bezier reset and single final-key
-previous-interval behavior, then close scalar curve-only engine/MCP edits and
-the observed Curves workflow. Continue multi-vertex Direct/Auto/brush weights,
-cross-property transform mapping, sliders and Animate draw-order authoring.
+The reset/final-key probes and bounded scalar Curves workflow are covered by the
+latest continuation above. Continue its recorded authoring gaps, multi-vertex
+Direct/Auto/brush weights, cross-property transform mapping and sliders.
 Use [the refreshed official blog audit](slices/spine-blog-audit-20261114.md).
 Hosted CI still gates main; keep the feature PR draft. The canceled female-pose
 full check remains canceled.

@@ -257,6 +257,61 @@ impl Editor {
             .find(|track| track.bone == context.bone && track.property == context.property)
     }
 
+    fn selected_scalar_key(&self) -> Option<(usize, Property, f32)> {
+        let selected_bone = self.selected_bone()?;
+        if let Some(peachy_engine::AnimationKey::Bone {
+            bone,
+            property,
+            time,
+        }) = self.preferred_scalar_curve_selection()
+            && bone == selected_bone
+        {
+            return Some((bone, property, time));
+        }
+        self.key_selection.keys().iter().find_map(|key| match key {
+            peachy_engine::AnimationKey::Bone {
+                bone,
+                property,
+                time,
+            } if *bone == selected_bone => Some((*bone, *property, *time)),
+            _ => None,
+        })
+    }
+
+    fn select_scalar_graph_key(&mut self, context: GraphContext, time: f32, toggle: bool) {
+        self.key_selection.select(
+            peachy_engine::AnimationKey::Bone {
+                bone: context.bone,
+                property: context.property,
+                time,
+            },
+            toggle,
+        );
+        self.graph.selected = self.key_selection.keys().iter().find_map(|key| match key {
+            peachy_engine::AnimationKey::Bone {
+                bone,
+                property,
+                time,
+            } if *bone == context.bone && *property == context.property => Some(*time),
+            _ => None,
+        });
+    }
+
+    pub(super) fn scalar_graph_has_focus(&self, ctx: &egui::Context) -> bool {
+        self.graph_visible()
+            && matches!(
+                self.timeline_owner(),
+                Some(peachy_engine::KeyOwner::Bone { .. })
+            )
+            && !ctx.text_edit_focused()
+            && !egui::Popup::is_any_open(ctx)
+            && self.error.is_none()
+            && self.rename.is_none()
+            && self.duplicate_animation.is_none()
+            && self.export_dialog.is_none()
+            && ctx.memory(|memory| memory.has_focus(Self::graph_id()))
+    }
+
     fn graph_source_matches(&self, edit: &GraphEdit) -> bool {
         self.graph_track(edit.context).is_some_and(|track| {
             track.keys.len() == edit.source.keys.len()
@@ -281,9 +336,11 @@ impl Editor {
         self.graph.edit.is_some()
             || self.deform_curve_edit_active()
             || self.slot_curve_edit_active()
+            || self.shared_curve_edit_active()
     }
 
     pub(super) fn cancel_graph_edit(&mut self) {
+        self.cancel_shared_curve_edit();
         self.cancel_deform_curve_edit();
         self.cancel_slot_curve_edit();
         if self.graph.edit.take().is_some() {
@@ -293,6 +350,7 @@ impl Editor {
     }
 
     pub(super) fn reconcile_graph_input(&mut self, ctx: &egui::Context) {
+        self.reconcile_shared_curve_input(ctx);
         self.reconcile_deform_curve_input(ctx);
         self.reconcile_slot_curve_input(ctx);
         if !ctx.input(|input| input.pointer.primary_down()) {
@@ -327,8 +385,7 @@ impl Editor {
 
     pub(super) fn settle_graph_input(&mut self, ctx: &egui::Context) {
         self.reconcile_graph_input(ctx);
-        self.settle_deform_curve_input(ctx);
-        self.settle_slot_curve_input(ctx);
+        self.settle_shared_curve_input(ctx);
         if !ctx.input(|input| input.pointer.primary_down())
             && self
                 .graph
@@ -341,9 +398,8 @@ impl Editor {
         }
     }
 
-    /// Called after global file/history/tool routing. Deform Graph keys use the
-    /// typed timeline clipboard. Scalar Graph keeps its independent selection;
-    /// neither canvas redirects shortcuts to viewport bone/vertex edits.
+    /// Called after global file/history/tool routing. Graph keys share the
+    /// typed timeline selection and clipboard, with focus kept on this canvas.
     pub(super) fn graph_shortcuts(&mut self, ctx: &egui::Context) -> bool {
         if !self.graph_visible()
             || !ctx.input(|input| input.focused)
@@ -366,7 +422,10 @@ impl Editor {
         if ctx.input_mut(|input| input.consume_key(egui::Modifiers::NONE, egui::Key::F9)) {
             self.toggle_views();
         }
-        if self.deform_graph_has_focus(ctx) || self.slot_graph_has_focus(ctx) {
+        if self.deform_graph_has_focus(ctx)
+            || self.slot_graph_has_focus(ctx)
+            || self.scalar_graph_has_focus(ctx)
+        {
             self.timeline_clipboard_shortcuts(ctx);
         }
         true
@@ -540,6 +599,10 @@ impl Editor {
             return;
         }
         self.animation_controls(ui);
+        if let Some((_, property, time)) = self.selected_scalar_key() {
+            self.graph.property = property;
+            self.graph.selected = Some(time);
+        }
         let previous = self.graph.property;
         let picker = egui::ComboBox::from_id_salt("graph-property")
             .selected_text(previous.label())
@@ -553,12 +616,18 @@ impl Editor {
         self.record_target("graphPropertyPicker", picker.response.rect);
         if previous != self.graph.property {
             self.cancel_gesture();
+            self.key_selection.clear();
+            self.graph.selected = None;
         }
         let context = self.graph_context();
         if context != self.graph.context {
-            self.cancel_graph_edit();
+            // A gray Curves handle can become primary while held. Updating the
+            // accompanying value Graph must preserve that Curves-owned edit.
+            if self.shared_curve_owner() != Some(curve_gesture::CurveInputOwner::Curves) {
+                self.cancel_graph_edit();
+            }
             self.graph.context = context;
-            self.graph.selected = None;
+            self.graph.selected = self.selected_scalar_key().map(|(_, _, time)| time);
             self.graph.bounds = None;
             self.graph.fit = true;
             self.graph.error = None;
@@ -642,7 +711,7 @@ impl Editor {
         }
         if let Some(time) = choose {
             self.cancel_gesture();
-            self.graph.selected = Some(time);
+            self.select_scalar_graph_key(context, time, false);
         }
         ui.horizontal(|ui| {
             let fit = ui.small_button("Fit");
@@ -661,6 +730,37 @@ impl Editor {
                 self.fit_graph(context, true);
             }
         });
+        ui.horizontal(|ui| self.curve_preset_controls(ui, "graphScalarCurve"));
+        let curve_channel=self.selected_curve_channels().ok().and_then(|channels|channels.into_iter().find(|channel|matches!(channel.target.key,
+            peachy_engine::AnimationKey::Bone {bone,property,..} if bone==context.bone&&property==context.property)));
+        // Keep this header in the layout before a marker is selected: a new
+        // selection must not shift the frozen canvas during its press/drag.
+        let handles = egui::CollapsingHeader::new("Handles")
+            .id_salt("scalar-curve-handles")
+            .default_open(false)
+            .show(ui, |ui| {
+                if let Some(channel) = curve_channel.as_ref()
+                    && super::curve_controller::value_handles(channel).is_some()
+                {
+                    self.scalar_curve_numeric_controls(ui, channel);
+                } else {
+                    let horizontal = ui.available_width() > 650.;
+                    curve_widgets::handle_fields(
+                        ui,
+                        "scalar-curve-placeholder",
+                        &mut Default::default(),
+                        false,
+                        false,
+                        horizontal,
+                        ["Time 1", "Value 1", "Time 2", "Value 2"],
+                    );
+                }
+            });
+        self.record_target("graphScalarHandles", handles.header_response.rect);
+        if let Some(error) = &self.curves.error {
+            let response = ui.colored_label(ACCENT, error);
+            self.record_target("graphScalarError", response.rect);
+        }
         if self.graph.fit || self.graph.bounds.is_none() {
             self.fit_graph(context, false);
         }
@@ -679,6 +779,26 @@ impl Editor {
         let plot_rect =
             egui::Rect::from_min_max(rect.min + vec2(6., 23.), rect.max - vec2(62., 8.));
         self.record_target("graphPlot", plot_rect);
+        ui.painter_at(rect)
+            .rect_filled(rect, 3., Color32::from_rgb(21, 26, 33));
+        if let Some(channel) = curve_channel.as_ref() {
+            self.curve_handles_on_surface(
+                ui,
+                channel,
+                curve_controller::CurveSurface {
+                    owner: curve_gesture::CurveInputOwner::ScalarGraph,
+                    rect: plot_rect,
+                    bounds: [
+                        bounds.time_min,
+                        bounds.time_max,
+                        bounds.value_min,
+                        bounds.value_max,
+                    ],
+                    normalized: false,
+                    color: MINT,
+                },
+            );
+        }
         let count = self
             .graph_track(context)
             .map_or(0, |track| track.keys.len());
@@ -720,6 +840,7 @@ impl Editor {
         if let Some(plot) = &preliminary {
             let press = ui.input(|input| key_drag::primary_pointer_event(&input.events, true));
             if !self.graph.blocked
+                && !self.shared_curve_edit_active()
                 && ui.input(|input| input.focused)
                 && self.error.is_none()
                 && self.rename.is_none()
@@ -727,8 +848,6 @@ impl Editor {
                 && self.export_dialog.is_none()
                 && !egui::Popup::is_any_open(ui.ctx())
                 && let Some((pointer, modifiers)) = press
-                && !modifiers.command
-                && !modifiers.ctrl
                 && !modifiers.alt
                 && rect.contains(pointer)
                 && ui.clip_rect().contains(pointer)
@@ -740,10 +859,19 @@ impl Editor {
                     .filter(|(_, point)| point.distance(pointer) <= 8.)
                     .min_by(|(_, a), (_, b)| a.distance(pointer).total_cmp(&b.distance(pointer)))
                     .map(|(key, _)| *key);
-                self.graph.selected = pressed.map(|key| key.time);
                 canvas.request_focus();
                 if let Some(key) = pressed {
-                    self.begin_graph_edit(context, key, pointer, plot_rect, bounds);
+                    self.select_scalar_graph_key(
+                        context,
+                        key.time,
+                        modifiers.command || modifiers.ctrl,
+                    );
+                    if !modifiers.command && !modifiers.ctrl {
+                        self.begin_graph_edit(context, key, pointer, plot_rect, bounds);
+                    }
+                } else {
+                    self.key_selection.clear();
+                    self.graph.selected = None;
                 }
             }
         }
@@ -760,7 +888,6 @@ impl Editor {
             ui.ctx().request_repaint();
         }
         let painter = ui.painter_at(rect);
-        painter.rect_filled(rect, 3., Color32::from_rgb(21, 26, 33));
         for tick in 0..=3 {
             let fraction = f64::from(tick) / 3.;
             let x = plot_rect.left() + plot_rect.width() * fraction as f32;

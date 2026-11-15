@@ -1,4 +1,5 @@
 //! Slot curves are unmultiplied RGBA values, sharing the timeline's typed keys.
+use super::curve_gesture::CurveInputOwner;
 use super::*;
 use peachy_engine::{AnimationKey, KeyOwner};
 
@@ -20,37 +21,8 @@ struct SlotContext {
     channel: usize,
 }
 
-struct SlotDraft {
-    context: SlotContext,
-    source: Curve,
-    source_color: [u8; 4],
-    next_color: [u8; 4],
-    text: [String; 4],
-    changed: bool,
-}
-
-struct SlotCurveEdit {
-    context: SlotContext,
-    source: ColorKey,
-    next: ColorKey,
-    curves: [Curve; 4],
-    handle: usize,
-    rect: egui::Rect,
-    bounds: [f64; 4],
-    cursor: f32,
-    skin: String,
-    tool: Tool,
-    axes: Axes,
-    auto_key: bool,
-    pose_generation: u64,
-    pose: peachy_engine::PoseEdits,
-    finish_pending: bool,
-}
-
 #[derive(Default)]
 pub(super) struct SlotCurveView {
-    edit: Option<SlotCurveEdit>,
-    draft: Option<SlotDraft>,
     blocked: bool,
     error: Option<String>,
     owner: Option<(usize, usize)>,
@@ -99,6 +71,7 @@ fn value_handles(curve: Curve, left: f32, right: f32) -> Option<[f64; 4]> {
     ])
 }
 
+#[cfg(test)]
 fn curve_with_value_handles(
     source: Curve,
     values: [f64; 4],
@@ -125,6 +98,7 @@ fn curve_with_value_handles(
     })
 }
 
+#[cfg(test)]
 fn changed_channel(mut curves: [Curve; 4], channel: usize, curve: Curve) -> [Curve; 4] {
     if curve == Curve::Stepped {
         return [Curve::Stepped; 4];
@@ -223,6 +197,7 @@ impl Editor {
             .find(|track| track.slot == slot)
     }
 
+    #[cfg(test)]
     fn slot_curve_key(&self, context: SlotContext) -> Option<&ColorKey> {
         let track = self.slot_color_track(context.animation, context.slot)?;
         let index = track
@@ -246,11 +221,24 @@ impl Editor {
                 _ => None,
             });
         let selected_time = selected.next().filter(|_| selected.next().is_none());
-        let time = selected_time.or(Some(self.time))?;
+        let time = selected_time.unwrap_or(self.time);
         track
             .keys
             .binary_search_by(|key| key.time.total_cmp(&time))
             .ok()?;
+        let fallback = vec![AnimationKey::SlotColor { slot, time }];
+        let selection = if self.key_selection.is_empty() {
+            fallback.as_slice()
+        } else {
+            self.key_selection.keys()
+        };
+        let time = peachy_engine::curve_targets(self.session.document(), self.animation, selection)
+            .ok()?
+            .into_iter()
+            .find_map(|target| match target.key {
+                AnimationKey::SlotColor { slot: owner, time } if owner == slot => Some(time),
+                _ => None,
+            })?;
         Some(SlotContext {
             animation: self.animation,
             slot,
@@ -268,70 +256,28 @@ impl Editor {
             && ctx.memory(|memory| memory.has_focus(Self::graph_id()))
     }
 
+    pub(super) fn slot_graph_channel(&self) -> usize {
+        self.graph.slot.channel
+    }
+
     pub(super) fn slot_curve_edit_active(&self) -> bool {
-        self.graph.slot.edit.is_some()
+        self.shared_curve_owner() == Some(CurveInputOwner::SlotGraph)
     }
 
     pub(super) fn cancel_slot_curve_edit(&mut self) {
-        if self.graph.slot.edit.take().is_some() {
-            self.session.cancel_transaction();
+        if self.slot_curve_edit_active() {
+            self.cancel_shared_curve_edit();
             self.graph.slot.blocked = true;
         }
-        self.graph.slot.draft = None;
     }
 
     pub(super) fn reconcile_slot_curve_input(&mut self, ctx: &egui::Context) {
         if !ctx.input(|input| input.pointer.primary_down()) {
             self.graph.slot.blocked = false;
         }
-        if self.graph.slot.edit.as_ref().is_some_and(|edit| {
-            !self.graph_visible()
-                || self.setup_mode
-                || !self.slot_authoring_input_available(ctx)
-                || self.timeline_owner()
-                    != Some(KeyOwner::Slot {
-                        slot: edit.context.slot,
-                    })
-                || self.animation != edit.context.animation
-                || self.graph.slot.channel != edit.context.channel
-                || self.time.to_bits() != edit.cursor.to_bits()
-                || self.skin != edit.skin
-                || self.tool != edit.tool
-                || self.axes != edit.axes
-                || self.auto_key != edit.auto_key
-                || self.pose_view_generation != edit.pose_generation
-                || self.session.pose_edits() != &edit.pose
-                || self
-                    .slot_curve_key(edit.context)
-                    .is_none_or(|key| key.color != edit.source.color || key.curves != edit.curves)
-                || self
-                    .slot_color_track(edit.context.animation, edit.context.slot)
-                    .is_none_or(|track| {
-                        let index = track
-                            .keys
-                            .partition_point(|key| key.time <= edit.context.time);
-                        track.keys.get(index) != Some(&edit.next)
-                    })
-                || ctx.text_edit_focused()
-        }) {
-            self.cancel_slot_curve_edit();
-        }
     }
 
-    pub(super) fn settle_slot_curve_input(&mut self, ctx: &egui::Context) {
-        if !ctx.input(|input| input.pointer.primary_down())
-            && self
-                .graph
-                .slot
-                .edit
-                .as_ref()
-                .is_some_and(|edit| edit.finish_pending)
-        {
-            self.graph.slot.edit = None;
-            self.session.commit_transaction();
-        }
-    }
-
+    #[cfg(test)]
     pub(super) fn set_slot_key_curve(
         &mut self,
         slot: usize,
@@ -375,11 +321,19 @@ impl Editor {
         let enabled = self.slot_authoring_input_available(ui.ctx());
         let mut choose = None;
         for (name, value, selected) in [
-            ("Linear", Curve::Linear, curve == Curve::Linear),
-            ("Stepped", Curve::Stepped, curve == Curve::Stepped),
+            (
+                "Linear",
+                peachy_engine::CurvePreset::Linear,
+                curve == Curve::Linear,
+            ),
+            (
+                "Stepped",
+                peachy_engine::CurvePreset::Stepped,
+                curve == Curve::Stepped,
+            ),
             (
                 "Bezier",
-                Curve::Bezier([0.42, 0., 0.58, 1.]),
+                peachy_engine::CurvePreset::Bezier,
                 handles(curve).is_some(),
             ),
         ] {
@@ -392,12 +346,34 @@ impl Editor {
             } else {
                 "Change only the selected channel's interpolation."
             });
-            if response.clicked() && !selected {
+            if response.clicked() {
                 choose = Some(value);
             }
         }
-        if let Some(curve) = choose {
-            self.set_slot_key_curve(context.slot, context.time, context.channel, curve);
+        if let Some(preset) = choose {
+            let selection = if self.key_selection.is_empty() {
+                vec![peachy_engine::CurveSelection {
+                    key: AnimationKey::SlotColor {
+                        slot: context.slot,
+                        time: context.time,
+                    },
+                    channel: context.channel,
+                }]
+            } else {
+                self.key_selection
+                    .keys()
+                    .iter()
+                    .map(|key| peachy_engine::CurveSelection {
+                        key: key.clone(),
+                        channel: if matches!(key, AnimationKey::SlotColor { .. }) {
+                            context.channel
+                        } else {
+                            0
+                        },
+                    })
+                    .collect()
+            };
+            self.apply_curve_preset_request(selection, preset);
         }
     }
 
@@ -405,108 +381,18 @@ impl Editor {
         &mut self,
         ui: &mut egui::Ui,
         context: SlotContext,
-        key: &ColorKey,
+        _key: &ColorKey,
         next: &ColorKey,
     ) {
-        let curve = key.curves[context.channel];
-        let Some(values) = value_handles(
-            curve,
-            channel_value(key, context.channel),
-            channel_value(next, context.channel),
-        ) else {
-            return;
-        };
-        let enabled = self.slot_authoring_input_available(ui.ctx());
-        if !enabled {
-            self.graph.slot.draft = None;
-        }
-        if self.graph.slot.draft.as_ref().is_none_or(|draft| {
-            draft.context != context
-                || draft.source != curve
-                || draft.source_color != key.color
-                || draft.next_color != next.color
-        }) {
-            self.graph.slot.draft = Some(SlotDraft {
-                context,
-                source: curve,
-                source_color: key.color,
-                next_color: next.color,
-                text: std::array::from_fn(|index| {
-                    (values[index] * if index % 2 == 0 { 1. } else { 100. }).to_string()
-                }),
-                changed: false,
-            });
-        }
-        let mut apply = false;
-        let mut cancel = false;
-        let mut targets = Vec::new();
-        if let Some(draft) = self.graph.slot.draft.as_mut() {
-            egui::Grid::new("slot-curve-handles")
-                .num_columns(2)
-                .show(ui, |ui| {
-                    for (index, label) in ["Time 1", "Value 1 (%)", "Time 2", "Value 2 (%)"]
-                        .iter()
-                        .enumerate()
-                    {
-                        ui.label(*label);
-                        let response = ui.add_enabled(
-                            enabled,
-                            egui::TextEdit::singleline(&mut draft.text[index])
-                                .id_salt(("slot-curve-number", index))
-                                .event_filter(egui::EventFilter {
-                                    horizontal_arrows: true,
-                                    vertical_arrows: true,
-                                    escape: true,
-                                    ..Default::default()
-                                })
-                                .desired_width(90.),
-                        );
-                        targets.push((format!("graphSlotValue:{index}"), response.rect));
-                        draft.changed |= response.changed();
-                        // Retain text focus until this handler runs: egui's
-                        // default Escape navigation would reach global deselect.
-                        if response.has_focus()
-                            && ui.input_mut(|input| {
-                                input.consume_key(egui::Modifiers::NONE, egui::Key::Escape)
-                            })
-                        {
-                            cancel = true;
-                            response.surrender_focus();
-                        }
-                        apply |= draft.changed && response.lost_focus();
-                        ui.end_row();
-                    }
-                });
-        }
-        for (name, rect) in targets {
-            self.record_target(&name, rect);
-        }
-        if cancel || !self.slot_authoring_input_available(ui.ctx()) {
-            self.graph.slot.draft = None;
-            return;
-        }
-        if apply {
-            let parsed: Option<Vec<f64>> = self.graph.slot.draft.as_ref().and_then(|draft| {
-                draft
-                    .text
-                    .iter()
-                    .map(|text| text.parse::<f64>().ok().filter(|value| value.is_finite()))
-                    .collect()
-            });
-            let curve = parsed.and_then(|values| {
-                curve_with_value_handles(
-                    curve,
-                    [values[0], values[1] / 100., values[2], values[3] / 100.],
-                    channel_value(key, context.channel),
-                    channel_value(next, context.channel),
-                )
-            });
-            if let Some(curve) = curve {
-                self.graph.slot.error = None;
-                self.set_slot_key_curve(context.slot, context.time, context.channel, curve);
-            } else {
-                self.graph.slot.error = Some("Bezier handles must be finite numbers.".into());
-            }
+        if let Some(channel) = self.graph_curve_channel(
+            AnimationKey::SlotColor {
+                slot: context.slot,
+                time: context.time,
+            },
+            next.time,
+            context.channel,
+        ) {
+            self.graph_curve_numeric_controls(ui, CurveInputOwner::SlotGraph, &channel);
         }
     }
 
@@ -607,7 +493,7 @@ impl Editor {
             self.graph.slot.owner = Some(owner);
             self.graph.slot.context = None;
             self.graph.slot.bounds = None;
-            self.graph.slot.draft = None;
+            self.curves.draft = None;
             self.graph.slot.error = None;
         }
         self.graph.slot.rendered_points = 0;
@@ -721,7 +607,7 @@ impl Editor {
         if channel != self.graph.slot.channel {
             self.cancel_gesture();
             self.graph.slot.channel = channel;
-            self.graph.slot.draft = None;
+            self.curves.draft = None;
         }
         if let Some(time) = choose {
             self.cancel_gesture();
@@ -769,20 +655,16 @@ impl Editor {
         if self.graph.slot.bounds.is_none() {
             self.graph.slot.bounds = Some(self.slot_fit_bounds(slot));
         }
-        let bounds = self
-            .graph
-            .slot
-            .edit
-            .as_ref()
-            .map_or(self.graph.slot.bounds.unwrap(), |edit| edit.bounds);
+        let bounds = self.graph.slot.bounds.unwrap();
         let Some(plot) = self.slot_plot(slot, bounds, context) else {
             self.graph.slot.context = None;
-            self.graph.slot.draft = None;
+            self.curves.draft = None;
             ui.label("This slot has no color keys. Key Color to create its RGBA curves.");
             return true;
         };
-        let footer_lines = usize::from(self.graph.slot.error.is_some())
-            + usize::from(plot.visible_intervals > INTERVAL_LIMIT);
+        let footer_lines =
+            usize::from(self.graph.slot.error.is_some() || self.curves.error.is_some())
+                + usize::from(plot.visible_intervals > INTERVAL_LIMIT);
         let footer = footer_lines as f32
             * (ui.text_style_height(&egui::TextStyle::Small) + ui.spacing().item_spacing.y);
         let (_, canvas) = ui.allocate_space(vec2(
@@ -806,15 +688,6 @@ impl Editor {
         response.widget_info(|| {
             egui::WidgetInfo::labeled(egui::WidgetType::Other, true, "Slot RGBA value graph")
         });
-        if self
-            .graph
-            .slot
-            .edit
-            .as_ref()
-            .is_some_and(|edit| edit.rect != rect)
-        {
-            self.cancel_slot_curve_edit();
-        }
         let painter = ui.painter_at(canvas);
         painter.rect_filled(canvas, 4., Color32::from_rgb(21, 26, 33));
         let labels = egui::Rect::from_min_max(canvas.min, pos2(rect.left() - 5., canvas.bottom()));
@@ -1008,42 +881,27 @@ impl Editor {
                 keys.push((key.time, channel, position));
             }
         }
-        let mut handle_points = Vec::new();
         if let (Some(context), Some((key, Some(next)))) = (context, &plot.selected)
-            && let Some(h) = value_handles(
-                key.curves[context.channel],
-                channel_value(key, context.channel),
-                channel_value(next, context.channel),
+            && let Some(channel) = self.graph_curve_channel(
+                AnimationKey::SlotColor {
+                    slot: context.slot,
+                    time: key.time,
+                },
+                next.time,
+                context.channel,
             )
         {
-            let anchors = [
-                (key.time, channel_value(key, context.channel)),
-                (next.time, channel_value(next, context.channel)),
-            ];
-            for index in 0..2 {
-                let time = f64::from(key.time)
-                    + h[index * 2] * (f64::from(next.time) - f64::from(key.time));
-                let position = point(rect, bounds, time, h[index * 2 + 1]);
-                if !position.is_finite() || !hit_rect.contains(position) {
-                    continue;
-                }
-                let color = CHANNEL_COLORS[context.channel];
-                let anchor = point(
+            self.curve_handles_on_surface(
+                ui,
+                &channel,
+                curve_controller::CurveSurface {
+                    owner: CurveInputOwner::SlotGraph,
                     rect,
                     bounds,
-                    f64::from(anchors[index].0),
-                    f64::from(anchors[index].1),
-                );
-                if anchor.is_finite() {
-                    plot_painter.line_segment([anchor, position], Stroke::new(1., color));
-                }
-                plot_painter.circle_filled(position, 4., color);
-                self.record_target(
-                    &format!("graphSlotHandle:{index}"),
-                    egui::Rect::from_center_size(position, vec2(12., 12.)),
-                );
-                handle_points.push((index, position));
-            }
+                    normalized: false,
+                    color: CHANNEL_COLORS[context.channel],
+                },
+            );
         }
         let playhead = point(rect, bounds, f64::from(self.time), 0.).x;
         if playhead.is_finite() {
@@ -1053,8 +911,9 @@ impl Editor {
             );
         }
         let press = ui.input(|input| super::key_drag::primary_pointer_event(&input.events, true));
-        if self.graph.slot.edit.is_none()
+        if !self.shared_curve_edit_active()
             && !self.graph.slot.blocked
+            && !self.curve_gesture_blocked(ui.ctx())
             && self.slot_authoring_input_available(ui.ctx())
             && ui.is_enabled()
             && let Some((pointer, modifiers)) = press
@@ -1063,33 +922,6 @@ impl Editor {
         {
             response.request_focus();
             if hit_rect.contains(pointer)
-                && let Some((handle, _)) = handle_points
-                    .iter()
-                    .find(|(_, point)| point.distance(pointer) <= 9.)
-                && let (Some(context), Some((source, Some(next)))) = (context, &plot.selected)
-            {
-                self.cancel_gesture();
-                self.session.commit_transaction();
-                self.session.begin_transaction();
-                self.playing = false;
-                self.graph.slot.edit = Some(SlotCurveEdit {
-                    context,
-                    source: source.clone(),
-                    next: next.clone(),
-                    curves: source.curves,
-                    handle: *handle,
-                    rect,
-                    bounds,
-                    cursor: self.time,
-                    skin: self.skin.clone(),
-                    tool: self.tool,
-                    axes: self.axes,
-                    auto_key: self.auto_key,
-                    pose_generation: self.pose_view_generation,
-                    pose: self.session.pose_edits().clone(),
-                    finish_pending: false,
-                });
-            } else if hit_rect.contains(pointer)
                 && let Some((time, channel, _)) = keys
                     .iter()
                     .filter(|(_, _, point)| point.distance(pointer) <= 9.)
@@ -1111,22 +943,13 @@ impl Editor {
                 );
             }
         }
-        let release =
-            ui.input(|input| super::key_drag::primary_pointer_event(&input.events, false));
-        if self.graph.slot.edit.is_some() && (response.dragged() || release.is_some()) {
-            if let Some(pointer) = release
-                .map(|(point, _)| point)
-                .or_else(|| response.interact_pointer_pos())
-            {
-                self.update_slot_curve_handle(pointer);
-            }
-            if release.is_some()
-                && let Some(edit) = self.graph.slot.edit.as_mut()
-            {
-                edit.finish_pending = true;
-            }
-        }
-        if let Some(error) = &self.graph.slot.error {
+        if let Some(error) = self
+            .graph
+            .slot
+            .error
+            .as_ref()
+            .or(self.curves.error.as_ref())
+        {
             ui.colored_label(ACCENT, error);
         }
         if plot.visible_intervals > INTERVAL_LIMIT {
@@ -1135,68 +958,11 @@ impl Editor {
         true
     }
 
-    fn update_slot_curve_handle(&mut self, pointer: Pos2) {
-        let Some(mut edit) = self.graph.slot.edit.take() else {
-            return;
-        };
-        if !valid_geometry(edit.rect, edit.bounds) || !pointer.is_finite() {
-            self.session.cancel_transaction();
-            self.graph.slot.blocked = true;
-            return;
-        }
-        let channel = edit.context.channel;
-        let Some(mut values) = value_handles(
-            edit.source.curves[channel],
-            channel_value(&edit.source, channel),
-            channel_value(&edit.next, channel),
-        ) else {
-            self.session.cancel_transaction();
-            return;
-        };
-        let time = edit.bounds[0]
-            + (f64::from(pointer.x) - f64::from(edit.rect.left())) / f64::from(edit.rect.width())
-                * (edit.bounds[1] - edit.bounds[0]);
-        let value = edit.bounds[2]
-            + (f64::from(edit.rect.bottom()) - f64::from(pointer.y))
-                / f64::from(edit.rect.height())
-                * (edit.bounds[3] - edit.bounds[2]);
-        values[edit.handle * 2] = (time - f64::from(edit.context.time))
-            / (f64::from(edit.next.time) - f64::from(edit.context.time));
-        values[edit.handle * 2 + 1] = value;
-        let Some(curve) = curve_with_value_handles(
-            edit.source.curves[channel],
-            values,
-            channel_value(&edit.source, channel),
-            channel_value(&edit.next, channel),
-        ) else {
-            self.session.cancel_transaction();
-            self.graph.slot.blocked = true;
-            self.graph.slot.error = Some("Bezier handles must be finite numbers.".into());
-            return;
-        };
-        edit.curves = changed_channel(edit.source.curves, channel, curve);
-        match self
-            .session
-            .preview_transaction(Command::SetSlotColorCurves {
-                animation: edit.context.animation,
-                slot: edit.context.slot,
-                time: edit.context.time,
-                curves: edit.curves,
-            }) {
-            Ok(()) => self.graph.slot.edit = Some(edit),
-            Err(error) => {
-                self.session.cancel_transaction();
-                self.graph.slot.blocked = true;
-                self.graph.slot.error = Some(error);
-            }
-        }
-    }
-
     pub(super) fn slot_curve_diagnostic(&self) -> serde_json::Value {
         serde_json::json!({
             "context": self.graph.slot.context.map(|context| serde_json::json!({"animation":context.animation,"slot":context.slot,"time":context.time,"channel":CHANNEL_NAMES[context.channel]})),
-            "bounds":self.graph.slot.bounds,"active":self.graph.slot.edit.is_some(),"blocked":self.graph.slot.blocked,
-            "error":self.graph.slot.error,"renderedPoints":self.graph.slot.rendered_points,"renderedIntervals":self.graph.slot.rendered_intervals
+            "bounds":self.graph.slot.bounds,"active":self.slot_curve_edit_active(),"blocked":self.graph.slot.blocked,
+            "error":self.graph.slot.error.as_ref().or(self.curves.error.as_ref()),"renderedPoints":self.graph.slot.rendered_points,"renderedIntervals":self.graph.slot.rendered_intervals
         })
     }
 }

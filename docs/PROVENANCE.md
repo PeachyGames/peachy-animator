@@ -1,5 +1,24 @@
 # Implementation provenance
 
+## Curves and scalar interpolation authoring — November 14, 2026
+
+The public [Graph guide](https://esotericsoftware.com/spine-graph),
+[Keys guide](https://esotericsoftware.com/spine-keys),
+[4.1 Curves announcement](https://esotericsoftware.com/blog/Spine-4-1-released#Curves-view),
+current changelog and attributed human staff statements informed the workflow.
+Original Peach Bot and independently constructed bone-only matrices were opened
+in owned installed 4.3.26 windows. Only visible controls, tooltips and generated
+JSON outputs were examined. Twelve reset cases, four incoming cases and normal
+live coupling establish the bounded arithmetic; extreme/adjacent cases are
+recorded as uncalibrated rather than copied or guessed.
+
+Relative/actual handle conversion, ray shortening, selection resolution and
+transaction planning are independently written engine code. Native and MCP use
+those same operations; all Graph/Curves surfaces share one UI preview controller.
+The separately licensed runtime is an external public-API oracle only. Reference
+captures stay private, public screenshots use original Peachy art, and no vendor
+implementation, art or UI assets are bundled. See [the contract](slices/curves-authoring.md).
+
 ## Deform timeline and installed-editor comparison — November 14, 2026
 
 The [official Spine 4.3 announcement](https://esotericsoftware.com/blog/Spine-4.3-released),

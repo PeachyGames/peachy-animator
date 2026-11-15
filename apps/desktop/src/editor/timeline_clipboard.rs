@@ -235,7 +235,8 @@ impl Editor {
     pub(super) fn timeline_clipboard_shortcuts(&mut self, ctx: &egui::Context) {
         let focused = (self.dopesheet_has_focus(ctx)
             || self.deform_graph_has_focus(ctx)
-            || self.slot_graph_has_focus(ctx))
+            || self.slot_graph_has_focus(ctx)
+            || self.scalar_graph_has_focus(ctx))
             && ctx.input(|input| input.focused);
         let actions = ctx.input_mut(|input| {
             take_timeline_actions(&mut input.events, focused, &mut self.timeline_input)

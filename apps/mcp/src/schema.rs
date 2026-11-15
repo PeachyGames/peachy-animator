@@ -328,7 +328,7 @@ pub fn command_schema() -> Value {
         ("time", number()),
         ("mix", number()),
         ("bend_positive", json!({"type":"boolean"})),
-        ("curve", ik_curve),
+        ("curve", ik_curve.clone()),
     ]);
     let key_owner = json!({"oneOf":[
         object(&[("type", tag("bone")), ("bone", index())]),
@@ -337,6 +337,14 @@ pub fn command_schema() -> Value {
         object(&[("type", tag("slot")), ("slot", index())]),
     ]});
     let animation_key = animation_key_schema();
+    let curve_selection = object(&[
+        ("key", animation_key.clone()),
+        ("channel", json!({"type":"integer","minimum":0,"maximum":3})),
+    ]);
+    let curve_preset = json!({"oneOf":[
+        {"type":"string","enum":["linear","stepped","bezier"]},
+        object(&[("custom",json!({"type":"array","items":{"type":"number"},"minItems":4,"maxItems":4}))]),
+    ]});
     let deform_layout = json!({"oneOf":[
         object(&[("type",tag("unweighted")),("vertices",index())]),
         object(&[("type",tag("weighted")),("influence_counts",list(index()))]),
@@ -405,6 +413,15 @@ pub fn command_schema() -> Value {
             ],
         ),
         command(
+            "setIkCurve",
+            &[
+                ("animation", index()),
+                ("constraint", index()),
+                ("time", number()),
+                ("curve", ik_curve),
+            ],
+        ),
+        command(
             "deleteIkKey",
             &[
                 ("animation", index()),
@@ -426,7 +443,7 @@ pub fn command_schema() -> Value {
                 ("animation", index()),
                 ("attachment", attachment.clone()),
                 ("time", number()),
-                ("curve", curve),
+                ("curve", curve.clone()),
             ],
         ),
         command(
@@ -522,6 +539,40 @@ pub fn command_schema() -> Value {
                 ("bone", index()),
                 ("property", property.clone()),
                 ("key", key),
+            ],
+        ),
+        command(
+            "setKeyCurve",
+            &[
+                ("animation", index()),
+                ("bone", index()),
+                ("property", property.clone()),
+                ("time", number()),
+                ("curve", curve.clone()),
+            ],
+        ),
+        command(
+            "applyCurvePreset",
+            &[
+                ("animation", index()),
+                ("selection", list(curve_selection.clone())),
+                ("preset", curve_preset),
+                ("separate", json!({"type":"boolean"})),
+            ],
+        ),
+        command(
+            "editCurveHandle",
+            &[
+                ("animation", index()),
+                ("selection", list(curve_selection.clone())),
+                ("primary", curve_selection),
+                ("handle", json!({"type":"integer","minimum":0,"maximum":1})),
+                (
+                    "point",
+                    json!({"type":"array","items":{"type":"number"},"minItems":2,"maxItems":2}),
+                ),
+                ("match_curves", json!({"type":"boolean"})),
+                ("separate", json!({"type":"boolean"})),
             ],
         ),
         command(
@@ -644,6 +695,7 @@ mod tests {
             Command::AddPhysicsConstraint { .. } => "addPhysicsConstraint",
             Command::SetPhysicsConstraint { .. } => "setPhysicsConstraint",
             Command::SetIkKey { .. } => "setIkKey",
+            Command::SetIkCurve { .. } => "setIkCurve",
             Command::DeleteIkKey { .. } => "deleteIkKey",
             Command::SetDeformKey { .. } => "setDeformKey",
             Command::DeleteDeformKey { .. } => "deleteDeformKey",
@@ -664,6 +716,9 @@ mod tests {
             Command::SetSlotColorCurves { .. } => "setSlotColorCurves",
             Command::InsertSlotColorKey { .. } => "insertSlotColorKey",
             Command::SetKey { .. } => "setKey",
+            Command::SetKeyCurve { .. } => "setKeyCurve",
+            Command::ApplyCurvePreset { .. } => "applyCurvePreset",
+            Command::EditCurveHandle { .. } => "editCurveHandle",
             Command::DeleteKey { .. } => "deleteKey",
             Command::MoveKeys { .. } => "moveKeys",
             Command::PasteKeys { .. } => "pasteKeys",
@@ -728,7 +783,7 @@ mod tests {
     fn every_published_shape_decodes_through_strict_engine_serde() {
         let schema = command_schema();
         let variants = schema["oneOf"].as_array().unwrap();
-        assert_eq!(variants.len(), 45);
+        assert_eq!(variants.len(), 49);
         for variant in variants {
             let payload = sample(variant);
             let command: CommandInput = serde_json::from_value(payload.clone()).unwrap();
@@ -737,6 +792,60 @@ mod tests {
             let mut unknown_field = payload;
             unknown_field["futureField"] = json!(true);
             assert!(serde_json::from_value::<CommandInput>(unknown_field).is_err());
+        }
+    }
+
+    #[test]
+    fn ik_curve_only_schema_keeps_f64_times_and_absolute_mix_controls() {
+        let payload = json!({"command":"setIkCurve","animation":4,"constraint":0,"time":0.25,
+            "curve":{"type":"bezier","time":[0.16666666666666669,0.8333333333333333],"mix":[-0.5,1.25]}});
+        let decoded: CommandInput = serde_json::from_value(payload.clone()).unwrap();
+        assert_eq!(serde_json::to_value(decoded.0).unwrap(), payload);
+        for field in ["time", "curve", "constraint", "animation"] {
+            let mut missing = payload.clone();
+            missing.as_object_mut().unwrap().remove(field);
+            assert!(serde_json::from_value::<CommandInput>(missing).is_err());
+        }
+        for field in ["mix", "bend_positive", "key"] {
+            let mut extra = payload.clone();
+            extra[field] = json!(0);
+            assert!(serde_json::from_value::<CommandInput>(extra).is_err());
+        }
+        let mut extra = payload;
+        extra["curve"]["future"] = json!(true);
+        assert!(serde_json::from_value::<CommandInput>(extra).is_err());
+    }
+
+    #[test]
+    fn scalar_curve_only_schema_requires_exact_identity_without_values() {
+        let schema = command_schema();
+        let variant = schema["oneOf"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|value| value["properties"]["command"]["const"] == "setKeyCurve")
+            .unwrap();
+        assert_eq!(variant["additionalProperties"], false);
+        assert!(variant["properties"].get("value").is_none());
+        assert!(variant["properties"].get("key").is_none());
+        for curve in [
+            json!("linear"),
+            json!("stepped"),
+            json!({"bezier":[0.25,0.75,0.75,0.25]}),
+            json!({"bezierOffset":[0.25,0.00000095367431640625,0.75,-0.00000095367431640625]}),
+        ] {
+            let payload = json!({"command":"setKeyCurve","animation":0,"bone":1,
+                "property":"x","time":0.5,"curve":curve});
+            let decoded: CommandInput = serde_json::from_value(payload.clone()).unwrap();
+            assert_eq!(serde_json::to_value(decoded.0).unwrap(), payload);
+            for name in ["time", "curve", "property", "bone", "animation"] {
+                let mut missing = payload.clone();
+                missing.as_object_mut().unwrap().remove(name);
+                assert!(serde_json::from_value::<CommandInput>(missing).is_err());
+            }
+            let mut unsafe_payload = payload;
+            unsafe_payload["value"] = json!(99);
+            assert!(serde_json::from_value::<CommandInput>(unsafe_payload).is_err());
         }
     }
 

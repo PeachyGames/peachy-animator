@@ -53,7 +53,7 @@ client's working directory. Absolute paths are accepted only inside that root.
 | `create_project` | New in-memory root-only native document with an empty default skin. Uses an existing asset directory within `--root`; no finished rig is loaded and no file is written. Source is null until Save. |
 | `inspect_file` | Read-only native validation or Spine capability report. Does not replace the working document. |
 | `open_project` | Load `.peachy` (including supported legacy migrations) or supported Spine 4.3 JSON into a new Session. Failed imports leave the current session intact. |
-| `get_command_schema` | Full JSON Schema for the 45 supported flat command variants; the same schema appears inline in `apply_commands` discovery. |
+| `get_command_schema` | Full JSON Schema for the 49 supported flat command variants; the same schema appears inline in `apply_commands` discovery. |
 | `apply_commands` | Apply a nonempty flat list through one engine Batch, atomically and as one undo step. No file writes. |
 | `copy_animation_keys` | Read-only capture of exact keys from one bone, IK constraint, Deform attachment or slot. Slot clipboards can mix attachment and color keys with one relative origin; Deform includes vertex/influence layout. Requires the current revision. |
 | `history` | Undo or redo one complete edit using the shared Session history. |
@@ -238,6 +238,83 @@ complete dense offsets and curves, and apply atomically. `setDeformCurve` takes
 without replacing the key's geometry. All existing curve shapes remain native
 values. Clipboard compatibility is a documented engine policy, not a claim that
 every installed-editor weighted binding combination has been verified.
+
+## Shared interval curve actions
+
+`applyCurvePreset` and `editCurveHandle` use the same engine actions as Curves
+and Graph. Both take an `animation` and the complete `selection`, an array of
+`{key:<typed AnimationKey>,channel:<index>}` entries. Scalar, IK and Deform use
+channel 0; slot color uses R/G/B/A indices 0–3. Discrete attachment keys count
+toward the selection but have no curve. Keep the complete selection when
+editing only its primary curve: filtering it can change final-key resolution.
+
+A single selected final key addresses its preceding interval. Multiple selected
+keys skip final keys. An empty effective selection makes no history entry and
+preserves redo. Raw setters below instead address the exact supplied key.
+
+`applyCurvePreset` takes `preset` (`"linear"`, `"stepped"`, `"bezier"`, or
+`{"custom":[x1,y1,x2,y2]}`) and `separate`. Custom controls use relative
+time/value coordinates. Reapplying Bezier resets its handles. Separate controls
+whether adjoining explicit Bezier angles affect preset application.
+
+`editCurveHandle` takes `primary` (a resolved left-interval key/channel from
+the complete selection), `handle` (0 or 1), `point:[seconds,value]`,
+`match_curves`, and `separate`. Values are actual scalar/Mix values, normalized
+RGBA, or normalized Deform progress. Match copies the selected handle's relative
+position across effective curves and preserves each other handle. A flat
+primary has no relative value coordinate, so matched editing refuses it.
+All targets are planned atomically; an unsupported or invalid target leaves
+the document and history unchanged. Native values, times and pending poses are
+preserved. Separate-off Bezier reset matches adjoining explicit Bezier angles,
+shortening an excessive handle along its ray within its own endpoint's value
+span; it leaves outer curves unchanged. Normal Separate-off live edits adjust
+the adjoining tangent and retain its exact horizontal coordinate, within the
+documented native comparison tolerance. These are different actions.
+
+Uncalibrated Separate-off adjacent selected intervals, Custom presets with
+Bezier neighbors, and live vertical/outside-time, flat-linked or extreme
+coupling fail explicitly. Separate-on permits independent finite handle edits.
+Matched edits onto flat destinations remain unsupported. User preset storage,
+Last chosen preferences and combined native property groups remain open. See
+[the measured scope](slices/curves-authoring.md).
+
+```json
+{
+  "commands": [
+    {"command":"applyCurvePreset","animation":0,"selection":[{"key":{"type":"bone","bone":8,"property":"rotation","time":0},"channel":0}],"preset":"bezier","separate":true},
+    {"command":"editCurveHandle","animation":0,"selection":[{"key":{"type":"bone","bone":8,"property":"rotation","time":0},"channel":0}],"primary":{"key":{"type":"bone","bone":8,"property":"rotation","time":0},"channel":0},"handle":0,"point":[0.1,6],"match_curves":false,"separate":true}
+  ]
+}
+```
+
+## Scalar and IK curve-only commands
+
+`setKeyCurve` takes `animation`, `bone`, `property`, an exact existing `time`,
+and `curve`. It changes only that scalar key's outgoing interpolation, retaining
+its raw value and time, sibling properties, pending pose and history semantics.
+All seven bone properties and native Linear, Stepped, Bezier and BezierOffset
+shapes are accepted. Missing exact identities fail atomically; there is no
+nearest-key upsert or implicit final-key redirection.
+
+`setIkCurve` similarly takes `animation`, `constraint`, exact `time` and typed
+`IkCurve`. Its Bezier payload retains f64 normalized time handles and absolute
+Mix controls; it does not cast them to scalar f32 controls or change Mix/Positive.
+Raw terminal curve metadata is explicit in both commands. Interactive interval
+selection and preset policies are separate from these exact setters.
+
+```json
+{
+  "expected_revision": 1,
+  "commands": [
+    {"command":"setKeyCurve","animation":0,"bone":8,"property":"rotation","time":0.5,"curve":{"bezier":[0.25,0,0.75,1]}},
+    {"command":"setIkCurve","animation":0,"constraint":0,"time":0.5,"curve":{"type":"bezier","time":[0.16666666666666669,0.8333333333333333],"mix":[0.25,1.25]}}
+  ]
+}
+```
+
+Both commands use the same atomic command/history boundary as native controls.
+The example requires both exact keys to exist; a failed second command restores
+the complete batch. Native v22 and 11 tools remain unchanged.
 
 ## Slot attachment and RGBA authoring
 

@@ -1,5 +1,26 @@
 # Spine workspace and interaction parity
 
+## Curves and scalar Graph — November 14, 2026
+
+Installed 4.3.26 places Curves between viewport and Tree, above the full-width
+Graph/Dopesheet dock. Peachy now follows that layout in Animate, with normalized
+relative handles, a colored primary and gray secondary curves, Match/Separate,
+and fitted finite Y controls. The fit freezes during a drag. Flat intervals leave
+the plot blank while retaining raw excursions. Scalar Graph shares exact typed
+selection and adds actual-value numeric/tangent editing through the same engine
+actions and preview controller used by Deform and RGBA Graph.
+
+Actual native input verifies drag/history, held and numeric Escape, repeated
+Bezier reset, single-/multiple-final behavior, typed 6.5 handles and pending
+rotation 13.5. Save excludes the pose; fresh-process exact recovery, all images
+and playback pass. See [before/after review](evidence/curves-authoring.html) and
+[the measured scope](slices/curves-authoring.md). Preset management remains
+disabled; Last chosen, grouped native properties and several coupled domains
+remain open. This is layout/interaction evidence, not pixel equivalence.
+
+The current inventory is 16 of the installed editor's 17 views. Problems is still
+missing; broader Color semantics and arbitrary docking remain.
+
 ## Slot attachment and RGBA authoring — November 14, 2026
 
 Installed 4.3.26 observations put attachment keys beside the slot row and color
@@ -35,8 +56,8 @@ and fresh-process persistence. See the [review gallery](evidence/deform-timeline
 Reference captures remain private; committed screenshots use only Peachy and
 original Peach Bot art.
 
-The actual Views menu has 17 entries. Peachy currently implements 15: Curves and
-Problems are missing, and Slot Color does not yet establish current Color-view
+The actual Views menu has 17 entries. At this Deform checkpoint Peachy implemented
+15; Curves is now covered above. Problems is missing, and Slot Color does not yet establish current Color-view
 behavior. This supersedes older claims of a complete 15-view reference inventory.
 See [the current update audit](slices/spine-blog-audit-20261114.md).
 
@@ -77,7 +98,7 @@ The baseline is the documented default workspace; user layouts/hotkeys can diffe
 | Reference convention | Current alignment |
 | --- | --- |
 | Menu and file/history shortcuts at top left | Compact Peachy menu, Open/Save/Undo/Redo; export in menu and Cmd/Ctrl+E |
-| Views selector at top right | 15 bounded implemented views, close/reopen, workspace restore and F9; installed 4.3.26 has 17 views, with Curves and Problems still missing |
+| Views selector at top right | 16 bounded implemented views, close/reopen, workspace restore and F9; installed 4.3.26 has 17 views, with Problems still missing |
 | Viewport left, Tree right | Right-side Tree; item properties below it; resizable panes |
 | Setup/Animate at viewport's upper left | Mode switch there; Dopesheet appears in Animate |
 | Main transform tools below viewport | Rotate/Translate selectors; numeric rotation, translation and scale |

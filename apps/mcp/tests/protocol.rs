@@ -1146,3 +1146,463 @@ async fn stdio_export_targets_protect_editor_refs_and_preserve_runtime_identity(
     assert_eq!(fs::read(source).unwrap(), original);
     client.cancel().await.unwrap();
 }
+
+#[tokio::test]
+async fn stdio_scalar_curve_only_exact_keys_history_and_persistence() {
+    let root = Sandbox::new();
+    root.fixture();
+    let source = root.0.join("source/peach-bot.peachy");
+    let original = fs::read(&source).unwrap();
+    let mut fixture: Value = serde_json::from_slice(&original).unwrap();
+    let first = 0.5_f32;
+    let middle = f32::from_bits(first.to_bits() + 1);
+    let last = f32::from_bits(first.to_bits() + 2);
+    fixture["animations"][0]["tracks"]
+        .as_array_mut()
+        .unwrap()
+        .push(json!({
+            "bone":0,"property":"rotation","keys":[
+                {"time":first,"value":-0.0,"curve":"linear"},
+                {"time":middle,"value":720.0,"curve":"linear"},
+                {"time":last,"value":-540.0,"curve":"linear"}
+            ]
+        }));
+    let exact_source = root.0.join("source/scalar-exact.peachy");
+    fs::write(&exact_source, serde_json::to_vec(&fixture).unwrap()).unwrap();
+    let client = start(&root.0).await;
+    success(
+        call(
+            &client,
+            "open_project",
+            json!({"expected_revision":0,"path":"source/scalar-exact.peachy"}),
+        )
+        .await,
+    );
+    let before = doc(&client).await;
+    let count = before["document"]["animations"][0]["tracks"]
+        .as_array()
+        .unwrap()
+        .len();
+    let curve = json!({"bezierOffset":[0.25,2.0,0.75,-1.0]});
+    success(call(&client,"apply_commands",json!({"expected_revision":1,"commands":[{
+        "command":"setKeyCurve","animation":0,"bone":0,"property":"rotation","time":middle,"curve":curve
+    }]})).await);
+    let mut expected = before["document"].clone();
+    expected["animations"][0]["tracks"][count - 1]["keys"][1]["curve"] = curve;
+    assert_eq!(doc(&client).await["document"], expected);
+    success(
+        call(
+            &client,
+            "history",
+            json!({"expected_revision":2,"action":"undo"}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await["document"], before["document"]);
+    success(
+        call(
+            &client,
+            "history",
+            json!({"expected_revision":3,"action":"redo"}),
+        )
+        .await,
+    );
+    let edited = doc(&client).await;
+    for time in [-0.1_f32, f32::from_bits(first.to_bits() + 3)] {
+        error(call(&client,"apply_commands",json!({"expected_revision":4,"commands":[
+            {"command":"setKeyCurve","animation":0,"bone":0,"property":"rotation","time":first,"curve":"stepped"},
+            {"command":"setKeyCurve","animation":0,"bone":0,"property":"rotation","time":time,"curve":"linear"}
+        ]})).await);
+        assert_eq!(doc(&client).await, edited);
+    }
+    // Raw terminal metadata is addressed explicitly; presentation redirect is separate.
+    success(call(&client,"apply_commands",json!({"expected_revision":4,"commands":[{
+        "command":"setKeyCurve","animation":0,"bone":0,"property":"rotation","time":last,"curve":"stepped"
+    }]})).await);
+    expected["animations"][0]["tracks"][count - 1]["keys"][2]["curve"] = json!("stepped");
+    assert_eq!(doc(&client).await["document"], expected);
+    success(
+        call(
+            &client,
+            "save_project",
+            json!({"expected_revision":5,"directory":"curve-saved"}),
+        )
+        .await,
+    );
+    success(
+        call(
+            &client,
+            "open_project",
+            json!({"expected_revision":6,"path":"curve-saved/project.peachy"}),
+        )
+        .await,
+    );
+    let reopened = doc(&client).await;
+    assert_eq!(reopened["document"], expected);
+    success(call(&client,"export_project",json!({"expected_revision":7,"kind":"json","path":"curve-runtime.json","target":"runtime43"})).await);
+    assert_eq!(doc(&client).await, reopened);
+    let exported: Value =
+        serde_json::from_slice(&fs::read(root.0.join("curve-runtime.json")).unwrap()).unwrap();
+    let keys = exported["animations"]["wave"]["bones"]["root"]["rotate"]
+        .as_array()
+        .unwrap();
+    assert_eq!(keys.len(), 3);
+    assert_eq!(keys[1]["time"].as_f64().unwrap() as f32, middle);
+    assert_eq!(keys[1]["value"], 720.0);
+    assert_eq!(keys[1]["curve"].as_array().unwrap().len(), 4);
+    assert_eq!(fs::read(source).unwrap(), original);
+    client.cancel().await.unwrap();
+}
+
+#[tokio::test]
+async fn stdio_ik_curve_only_preserves_precision_values_flags_and_persistence() {
+    let root = Sandbox::new();
+    root.fixture();
+    let source = root.0.join("source/ik-animation-bot.peachy");
+    let original = fs::read(&source).unwrap();
+    let client = start(&root.0).await;
+    success(
+        call(
+            &client,
+            "open_project",
+            json!({"expected_revision":0,"path":"source/ik-animation-bot.peachy"}),
+        )
+        .await,
+    );
+    let before = doc(&client).await;
+    let curve =
+        json!({"type":"bezier","time":[0.16666666666666669,0.8333333333333333],"mix":[-0.5,1.25]});
+    success(
+        call(
+            &client,
+            "apply_commands",
+            json!({"expected_revision":1,"commands":[{
+                "command":"setIkCurve","animation":4,"constraint":0,"time":0.25,"curve":curve
+            }]}),
+        )
+        .await,
+    );
+    let mut expected = before["document"].clone();
+    expected["animations"][4]["ik_tracks"][0]["keys"][0]["curve"] = curve;
+    assert_eq!(doc(&client).await["document"], expected);
+    success(
+        call(
+            &client,
+            "history",
+            json!({"expected_revision":2,"action":"undo"}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await["document"], before["document"]);
+    success(
+        call(
+            &client,
+            "history",
+            json!({"expected_revision":3,"action":"redo"}),
+        )
+        .await,
+    );
+    let edited = doc(&client).await;
+    let absent = f32::from_bits(0.25_f32.to_bits() + 1);
+    for (time, bad_curve) in [
+        (absent, json!({"type":"linear"})),
+        (0.25, json!({"type":"bezier","time":[-0.1,0.8],"mix":[0,1]})),
+    ] {
+        error(call(&client,"apply_commands",json!({"expected_revision":4,"commands":[
+            {"command":"setIkCurve","animation":4,"constraint":0,"time":0.25,"curve":{"type":"stepped"}},
+            {"command":"setIkCurve","animation":4,"constraint":0,"time":time,"curve":bad_curve}
+        ]})).await);
+        assert_eq!(doc(&client).await, edited);
+    }
+    success(
+        call(
+            &client,
+            "evaluate_pose",
+            json!({"animation":"ik ratio time","time":0.625,"skin":"peach"}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await, edited);
+    success(
+        call(
+            &client,
+            "save_project",
+            json!({"expected_revision":4,"directory":"ik-curve-saved"}),
+        )
+        .await,
+    );
+    success(
+        call(
+            &client,
+            "open_project",
+            json!({"expected_revision":5,"path":"ik-curve-saved/project.peachy"}),
+        )
+        .await,
+    );
+    let reopened = doc(&client).await;
+    assert_eq!(reopened["document"], expected);
+    success(call(&client,"export_project",json!({"expected_revision":6,"kind":"json","path":"ik-curve-runtime.json","target":"runtime43"})).await);
+    assert_eq!(doc(&client).await, reopened);
+    assert_eq!(fs::read(source).unwrap(), original);
+    client.cancel().await.unwrap();
+}
+
+#[tokio::test]
+async fn stdio_curve_actions_author_from_cutout_match_handles_and_resolve_terminal_selection() {
+    let root = Sandbox::new();
+    fs::create_dir_all(root.0.join("art/images")).unwrap();
+    let image =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/peach-bot/images/torso.png");
+    let original = fs::read(&image).unwrap();
+    fs::write(root.0.join("art/images/torso.png"), &original).unwrap();
+    let client = start(&root.0).await;
+    success(
+        call(
+            &client,
+            "create_project",
+            json!({"expected_revision":0,"name":"Curve study","fps":30,"asset_root":"art"}),
+        )
+        .await,
+    );
+    let mut commands = vec![
+        json!({"command":"addSlot","slot":{"name":"body","bone":0,"attachment":null,"color":[255,255,255,255],"blend":"normal"}}),
+        json!({"command":"addAttachment","attachment":{"skin":"default","slot":"body","placeholder":"body"},"value":{
+            "type":"region","path":"torso","width":140,"height":148,
+            "transform":{"x":0,"y":0,"rotation":0,"scale_x":1,"scale_y":1}}}),
+        json!({"command":"setSlotAttachment","slot":0,"attachment":"body"}),
+        json!({"command":"addAnimation","name":"curves","duration":0}),
+    ];
+    for (property, values) in [("rotation", [0., 30., 10.]), ("y", [0., 15., -5.])] {
+        for (time, value) in [0., 0.5, 1.].into_iter().zip(values) {
+            commands.push(
+                json!({"command":"setKey","animation":0,"bone":0,"property":property,
+                "key":{"time":time,"value":value,"curve":{"bezier":[0.25,0.75,0.75,0.25]}}}),
+            );
+        }
+    }
+    success(
+        call(
+            &client,
+            "apply_commands",
+            json!({"expected_revision":1,"commands":commands}),
+        )
+        .await,
+    );
+    let authored = doc(&client).await;
+    let selected = |property: &str, time: f32| json!({"key":{"type":"bone","bone":0,"property":property,"time":time},"channel":0});
+    let selection = json!([selected("rotation", 0.), selected("y", 0.)]);
+    success(call(&client,"apply_commands",json!({"expected_revision":2,"commands":[{
+        "command":"applyCurvePreset","animation":0,"selection":selection,"preset":"bezier","separate":true
+    }]})).await);
+    let preset = doc(&client).await;
+    success(call(&client,"apply_commands",json!({"expected_revision":3,"commands":[{
+        "command":"editCurveHandle","animation":0,"selection":selection,"primary":selected("rotation",0.),
+        "handle":0,"point":[0.1,6.0],"match_curves":true,"separate":true
+    }]})).await);
+    let matched = doc(&client).await;
+    let mut expected = authored["document"].clone();
+    for index in 0..2 {
+        let actual = &matched["document"]["animations"][0]["tracks"][index]["keys"][0]["curve"];
+        let handles = actual["bezier"].as_array().unwrap();
+        assert!((handles[0].as_f64().unwrap() - 0.2).abs() < 1e-6);
+        assert!((handles[1].as_f64().unwrap() - 0.2).abs() < 1e-6);
+        let before =
+            &preset["document"]["animations"][0]["tracks"][index]["keys"][0]["curve"]["bezier"];
+        assert_eq!(handles[2], before[2]);
+        assert_eq!(handles[3], before[3]);
+        expected["animations"][0]["tracks"][index]["keys"][0]["curve"] = actual.clone();
+    }
+    assert_eq!(matched["document"], expected);
+    let pose = success(
+        call(
+            &client,
+            "evaluate_pose",
+            json!({"animation":"curves","time":0.2}),
+        )
+        .await,
+    );
+    let local = &pose["locals"][0];
+    assert!(
+        (local["rotation"].as_f64().unwrap() / 30. - local["y"].as_f64().unwrap() / 15.).abs()
+            < 1e-6
+    );
+    success(
+        call(
+            &client,
+            "history",
+            json!({"expected_revision":4,"action":"undo"}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await["document"], preset["document"]);
+    success(
+        call(
+            &client,
+            "history",
+            json!({"expected_revision":5,"action":"redo"}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await["document"], matched["document"]);
+    success(call(&client,"apply_commands",json!({"expected_revision":6,"commands":[{
+        "command":"applyCurvePreset","animation":0,"selection":[selected("rotation",1.)],"preset":"stepped","separate":true
+    }]})).await);
+    let terminal = doc(&client).await;
+    assert_eq!(
+        terminal["document"]["animations"][0]["tracks"][0]["keys"][1]["curve"],
+        "stepped"
+    );
+    assert_eq!(
+        terminal["document"]["animations"][0]["tracks"][0]["keys"][2],
+        matched["document"]["animations"][0]["tracks"][0]["keys"][2]
+    );
+    success(
+        call(
+            &client,
+            "history",
+            json!({"expected_revision":7,"action":"undo"}),
+        )
+        .await,
+    );
+    success(call(&client,"apply_commands",json!({"expected_revision":8,"commands":[{
+        "command":"applyCurvePreset","animation":0,"selection":[selected("rotation",1.),selected("y",1.)],"preset":"bezier","separate":true
+    }]})).await);
+    assert_eq!(doc(&client).await["document"], matched["document"]);
+    // A no-op two-terminal preset must retain the existing redo branch.
+    success(
+        call(
+            &client,
+            "history",
+            json!({"expected_revision":9,"action":"redo"}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await["document"], terminal["document"]);
+    success(
+        call(
+            &client,
+            "save_project",
+            json!({"expected_revision":10,"directory":"authored"}),
+        )
+        .await,
+    );
+    success(
+        call(
+            &client,
+            "open_project",
+            json!({"expected_revision":11,"path":"authored/project.peachy"}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await["document"], terminal["document"]);
+    success(
+        call(
+            &client,
+            "export_project",
+            json!({"expected_revision":12,"kind":"bundle","path":".","target":"runtime43"}),
+        )
+        .await,
+    );
+    assert_eq!(
+        fs::read(root.0.join("art/images/torso.png")).unwrap(),
+        original
+    );
+    assert_eq!(fs::read(image).unwrap(), original);
+    client.cancel().await.unwrap();
+}
+
+#[tokio::test]
+async fn stdio_curve_live_separate_off_updates_neighbor_atomically() {
+    let root = Sandbox::new();
+    let client = start(&root.0).await;
+    success(
+        call(
+            &client,
+            "create_project",
+            json!({
+                "expected_revision":0,"name":"Original linked curve probe","fps":60,"asset_root":"."
+            }),
+        )
+        .await,
+    );
+    let mut commands = vec![json!({"command":"addAnimation","name":"curves","duration":0})];
+    for (time, value, curve) in [
+        (0., 0., json!({"bezier":[0.2,0.,0.8,29./30.]})),
+        (0.5, 30., json!({"bezier":[1./3.,-1./12.,2./3.,13./12.]})),
+        (1., 10., json!({"bezier":[0.2,1./30.,0.8,1.]})),
+        (1.5, 40., json!("linear")),
+    ] {
+        commands.push(
+            json!({"command":"setKey","animation":0,"bone":0,"property":"rotation",
+            "key":{"time":time,"value":value,"curve":curve}}),
+        );
+    }
+    success(
+        call(
+            &client,
+            "apply_commands",
+            json!({"expected_revision":1,"commands":commands}),
+        )
+        .await,
+    );
+    let before = doc(&client).await;
+    let primary =
+        json!({"key":{"type":"bone","bone":0,"property":"rotation","time":0.5},"channel":0});
+    let action = json!({"command":"editCurveHandle","animation":0,"selection":[primary.clone()],
+        "primary":primary,"handle":0,"point":[0.6666667,28.409304],"match_curves":false,"separate":false});
+    success(
+        call(
+            &client,
+            "apply_commands",
+            json!({"expected_revision":2,"commands":[action.clone()]}),
+        )
+        .await,
+    );
+    let after = doc(&client).await;
+    let keys = &after["document"]["animations"][0]["tracks"][0]["keys"];
+    let old = &before["document"]["animations"][0]["tracks"][0]["keys"];
+    let previous = &keys[0]["curve"]["bezier"];
+    assert_eq!(previous[0], old[0]["curve"]["bezier"][0]);
+    assert_eq!(previous[1], old[0]["curve"]["bezier"][1]);
+    assert_eq!(previous[2], old[0]["curve"]["bezier"][2]);
+    assert!((previous[3].as_f64().unwrap() * 30. - 30.95443).abs() < 0.0002);
+    let mut expected = before["document"].clone();
+    for index in 0..2 {
+        expected["animations"][0]["tracks"][0]["keys"][index]["curve"] =
+            keys[index]["curve"].clone();
+    }
+    assert_eq!(after["document"], expected);
+    success(
+        call(
+            &client,
+            "history",
+            json!({"expected_revision":3,"action":"undo"}),
+        )
+        .await,
+    );
+    let undone = doc(&client).await;
+    assert_eq!(undone["document"], before["document"]);
+    let mut extreme = action;
+    extreme["point"] = json!([0.5183616, 10.004745]);
+    error(
+        call(
+            &client,
+            "apply_commands",
+            json!({"expected_revision":4,"commands":[
+                {"command":"renameBone","bone":0,"name":"must-rollback"},extreme
+            ]}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await, undone);
+    success(
+        call(
+            &client,
+            "history",
+            json!({"expected_revision":4,"action":"redo"}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await["document"], after["document"]);
+    client.cancel().await.unwrap();
+}

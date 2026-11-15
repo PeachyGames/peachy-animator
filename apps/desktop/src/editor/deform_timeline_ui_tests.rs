@@ -69,6 +69,8 @@ fn graph_fixture() -> (Editor, AttachmentRef, egui::Context) {
     let (mut editor, attachment, ctx) = fixture(true);
     editor.key_selection.replace(vec![key(&attachment, 0.3)]);
     editor.show_tree = false;
+    // These regressions exercise independent handles and unchanged neighbors.
+    editor.curves.separate = true;
     editor.open_graph_view();
     settle(&mut editor, &ctx);
     (editor, attachment, ctx)
@@ -246,6 +248,50 @@ fn deform_graph_handle_drag_includes_release_and_is_one_undo_step() {
     assert!(!editor.session.can_undo());
     editor.redo();
     assert_eq!(editor.session.document(), &changed);
+}
+
+#[test]
+fn deform_graph_cancels_when_the_frozen_outgoing_neighbor_is_retimed() {
+    let (mut editor, attachment, ctx) = graph_fixture();
+    let original = editor.session.document().clone();
+    let start = target(&editor, "graphDeformHandle:0");
+    pointer(&mut editor, &ctx, start, true);
+    workspace_frame(
+        &mut editor,
+        &ctx,
+        vec![egui::Event::PointerMoved(start + vec2(18., -12.))],
+    );
+    assert!(editor.deform_curve_edit_active());
+    let curve = editor.session.document().animations[0].deform_tracks[0].keys[1].curve;
+    editor
+        .session
+        .preview_transaction(Command::Batch {
+            commands: vec![
+                Command::SetDeformCurve {
+                    animation: 0,
+                    attachment: attachment.clone(),
+                    time: 0.3,
+                    curve,
+                },
+                Command::MoveAnimationKeys {
+                    animation: 0,
+                    keys: vec![key(&attachment, 0.300005)],
+                    delta: 0.2,
+                    copy: false,
+                },
+            ],
+        })
+        .unwrap();
+    settle(&mut editor, &ctx);
+    assert!(!editor.deform_curve_edit_active());
+    assert_eq!(editor.session.document(), &original);
+    workspace_frame(
+        &mut editor,
+        &ctx,
+        vec![egui::Event::PointerMoved(start + vec2(30., -20.))],
+    );
+    assert_eq!(editor.session.document(), &original);
+    pointer(&mut editor, &ctx, start, false);
 }
 
 #[test]
@@ -542,7 +588,7 @@ fn deform_graph_numeric_escape_keeps_mesh_key_pending_pose_and_redo() {
             ],
         );
         assert!(ctx.text_edit_focused());
-        assert!(editor.graph.deform.draft.as_ref().unwrap().changed);
+        assert_eq!(editor.curve_handle_diagnostic()["draft"]["changed"], true);
         workspace_frame(
             &mut editor,
             &ctx,
@@ -945,19 +991,12 @@ fn deform_graph_discards_numeric_draft_when_a_modal_takes_focus() {
             egui::Event::Paste("25".into()),
         ],
     );
-    assert!(
-        editor
-            .graph
-            .deform
-            .draft
-            .as_ref()
-            .is_some_and(|draft| draft.changed)
-    );
+    assert_eq!(editor.curve_handle_diagnostic()["draft"]["changed"], true);
     assert_eq!(editor.session.document(), &original);
     editor.error = Some("A modal interrupts the numeric draft".into());
     settle(&mut editor, &ctx);
     assert_eq!(editor.session.document(), &original);
-    assert!(editor.graph.deform.draft.is_none());
+    assert!(editor.curve_handle_diagnostic()["draft"].is_null());
     assert!(!editor.session.can_undo());
 }
 

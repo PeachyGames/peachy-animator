@@ -2,6 +2,10 @@ mod animation;
 mod animation_management;
 mod audio;
 mod audio_output;
+mod curve_controller;
+mod curve_gesture;
+mod curve_widgets;
+mod curves;
 mod deform_curves;
 mod dopesheet;
 mod dopesheet_selection;
@@ -137,6 +141,8 @@ pub(crate) struct Editor {
     preview: preview::PreviewView,
     audio: audio::AudioView,
     graph: graph::GraphView,
+    curve_interaction: curve_gesture::CurveInteraction,
+    curves: curves::CurvesView,
     slot_color: slot_color::SlotColorView,
     weights: weights::WeightsState,
     weight_edit: Option<weight_direct::WeightEdit>,
@@ -275,6 +281,8 @@ impl Editor {
             preview: Default::default(),
             audio: Default::default(),
             graph: Default::default(),
+            curve_interaction: Default::default(),
+            curves: Default::default(),
             slot_color: Default::default(),
             drag: None,
             transform_blocked: false,
@@ -904,6 +912,15 @@ impl Editor {
                     ui.add_enabled_ui(enabled, |ui| self.compact_timeline(ui));
                 });
         }
+        if self.curves_visible() {
+            egui::Panel::right("curves-view")
+                .default_size(275.)
+                .min_size(230.)
+                .max_size(400.)
+                .resizable(true)
+                .frame(egui::Frame::new().fill(PANEL).inner_margin(6))
+                .show(ui, |ui| self.curves_panel(ui));
+        }
         egui::CentralPanel::default()
             .frame(
                 egui::Frame::new()
@@ -994,6 +1011,7 @@ impl Editor {
                 report["preview"] = self.preview_diagnostic();
                 report["audio"] = self.audio_diagnostic();
                 report["graph"] = self.graph_diagnostic();
+                report["curves"] = self.curves_diagnostic();
                 report["slotColor"] = self.slot_color_diagnostic();
                 report["exportDialog"] = self.export_dialog_diagnostic();
                 report["playbackSpeed"] = self.playback_speed.into();
