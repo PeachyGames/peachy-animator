@@ -53,15 +53,16 @@ client's working directory. Absolute paths are accepted only inside that root.
 | `create_project` | New in-memory root-only native document with an empty default skin. Uses an existing asset directory within `--root`; no finished rig is loaded and no file is written. Source is null until Save. |
 | `inspect_file` | Read-only native validation or Spine capability report. Does not replace the working document. |
 | `open_project` | Load `.peachy` (including supported legacy migrations) or supported Spine 4.3 JSON into a new Session. Failed imports leave the current session intact. |
-| `get_command_schema` | Full JSON Schema for the 51 supported flat command variants; the same schema appears inline in `apply_commands` discovery. |
+| `get_command_schema` | Full JSON Schema for the 52 supported flat command variants; the same schema appears inline in `apply_commands` discovery. |
 | `apply_commands` | Apply a nonempty flat list through one engine Batch, atomically and as one undo step. No file writes. |
 | `copy_animation_keys` | Read-only capture of exact keys from one bone, IK constraint, Deform attachment, slot or global draw order. Slot clipboards can mix attachment and color keys with one relative origin; Deform includes vertex/influence layout. Draw order requires the identical ordered slot-name layout on paste. Requires the current revision. |
+| `get_mesh_weights` | Read exact selected weights and a uniform/mixed aggregate through the engine; absent influences of an already bound bone read zero. Requires the current revision and exact attachment identity. |
 | `history` | Undo or redo one complete edit using the shared Session history. |
-| `evaluate_pose` | Setup or a named animation at a nonnegative time in seconds, with optional skin. Returns authored locals, IK-applied locals, world matrices, raw `slotAttachments`/`slotColors`, complete back-to-front `drawOrder` including hidden/empty slots, textured vertex/UV/index buffers and bounds. |
+| `evaluate_pose` | Setup or a named animation at a nonnegative time in seconds, with optional skin. Returns authored locals, IK-applied locals, per-bone `inherits` modes, world matrices, raw `slotAttachments`/`slotColors`, complete back-to-front `drawOrder` including hidden/empty slots, textured vertex/UV/index buffers and bounds. |
 | `save_project` | Create a new directory containing `project.peachy` and the required loose `images/`; marks the headless Session saved. |
 | `export_project` | New Spine JSON file, or a fresh packed JSON/atlas/PNG directory inside an existing parent. Optional `target` defaults to `spineEditor43`; use `runtime43` to retain independent attachment names/placeholders for runtime consumers. Does not mark the native document saved. |
 
-These 11 tools publish parameter schemas, descriptions and behavior annotations through
+These 12 tools publish parameter schemas, descriptions and behavior annotations through
 MCP `tools/list`. Successful results include both `structuredContent` and matching
 serialized text for older clients. Operational failures return `isError: true`
 with the current revision; malformed tool arguments use the SDK's protocol error.
@@ -69,8 +70,9 @@ Read-only tools do not change session state.
 
 `export_project.target` accepts only `spineEditor43` or `runtime43`. Editor
 export rejects default-skin attachment name overrides and named/default
-placeholder collisions before writing an output. The error identifies the
-unsafe attachment. Runtime export preserves valid names, placeholder references
+placeholder collisions, plus contradictory weighted bone ordering, before writing
+an output. The error identifies the
+unsafe attachment. Runtime export preserves valid names, raw influence arrays, placeholder references
 and skin fallback without applying those Editor-only restrictions; all other
 supported-feature validation remains. Neither target rewrites the native
 document or changes revision/history. A runtime export is not an Editor import
@@ -185,8 +187,13 @@ To evaluate, call `evaluate_pose`:
 
 Omit `animation` for Setup, `time` for zero and `skin` for `default`. Bone-only
 documents with no skins are supported. Bind commands require a complete
-**applied-local** snapshot from `appliedLocals`; this captures the checked IK result
-once. Do not substitute authored `locals` for this snapshot. Transform commands
+**applied-local** snapshot from `appliedLocals` together with its sampled
+`inherits` array. Use `{"locals": evaluated.appliedLocals, "inherits": evaluated.inherits}`
+for the command's `pose`; this captures the checked IK result and animated
+inheritance once. Do not substitute authored `locals` for this snapshot.
+Legacy poses omitting `inherits` still use document Setup modes. A supplied
+array must have one mode per bone; null, unknown modes and wrong lengths fail
+without applying the batch. Transform commands
 require seven fields: `x`, `y`, `rotation`, `scale_x`, `scale_y`, `shear_x`,
 `shear_y`. SetKey values use the native setup-relative convention; scale keys
 multiply setup. Shared engine validation and unsupported-feature gates apply.
@@ -314,7 +321,7 @@ selection and preset policies are separate from these exact setters.
 
 Both commands use the same atomic command/history boundary as native controls.
 The example requires both exact keys to exist; a failed second command restores
-the complete batch. Native v22 and 11 tools remain unchanged.
+the complete batch. Native v22 stays unchanged; the current tool inventory is above.
 
 ## Slot attachment and RGBA authoring
 
@@ -498,3 +505,58 @@ exports JSON and an atlas bundle, and reopens the saved native project. It loads
 no finished rig as its starting document. This is a creation capability check;
 recreating a particular tutorial remains a separate artifact/visual acceptance
 task.
+
+
+## Multi-vertex Direct weights
+
+`get_mesh_weights` reads one explicit attachment and bound bone at the current
+revision. For example:
+
+```json
+{"expected_revision":17,"skin":"default","slot":"dense_mesh","placeholder":"dense_mesh","vertices":[3,2],"bone":1}
+```
+
+The response sorts vertex indices and returns raw `weights` plus
+`value: {"kind":"mixed"}` or `value: {"kind":"uniform","weight":0.5}`.
+It never averages, normalizes or edits data. An absent contribution of a bone
+already bound elsewhere on the mesh reads zero. Empty/duplicate selections,
+unknown identities, repeated ambiguous influences and stale revisions fail.
+
+`editMeshBoneWeights` takes `attachment`, `vertices`, `bone`, `pose` and `edit`.
+Capture **both** `appliedLocals` and `inherits` from one `evaluate_pose` result:
+pass them as `pose.locals` and `pose.inherits`. The new `edit` object is one of:
+
+```json
+{"mode":"absolute","weight":0.5}
+```
+
+```json
+{"mode":"relative","deltas":[2.0,-0.14285715]}
+```
+
+Weights and deltas use 0–1 weight units. Ordered deltas describe **one gesture**:
+each step clamps each vertex's target while redistribution uses the original
+positive recipient ratios. Thus clamping to one and reversing can restore those
+ratios within the gesture. A later command starts from committed data. Absolute
+entry assigns the same value to every eligible vertex; sole-positive vertices
+without recipients stay unchanged while the others can change. Both forms are
+one atomic undo step and preserve bind positions and unselected vertices.
+
+For a truly absent influence of an already bound bone, a positive edit appends
+a `(0,0)` bone-local entry in the mesh’s existing binding order, matching the
+measured Setup/Animate origin policy.
+Existing entries retain their relative order and positions. Sparse insertion uses
+an independent topological extension of mesh bone sequences, with first-appearance
+ties; repeated or contradictory ordering rejects positive creation atomically.
+Existing zero entries retain their positions. Zero/no-change relative input
+preserves raw absence and nonunit data. Creating a missing influence on a mesh
+with keyed or pending Deform data is rejected until offset-layout remapping is
+implemented; explicit existing entries can still be edited. Ambiguous repeated
+bones and nonfinite resulting geometry fail atomically. The strict legacy
+`setMeshBoneWeight` retains its previous sparse/sole-recipient rejection policy.
+
+Legacy pose payloads that omit `inherits` retain Setup modes. A supplied array
+must have one valid mode per bone; `null` is rejected. Native captures and new
+MCP recipes include the array so animated inheritance is retained when binding.
+See [the measured contract](slices/weight-multivertex.md) for native-reference
+calibration, differences and verification limits.

@@ -1,7 +1,8 @@
 use crate::{
-    AuthoredPose, Command, EditTarget, EvaluatedPose, IkPoseEdit, MeshBindPose, PoseEdits,
-    SlotPose, SlotPoseEdit, SlotProperty, apply_command, checked_pose_from_authored,
-    ik_keyframe_at, sample_authored_pose, transform_group,
+    AuthoredPose, Command, EditTarget, EvaluatedPose, IkPoseEdit, MeshBindPose, MeshWeightEdit,
+    MeshWeightGesture, MeshWeightSelection, PoseEdits, SlotPose, SlotPoseEdit, SlotProperty,
+    apply_command, checked_pose_from_authored, ik_keyframe_at, sample_authored_pose,
+    transform_group,
 };
 use peachy_document::{
     AttachmentRef, Constraint, Document, IkCurve, IkKeyframe, Property, Transform,
@@ -753,8 +754,11 @@ impl Session {
     /// Capture applied locals once, including pending edits. Binding reconstructs
     /// FK from this explicit snapshot and must never apply constraints again.
     pub fn mesh_bind_pose(&self, target: EditTarget) -> Result<MeshBindPose, String> {
+        let authored = self.authored_pose(target)?;
+        let evaluated = checked_pose_from_authored(self.document(), &authored)?;
         Ok(MeshBindPose {
-            locals: self.evaluated_pose(target)?.applied_locals().to_vec(),
+            locals: evaluated.applied_locals().to_vec(),
+            inherits: Some(authored.inherits().to_vec()),
         })
     }
     /// Bind at the explicit setup or posed animation state without keying or discarding it.
@@ -811,6 +815,32 @@ impl Session {
             weight,
             pose,
         })
+    }
+    pub fn set_mesh_bone_weights(
+        &mut self,
+        selection: MeshWeightSelection,
+        weight: f32,
+        target: EditTarget,
+    ) -> Result<(), String> {
+        let pose = self.mesh_bind_pose(target)?;
+        self.dispatch(Command::EditMeshBoneWeights {
+            attachment: selection.attachment,
+            vertices: selection.vertices,
+            bone: selection.bone,
+            edit: MeshWeightEdit::Absolute { weight },
+            pose,
+        })
+    }
+    /// Publish a candidate gesture only against its original transaction source.
+    pub fn preview_mesh_bone_weights(&mut self, gesture: &MeshWeightGesture) -> Result<(), String> {
+        let base = self.transaction.as_ref().ok_or("No active transaction")?;
+        if !gesture.matches_baseline(&base.document) {
+            return Err("Weight gesture source changed".into());
+        }
+        let document = crate::commands::apply_prepared(&base.document, |doc| gesture.apply(doc))?;
+        let pose = base.pose.after_document(&base.document, &document)?;
+        self.state = WorkingState { document, pose };
+        Ok(())
     }
     /// Pose with Auto Key on or off through the same validation/undo boundary.
     pub fn edit_pose(

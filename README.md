@@ -1,9 +1,19 @@
 # Peachy Animator
 
+Multi-vertex Direct weights now supports additive/marquee selection, mixed-value
+display, exact assignment and cumulative viewport gestures in a dedicated Weights
+pane. MCP shares the engine command and raw uniform/mixed query: **52 commands /
+12 tools**, with native v22 unchanged. Native and MCP authoring save the same
+original project; fresh native reopen/playback, external runtime and installed
+4.3.26 interchange pass. See the [review gallery](docs/evidence/weight-multivertex.html),
+[measured contract](docs/slices/weight-multivertex.md) and
+[Multi-vertex Weights Lab](examples/peach-bot/multi-weights-bot.peachy).
+Auto/Smooth/brush tools, locks, Update and multiple selected bones remain open.
+
 Global Animate draw order now supports Tree movement/dragging, Reset, pending
 poses, Auto Key/K and typed Dopesheet clipboard/retiming. MCP uses the same engine
-for raw/semantic order keys and typed timeline operations. There are 51 strict
-commands / 11 tools; native v22 is unchanged.
+for raw/semantic order keys and typed timeline operations. There are 52 strict
+commands / 12 tools; native v22 is unchanged.
 See the [measured scope](docs/slices/draw-order-authoring.md) and open
 [the original Draw Order Authoring Lab](examples/peach-bot/draw-order-authoring-bot.peachy).
 Native input, fresh-process reopen, both authored runtime checks and installed
@@ -12,7 +22,7 @@ Native input, fresh-process reopen, both authored runtime checks and installed
 Curves now has a separate relative-transition view, fitted handles, Match/Separate
 controls and shared Dopesheet selection. Scalar Graph adds tangent and numeric
 editing. Exact scalar/IK curve setters and shared preset/handle actions are also
-available through MCP: 51 strict commands / 11 tools, with native v22 unchanged.
+available through MCP: 52 strict commands / 12 tools, with native v22 unchanged.
 Native input, persistence and both authored runtime comparisons pass. Preset
 library/default preferences and uncalibrated coupling cases remain explicit gaps.
 See the [review gallery](docs/evidence/curves-authoring.html) and
@@ -25,12 +35,13 @@ Auto Key and K through the same engine and MCP. Native Properties opens a Color
 dialog; typed Attach/RGBA rows and a four-channel Graph provide key, clipboard
 and curve editing. New color keys subdivide existing curves using independently
 calibrated Spine behavior. See the [review gallery](docs/evidence/slot-authoring.html)
-and [slot contract](docs/slices/slot-authoring.md). MCP exposes 51 strict commands
+and [slot contract](docs/slices/slot-authoring.md). MCP exposes 52 strict commands
 and raw slot poses, including hidden slots; native format remains v22.
 
 Export now offers explicit Spine Editor 4.3 and Runtime 4.3 targets in the native
 app, CLI and MCP. Editor export rejects unsafe default attachment names before
-writing; runtime export preserves independent names and placeholder references.
+writing and contradictory per-vertex bone ordering; runtime export preserves raw
+influence arrays, independent names and placeholder references.
 See [the export contract](docs/slices/export-targets.md).
 
 Deform keys now have named Dopesheet rows, exact retiming and clipboard editing,
@@ -56,7 +67,7 @@ the remaining raw-curve import precision issue. Interactive review is still pend
 A native 2D skeletal animation editor from Team Peachy, with an independent Rust
 core and Spine-compatible exports. The current slices include Spine-style naming,
 Dopesheet selection/retiming/clipboard actions, key-derived animation duration, and
-weighted mesh import, bone-driven preview, binding, single-vertex Direct weights,
+weighted mesh import, bone-driven preview, binding, multi-vertex Direct weights,
 bone shear authoring, and bounded one-/two-bone inverse kinematics (IK).
 This is still a bounded subset of Spine.
 

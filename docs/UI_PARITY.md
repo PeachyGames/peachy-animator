@@ -1,5 +1,42 @@
 # Spine workspace and interaction parity
 
+## Multi-vertex Direct weights — November 15, 2026
+
+The installed 4.3.26 reference shows a dedicated Weights column, explicit
+vertex selection, bone-list asterisks and a blank Weight field for mixed values.
+Peachy now supports click/box/additive/Select All for one mesh and one bound
+bone, absolute numeric/slider edits and cumulative vertical viewport dragging.
+Weights sits left of Curves/Tree; both panes remain visible above the full-width
+Dopesheet. Native format **22** is unchanged; the shared boundary exposes
+**52 commands / 12 MCP tools**, including raw mixed/uniform weight readback.
+
+Actual native input verifies typed 50 and history, a blank mixed held field,
+clamp/reversal to approximately 6/7 with original recipient ratios and one Undo,
+Escape/marquee held-input blocking, all-six skip-sole editing and ordered sparse
+insertion at bone-local `[0,0]`. Save excludes a pending 13.5-degree pose.
+Corrected native/MCP outputs match the public lab exactly. A fresh no-history
+open verifies early Cmd release, mixed display, both panes and looping playback.
+At 1120×740, the viewport stays 320 wide and checked controls are not clipped.
+All owned GUI instances are closed. See the [capture gallery](evidence/weight-multivertex.html),
+[scalar evidence](evidence/weight-multivertex.json),
+[contract](slices/weight-multivertex.md) and
+[original public lab](../examples/peach-bot/multi-weights-bot.peachy).
+
+Installed-editor import controls establish that influence order must remain
+consistent across vertices: an order-only B,A→A,B repair imports, and consistent
+nonnumeric C,A,B also imports. New sparse insertion preserves old entries using
+an independent per-mesh precedence extension. Editor export rejects precedence
+cycles before writing; Runtime preserves raw arrays. The exact final Editor
+artifact passes the 52-pose roundtrip within 0.001, with native zero pruning and
+weight rounding explicitly recorded rather than treated as lossless authoring.
+
+Auto/Smooth, brushes, locks, Update, multiple selected bones, sparse Deform-layout
+remapping, Pies/overlay controls and exact styling remain open. General vertex
+selection in other tools and arbitrary docking are separate gaps. The November 6
+weight checkpoints below remain historical records; this slice supersedes their
+single-vertex Direct, viewport-drag and provisional-placement limits only within
+the stated scope. No pixel or browser-render equivalence is claimed.
+
 ## Global Animate draw order — November 14, 2026
 
 Installed 4.3.26 shows a Draw order Tree category with frontmost slots first,
@@ -153,8 +190,9 @@ attachment properties. Interpolation labels are Linear, Stepped and Bezier.
   Rotate/Translate/Scale and the axis selectors now cover the supported transform subset.
 - Add movable tabs, arbitrary docking and saved workspace state. Graph/Dopesheet
   share bottom tabs with resizers and visibility controls.
-- Add multiple/box selection and complete view-dependent input focus/navigation
-  preferences. Extend Auto Key/unkeyed editing to new keyable types
+- Add multiple/box selection outside the accepted one-mesh/one-bone Direct
+  workflow and complete view-dependent input focus/navigation preferences.
+  Extend Auto Key/unkeyed editing to new keyable types
   as their model and adapters are implemented.
 - Match Dopesheet key selection, dragging, clipboard, pan/zoom and selection tools.
 - Implement Edit Mesh UV/topology controls with their own reference semantics.

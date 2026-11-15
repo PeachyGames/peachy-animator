@@ -238,7 +238,6 @@ pub fn command_schema() -> Value {
             ("key", key.clone()),
         ])),
     )]);
-    let bind_pose = object(&[("locals", list(transform.clone()))]);
     let ik = with_optional(
         object(&[
             ("name", text()),
@@ -255,6 +254,10 @@ pub fn command_schema() -> Value {
         &[("stretch", json!({"type":"boolean","default":false}))],
     );
     let inherit = json!({"type":"string","enum":["normal","onlyTranslation","noRotationOrReflection","noScale","noScaleOrReflection"]});
+    let bind_pose = with_optional(
+        object(&[("locals", list(transform.clone()))]),
+        &[("inherits", list(inherit.clone()))],
+    );
     let settings = [
         "inertia", "strength", "damping", "mass", "wind", "gravity", "mix",
     ];
@@ -701,15 +704,34 @@ pub fn command_schema() -> Value {
         command(
             "setMeshBoneWeight",
             &[
-                ("attachment", attachment),
+                ("attachment", attachment.clone()),
                 ("vertex", index()),
                 ("bone", index()),
                 ("weight", number()),
+                ("pose", bind_pose.clone()),
+            ],
+        ),
+        command(
+            "editMeshBoneWeights",
+            &[
+                ("attachment", attachment),
+                (
+                    "vertices",
+                    json!({"type":"array","items":{"type":"integer","minimum":0},"minItems":1,"uniqueItems":true,"description":"Exact selected vertex indices; one attachment and one globally bound bone. No implicit active selection."}),
+                ),
+                ("bone", index()),
+                (
+                    "edit",
+                    json!({"description":"Absolute assigns every eligible vertex; sole-positive vertices without recipients stay unchanged. Relative describes one gesture with per-step clamps and frozen original recipient ratios. Positive missing influences use local [0,0] in consistent mesh binding order; ambiguous repeated or contradictory ordering fails atomically.","oneOf":[
+                        object(&[("mode",json!({"const":"absolute"})),("weight",json!({"type":"number","minimum":0,"maximum":1}))]),
+                        object(&[("mode",json!({"const":"relative"})),("deltas",json!({"type":"array","items":{"type":"number"},"minItems":1,"description":"Ordered signed weight-unit steps within ONE gesture, not pixels or a net delta. Clamp each step against frozen original recipient ratios."}))])
+                    ]}),
+                ),
                 ("pose", bind_pose),
             ],
         ),
     ];
-    json!({"oneOf":variants,"description":"Native engine command. Indices address the current get_document result; a commands list is one atomic undo step. Transform payloads require all seven fields. Bind poses use evaluated appliedLocals, not authored locals."})
+    json!({"oneOf":variants,"description":"Native engine command. Indices address the current get_document result; a commands list is one atomic undo step. Transform payloads require all seven fields. Bind poses use evaluated appliedLocals and inherits, not authored locals. Omitted inherits retains legacy Setup modes; supplied inherits must contain one mode per bone and cannot be null."})
 }
 
 #[cfg(test)]
@@ -770,6 +792,7 @@ mod tests {
             Command::UnbindMesh { .. } => "unbindMesh",
             Command::AddMeshBoneBinding { .. } => "addMeshBoneBinding",
             Command::SetMeshBoneWeight { .. } => "setMeshBoneWeight",
+            Command::EditMeshBoneWeights { .. } => "editMeshBoneWeights",
             Command::Batch { .. } => "batch",
         }
     }
@@ -819,7 +842,7 @@ mod tests {
     fn every_published_shape_decodes_through_strict_engine_serde() {
         let schema = command_schema();
         let variants = schema["oneOf"].as_array().unwrap();
-        assert_eq!(variants.len(), 51);
+        assert_eq!(variants.len(), 52);
         for variant in variants {
             let payload = sample(variant);
             let command: CommandInput = serde_json::from_value(payload.clone()).unwrap();
@@ -828,6 +851,81 @@ mod tests {
             let mut unknown_field = payload;
             unknown_field["futureField"] = json!(true);
             assert!(serde_json::from_value::<CommandInput>(unknown_field).is_err());
+        }
+    }
+
+    #[test]
+    fn mesh_weight_edits_publish_strict_absolute_and_single_gesture_relative_shapes() {
+        let schema = command_schema();
+        let shape = schema["oneOf"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|shape| shape["properties"]["command"]["const"] == "editMeshBoneWeights")
+            .unwrap();
+        assert_eq!(shape["properties"]["vertices"]["minItems"], 1);
+        assert_eq!(shape["properties"]["vertices"]["uniqueItems"], true);
+        let mut payload = sample(shape);
+        payload["vertices"] = json!([2, 3]);
+        for edit in [
+            json!({"mode":"absolute","weight":0.5}),
+            json!({"mode":"relative","deltas":[2.0,-0.125]}),
+        ] {
+            payload["edit"] = edit;
+            let command: CommandInput = serde_json::from_value(payload.clone()).unwrap();
+            assert_eq!(serde_json::to_value(command.0).unwrap(), payload);
+        }
+        for edit in [
+            Value::Null,
+            json!({"mode":"future","weight":0.5}),
+            json!({"mode":"absolute","weight":0.5,"deltas":[]}),
+            json!({"mode":"relative","deltas":[0.1],"weight":0.5}),
+        ] {
+            payload["edit"] = edit;
+            assert!(serde_json::from_value::<CommandInput>(payload.clone()).is_err());
+        }
+    }
+
+    #[test]
+    fn binding_pose_schema_preserves_legacy_and_explicit_inheritance_snapshots() {
+        let schema = command_schema();
+        for variant in schema["oneOf"].as_array().unwrap().iter().filter(|shape| {
+            matches!(
+                shape["properties"]["command"]["const"].as_str(),
+                Some(
+                    "bindMeshToBone"
+                        | "unbindMesh"
+                        | "addMeshBoneBinding"
+                        | "setMeshBoneWeight"
+                        | "editMeshBoneWeights"
+                )
+            )
+        }) {
+            let pose_schema = &variant["properties"]["pose"];
+            assert_eq!(pose_schema["required"], json!(["locals"]));
+            assert_eq!(pose_schema["properties"]["inherits"]["type"], "array");
+            assert_eq!(
+                pose_schema["properties"]["inherits"]["items"]["enum"],
+                json!([
+                    "normal",
+                    "onlyTranslation",
+                    "noRotationOrReflection",
+                    "noScale",
+                    "noScaleOrReflection"
+                ])
+            );
+            let legacy = sample(variant);
+            let decoded: CommandInput = serde_json::from_value(legacy.clone()).unwrap();
+            assert_eq!(serde_json::to_value(decoded.0).unwrap(), legacy);
+            let mut explicit = legacy.clone();
+            explicit["pose"]["inherits"] = json!(["onlyTranslation"]);
+            let decoded: CommandInput = serde_json::from_value(explicit.clone()).unwrap();
+            assert_eq!(serde_json::to_value(decoded.0).unwrap(), explicit);
+            for invalid in [Value::Null, json!("normal"), json!(["futureMode"])] {
+                let mut malformed = legacy.clone();
+                malformed["pose"]["inherits"] = invalid;
+                assert!(serde_json::from_value::<CommandInput>(malformed).is_err());
+            }
         }
     }
 

@@ -1,10 +1,10 @@
 //! Explicit binding and weight transitions. Captured bone poses are never changed.
-use crate::{Affine, mesh_world_vertices, world_pose};
+use crate::{Affine, mesh_world_vertices, world_pose, world_pose_with};
 use peachy_document::{
-    Attachment, AttachmentRef, BoneInfluence, Document, Mesh, MeshVertices, Transform,
+    Attachment, AttachmentRef, BoneInfluence, Document, Inherit, Mesh, MeshVertices, Transform,
     finite_transform,
 };
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::BTreeSet;
 
 /// Bind/Remove-all and additional bindings use checked positions. Reject a recovered f32 local
@@ -12,15 +12,41 @@ use std::collections::BTreeSet;
 /// absolute amount. This command policy has no relative or large-pose exception.
 const BIND_WORLD_COORDINATE_TOLERANCE: f64 = 0.001;
 
+#[cfg(test)]
+thread_local! {
+    static BIND_WORLD_CALLS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+#[cfg(test)]
+pub(crate) fn bind_world_calls() -> usize {
+    BIND_WORLD_CALLS.with(std::cell::Cell::get)
+}
+
 /// An applied-local FK snapshot, including any unkeyed Session pose edits.
 /// These locals are reconstructed directly; constraints are never solved again.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct MeshBindPose {
     pub locals: Vec<Transform>,
+    /// Explicit captured modes. Legacy omitted fields retain Setup inheritance;
+    /// a present field must be an array with exactly one mode per document bone.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "explicit_inherits"
+    )]
+    pub inherits: Option<Vec<Inherit>>,
 }
 
-fn bind_world(document: &Document, pose: &MeshBindPose) -> Result<Vec<Affine>, String> {
+fn explicit_inherits<'de, D: Deserializer<'de>>(
+    deserializer: D,
+) -> Result<Option<Vec<Inherit>>, D::Error> {
+    // `default` handles absence. A supplied null is not an inheritance array.
+    Vec::<Inherit>::deserialize(deserializer).map(Some)
+}
+
+pub(crate) fn bind_world(document: &Document, pose: &MeshBindPose) -> Result<Vec<Affine>, String> {
+    #[cfg(test)]
+    BIND_WORLD_CALLS.with(|count| count.set(count.get() + 1));
     if pose.locals.len() != document.bones.len()
         || pose.locals.iter().any(|local| !finite_transform(*local))
     {
@@ -36,10 +62,21 @@ fn bind_world(document: &Document, pose: &MeshBindPose) -> Result<Vec<Affine>, S
     {
         return Err("Bind pose requires a valid bone hierarchy".into());
     }
-    Ok(world_pose(document, &pose.locals))
+    match &pose.inherits {
+        None => Ok(world_pose(document, &pose.locals)),
+        Some(inherits) => {
+            if inherits.len() != document.bones.len() {
+                return Err("Bind pose needs one inheritance mode per bone".into());
+            }
+            let world = world_pose_with(document, &pose.locals, inherits);
+            crate::ik::check_inherit_domain(document, &world, &pose.locals, inherits)?;
+            crate::ik::check_world(document, &world)?;
+            Ok(world)
+        }
+    }
 }
 
-fn mesh_target<'a>(
+pub(crate) fn mesh_target<'a>(
     document: &'a Document,
     attachment: &AttachmentRef,
 ) -> Result<(usize, &'a Mesh), String> {
@@ -241,6 +278,27 @@ pub(super) fn set_mesh_bone_weight(
         return Err("Direct weights require a weighted mesh".into());
     };
     let selected = influences.get(vertex).ok_or("Unknown mesh vertex")?;
+    let next = direct_vertex_weights(selected, bone, weight)?;
+    if crate::mesh::weighted_world_vertex(&next, &world)
+        .iter()
+        .any(|value| !value.is_finite())
+    {
+        return Err("Direct weight would produce nonfinite world vertices at this pose".into());
+    }
+    let Some(Attachment::Mesh(mesh)) = document.attachment_mut(attachment) else {
+        unreachable!("Validated mesh target must remain present")
+    };
+    let MeshVertices::Weighted { influences } = &mut mesh.vertices else {
+        unreachable!("Validated weighted mesh must remain weighted")
+    };
+    influences[vertex] = next;
+    Ok(())
+}
+
+pub(crate) fn weight_entry(
+    selected: &[BoneInfluence],
+    bone: usize,
+) -> Result<(usize, f64), String> {
     let mut bones = BTreeSet::new();
     if selected
         .iter()
@@ -258,10 +316,19 @@ pub(super) fn set_mesh_bone_weight(
         .filter(|(index, influence)| *index != chosen && influence.weight > 0.0)
         .map(|(_, influence)| f64::from(influence.weight))
         .sum();
+    Ok((chosen, others))
+}
+
+pub(crate) fn direct_vertex_weights(
+    selected: &[BoneInfluence],
+    bone: usize,
+    weight: f32,
+) -> Result<Vec<BoneInfluence>, String> {
+    let (chosen, others) = weight_entry(selected, bone)?;
     if others == 0.0 && weight < 1.0 {
         return Err("Cannot reduce a weight without another positive recipient".into());
     }
-    let mut next = selected.clone();
+    let mut next = selected.to_vec();
     for (index, influence) in next.iter_mut().enumerate() {
         if index == chosen {
             influence.weight = weight;
@@ -270,18 +337,5 @@ pub(super) fn set_mesh_bone_weight(
                 (f64::from(influence.weight) * (1.0 - f64::from(weight)) / others) as f32;
         }
     }
-    if crate::mesh::weighted_world_vertex(&next, &world)
-        .iter()
-        .any(|value| !value.is_finite())
-    {
-        return Err("Direct weight would produce nonfinite world vertices at this pose".into());
-    }
-    let Some(Attachment::Mesh(mesh)) = document.attachment_mut(attachment) else {
-        unreachable!("Validated mesh target must remain present")
-    };
-    let MeshVertices::Weighted { influences } = &mut mesh.vertices else {
-        unreachable!("Validated weighted mesh must remain weighted")
-    };
-    influences[vertex] = next;
-    Ok(())
+    Ok(next)
 }

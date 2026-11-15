@@ -347,7 +347,7 @@ pub(crate) fn check_key_continuity(
 
 /// Explain degenerate parents that inheritance modes do not cover, before the
 /// generic nonfinite-world check. Root bones have no parent frame to inherit.
-fn check_inherit_domain(
+pub(crate) fn check_inherit_domain(
     doc: &Document,
     world: &[Affine],
     locals: &[Transform],

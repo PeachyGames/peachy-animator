@@ -1,5 +1,59 @@
 # Implementation provenance
 
+## Multi-vertex Direct weights and pose capture — November 15, 2026
+
+The official [Weights guide](https://esotericsoftware.com/spine-weights),
+retrieved through agent-reach on November 15, supplies Direct terminology,
+selection conventions, mixed-value asterisks and proportional remainder.
+Existing single-vertex design/native records were reviewed before preparing
+new probes. They do not establish the new multi-selection rules by themselves.
+
+Owned installed Spine 4.3.26 windows used our original input with six vertices,
+three influence bones and one committed geometric PNG. Fourteen valid cases
+compare actual selected controls, numeric entry, held pointer paths and generated
+JSON. Fresh pruned input distinguishes a truly absent influence from an explicit zero entry
+retained internally. Both Setup and Animate produce bone-local `[0,0]` for the
+new positive influence; the original explicit-zero position remains unchanged
+when edited. Trials where the intended bone was unselected are excluded.
+Only visible controls/captures and original inputs/outputs were examined; no
+proprietary editor/runtime implementation, artist asset or vendor project was
+inspected or copied.
+
+The engine implementation independently extends the existing proportional
+arithmetic with absolute selection edits, skip-sole behavior and cumulative
+clamped targets using frozen original recipient ratios. Native pointer samples
+calibrate the bounded 1/350 response and axis activation behavior; exact universal
+diagonal/modifier rules are not inferred. Sparse insertion now follows an
+independent per-mesh precedence extension with first-appearance ties, preserving
+all old relative order and positions.
+An order-only B,A→A,B control resolved the observed editor import failure;
+consistent nonnumeric C,A,B also imports. Editor-only preflight rejects
+cross-vertex precedence cycles while Runtime preserves raw arrays. Stored/pending
+Deform layout changes fail rather than inventing a remapping. Applied-local pose
+capture now carries inheritance modes, with a
+strict optional legacy-compatible array; persistent native v22 is unchanged.
+
+The actual MCP study starts from a root-only project and the original PNG,
+constructs two weighted meshes through commands, and retains requests/poses.
+The separately licensed Spine 4.3 runtime is an external oracle through its
+public API only, never a Cargo dependency or bundled implementation. Core/MCP
+and MCP-authored runtime checks pass. A separate actual MCP consumer study
+verifies Editor rejection before writing, unchanged failure state and exact raw
+Runtime output. The exact final ordered Editor JSON imports/re-exports through
+installed 4.3.26 and passes 52 source-versus-returned poses at the unchanged
+0.001 geometry tolerance. Native zero pruning/weight rounding is recorded,
+not hidden as raw-lossless interchange. Actual native Peachy input verifies
+typed 50, mixed held clamp/reversal with one Undo, Escape/marquee held-input
+blocking, all-six skip-sole behavior, ordered sparse origin and pending-pose Save
+exclusion. The corrected native and MCP outputs match the public lab exactly.
+A fresh no-history reopen, early Cmd release, both panes, minimum layout and
+looping playback pass; all owned GUI instances are closed. Pies/overlays, exact
+styling, brushing, locks, Auto/Smooth/Update and multi-bone authoring remain open.
+See [the bounded contract](slices/weight-multivertex.md) and
+[scalar evidence](evidence/weight-multivertex.json). Private native captures,
+hashes and retained task evidence remain under the existing
+`weights-multivertex/` record; committed sources use original art only.
+
 ## Global Animate draw-order authoring — November 14, 2026
 
 The public [Slots guide](https://esotericsoftware.com/spine-slots),

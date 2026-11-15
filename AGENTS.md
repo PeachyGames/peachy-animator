@@ -139,7 +139,7 @@ IK evaluation uses one checked engine solve. `EvaluatedPose` distinguishes autho
 locals, applied locals and world transforms; `Session::local_pose` stays authored.
 Rendering, picking, bounds and tools use the evaluated frame. The old evaluation
 names are fallible aliases; `world_pose` is explicitly forward kinematics only.
-Binding captures applied locals once and reconstructs FK, never applying IK twice.
+Binding captures applied locals and sampled inheritance modes once and reconstructs checked FK, never applying IK twice.
 Viewport deltas use `drag_transform_in_frame` and update authored values without
 baking solved transforms. Preserve raw Setup rotation winding on directly constrained
 bones, including zero Mix. Native6 Mix is [0,1]; unsupported chains/poses fail explicitly
@@ -169,9 +169,26 @@ the selected vertex, sparse missing targets, existing-global-bone Add and a
 sole-positive reduction without recipients; these are bounded policies, not
 observations of every Spine edge case. Do not silently normalize imports, key or
 discard pending poses, merge bindings or rebuild geometry in the UI. Brush editing,
-locks, multiple selected vertices/bones and Update need separate commands/gates.
+locks, multiple selected bones and Update need separate commands/gates.
 Add stable vertex identity before removal/reindexing or cross-topology animation
 references, and remap all influences before any future bone reordering/deletion.
+
+`EditMeshBoneWeights` is the semantic multi-vertex Direct operation: absolute
+assignments skip sole-positive vertices without recipients, while ordered relative
+steps incrementally clamp chosen values against frozen recipient ratios. The raw
+single-vertex setter keeps its stricter policy. Shared `mesh_bone_weights` reports
+uniform/mixed raw values without averaging; globally bound missing influences
+read zero. A positive semantic edit inserts a missing entry at `[0,0]` in consistent mesh
+binding order, matching
+observed native Setup/Animate behavior; existing zero positions stay unchanged.
+Sparse insertion with keyed/pending Deform layout is rejected until remapping
+exists. Session prepared previews reuse command validation, linked propagation,
+layout guards and pending reconciliation, with one captured FK per gesture.
+Capture both applied locals and `MeshBindPose.inherits`; legacy omitted modes
+retain Setup reconstruction, while supplied null/invalid arrays are rejected.
+See docs/slices/weight-multivertex.md. Keep sorted transient Weights selection
+separate from the Mesh tool's vertex selection and soft-transform state.
+
 
 Track concrete Spine behavior and gaps in `docs/PARITY.md`. Check new geometry against the external runtime and exported data against the installed editor using original fixtures before claiming parity for a feature.
 
@@ -199,7 +216,7 @@ mode after time scrubbing captures the live pose only on the concrete target cli
 Opening another document resets the context. Keep genuine Weights tool history
 separate from temporary Mesh inspection's return-tool tracking.
 
-Direct previews freeze the explicit mesh/vertex/bone, mode/clip/actual time and one
+Direct previews freeze the explicit mesh/vertex-set/bone, mode/clip/actual time and one
 pose snapshot, then use Session's fixed transaction baseline. Completion is one
 undo step after frame actions and pointer release. Escape, application focus loss,
 tool/context/history/Open/Save/Export/view-hide actions cancel before continuing;

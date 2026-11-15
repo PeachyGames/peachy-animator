@@ -352,11 +352,11 @@ impl Editor {
                     let p = screen(p);
                     if selected {
                         let selected_vertex = if self.tool == Tool::Weights {
-                            self.weights.vertex == Some(i)
+                            self.weights.vertices.binary_search(&i).is_ok()
                         } else {
                             i == self.mesh_vertex
                         };
-                        if self.tool == Tool::Weights {
+                        if self.tool == Tool::Weights && rect.contains(p) {
                             self.capture_targets.insert(
                                 format!("weightsVertex:{i}"),
                                 [p.x - 5., p.y - 5., p.x + 5., p.y + 5.],
@@ -619,16 +619,22 @@ impl Editor {
             }
             return;
         }
-        if matches!(self.tool, Tool::Weights | Tool::Mesh) {
+        if self.tool == Tool::Weights {
+            self.weights_viewport_input(
+                ui,
+                &response,
+                nearest_vertex,
+                picked,
+                (rect, origin, zoom),
+            );
+            return;
+        }
+        if self.tool == Tool::Mesh {
             if (response.clicked() || response.drag_started_by(egui::PointerButton::Primary))
                 && let Some((key, vertex, _)) = nearest_vertex
             {
                 self.select(TreeItem::Attachment(key.clone()));
-                if self.tool == Tool::Weights {
-                    self.weights.vertex = Some(vertex);
-                } else {
-                    self.mesh_vertex = vertex;
-                }
+                self.mesh_vertex = vertex;
                 if self.tool == Tool::Mesh
                     && response.drag_started_by(egui::PointerButton::Primary)
                     && let Some(pointer) = ui
@@ -640,10 +646,6 @@ impl Editor {
             } else if response.clicked() {
                 if let Some(item) = picked {
                     self.select(item);
-                } else if self.tool == Tool::Weights {
-                    self.cancel_weight_edit();
-                    self.weights.vertex = None;
-                    self.weights.bone = None;
                 } else {
                     self.deselect();
                 }

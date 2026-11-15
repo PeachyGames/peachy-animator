@@ -55,7 +55,7 @@ availability and bounded feature scopes are explicit below.
 | Slot Color | New inline Setup HSV/Hue/Alpha chooser and exact #RRGGBBAA entry for a typed slot or attachment's owner. Persistent native7 RGBA tint reaches all image views. Animate is read-only; color timelines/dark tint remain pending. |
 | Timeline | New compact Animate ruler below the viewport. Shared cursor/transport/Loop, exact all-track key markers, decimal frame entry, snapped or Shift-subframe scrubbing, wheel/slider zoom, right-drag pan and Zoom Keys. Works with Dopesheet closed. |
 | Tree | Existing typed outline, filters, activation dots and contextual properties. The Slots filter shows draw order; Spine has no separate Slots view in this inventory. |
-| Weights | Existing bounded Bind/Remove all/Add binding/Direct workflow; still no brush, Update, locks or multi-vertex editing. |
+| Weights | Dedicated vertical Weights pane; Bind/Remove all/Add binding and single-/multi-vertex Direct numeric/slider/viewport editing through the shared engine/MCP. Brush, Auto/Smooth, Update and locks remain. See [multi-vertex scope](slices/weight-multivertex.md). |
 
 All 15 views now have bounded implementations; no view remains a disabled placeholder.
 

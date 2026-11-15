@@ -188,6 +188,19 @@ struct CopyAnimationKeysInput {
 
 #[derive(Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
+struct MeshWeightsInput {
+    expected_revision: u64,
+    /// Exact attachment identity; no active-skin fallback or implicit current selection.
+    skin: String,
+    slot: String,
+    placeholder: String,
+    /// Nonempty unique vertex indices. Returned in ascending order.
+    vertices: Vec<usize>,
+    bone: usize,
+}
+
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 struct SaveInput {
     expected_revision: u64,
     /// Fresh directory to create under --root. Its parent must exist. Writes project.peachy and loose images, never overwrites.
@@ -342,13 +355,40 @@ impl AnimatorServer {
     }
 
     #[tool(
-        description = "Return the supported native command JSON Schema. apply_commands exposes the same schema inline. Bind operations require appliedLocals from evaluate_pose; key values are setup-relative offsets (scale multiplies).",
+        description = "Return the supported native command JSON Schema. apply_commands exposes the same schema inline. Bind operations capture appliedLocals and inherits from evaluate_pose; key values are setup-relative offsets (scale multiplies).",
         annotations(read_only_hint = true, idempotent_hint = true, open_world_hint = false)
     )]
     fn get_command_schema(&self) -> CallToolResult {
         CallToolResult::structured(
             json!({"nativeFormat":peachy_document::FORMAT_VERSION,"schema":schema::command_schema()}),
         )
+    }
+
+    #[tool(
+        description = "Read selected mesh/bone weights through the shared Direct query. Returns exact per-vertex values and a uniform or mixed aggregate, never an average or normalized display value. An absent influence of a globally bound bone reads as zero. Rejects empty, duplicate, ambiguous or stale selections. This changes no document, history or revision.",
+        annotations(read_only_hint = true, idempotent_hint = true, open_world_hint = false)
+    )]
+    fn get_mesh_weights(&self, Parameters(input): Parameters<MeshWeightsInput>) -> CallToolResult {
+        self.access(|state| {
+            state.check_revision(input.expected_revision)?;
+            let selection = peachy_engine::MeshWeightSelection {
+                attachment: peachy_document::AttachmentRef {
+                    skin: input.skin,
+                    slot: input.slot,
+                    placeholder: input.placeholder,
+                },
+                vertices: input.vertices,
+                bone: input.bone,
+            };
+            let query = peachy_engine::mesh_bone_weights(state.project()?.session.document(), &selection)?;
+            let value = match query.value {
+                peachy_engine::MeshWeightValue::Uniform(weight) => json!({"kind":"uniform","weight":weight}),
+                peachy_engine::MeshWeightValue::Mixed => json!({"kind":"mixed"}),
+            };
+            Ok(json!({"revision":state.revision,"attachment":query.selection.attachment,
+                "vertices":query.selection.vertices,"bone":query.selection.bone,
+                "weights":query.weights.iter().map(|entry|json!({"vertex":entry.vertex,"weight":entry.weight})).collect::<Vec<_>>(),"value":value}))
+        })
     }
 
     #[tool(
@@ -430,7 +470,7 @@ impl AnimatorServer {
     }
 
     #[tool(
-        description = "Evaluate Setup or an animation at a time using the shared checked pose/IK/mesh engine. Returns authored locals, appliedLocals, world transforms, slotAttachments, raw unmultiplied float slotColors, complete back-to-front drawOrder slot indices, textured geometry and bounds. Slot arrays and drawOrder include hidden and empty slots, before tint and byte display rounding. This is geometry, not a raster preview or live desktop pose.",
+        description = "Evaluate Setup or an animation at a time using the shared checked pose/IK/mesh engine. Returns authored locals, appliedLocals, per-bone inherits modes, world transforms, slotAttachments, raw unmultiplied float slotColors, complete back-to-front drawOrder slot indices, textured geometry and bounds. Capture appliedLocals and inherits together for a binding/weight command pose. Slot arrays and drawOrder include hidden and empty slots, before tint and byte display rounding. This is geometry, not a raster preview or live desktop pose.",
         annotations(read_only_hint = true, idempotent_hint = true, open_world_hint = false)
     )]
     fn evaluate_pose(&self, Parameters(input): Parameters<EvaluateInput>) -> CallToolResult {
@@ -440,7 +480,7 @@ impl AnimatorServer {
             if !document.skins.is_empty() && !document.skins.contains_key(&input.skin){return Err("Unknown skin".into());}
             let authored=sample_authored_pose(document,animation,input.time)?;
             let scene=checked_scene_from_authored(document,&input.skin,&authored)?;
-            Ok(json!({"revision":state.revision,"animation":input.animation,"time":input.time,"skin":input.skin,"locals":scene.locals,"appliedLocals":scene.applied_locals,"world":scene.world,"slotAttachments":authored.slot_attachments(),"slotColors":authored.slot_colors(),"drawOrder":authored.draw_order(),"attachments":scene.attachments,"bounds":scene.bounds.map(|bounds|json!({"min":bounds.min,"max":bounds.max}))}))
+            Ok(json!({"revision":state.revision,"animation":input.animation,"time":input.time,"skin":input.skin,"locals":scene.locals,"appliedLocals":scene.applied_locals,"inherits":authored.inherits(),"world":scene.world,"slotAttachments":authored.slot_attachments(),"slotColors":authored.slot_colors(),"drawOrder":authored.draw_order(),"attachments":scene.attachments,"bounds":scene.bounds.map(|bounds|json!({"min":bounds.min,"max":bounds.max}))}))
         })
     }
 

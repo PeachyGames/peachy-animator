@@ -345,7 +345,7 @@ fn weights_bind_and_direct_capture_full_animated_pending_ik_once() {
     assert_eq!(editor.session.pose_edits(), &pending);
     editor.begin_weights_bind();
     editor.select(TreeItem::Bone(0));
-    editor.weights.vertex = Some(0);
+    editor.weights.vertices = vec![0];
     editor.weights.bone = Some(0);
     workspace_frame(&mut editor, &ctx, vec![]);
     let applied = editor

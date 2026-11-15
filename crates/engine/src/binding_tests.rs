@@ -27,6 +27,7 @@ pub(super) fn slot_local_rig() -> Document {
 pub(super) fn setup_pose(doc: &Document) -> MeshBindPose {
     MeshBindPose {
         locals: doc.bones.iter().map(|bone| bone.setup).collect(),
+        inherits: None,
     }
 }
 
@@ -560,7 +561,10 @@ fn already_weighted_binding_is_rejected_and_slot_local_unbind_validates_before_n
     let mut invalid = setup_pose(&original);
     invalid.locals[0].scale_y = f32::INFINITY;
     for command in [
-        unbind(MeshBindPose { locals: vec![] }),
+        unbind(MeshBindPose {
+            locals: vec![],
+            inherits: None,
+        }),
         unbind(invalid),
         Command::UnbindMesh {
             attachment: reference("unknown slot"),
@@ -616,6 +620,7 @@ fn fixed_base_bind_previews_and_cancel_restore_original_payload_pose_and_history
     let pending = session.pose_edits().clone();
     let pose = MeshBindPose {
         locals: session.local_pose(Some(0), 0.137),
+        inherits: None,
     };
     session.begin_transaction();
     session.preview_transaction(bind(1, pose.clone())).unwrap();

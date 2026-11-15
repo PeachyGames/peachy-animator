@@ -113,7 +113,6 @@ impl Editor {
     }
 
     pub(super) fn main_tools(&mut self, ui: &mut egui::Ui) {
-        self.record_target("mainTools", ui.max_rect());
         self.record_target("mainToolsClip", ui.clip_rect());
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
@@ -153,6 +152,7 @@ impl Editor {
                 if weights.clicked() {
                     self.show_weights = true;
                     self.set_tool(Tool::Weights);
+                    ui.memory_mut(|memory| memory.request_focus(Self::weights_id()));
                 }
                 if !self.setup_mode {
                     let mut enabled=self.auto_key;
@@ -175,6 +175,37 @@ impl Editor {
                 }
             });
         });
+        self.record_target("mainTools", ui.min_rect().intersect(ui.clip_rect()));
+        // Narrow workspaces scroll this toolbar. Report only its visible input
+        // regions, while the clip remains available for scrolling automation.
+        let mut targets = vec![
+            "rotateTool".to_string(),
+            "translateTool".to_string(),
+            "scaleTool".to_string(),
+            "shearTool".to_string(),
+            "weightsTool".to_string(),
+            "axes:Local".to_string(),
+            "axes:Parent".to_string(),
+            "axes:World".to_string(),
+            "autoKey".to_string(),
+            "keyEdited".to_string(),
+        ];
+        for property in Property::ALL {
+            targets.push(format!("value:{property:?}"));
+            targets.push(format!("key:{property:?}"));
+        }
+        for name in targets {
+            let Some([left, top, right, bottom]) = self.capture_targets.get(&name).copied() else {
+                continue;
+            };
+            let visible = egui::Rect::from_min_max(pos2(left, top), pos2(right, bottom))
+                .intersect(ui.clip_rect());
+            if visible.is_positive() && visible.is_finite() {
+                self.record_target(&name, visible);
+            } else {
+                self.capture_targets.remove(&name);
+            }
+        }
     }
 
     fn transform_row(

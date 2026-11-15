@@ -870,7 +870,7 @@ mod tests {
         let (mut editor, attachment) = mesh_editor(true);
         install_ik(&mut editor, false, 0.);
         editor.weights.select_mesh(attachment);
-        editor.weights.vertex = Some(0);
+        editor.weights.vertices = vec![0];
         editor.weights.bone = Some(0);
         editor.set_tool(Tool::Weights);
         editor.show_weights = true;
@@ -1302,7 +1302,7 @@ mod tests {
         let (mut editor, attachment) = mesh_editor(true);
         install_ik(&mut editor, false, 0.);
         editor.weights.select_mesh(attachment);
-        editor.weights.vertex = Some(0);
+        editor.weights.vertices = vec![0];
         editor.weights.bone = Some(0);
         editor.set_tool(Tool::Weights);
         let original = editor.session.document().clone();

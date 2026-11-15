@@ -57,6 +57,7 @@ mod viewport_overlays;
 mod views;
 mod weight_direct;
 mod weights;
+mod weights_selection;
 use eframe::egui::{self, Color32, FontId, Pos2, RichText, Sense, Stroke, Vec2, pos2, vec2};
 use peachy_document::*;
 use peachy_engine::{
@@ -567,6 +568,10 @@ impl Editor {
     }
     fn undo(&mut self) {
         self.cancel_timeline_interaction();
+        if self.weights.pointer.is_some() || self.weights.vertex_press.is_some() {
+            self.cancel_gesture();
+            return;
+        }
         if self.draw_order_edit_active() {
             self.cancel_draw_order_edit();
             return;
@@ -610,6 +615,10 @@ impl Editor {
     }
     fn redo(&mut self) {
         self.cancel_timeline_interaction();
+        if self.weights.pointer.is_some() || self.weights.vertex_press.is_some() {
+            self.cancel_gesture();
+            return;
+        }
         if self.draw_order_edit_active() {
             self.cancel_draw_order_edit();
             return;
@@ -777,6 +786,7 @@ impl Editor {
             self.cancel_gesture();
         }
         self.reconcile_mesh_input(&ctx);
+        self.reconcile_weights_pointer(&ctx);
         self.mesh_tools.show_radius = false;
         self.capture_targets.clear();
         self.mesh_handles.clear();
@@ -926,13 +936,31 @@ impl Editor {
                 });
         }
         if self.curves_visible() {
+            // With both vertical views open, reserve the Weights minimum and a
+            // usable canvas before restoring any persisted Curves width.
+            let max_width = if self.show_weights {
+                (ui.available_width() - 230. - 320.).clamp(230., 400.)
+            } else {
+                400.
+            };
             egui::Panel::right("curves-view")
-                .default_size(275.)
+                .default_size(275_f32.min(max_width))
                 .min_size(230.)
-                .max_size(400.)
+                .max_size(max_width)
                 .resizable(true)
                 .frame(egui::Frame::new().fill(PANEL).inner_margin(6))
                 .show(ui, |ui| self.curves_panel(ui));
+        }
+        if self.show_weights {
+            let viewport_min = if self.curves_visible() { 320. } else { 400. };
+            let max_width = (ui.available_width() - viewport_min).clamp(230., 400.);
+            egui::Panel::right("weights-pane")
+                .default_size(290_f32.min(max_width))
+                .min_size(230.)
+                .max_size(max_width)
+                .resizable(true)
+                .frame(egui::Frame::new().fill(PANEL).inner_margin(6))
+                .show(ui, |ui| self.weights_panel(ui));
         }
         egui::CentralPanel::default()
             .frame(
@@ -941,11 +969,32 @@ impl Editor {
                     .inner_margin(0),
             )
             .show(ui, |ui| {
-                let height = layout::main_tools_height(ui);
+                let narrow_tools = self.show_weights && self.curves_visible();
+                let height = layout::main_tools_height(ui)
+                    + if narrow_tools {
+                        ui.spacing().scroll.bar_width + ui.spacing().item_spacing.y
+                    } else {
+                        0.
+                    };
                 egui::Panel::bottom("main-tools")
                     .exact_size(height)
                     .frame(egui::Frame::new().fill(PANEL).inner_margin(7))
-                    .show(ui, |ui| self.main_tools(ui));
+                    .show(ui, |ui| {
+                        if narrow_tools {
+                            egui::ScrollArea::horizontal()
+                                .id_salt("main-tools-horizontal")
+                                .min_scrolled_width(0.)
+                                .auto_shrink([false, false])
+                                .show(ui, |ui| {
+                                    // A horizontal overflow surface must keep
+                                    // each toolbar column at its natural width.
+                                    ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
+                                    self.main_tools(ui);
+                                });
+                        } else {
+                            self.main_tools(ui);
+                        }
+                    });
                 self.canvas(ui);
             });
         self.finish_idle_transactions(&ctx);

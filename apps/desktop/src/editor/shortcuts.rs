@@ -3,6 +3,7 @@ use super::*;
 
 impl Editor {
     pub(super) fn cancel_gesture(&mut self) {
+        self.cancel_weights_pointer();
         self.export_dialog = None;
         self.cancel_timeline_interaction();
         self.cancel_graph_edit();

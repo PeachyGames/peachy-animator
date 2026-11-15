@@ -95,6 +95,372 @@ async fn open(client: &RunningService<RoleClient, ()>) -> Value {
     )
 }
 
+fn write_multi_vertex_weight_fixture(root: &Path) -> Vec<u8> {
+    let mut fixture = serde_json::to_value(
+        peachy_document::Document::new("Direct weight matrix".into(), 60).unwrap(),
+    )
+    .unwrap();
+    let origins = [-75.0_f32, 0.0, 75.0];
+    for (index, x) in origins.iter().enumerate() {
+        fixture["bones"].as_array_mut().unwrap().push(json!({
+            "name":format!("weight_{}", ['A', 'B', 'C'][index]),
+            "parent":0,"length":50.0,"inherit":"normal",
+            "setup":{"x":x,"y":-100.0,"rotation":0.0,"scale_x":1.0,
+                "scale_y":1.0,"shear_x":0.0,"shear_y":0.0}
+        }));
+    }
+    let points = [
+        [-96.0_f32, 0.0],
+        [-48.0, 72.0],
+        [48.0, 72.0],
+        [96.0, 0.0],
+        [48.0, -72.0],
+        [-48.0, -72.0],
+    ];
+    let weights = [
+        [1.0_f32, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+        [0.2, 0.3, 0.5],
+        [0.65, 0.25, 0.1],
+        [0.4, 0.0, 0.6],
+        [0.05, 0.15, 0.8],
+    ];
+    let influences: Vec<Vec<Value>> = points
+        .iter()
+        .zip(weights)
+        .map(|(point, weights)| {
+            origins
+                .iter()
+                .zip(weights)
+                .enumerate()
+                .map(|(bone, (x, weight))| {
+                    json!({"bone":bone+1,"position":[point[0]-x,point[1]+100.0],"weight":weight})
+                })
+                .collect()
+        })
+        .collect();
+    let uvs: Vec<_> = points
+        .iter()
+        .map(|point| [(point[0] + 96.0) / 192.0, (72.0 - point[1]) / 144.0])
+        .collect();
+    fixture["slots"] = json!([{"name":"weight_mesh","bone":0,
+        "attachment":"weight_mesh","color":[255,255,255,255],"blend":"normal"}]);
+    fixture["skins"] = json!({"default":{"weight_mesh":{"weight_mesh":{
+        "type":"mesh","path":"blue_cutout","width":128.0,"height":128.0,
+        "vertices":{"mode":"weighted","influences":influences},
+        "uvs":uvs,"triangles":[0,1,2,0,2,3,0,3,4,0,4,5],"hull":6
+    }}}});
+    let fixture: peachy_document::Document = serde_json::from_value(fixture).unwrap();
+    fixture.validate().unwrap();
+    fs::create_dir(root.join("images")).unwrap();
+    fs::copy(
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../examples/peach-bot/images/blue_cutout.png"),
+        root.join("images/blue_cutout.png"),
+    )
+    .unwrap();
+    peachy_io::create_project(&root.join("weights.peachy"), &fixture).unwrap();
+    fs::read(root.join("weights.peachy")).unwrap()
+}
+
+fn multi_vertex_weight_edit(pose: &Value, vertices: Value, edit: Value) -> Value {
+    json!({"command":"editMeshBoneWeights",
+        "attachment":{"skin":"default","slot":"weight_mesh","placeholder":"weight_mesh"},
+        "vertices":vertices,"bone":1,"edit":edit,"pose":pose})
+}
+
+fn assert_multi_vertex_weight_result(before: &Value, after: &Value, changes: &[(usize, [f64; 3])]) {
+    let mut expected = before.clone();
+    for (vertex, weights) in changes {
+        for (bone, weight) in weights.iter().enumerate() {
+            let actual = &after["skins"]["default"]["weight_mesh"]["weight_mesh"]["vertices"]["influences"]
+                [*vertex][bone]["weight"];
+            assert!((actual.as_f64().unwrap() - weight).abs() < 0.000001);
+            expected["skins"]["default"]["weight_mesh"]["weight_mesh"]["vertices"]["influences"]
+                [*vertex][bone]["weight"] = actual.clone();
+        }
+    }
+    // Only these weights may change: preserve every bind position, zero entry,
+    // unselected vertex and unrelated document field through the actual protocol.
+    assert_eq!(after, &expected);
+}
+
+async fn apply_multi_vertex_weight_edit(
+    client: &RunningService<RoleClient, ()>,
+    command: Value,
+) -> Value {
+    let revision = doc(client).await["state"]["revision"].clone();
+    success(
+        call(
+            client,
+            "apply_commands",
+            json!({"expected_revision":revision,"commands":[command]}),
+        )
+        .await,
+    )
+}
+
+async fn multi_vertex_weight_history(client: &RunningService<RoleClient, ()>, action: &str) {
+    let revision = doc(client).await["state"]["revision"].clone();
+    success(
+        call(
+            client,
+            "history",
+            json!({"expected_revision":revision,"action":action}),
+        )
+        .await,
+    );
+}
+
+#[tokio::test]
+async fn stdio_multi_vertex_direct_weights_clamp_history_and_persistence() {
+    let root = Sandbox::new();
+    let original = write_multi_vertex_weight_fixture(&root.0);
+    let client = start(&root.0).await;
+    success(
+        call(
+            &client,
+            "open_project",
+            json!({"expected_revision":0,"path":"weights.peachy"}),
+        )
+        .await,
+    );
+    let baseline = doc(&client).await["document"].clone();
+    let evaluated = success(call(&client, "evaluate_pose", json!({})).await);
+    let pose = json!({"locals":evaluated["appliedLocals"],"inherits":evaluated["inherits"]});
+    let read_before = doc(&client).await;
+    let mixed = success(
+        call(
+            &client,
+            "get_mesh_weights",
+            json!({
+                "expected_revision":read_before["state"]["revision"],
+                "skin":"default","slot":"weight_mesh","placeholder":"weight_mesh",
+                "vertices":[3,2],"bone":1
+            }),
+        )
+        .await,
+    );
+    assert_eq!(mixed["vertices"], json!([2, 3]));
+    assert_eq!(mixed["value"], json!({"kind":"mixed"}));
+    assert_eq!(mixed["weights"][0]["vertex"], 2);
+    assert_eq!(mixed["weights"][1]["vertex"], 3);
+    assert!((mixed["weights"][0]["weight"].as_f64().unwrap() - 0.2).abs() < 0.000001);
+    assert!((mixed["weights"][1]["weight"].as_f64().unwrap() - 0.65).abs() < 0.000001);
+    assert_eq!(doc(&client).await, read_before);
+    apply_multi_vertex_weight_edit(
+        &client,
+        multi_vertex_weight_edit(
+            &pose,
+            json!([0, 1, 2, 3, 4, 5]),
+            json!({"mode":"absolute","weight":0.5}),
+        ),
+    )
+    .await;
+    let absolute = doc(&client).await;
+    assert_multi_vertex_weight_result(
+        &baseline,
+        &absolute["document"],
+        &[
+            (0, [1.0, 0.0, 0.0]), // No positive recipients: skip only this vertex.
+            (1, [0.5, 0.5, 0.0]),
+            (2, [0.5, 0.1875, 0.3125]),
+            (3, [0.5, 5.0 / 14.0, 1.0 / 7.0]),
+            (4, [0.5, 0.0, 0.5]),
+            (5, [0.5, 3.0 / 38.0, 8.0 / 19.0]),
+        ],
+    );
+    let uniform = success(
+        call(
+            &client,
+            "get_mesh_weights",
+            json!({
+                "expected_revision":absolute["state"]["revision"],
+                "skin":"default","slot":"weight_mesh","placeholder":"weight_mesh",
+                "vertices":[5,4,3,2,1],"bone":1
+            }),
+        )
+        .await,
+    );
+    assert_eq!(uniform["vertices"], json!([1, 2, 3, 4, 5]));
+    assert_eq!(uniform["value"], json!({"kind":"uniform","weight":0.5}));
+    assert_eq!(doc(&client).await, absolute);
+    multi_vertex_weight_history(&client, "undo").await;
+    assert_eq!(doc(&client).await["document"], baseline);
+
+    apply_multi_vertex_weight_edit(
+        &client,
+        multi_vertex_weight_edit(
+            &pose,
+            json!([2, 3]),
+            json!({"mode":"relative","deltas":[2.0,-1.0/7.0]}),
+        ),
+    )
+    .await;
+    let reversed = doc(&client).await["document"].clone();
+    assert_multi_vertex_weight_result(
+        &baseline,
+        &reversed,
+        &[
+            (2, [6.0 / 7.0, 3.0 / 56.0, 5.0 / 56.0]),
+            (3, [6.0 / 7.0, 5.0 / 49.0, 2.0 / 49.0]),
+        ],
+    );
+    // The held clamp and reversal are one command, so one Undo restores raw input.
+    multi_vertex_weight_history(&client, "undo").await;
+    assert_eq!(doc(&client).await["document"], baseline);
+    multi_vertex_weight_history(&client, "redo").await;
+    assert_eq!(doc(&client).await["document"], reversed);
+    multi_vertex_weight_history(&client, "undo").await;
+
+    apply_multi_vertex_weight_edit(
+        &client,
+        multi_vertex_weight_edit(
+            &pose,
+            json!([2, 3]),
+            json!({"mode":"absolute","weight":1.0}),
+        ),
+    )
+    .await;
+    let committed = doc(&client).await["document"].clone();
+    assert_multi_vertex_weight_result(
+        &baseline,
+        &committed,
+        &[(2, [1.0, 0.0, 0.0]), (3, [1.0, 0.0, 0.0])],
+    );
+    apply_multi_vertex_weight_edit(
+        &client,
+        multi_vertex_weight_edit(
+            &pose,
+            json!([2, 3]),
+            json!({"mode":"absolute","weight":0.5}),
+        ),
+    )
+    .await;
+    assert_eq!(doc(&client).await["document"], committed);
+    let revision = doc(&client).await["state"]["revision"].clone();
+    let saved = success(
+        call(
+            &client,
+            "save_project",
+            json!({
+                "expected_revision":revision,"directory":"saved-weights"
+            }),
+        )
+        .await,
+    );
+    success(
+        call(
+            &client,
+            "open_project",
+            json!({
+                "expected_revision":saved["state"]["revision"],"path":saved["path"]
+            }),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await["document"], committed);
+    assert_eq!(fs::read(root.0.join("weights.peachy")).unwrap(), original);
+    client.cancel().await.unwrap();
+}
+
+#[tokio::test]
+async fn stdio_multi_vertex_direct_weights_rejections_preserve_document_and_redo() {
+    let root = Sandbox::new();
+    write_multi_vertex_weight_fixture(&root.0);
+    let client = start(&root.0).await;
+    success(
+        call(
+            &client,
+            "open_project",
+            json!({"expected_revision":0,"path":"weights.peachy"}),
+        )
+        .await,
+    );
+    let evaluated = success(call(&client, "evaluate_pose", json!({})).await);
+    let pose = json!({"locals":evaluated["appliedLocals"],"inherits":evaluated["inherits"]});
+    let valid = multi_vertex_weight_edit(
+        &pose,
+        json!([2, 3]),
+        json!({"mode":"absolute","weight":0.5}),
+    );
+    apply_multi_vertex_weight_edit(&client, valid.clone()).await;
+    let edited = doc(&client).await["document"].clone();
+    multi_vertex_weight_history(&client, "undo").await;
+    let before = doc(&client).await;
+    assert_eq!(before["state"]["canRedo"], true);
+    for (revision, vertices) in [
+        (before["state"]["revision"].as_u64().unwrap(), json!([])),
+        (
+            before["state"]["revision"].as_u64().unwrap() - 1,
+            json!([2, 3]),
+        ),
+    ] {
+        let rejected = call(
+            &client,
+            "get_mesh_weights",
+            json!({
+                "expected_revision":revision,"skin":"default","slot":"weight_mesh",
+                "placeholder":"weight_mesh","vertices":vertices,"bone":1
+            }),
+        )
+        .await;
+        assert_eq!(rejected.is_error, Some(true), "{rejected:?}");
+        assert_eq!(doc(&client).await, before);
+    }
+    let mut invalid = vec![];
+    for vertices in [json!([]), json!([2, 2]), json!([2, 6]), Value::Null] {
+        let mut command = valid.clone();
+        command["vertices"] = vertices;
+        invalid.push(command);
+    }
+    let mut null_edit = valid.clone();
+    null_edit["edit"] = Value::Null;
+    invalid.push(null_edit);
+    let mut unknown_command = valid.clone();
+    unknown_command["future"] = json!(true);
+    invalid.push(unknown_command);
+    let mut unknown_edit = valid.clone();
+    unknown_edit["edit"]["future"] = json!(true);
+    invalid.push(unknown_edit);
+    for command in invalid {
+        let rejected = call(
+            &client,
+            "apply_commands",
+            json!({
+                "expected_revision":before["state"]["revision"],"commands":[
+                    {"command":"renameBone","bone":0,"name":"must-rollback"},command
+                ]
+            }),
+        )
+        .await;
+        // Serde failures may be plain MCP error text; domain failures are structured.
+        assert_eq!(rejected.is_error, Some(true), "{rejected:?}");
+        assert_eq!(doc(&client).await, before);
+    }
+    let stale = before["state"]["revision"].as_u64().unwrap() - 1;
+    let rejected = error(
+        call(
+            &client,
+            "apply_commands",
+            json!({
+                "expected_revision":stale,"commands":[valid]
+            }),
+        )
+        .await,
+    );
+    assert!(
+        rejected["error"]
+            .as_str()
+            .unwrap()
+            .contains("Stale revision")
+    );
+    assert_eq!(doc(&client).await, before);
+    multi_vertex_weight_history(&client, "redo").await;
+    assert_eq!(doc(&client).await["document"], edited);
+    client.cancel().await.unwrap();
+}
+
 #[tokio::test]
 async fn stdio_discovery_atomic_edit_history_save_and_export() {
     let root = Sandbox::new();
@@ -103,7 +469,7 @@ async fn stdio_discovery_atomic_edit_history_save_and_export() {
     let original = fs::read(&source).unwrap();
     let client = start(&root.0).await;
     let tools = client.list_tools(Default::default()).await.unwrap().tools;
-    assert_eq!(tools.len(), 11);
+    assert_eq!(tools.len(), 12);
     assert!(tools.iter().all(|tool| !tool.input_schema.is_empty()));
     let apply = tools
         .iter()
@@ -251,6 +617,210 @@ async fn stdio_discovery_atomic_edit_history_save_and_export() {
     assert_eq!(fs::read(&source).unwrap(), original);
     // Export doesn't alter history, dirty state or revision.
     assert_eq!(doc(&client).await["state"], saved["state"]);
+    client.cancel().await.unwrap();
+}
+
+#[tokio::test]
+async fn stdio_bind_pose_inherits_capture_keyed_modes_and_preserve_geometry() {
+    use peachy_document::{Inherit, InheritKey, InheritTrack};
+
+    let root = Sandbox::new();
+    root.fixture();
+    let original_path = root.0.join("source/peach-bot.peachy");
+    let original_bytes = fs::read(&original_path).unwrap();
+    let mut fixture: peachy_document::Document = serde_json::from_slice(&original_bytes).unwrap();
+    assert_eq!(fixture.bones[8].name, "hand.R");
+    fixture.bones[0].setup.rotation = 35.;
+    fixture.animations[0].inherit_tracks = vec![InheritTrack {
+        bone: 8,
+        keys: vec![InheritKey {
+            time: 0.,
+            inherit: Inherit::OnlyTranslation,
+        }],
+    }];
+    fixture.validate().unwrap();
+    peachy_io::create_project(&root.0.join("source/inherited-bind.peachy"), &fixture).unwrap();
+    let client = start(&root.0).await;
+    success(
+        call(
+            &client,
+            "open_project",
+            json!({
+                "expected_revision":0,"path":"source/inherited-bind.peachy"
+            }),
+        )
+        .await,
+    );
+    let attachment = json!({"skin":"default","slot":"hand.R","placeholder":"hand.R"});
+    success(
+        call(
+            &client,
+            "apply_commands",
+            json!({
+                "expected_revision":1,"commands":[{
+                    "command":"convertRegionToMesh","attachment":attachment
+                }]
+            }),
+        )
+        .await,
+    );
+    let arguments = json!({"animation":"wave","time":0.3,"skin":"peach"});
+    let before = success(call(&client, "evaluate_pose", arguments.clone()).await);
+    assert_eq!(
+        before["inherits"].as_array().unwrap().len(),
+        fixture.bones.len()
+    );
+    assert_eq!(before["inherits"][8], "onlyTranslation");
+    let setup = success(call(&client, "evaluate_pose", json!({})).await);
+    assert_eq!(setup["inherits"][8], "normal");
+    let pose = json!({"locals":before["appliedLocals"],"inherits":before["inherits"]});
+    let vertices = |sample: &Value| -> Vec<[f32; 2]> {
+        let draw = sample["attachments"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|draw| draw["slot"] == 13)
+            .unwrap();
+        serde_json::from_value(draw["vertices"].clone()).unwrap()
+    };
+    let difference = |left: &Value, right: &Value| -> f32 {
+        let left = vertices(left);
+        let right = vertices(right);
+        assert_eq!(left.len(), right.len());
+        left.iter()
+            .flatten()
+            .zip(right.iter().flatten())
+            .map(|(a, b)| (a - b).abs())
+            .fold(0., f32::max)
+    };
+    let pre_bind = doc(&client).await;
+    // Missing modes deliberately retains legacy Setup reconstruction. The
+    // changed geometry proves this fixture actually exercises the new field.
+    success(
+        call(
+            &client,
+            "apply_commands",
+            json!({
+                "expected_revision":2,"commands":[{
+                    "command":"bindMeshToBone","attachment":attachment,"bone":0,
+                    "pose":{"locals":before["appliedLocals"]}
+                }]
+            }),
+        )
+        .await,
+    );
+    let legacy = success(call(&client, "evaluate_pose", arguments.clone()).await);
+    assert!(difference(&before, &legacy) > 1.);
+    success(
+        call(
+            &client,
+            "history",
+            json!({"expected_revision":3,"action":"undo"}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await["document"], pre_bind["document"]);
+    success(
+        call(
+            &client,
+            "apply_commands",
+            json!({
+                "expected_revision":4,"commands":[{
+                    "command":"bindMeshToBone","attachment":attachment,"bone":0,"pose":pose
+                }]
+            }),
+        )
+        .await,
+    );
+    let bound = success(call(&client, "evaluate_pose", arguments.clone()).await);
+    assert!(difference(&before, &bound) <= 0.001);
+    let stable = doc(&client).await;
+    let bad_length = error(
+        call(
+            &client,
+            "apply_commands",
+            json!({
+                "expected_revision":5,"commands":[
+                    {"command":"renameBone","bone":0,"name":"must-rollback"},
+                    {"command":"addMeshBoneBinding","attachment":attachment,"bone":8,
+                     "pose":{"locals":bound["appliedLocals"],"inherits":["normal"]}}
+                ]
+            }),
+        )
+        .await,
+    );
+    assert!(bad_length["error"].as_str().unwrap().contains("inherit"));
+    assert_eq!(doc(&client).await, stable);
+    for invalid in [Value::Null, json!(["futureMode"])] {
+        let rejected = call(
+            &client,
+            "apply_commands",
+            json!({
+                "expected_revision":5,"commands":[{
+                    "command":"addMeshBoneBinding","attachment":attachment,"bone":8,
+                    "pose":{"locals":bound["appliedLocals"],"inherits":invalid}
+                }]
+            }),
+        )
+        .await;
+        assert_eq!(rejected.is_error, Some(true));
+        assert_eq!(doc(&client).await, stable);
+    }
+    let pose = json!({"locals":bound["appliedLocals"],"inherits":bound["inherits"]});
+    success(
+        call(
+            &client,
+            "apply_commands",
+            json!({
+                "expected_revision":5,"commands":[{
+                    "command":"addMeshBoneBinding","attachment":attachment,"bone":8,"pose":pose
+                }]
+            }),
+        )
+        .await,
+    );
+    success(
+        call(
+            &client,
+            "apply_commands",
+            json!({
+                "expected_revision":6,"commands":[
+                    {"command":"setMeshBoneWeight","attachment":attachment,"vertex":0,
+                     "bone":8,"weight":0.35,"pose":pose},
+                    {"command":"setMeshBoneWeight","attachment":attachment,"vertex":1,
+                     "bone":8,"weight":0.35,"pose":pose}
+                ]
+            }),
+        )
+        .await,
+    );
+    let edited = success(call(&client, "evaluate_pose", arguments.clone()).await);
+    assert!(difference(&before, &edited) <= 0.001);
+    let final_document = doc(&client).await["document"].clone();
+    success(
+        call(
+            &client,
+            "save_project",
+            json!({
+                "expected_revision":7,"directory":"inherited-output"
+            }),
+        )
+        .await,
+    );
+    success(
+        call(
+            &client,
+            "open_project",
+            json!({
+                "expected_revision":8,"path":"inherited-output/project.peachy"
+            }),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await["document"], final_document);
+    let reopened = success(call(&client, "evaluate_pose", arguments).await);
+    assert!(difference(&before, &reopened) <= 0.001);
+    assert_eq!(fs::read(original_path).unwrap(), original_bytes);
     client.cancel().await.unwrap();
 }
 

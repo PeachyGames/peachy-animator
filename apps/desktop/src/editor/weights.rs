@@ -1,5 +1,6 @@
 //! Explicit per-tool selection; bind geometry and history belong to Session.
 use super::*;
+use peachy_engine::{MeshWeightSelection, MeshWeightValue, mesh_bone_weights};
 
 pub(super) fn bone_color(bone: usize) -> Color32 {
     [
@@ -21,9 +22,13 @@ pub(super) enum BindMode {
 #[derive(Default)]
 pub(super) struct WeightsState {
     pub mesh: Option<AttachmentRef>,
-    pub vertex: Option<usize>,
+    pub vertices: Vec<usize>,
     pub bone: Option<usize>,
     pub bind: Option<BindMode>,
+    pub pointer: Option<super::weights_selection::WeightsPointer>,
+    pub vertex_press: Option<super::weights_selection::WeightsVertexPress>,
+    pub pointer_blocked: bool,
+    pub formatted_percent: Option<String>,
 }
 
 impl WeightsState {
@@ -31,17 +36,19 @@ impl WeightsState {
         if self.mesh.as_ref() != Some(&key) {
             self.bind = None;
             self.mesh = Some(key);
-            self.vertex = None;
+            self.vertices.clear();
             self.bone = None;
         }
     }
     pub fn reconcile(&mut self, document: &Document) {
         let mesh = self.mesh.as_ref().and_then(|key| document.attachment(key));
         if let Some(Attachment::Mesh(mesh)) = mesh {
-            self.vertex = self.vertex.filter(|&vertex| vertex < mesh.vertex_count());
+            self.vertices.retain(|&vertex| vertex < mesh.vertex_count());
+            self.vertices.sort_unstable();
+            self.vertices.dedup();
         } else {
             self.mesh = None;
-            self.vertex = None;
+            self.vertices.clear();
             self.bone = None;
         }
         self.bone = self.bone.filter(|&bone| bone < document.bones.len());
@@ -62,7 +69,6 @@ impl WeightsState {
 impl Editor {
     pub(super) fn open_weights_view(&mut self) {
         self.restore_hidden_views();
-        self.focus_weights_tab();
         self.show_weights = true;
     }
     pub(super) fn weights_id() -> egui::Id {
@@ -218,10 +224,7 @@ impl Editor {
         self.reconcile_selection();
     }
     pub(super) fn weights_shortcuts(&mut self, ctx: &egui::Context) -> bool {
-        if !ctx.input(|input| input.focused)
-            || self.error.is_some()
-            || self.rename.is_some()
-            || self.duplicate_animation.is_some()
+        if !self.weights_input_available(ctx)
             || ctx.text_edit_focused()
             || egui::Popup::is_any_open(ctx)
         {
@@ -232,17 +235,32 @@ impl Editor {
                 && !self.dopesheet_has_focus(ctx)
                 && (!ctx.egui_wants_keyboard_input()
                     || ctx.memory(|memory| memory.has_focus(Self::weights_id()))
+                    || ctx.memory(|memory| memory.has_focus(Self::weights_viewport_id()))
                     || self.weight_control_has_focus(ctx)));
+        if priority
+            && self.tool == Tool::Weights
+            && self.weights.bind.is_none()
+            && ctx.input_mut(|input| input.consume_key(egui::Modifiers::COMMAND, egui::Key::A))
+        {
+            self.select_all_weights_vertices();
+            return true;
+        }
         if priority
             && [egui::Key::Space, egui::Key::Escape]
                 .into_iter()
                 .any(|key| ctx.input_mut(|input| input.consume_key(egui::Modifiers::NONE, key)))
         {
+            let pointer_active =
+                self.weights.pointer.is_some() || self.weights.vertex_press.is_some();
             self.cancel_gesture();
+            if pointer_active {
+                self.status = "Vertex selection canceled".into();
+                return true;
+            }
             if self.weights.bind.take().is_some() {
                 self.status = "Bind mode ended".into();
             } else {
-                self.weights.vertex = None;
+                self.weights.vertices.clear();
                 self.weights.bone = None;
             }
             return true;
@@ -259,7 +277,7 @@ impl Editor {
                 .find(|draw| Some(&draw.attachment) == self.weights.mesh.as_ref())
                 .map(|draw| &draw.vertices)
         });
-        serde_json::json!({"mesh":self.weights.mesh,"vertex":self.weights.vertex,"bone":self.weights.bone,
+        serde_json::json!({"mesh":self.weights.mesh,"vertices":self.weights.vertices,"vertex":(self.weights.vertices.len()==1).then(||self.weights.vertices[0]),"bone":self.weights.bone,"pointer":self.weights_pointer_diagnostic(),
             "bindMode":match self.weights.bind {Some(BindMode::Mesh(_))=>Some("meshFirst"),Some(BindMode::Bone(_))=>Some("boneFirst"),None=>None},
             "worldVertices":vertices,"handles":if evaluation_error.is_some() { &[][..] } else { &self.weights_handles[..] },"evaluationError":evaluation_error,"visible":self.show_weights})
     }
@@ -272,6 +290,16 @@ impl Editor {
         focus.widget_info(|| {
             egui::WidgetInfo::labeled(egui::WidgetType::Other, true, "Weights view")
         });
+        self.reconcile_weights();
+        let footer_height = ui.spacing().interact_size.y.max(22.) + 12.;
+        egui::Panel::bottom("weights-bindings-footer")
+            .exact_size(footer_height)
+            .frame(egui::Frame::NONE)
+            .show(ui, |ui| {
+                self.record_target("weightsFooter", ui.clip_rect());
+                ui.separator();
+                self.weights_bind_controls(ui, &focus);
+            });
         ui.horizontal(|ui| {
             icons::heading(ui, icons::Icon::Weights, "Weights");
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
@@ -285,7 +313,8 @@ impl Editor {
                 }
             });
         });
-        self.reconcile_weights();
+        ui.separator();
+        self.weight_controls(ui);
         let mesh_label = if matches!(self.weights.bind, Some(BindMode::Bone(_))) {
             "Mesh: click a mesh".into()
         } else {
@@ -294,96 +323,124 @@ impl Editor {
                 |key| format!("Mesh: {}", key.placeholder),
             )
         };
-        ui.label(mesh_label);
+        ui.add(egui::Label::new(mesh_label).truncate());
         let binding_bone = match self.weights.bind {
             Some(BindMode::Mesh(_)) => None,
             Some(BindMode::Bone(bone)) => Some(bone),
             None => self.weights.bone,
         };
-        ui.label(binding_bone.map_or_else(
-            || "Binding bone: select a bone".into(),
-            |bone| format!("Binding bone: {}", self.session.document().bones[bone].name),
-        ));
-        ui.horizontal(|ui| {
-            let can_bind = self.weights.bind.is_some() || self.selected_bone().is_some() || self.weights.mesh.as_ref().is_some_and(|key|
-                matches!(self.session.document().attachment(key),Some(Attachment::Mesh(_))));
-            let bind = ui.add_enabled(can_bind, egui::Button::selectable(self.weights.bind.is_some(), "Bind"))
-                .on_hover_text("Bind an unweighted mesh to one bone, or add a new bone with zero weight to a weighted mesh. Click a bone or mesh after entering Bind mode.");
-            self.record_target("weightsBind", bind.rect);
-            if bind.clicked() { self.begin_weights_bind(); focus.request_focus(); }
-            let can_remove = self.weights.bind.is_none() && self.weights.mesh.as_ref().is_some_and(|key|matches!(self.session.document().attachment(key),Some(Attachment::Mesh(mesh)) if mesh.is_weighted()));
-            let remove = ui.add_enabled(can_remove, egui::Button::new("Remove all"))
-                .on_hover_text("Remove every bound bone and keep the current mesh shape. Removing individual bones is not available yet.");
-            self.record_target("weightsRemoveAll", remove.rect);
-            if remove.clicked() { self.remove_weights_bindings(); focus.request_focus(); }
-        });
+        ui.add(
+            egui::Label::new(binding_bone.map_or_else(
+                || "Binding bone: select a bone".into(),
+                |bone| format!("Binding bone: {}", self.session.document().bones[bone].name),
+            ))
+            .truncate(),
+        );
         if self.weights.bind.is_some() {
-            ui.label(RichText::new(&self.status).color(ACCENT));
+            ui.add(egui::Label::new(RichText::new(&self.status).color(ACCENT)).wrap());
         }
-        let Some(key) = self.weights.mesh.clone() else {
-            return;
-        };
-        let Some(Attachment::Mesh(mesh)) = self.session.document().attachment(&key) else {
-            return;
-        };
-        ui.label(format!("{} vertices", mesh.vertex_count()));
-        if let Some(vertex) = self.weights.vertex {
-            ui.label(format!("Vertex {vertex}"));
+        ui.separator();
+        ui.label("Bones:");
+        let key = self.weights.mesh.clone();
+        let mut rows = Vec::new();
+        let mut mesh_status = None;
+        if let Some(Attachment::Mesh(mesh)) = key
+            .as_ref()
+            .and_then(|key| self.session.document().attachment(key))
+        {
+            mesh_status = Some(match self.weights.vertices.as_slice() {
+                [vertex] => format!("{} vertices · Vertex {vertex}", mesh.vertex_count()),
+                vertices => format!(
+                    "{} vertices · {} selected",
+                    mesh.vertex_count(),
+                    vertices.len()
+                ),
+            });
+            if let MeshVertices::Weighted { influences } = &mesh.vertices {
+                let mut bones = Vec::new();
+                for influence in influences.iter().flatten() {
+                    if !bones.contains(&influence.bone) {
+                        bones.push(influence.bone);
+                    }
+                }
+                rows = bones
+                    .into_iter()
+                    .map(|bone| {
+                        let weight = mesh_bone_weights(
+                            self.session.document(),
+                            &MeshWeightSelection {
+                                attachment: key.clone().unwrap(),
+                                vertices: self.weights.vertices.clone(),
+                                bone,
+                            },
+                        )
+                        .ok()
+                        .map(|query| query.value);
+                        (bone, weight)
+                    })
+                    .collect();
+            }
         }
-        let mut bones = Vec::new();
         let mut pose_bone = None;
         let mut picked_bone = None;
-        if let MeshVertices::Weighted { influences } = &mesh.vertices {
-            for influence in influences.iter().flatten() {
-                if !bones.contains(&influence.bone) {
-                    bones.push(influence.bone);
-                }
-            }
-            for bone in bones {
-                let weight = self.weights.vertex.map(|vertex| {
-                    influences[vertex]
-                        .iter()
-                        .filter(|influence| influence.bone == bone)
-                        .map(|influence| f64::from(influence.weight))
-                        .sum::<f64>()
-                });
-                let row = ui
-                    .horizontal(|ui| {
-                        let (rect, _) = ui.allocate_exact_size(vec2(10., 10.), Sense::hover());
-                        ui.painter().rect_filled(rect, 1., bone_color(bone));
-                        ui.selectable_label(
-                            self.weights.bone == Some(bone),
-                            format!(
-                                "{}   {}",
-                                self.session.document().bones[bone].name,
-                                weight.map_or_else(
-                                    || "—".into(),
-                                    |weight| format!("{:.2}%", weight * 100.)
-                                )
-                            ),
+        let mesh_id = key
+            .as_ref()
+            .map(|key| (&key.skin, &key.slot, &key.placeholder));
+        egui::ScrollArea::vertical()
+            .id_salt("weights-bones-scroll")
+            .auto_shrink([false, false])
+            .min_scrolled_height(0.)
+            .show(ui, |ui| {
+                self.record_target("weightsBonesClip", ui.clip_rect());
+                for (bone, weight) in rows {
+                    let row = ui
+                        .scope_builder(
+                            egui::UiBuilder::new().id(egui::Id::new((
+                                "weights-bone",
+                                mesh_id,
+                                bone,
+                            ))),
+                            |ui| {
+                                ui.horizontal(|ui| {
+                                    let (rect, _) =
+                                        ui.allocate_exact_size(vec2(10., 10.), Sense::hover());
+                                    ui.painter().rect_filled(rect, 1., bone_color(bone));
+                                    ui.selectable_label(
+                                        self.weights.bone == Some(bone),
+                                        format!(
+                                            "{}   {}",
+                                            self.session.document().bones[bone].name,
+                                            match weight {
+                                                Some(MeshWeightValue::Uniform(weight)) =>
+                                                    format!("{:.2}%", f64::from(weight) * 100.),
+                                                Some(MeshWeightValue::Mixed) => "*".into(),
+                                                None => "—".into(),
+                                            }
+                                        ),
+                                    )
+                                })
+                                .inner
+                            },
                         )
-                    })
-                    .inner;
-                self.capture_targets.insert(
-                    format!("weightsBone:{bone}"),
-                    [
-                        row.rect.min.x,
-                        row.rect.min.y,
-                        row.rect.max.x,
-                        row.rect.max.y,
-                    ],
-                );
-                if row.clicked() {
-                    picked_bone = Some(bone);
-                    focus.request_focus();
+                        .inner;
+                    let visible = row.rect.intersect(ui.clip_rect());
+                    if visible.is_positive() && visible.is_finite() {
+                        self.record_target(&format!("weightsBone:{bone}"), visible);
+                    }
+                    if row.clicked() {
+                        picked_bone = Some(bone);
+                        focus.request_focus();
+                    }
+                    if row.secondary_clicked() {
+                        pose_bone = Some(bone);
+                    }
                 }
-                if row.secondary_clicked() {
-                    pose_bone = Some(bone);
+                if let Some(status) = mesh_status {
+                    ui.label(RichText::new(status).small().color(MUTED));
+                } else {
+                    ui.label("Select an active mesh.");
                 }
-            }
-        } else {
-            ui.label("Unweighted mesh");
-        }
+            });
         if let Some(bone) = picked_bone {
             self.cancel_weight_edit();
             self.weights.bone = Some(bone);
@@ -391,14 +448,23 @@ impl Editor {
         if let Some(bone) = pose_bone {
             self.select(TreeItem::Bone(bone));
         }
-        self.weight_controls(ui);
-        ui.label(
-            RichText::new(
-                "Direct adjusts one vertex and one bone. Brush, Update bindings and individual removal are not available yet.",
-            )
-            .small()
-            .color(MUTED),
-        );
+    }
+    fn weights_bind_controls(&mut self, ui: &mut egui::Ui, focus: &egui::Response) {
+        ui.scope_builder(egui::UiBuilder::new().id(egui::Id::new("weights-bind-controls")), |ui| {
+            ui.horizontal(|ui| {
+                let can_bind = self.weights.bind.is_some() || self.selected_bone().is_some() || self.weights.mesh.as_ref().is_some_and(|key|
+                    matches!(self.session.document().attachment(key),Some(Attachment::Mesh(_))));
+                let bind = ui.add_enabled(can_bind, egui::Button::selectable(self.weights.bind.is_some(), "Bind"))
+                    .on_hover_text("Bind an unweighted mesh to one bone, or add a new bone with zero weight to a weighted mesh. Click a bone or mesh after entering Bind mode.");
+                self.record_target("weightsBind", bind.rect);
+                if bind.clicked() { self.begin_weights_bind(); focus.request_focus(); }
+                let can_remove = self.weights.bind.is_none() && self.weights.mesh.as_ref().is_some_and(|key|matches!(self.session.document().attachment(key),Some(Attachment::Mesh(mesh)) if mesh.is_weighted()));
+                let remove = ui.add_enabled(can_remove, egui::Button::new("Remove all"))
+                    .on_hover_text("Remove every bound bone and keep the current mesh shape. Removing individual bones is not available yet.");
+                self.record_target("weightsRemoveAll", remove.rect);
+                if remove.clicked() { self.remove_weights_bindings(); focus.request_focus(); }
+            });
+        });
     }
 }
 
@@ -432,13 +498,14 @@ mod tests {
         let document = editor.session.document();
         let mut state = WeightsState {
             mesh: Some(key.clone()),
-            vertex: Some(usize::MAX),
+            vertices: vec![usize::MAX],
             bone: Some(usize::MAX),
             bind: Some(BindMode::Bone(usize::MAX)),
+            ..Default::default()
         };
         state.reconcile(document);
         assert_eq!(state.mesh, Some(key.clone()));
-        assert_eq!(state.vertex, None);
+        assert!(state.vertices.is_empty());
         assert_eq!(state.bone, None);
         assert_eq!(state.bind, None);
         state.bind = Some(BindMode::Mesh(key.clone()));
@@ -451,7 +518,7 @@ mod tests {
         });
         state.reconcile(document);
         assert!(state.mesh.is_none());
-        assert!(state.vertex.is_none());
+        assert!(state.vertices.is_empty());
         assert!(state.bone.is_none());
     }
     fn chord(key: egui::Key) -> Vec<egui::Event> {
@@ -561,11 +628,11 @@ mod tests {
         assert_eq!(editor.session.pose_edits(), &pending);
         assert_eq!(editor.time, 0.4);
         editor.redo();
-        editor.weights.vertex = Some(2);
+        editor.weights.vertices = vec![2];
         editor.set_tool(Tool::Rotate);
         editor.select(TreeItem::Bone(8));
         assert_eq!(editor.weights.mesh, Some(key.clone()));
-        assert_eq!(editor.weights.vertex, Some(2));
+        assert_eq!(editor.weights.vertices, vec![2]);
         editor.playing = true;
         editor.remove_weights_bindings();
         assert!(!editor.playing);
@@ -642,10 +709,10 @@ mod tests {
     fn active_appearance_reconciliation_keeps_default_fallback_but_never_redirects_edits() {
         let (mut editor, key) = mesh_editor(true);
         editor.set_tool(Tool::Weights);
-        editor.weights.vertex = Some(4);
+        editor.weights.vertices = vec![4];
         editor.weights.bone = Some(8);
         editor.reconcile_weights();
-        assert_eq!(editor.weights.vertex, None);
+        assert!(editor.weights.vertices.is_empty());
         editor.skin = "mint".into();
         editor.reconcile_weights();
         assert_eq!(editor.weights.mesh, Some(key.clone()));
@@ -690,14 +757,14 @@ mod tests {
         let ctx = editor_context();
         input(&mut editor, &ctx, chord(egui::Key::G), false);
         assert!(editor.tool == Tool::Weights && editor.show_weights);
-        editor.weights.vertex = Some(2);
+        editor.weights.vertices = vec![2];
         editor.weights.bone = Some(7);
         input(&mut editor, &ctx, chord(egui::Key::C), false);
         assert!(editor.tool == Tool::Rotate);
         editor.toggle_transform_tool();
         assert!(editor.tool == Tool::Weights);
         assert_eq!(editor.weights.mesh, Some(key));
-        assert_eq!(editor.weights.vertex, Some(2));
+        assert_eq!(editor.weights.vertices, vec![2]);
         assert_eq!(editor.weights.bone, Some(7));
         editor.begin_weights_bind();
         let original = editor.session.document().clone();
@@ -799,7 +866,7 @@ mod tests {
     fn bind_mode_cancels_on_context_history_and_visibility_changes_but_scrub_uses_live_pose() {
         let (mut editor, key) = mesh_editor(false);
         editor.set_tool(Tool::Weights);
-        editor.weights.vertex = Some(2);
+        editor.weights.vertices = vec![2];
         editor.weights.bone = Some(7);
         editor.begin_weights_bind();
         editor.set_time(0.4);
@@ -820,7 +887,7 @@ mod tests {
         assert!(editor.weights.bind.is_none());
         editor.toggle_views();
         assert_eq!(editor.weights.mesh, Some(key.clone()));
-        assert_eq!(editor.weights.vertex, Some(2));
+        assert_eq!(editor.weights.vertices, vec![2]);
         assert_eq!(editor.weights.bone, Some(7));
         editor.begin_weights_bind();
         editor.set_time(0.7);

@@ -1,5 +1,56 @@
 # First-slice validation — November 5, 2026
 
+## Multi-vertex Direct weights — November 15, 2026
+
+Focused two-worker checks pass: engine multi-weights **10**, inheritance snapshots
+**4**, legacy binding **13**, legacy Direct **11**, desktop weights **39**, Spine
+order-consumer **4**, legacy weighted adapter **4**, MCP schema **11** and protocol
+**15** (including **13** stdio cases). Earlier combined-pane Curves checks **48**
+also pass. Filters overlap; these are not additive full-suite totals. Formatting,
+all-target workspace Clippy, workspace build/final native rebuild and seven-crate
+architecture checks pass. Hosted CI remains a separate main-integration gate.
+
+Installed Spine 4.3.26 calibration retains **14** valid original cases, excluding
+misdirected input trials. Actual native Peachy input verifies typed `50`, mixed blank,
+proportional recipients, cumulative clamp/reversal to `6/7`, one-step Undo/Redo,
+Escape/held-input blocking, Cmd-add/marquee, all-six assignment with sole-positive
+skip, ordered sparse insertion and pending `13.5`-degree Save exclusion. Fresh public
+reopen has one image, no history, correct fast Cmd release and actual looping
+playback. The 1120×740 client retains a 320-unit viewport and unclipped checked
+Weights/Curves controls. All owned GUI is closed.
+
+Native and actual root-only MCP authoring save the byte-identical public lab:
+SHA256 `87214e61dc6410d8f9f0306deacd7b19b2a658a9353bd2b15b9f2be606540807`.
+The **90** stdio requests include mixed/raw readback, absolute/relative/sparse
+edits, atomic rejection, Undo/Redo and Save/reopen/export. External runtime checks
+cover **52** poses, **1,248** world values (max **7.967635085037728e-6**), **1,248**
+weighted coordinates (max **3.0517578125e-5**) and **2,496** UV values (zero error).
+Installed import/re-export preserves all key times/values/curves and topology;
+52 returned poses have max weighted error **0.0001678466796875**, world/UV error 0,
+under the unchanged **0.001** tolerance. The editor prunes five zero entries and
+rounds surviving weights by up to **4.289999999990135e-6**; surviving bind positions
+are exact and surviving entries do not reorder.
+
+An order-only AB control and a consistent nonnumeric CAB control isolate the
+legacy cyclic-order failure. Nine actual MCP requests verify Editor rejection
+before writes with unchanged session, byte-exact Runtime preservation and accepted
+ordered Editor output. No raw influence normalization is introduced.
+
+Another **141** actual MCP requests verify captured inheritance in all five modes:
+four omitted-mode negative controls fail geometry preservation, while explicit
+Bind/Add/Direct/Unbind remains within **3.0517578125e-5**. Three malformed snapshots
+reject atomically. The final unbound output passes **260** external runtime poses
+(max world **1.4129895788528302e-5**, mesh **6.103515625e-5**). Keyed modes originate
+in an imported original fixture; this does not prove new MCP inheritance-key
+authoring or weighted runtime coverage for that final unbound artifact.
+
+See [gallery](evidence/weight-multivertex.html),
+[scalar evidence](evidence/weight-multivertex.json) and
+[bounded contract](slices/weight-multivertex.md). Brush/Auto/Smooth/locks/Update,
+multiple bones, sparse Deform remapping, Pies/overlay controls and full pixel
+parity remain open. The HTML gallery is statically link-checked; native captures
+are real application screenshots, with no browser-render claim.
+
 ## Global Animate draw-order authoring — November 14, 2026
 
 Focused checks pass with two Cargo workers/test threads: engine draw order **20**,

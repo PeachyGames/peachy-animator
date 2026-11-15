@@ -1,6 +1,6 @@
 use crate::{
     AnimationKey, AnimationKeyClipboard, CurvePreset, CurveSelection, KeyClipboard, KeyOwner,
-    MeshBindPose, TimelineKey,
+    MeshBindPose, MeshWeightEdit, MeshWeightSelection, TimelineKey,
 };
 use peachy_document::*;
 use serde::{Deserialize, Serialize};
@@ -264,6 +264,13 @@ pub enum Command {
         weight: f32,
         pose: MeshBindPose,
     },
+    EditMeshBoneWeights {
+        attachment: AttachmentRef,
+        vertices: Vec<usize>,
+        bone: usize,
+        edit: MeshWeightEdit,
+        pose: MeshBindPose,
+    },
     Batch {
         commands: Vec<Command>,
     },
@@ -296,9 +303,17 @@ impl<'de> Deserialize<'de> for EditTarget {
 
 /// Pure document transition. Neither the input nor history changes on failure.
 pub fn apply_command(document: &Document, command: Command) -> Result<Document, String> {
+    apply_prepared(document, |candidate| apply(candidate, command))
+}
+
+/// Prepared previews share command validation and transition guards.
+pub(crate) fn apply_prepared(
+    document: &Document,
+    edit: impl FnOnce(&mut Document) -> Result<(), String>,
+) -> Result<Document, String> {
     document.validate()?;
     let mut candidate = document.clone();
-    apply(&mut candidate, command)?;
+    edit(&mut candidate)?;
     // Linked meshes follow source geometry edits; editing one alone is refused
     // by validation.
     candidate.propagate_linked_geometry(document);
@@ -509,6 +524,24 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
                 bone,
                 weight,
                 &pose,
+            )?;
+        }
+        Command::EditMeshBoneWeights {
+            attachment,
+            vertices,
+            bone,
+            edit,
+            pose,
+        } => {
+            crate::mesh_weights::edit_weights(
+                doc,
+                MeshWeightSelection {
+                    attachment,
+                    vertices,
+                    bone,
+                },
+                edit,
+                pose,
             )?;
         }
         Command::AddIkConstraint { constraint } => doc.constraints.push(Constraint::Ik(constraint)),

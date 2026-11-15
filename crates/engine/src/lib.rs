@@ -13,6 +13,7 @@ mod ik_solver;
 mod mesh;
 mod mesh_binding;
 mod mesh_soft_selection;
+mod mesh_weights;
 mod names;
 mod path_constraint;
 mod picking;
@@ -49,6 +50,10 @@ pub use mesh::{
 };
 pub use mesh_binding::MeshBindPose;
 pub use mesh_soft_selection::{MeshSoftSelection, MeshTranslation};
+pub use mesh_weights::{
+    MeshWeightEdit, MeshWeightGesture, MeshWeightQuery, MeshWeightSelection, MeshWeightValue,
+    VertexWeight, mesh_bone_weights,
+};
 pub use path_constraint::{PathPose, path_cubics};
 pub use picking::{attachment_bounds, geometry_bounds, pick_attachment};
 pub use playback::{
@@ -78,6 +83,8 @@ pub use tools::{
 
 #[cfg(test)]
 mod animation_tests;
+#[cfg(test)]
+mod bind_pose_inherit_tests;
 #[cfg(test)]
 mod binding_tests;
 #[cfg(test)]
@@ -114,6 +121,8 @@ mod inherit_tests;
 mod linked_mesh_tests;
 #[cfg(test)]
 mod mesh_soft_selection_tests;
+#[cfg(test)]
+mod mesh_weights_tests;
 #[cfg(test)]
 mod overlay_tests;
 #[cfg(test)]

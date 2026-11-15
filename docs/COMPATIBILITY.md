@@ -4,6 +4,23 @@ Target: Spine **4.3.x JSON**, with export metadata `4.3.26`. The initial externa
 oracle is separately installed `@esotericsoftware/spine-core` **4.3.13**.
 Compatibility applies to the subset below, not every 4.3 project or future patch.
 
+Multi-vertex Direct addition (November 15): one bound bone can be edited across
+an explicit vertex set through native numeric/slider/viewport controls and the
+shared MCP command. Exact raw uniform/mixed readback brings MCP to **52 commands /
+12 tools**, with native v22 unchanged. Absolute edits skip sole-positive vertices
+without recipients; relative steps retain one gesture's frozen recipient ratios.
+Positive sparse creation inserts a new bone-local `[0,0]` entry in consistent mesh
+binding order, preserving existing entries. It rejects keyed/pending Deform layout
+changes until remapping exists. Bind snapshots capture applied locals and sampled
+inheritance together; omitted modes preserve legacy Setup behavior.
+
+Actual native input, byte-identical native/MCP saves, fresh reopen/playback,
+external runtime and installed4.3.26 interchange pass. Editor export rejects
+contradictory cross-vertex bone precedence before writing. Runtime export retains
+raw arrays, including repeated/zero entries. This consumer restriction does not
+sort or normalize native data. Brushes/Auto/Smooth/locks/Update, multiple selected
+bones and exact styling remain gaps. See [the contract](slices/weight-multivertex.md).
+
 Global draw-order authoring addition (November 14): native Animate controls add
 pending order and Auto Key/K. Exact raw-key/complete-permutation commands and
 typed retime/copy/paste/delete share the engine with MCP. MCP has **51 commands /
@@ -33,7 +50,8 @@ properties remain open. See [the measured contract](slices/curves-authoring.md).
 Export targets (November 14): native, CLI and MCP export share explicit Editor
 and Runtime policies. Editor remains the default and rejects default-skin name
 overrides that the installed importer can rename while clearing Setup and swap
-keys. Runtime preserves both identities and skips only Editor naming restrictions.
+keys. Runtime preserves both identities and skips Editor naming and weighted
+bone-order consumer restrictions.
 No native data is renamed or removed; all other feature guards remain. See the
 [observed cases and precise contract](slices/export-targets.md).
 

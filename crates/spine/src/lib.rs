@@ -533,6 +533,7 @@ pub fn export_json_for(doc: &Document, target: ExportTarget) -> Result<Value, St
     constraints::validate_source(doc)?;
     if target == ExportTarget::SpineEditor43 {
         validate_export_names(doc)?;
+        validate_export_weight_orders(doc)?;
     }
     let bones: Vec<_> = doc
         .bones
@@ -993,6 +994,76 @@ fn validate_export_names(doc: &Document) -> Result<(), String> {
                 {
                     return Err(format!(
                         "Spine Editor export: skin placeholder {slot}/{placeholder} collides with a direct default attachment"
+                    ));
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Installed 4.3.26 rejects meshes whose vertex binding lists require cyclic
+/// bone precedence (original November 15 AB/BA control). Consistent nonnumeric
+/// orders import successfully. This is an Editor consumer restriction: inspect
+/// first occurrences only, without sorting, merging or rewriting native data.
+fn validate_export_weight_orders(doc: &Document) -> Result<(), String> {
+    for (skin_name, skin) in &doc.skins {
+        for (slot, attachments) in skin {
+            for (placeholder, attachment) in attachments {
+                let Attachment::Mesh(mesh) = attachment else {
+                    continue;
+                };
+                let MeshVertices::Weighted { influences } = &mesh.vertices else {
+                    continue;
+                };
+                let mut successors = BTreeMap::<usize, BTreeSet<usize>>::new();
+                let mut incoming = BTreeMap::<usize, usize>::new();
+                for vertex in influences {
+                    let mut seen = BTreeSet::new();
+                    let mut previous = None;
+                    for influence in vertex {
+                        if !seen.insert(influence.bone) {
+                            continue;
+                        }
+                        incoming.entry(influence.bone).or_default();
+                        if let Some(before) = previous
+                            && successors.entry(before).or_default().insert(influence.bone)
+                        {
+                            *incoming.entry(influence.bone).or_default() += 1;
+                        }
+                        previous = Some(influence.bone);
+                    }
+                }
+                // Iterative topological validation also handles long sparse
+                // binding chains without recursion or a numeric order policy.
+                let mut ready = incoming
+                    .iter()
+                    .filter_map(|(&bone, &count)| (count == 0).then_some(bone))
+                    .collect::<Vec<_>>();
+                let mut visited = 0;
+                while let Some(bone) = ready.pop() {
+                    visited += 1;
+                    if let Some(next) = successors.get(&bone) {
+                        for after in next {
+                            let count = incoming
+                                .get_mut(after)
+                                .expect("Each successor is a binding bone");
+                            *count -= 1;
+                            if *count == 0 {
+                                ready.push(*after);
+                            }
+                        }
+                    }
+                }
+                if visited != incoming.len() {
+                    let unresolved = incoming
+                        .iter()
+                        .filter_map(|(&bone, &count)| {
+                            (count != 0).then_some(doc.bones[bone].name.as_str())
+                        })
+                        .collect::<Vec<_>>();
+                    return Err(format!(
+                        "Spine Editor export: attachment {skin_name}/{slot}/{placeholder} has contradictory per-vertex bone order; a precedence cycle prevents ordering {unresolved:?}. Export as Runtime43 to preserve the raw influence arrays"
                     ));
                 }
             }

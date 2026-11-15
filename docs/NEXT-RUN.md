@@ -4,6 +4,47 @@ Written November 10, 2026, at the end of the import-parity push. Read this
 first, then `AGENTS.md`. The workspace rules in `../AGENTS.md` and `../CLAUDE.md`
 still apply.
 
+## November 15 multi-vertex Direct continuation
+
+Multi-vertex Direct weights now has a dedicated native pane, additive/marquee
+selection, mixed blank/asterisk display, absolute assignment and cumulative
+relative gestures. The shared engine command and read-only `get_mesh_weights`
+bring MCP to **52 commands / 12 tools**; native **v22** is unchanged. Applied
+binding snapshots now include sampled inheritance modes. Legacy omitted modes
+retain Setup reconstruction. See [scope](slices/weight-multivertex.md),
+[gallery](evidence/weight-multivertex.html) and [evidence](evidence/weight-multivertex.json).
+
+Actual native input/history/cancellation, pending Save exclusion, fast Cmd release,
+fresh public reopen, playback and 1120×740 layout pass. Native and root-only MCP
+authoring save byte-identical `examples/peach-bot/multi-weights-bot.peachy`
+(SHA256 `87214e61dc6410d8f9f0306deacd7b19b2a658a9353bd2b15b9f2be606540807`).
+Ninety actual stdio requests recreate the lab from one original PNG; both the
+external runtime and installed 4.3.26 roundtrip pass at unchanged 0.001 tolerance.
+An additional 141-request study verifies five captured inheritance modes;
+its keyed modes are imported fixture data, not new inheritance-key authoring.
+Focused two-worker checks, formatting, all-target Clippy, workspace build and
+seven-crate architecture check pass. Hosted CI still gates main; keep PR1 draft.
+
+Sparse creation inserts only a new `[0,0]` entry in consistent mesh binding order.
+Existing raw entries are untouched. Installed controls isolated an import failure
+for cyclic cross-vertex precedence; Editor export now rejects it before writes,
+while Runtime export preserves the arrays. Deform-layout remapping remains a
+separate requirement for sparse creation with keyed/pending Deform data.
+
+Continue the [blog backlog](slices/spine-blog-audit-20261114.md): stored Curves
+presets/default choices, transform mappings/sliders, Auto/Smooth/brush weights,
+locks/Update and multiple selected bones. Pies/overlay controls, Problems, broader
+Color and exact styling/docking remain open. The canceled female-pose full check
+stays canceled.
+
+All owned native/reference processes are closed. Private original calibration
+inputs, selected captures, scalar reports, actual MCP requests/recipes and final
+runtime/interchange outputs remain in `weights-multivertex/` until active review
+is integrated or superseded. Temporary input helpers, invalid input diagnostics
+and reconstructible Save backups retire at the verified checkpoint. The shared
+Cargo target remains required by ongoing parity work; no extra checkout or target
+was created.
+
 ## November 14 global draw-order continuation
 
 Global Animate draw order now has Tree movement/dragging, Reset, pending poses,

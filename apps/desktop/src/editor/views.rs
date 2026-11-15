@@ -105,7 +105,7 @@ impl Default for ViewTabs {
         Self {
             animation_view: AnimationView::Dopesheet,
             open: BTreeSet::new(),
-            active: DockView::Weights,
+            active: DockView::Animations,
             animation_query: String::new(),
             skin_query: String::new(),
             outline_zoom: 1.,
@@ -154,11 +154,7 @@ impl Editor {
     pub(super) fn has_dock_views(&self) -> bool {
         self.visible_dock_views()
             .iter()
-            .any(|view| !matches!(view, DockView::Graph | DockView::Curves))
-    }
-
-    pub(super) fn focus_weights_tab(&mut self) {
-        self.view_tabs.active = DockView::Weights;
+            .any(|view| !matches!(view, DockView::Graph | DockView::Curves | DockView::Weights))
     }
 
     fn open_dock_view(&mut self, view: DockView) {
@@ -172,7 +168,7 @@ impl Editor {
         }
         if view == DockView::Graph {
             self.view_tabs.animation_view = AnimationView::Graph;
-        } else if view != DockView::Curves {
+        } else if !matches!(view, DockView::Curves | DockView::Weights) {
             self.view_tabs.active = view;
         }
     }
@@ -388,7 +384,7 @@ impl Editor {
         let visible: Vec<_> = self
             .visible_dock_views()
             .into_iter()
-            .filter(|view| !matches!(view, DockView::Graph | DockView::Curves))
+            .filter(|view| !matches!(view, DockView::Graph | DockView::Curves | DockView::Weights))
             .collect();
         if !visible.contains(&self.view_tabs.active) {
             let Some(&view) = visible.first() else { return };
@@ -463,7 +459,7 @@ impl Editor {
                     DockView::Preview => self.preview_panel(ui),
                     DockView::Skins => self.skins_panel(ui),
                     DockView::SlotColor => self.slot_color_panel(ui),
-                    DockView::Weights => self.weights_panel(ui),
+                    DockView::Weights => unreachable!("Weights has its own vertical pane"),
                     DockView::Outline => unreachable!(),
                 });
         }

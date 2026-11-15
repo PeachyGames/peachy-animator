@@ -670,7 +670,7 @@ mod tests {
         editor.set_setup_mode(false);
         editor.set_time(0.37);
         editor.set_tool(Tool::Weights);
-        editor.weights.vertex = Some(0);
+        editor.weights.vertices = vec![0];
         editor.weights.bone = Some(8);
         editor.select(TreeItem::Bone(8));
         let baseline = editor.session.document().attachment(&mesh).unwrap().clone();

@@ -1,14 +1,16 @@
 # Official Spine update audit — November 14, 2026
 
-Rechecked November 14 after the slot authoring commit, against Peachy Animator
-`f345fdd` plus verified export-target, Curves and global draw-order continuations below. This is a current
-backlog and reference record, not a claim of full Spine parity.
+Public sources were checked November 14 after the slot authoring commit
+`f345fdd`. The implementation record includes verified export-target, Curves,
+global draw-order and November 15 multi-vertex Direct continuations below.
+The November 15 update reconciles accepted local evidence without a new web
+fetch. This is a backlog and reference record, not a claim of full Spine parity.
 Installed-editor observations and native screenshots are recorded
 in [UI parity](../UI_PARITY.md) and the linked slice acceptance records.
 
 The [official editor changelog](https://esotericsoftware.com/spine-changelog)
-dates **4.3.26 to September 7, 2026** and labels **4.3.27 Unreleased** at this
-check. Retain the installed 4.3.26 behavioral baseline; listing an unreleased
+dates **4.3.26 to September 7, 2026** and labels **4.3.27 Unreleased** at the
+November 14 source check. Retain the installed 4.3.26 behavioral baseline; listing an unreleased
 version does not authorize changing the installed reference.
 
 ## Installed Views inventory
@@ -68,8 +70,18 @@ The former immediate gaps are now closed within their documented bounds:
   pending poses, typed discrete timeline and shared MCP raw/semantic commands.
   Native input/fresh reopen, both authored runtime checks and installed 4.3.26
   interchange pass. Independent folder keys remain a separate model slice.
+- [Multi-vertex Direct weights](weight-multivertex.md), accepted November 15:
+  explicit one-mesh/one-bone selection, numeric/slider/vertical edits, mixed
+  blank field, skip-sole assignment, cumulative clamping with frozen ratios,
+  ordered sparse origin and raw MCP readback. Actual native history/cancellation,
+  pending Save exclusion, fresh reopen/minimum/playback, root-only MCP creation,
+  runtime and exact final Editor roundtrip pass. See the
+  [scalar evidence](../evidence/weight-multivertex.json) and
+  [capture gallery](../evidence/weight-multivertex.html). Auto/Smooth, brushes,
+  locks, Update, multiple bones, sparse Deform remapping and Pies/overlay remain.
 
-MCP now exposes 51 strict commands / 11 tools, including raw/semantic global
+Native format remains **22**. MCP now exposes **52 strict commands / 12 tools**,
+including semantic `editMeshBoneWeights` and read-only `get_mesh_weights`, raw/semantic global
 draw-order authoring and complete hidden-slot order readback, value-preserving
 `setDeformCurve`, `setSlotColorCurves`, float `insertSlotColorKey` and read-only
 typed copying, plus exact `setKeyCurve`/`setIkCurve` and shared
@@ -127,7 +139,7 @@ transition display that resets each interval, with blue attachment-owned rows.
 Those observations support the current Deform Graph. They do not establish a
 per-vertex scalar Graph workflow.
 
-## Ranked continuation after slot authoring
+## Ranked continuation after accepted authoring slices
 
 The order below is a proposed implementation sequence, based on current source
 and documented dependencies. It is not a claim that all named features have
@@ -138,19 +150,30 @@ been exhaustively observed.
 | 0: verified interchange prerequisite | Explicit Editor versus Runtime export targets | The shared adapter now rejects confirmed lossy default-name overrides for Editor output and preserves metadata for Runtime output. Native/CLI/MCP and bounded editor/runtime acceptance pass; see [the contract](export-targets.md). Arbitrary conversion and hosted CI remain separate gates. |
 | 1: accepted bounded continuation | Selected-owner Curves and scalar interpolation editing | Native/MCP/runtime acceptance covers shared exact setters/actions, typed selection, fitted relative handles, repeated reset, final-key rules and calibrated normal coupling. Stored presets/defaults, grouped properties and uncalibrated coupling remain; see [contract](curves-authoring.md). |
 | 2: accepted bounded continuation | Global Animate draw-order editing | The Look around demo's global ordering now has shared pending/key/Reset/typed timeline and MCP authoring. Actual native input/fresh reopen, both authored runtime checks and installed 4.3.26 interchange pass; see [contract](draw-order-authoring.md) and [review](../evidence/draw-order-authoring.html). Per-folder keys, Setup reordering, compact property sizing and cross-layout mapping remain separate slices. |
-| 2: weight workflow foundation | Multiple selected vertices, one mesh/bone, Direct mode | Replace the retained single vertex with explicit selection and native box/additive/select-all controls. Apply one frozen, atomic Batch through existing per-vertex weight commands; MCP already accepts explicit batches. Preserve untouched influences/positions and pending poses. Auto/brush algorithms, locks and multi-mesh painting require later shared operations. |
-| 3: major 4.3 rigging gap | One world-space cross-property transform mapping | Existing data and MCP add/set constraint payloads are present, but evaluation refuses translation-to-rotation/scale mappings used by the announcement. Calibrate one mapping, implement it in the engine, expose real mapping controls and evaluate an MCP-authored rig against the external oracle. Local/additive modes remain separate. |
-| 4: larger new model | A manually driven slider constraint | Add explicit animation/frame/mix ownership, model validation, shared evaluation, adapter, creation/key controls and strict MCP commands. Detect self-reference/cycles and unsupported timeline domains. A copied pose or an ordinary slot fade is not slider evaluation. Bone-driven sliders extend this slice later. |
+| 3: accepted weight foundation | Multiple selected vertices, one mesh/bone, Direct mode | Native selection, absolute/relative shared command, raw mixed/uniform MCP query, atomic history/pending guards and ordered sparse insertion now pass native/MCP/runtime/Editor acceptance. See [contract](weight-multivertex.md). Auto/Smooth, brushes, locks, Update, multiple bones, sparse Deform remapping, Pies/overlay and exact styling remain separate work. |
+| 4: next major 4.3 rigging gap | One world-space cross-property transform mapping | Existing data and MCP add/set constraint payloads are present, but evaluation refuses translation-to-rotation/scale mappings used by the announcement. Calibrate one mapping, implement it in the engine, expose real mapping controls and evaluate an MCP-authored rig against the external oracle. Local/additive modes remain separate. |
+| 5: larger new model | A manually driven slider constraint | Add explicit animation/frame/mix ownership, model validation, shared evaluation, adapter, creation/key controls and strict MCP commands. Detect self-reference/cycles and unsupported timeline domains. A copied pose or an ordinary slot fade is not slider evaluation. Bone-driven sliders extend this slice later. |
 
 The [4.1 release post, July 4, 2022](https://esotericsoftware.com/blog/Spine-4-1-released)
 is the primary description of the separate Curves view: relative transition
 editing with reusable user presets. It establishes why a scalar value Graph
 alone does not cover that view, but does not establish current 4.3 placement.
 The [current Weights guide](https://esotericsoftware.com/spine-weights)
-documents vertex multi-selection and Direct/brush workflows. Current source has
-one retained vertex and `setMeshBoneWeight`. Explicit MCP batches already edit
-multiple vertices; native selection and generated Auto/brush weights remain
-different missing capabilities.
+documents vertex multi-selection and Direct/brush workflows. The November 15
+slice supplies the one-mesh/one-bone Direct selection and semantic editing path;
+the legacy raw `setMeshBoneWeight` keeps its stricter policy. Generated Auto/Smooth
+and brush weights, locks, Update, multiple selected bones and Pies/overlay
+controls remain different missing capabilities.
+
+The installed-editor order controls also exposed an interchange restriction:
+changing only sparse B,A to A,B resolves the original import failure, while
+consistent C,A,B imports too. This supports consistent per-mesh precedence, not
+mandatory numeric sorting. New positive sparse insertion preserves old entries
+under an independent precedence extension. Editor export rejects a precedence
+cycle before writing; Runtime preserves raw arrays. The exact accepted final
+Editor artifact passes 52 source/returned poses at the unchanged 0.001 tolerance.
+Native re-export prunes five zero entries and rounds some weights, so the result
+does not establish raw-lossless later authoring.
 
 ## Broader update backlog
 
@@ -164,7 +187,7 @@ not complete this broader objective.
 | Dopesheet-centric synchronization and curve refinements | Shared scalar/Deform/slot selection and bounded Curves/Graph actions pass native/MCP/runtime acceptance. Stored preset library, default curve preferences, native grouping and uncalibrated/generalized handle adjustment remain. |
 | Sliders | No native model, evaluation, import/export or creation workflow; add shared commands and strict schemas with independently derived behavior. |
 | Transform property mapping and local/world choices | Data is modeled, but evaluation is restricted and mapping editing is pending; do not equate accepted data with working constrained motion. |
-| Multiple-mesh tracing and weight workflows | Explicit payload creation exists through MCP; native topology generation, multi-selection and Auto/brush workflows remain. |
+| Multiple-mesh tracing and weight workflows | Explicit payload creation and bounded one-mesh/one-bone Direct selection/editing exist through shared native/MCP paths. Native topology generation, multiple-mesh/bone workflows, Auto/Smooth/brush/locks/Update, sparse Deform remapping and Pies/overlay remain. |
 | Draw order folder keys | Current keyed draw order is separate; folders need a model, adapter, evaluation and authoring surface. |
 | Inverse clipping | Existing clipping is bounded and refuses inverse behavior; add geometry/evaluation plus controls and automation commands. |
 | Linked meshes across slots | Current links resolve source skin/name within the same slot. Cross-slot source identity, adapter and evaluation remain; raw MCP `addAttachment` can already create valid same-slot link payloads, while dedicated native create/unlink controls are absent. |
