@@ -35,9 +35,19 @@ native gates for this bounded workspace follow-up pass.
 **Next feature action: calibrate manually driven Slider constraints from native
 controls and public runtime behavior, or the remaining bounded UI workflows in
 the [blog backlog](slices/spine-blog-audit-20261114.md).** Mapping checkpoint
-`54936e4` is already pushed with the draft PR updated; the coordinator handles
-this follow-up's cleanup, commit and publication. There is no native-format or
-MCP-schema change. Reference/native windows used for these checks are closed.
+`54936e4` and workspace follow-up `58618c5` are pushed, with draft PR1 updated
+and its remote head verified. Temporary input helpers, disposable fixtures and
+redundant step captures are retired; selected private witnesses remain for active
+PR review until integration or supersession. The shared Cargo target remains
+needed by the continuing parity goal. There is no native-format or MCP-schema
+change. All recorded reference/native identities are verified closed.
+
+Standing authorization from November 15: push verified parity checkpoints at
+will and update the existing draft PR without asking again. Hosted workflow
+execution remains separately gated: the registry is empty, read-only workflow
+lookup returns 404, and automatic approval review rejected dispatch under the
+workflow/spending rule. Continue local/native verification, retain draft status
+and avoid repeating dispatches while that condition remains.
 See [UI parity](UI_PARITY.md#workspace-divider-input--november-15-2026).
 
 ## November 15 Transform mapping continuation
