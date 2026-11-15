@@ -5,7 +5,11 @@ runtime JSON. A feature is accepted through independent implementation, command/
 history checks, native interaction where applicable, and a controlled editor/runtime
 comparison. The native `.peachy` format is our own editable model.
 
-November 15 checkpoint: native format **22**, **52 commands / 12 MCP tools**.
+November 15 checkpoint: native format **22**, **53 commands / 13 MCP tools**.
+World X→Rotate passes native input/history/cancellation, minimum layout, fresh
+reopen/playback, actual MCP recreation, runtime and installed interchange. See
+[scope](slices/transform-mapping-authoring.md), [scalar evidence](evidence/transform-mapping.json)
+and [gallery](evidence/transform-mapping.html).
 The accepted multi-vertex Direct scope has separate native/MCP/runtime and
 installed-editor evidence; see the [contract](slices/weight-multivertex.md),
 [scalar record](evidence/weight-multivertex.json) and
@@ -45,7 +49,7 @@ installed-editor evidence; see the [contract](slices/weight-multivertex.md),
 | Nested IK chains and child offsets | Leg-then-toe style chains solve sequentially in list order (either order); two-bone children may sit off the parent axis | Original Chain Lab and offset variants match the external runtime in forward and reversed order; a 62-bone game rig with 6 IK and 16 physics constraints round-trips with matching poses |
 | Physics constraints (data) | Import/edit/save/export every setting, Scale Y mode and Global flag; setting and reset timelines incl. global; Tree icon, typed Properties, rename, Timeline/W-S keys, Metrics | Installed 4.3.26 round trip and external 4.3.13 data/timeline checks pass; a game rig round-trips with identical simulated motion. **No editor simulation**, keying UI, creation UI, skin-required physics or reference scale yet. See [physics data](slices/physics-data.md) |
 | Physics simulation preview | Pending | Needs an independently derived model calibrated against the external runtime, Simulate/Deterministic/Reset controls and wind/gravity reference scale |
-| Transform constraints | Full 4.3 data; world-mode evaluation: identity Rotate, X/Y with offsets, scale and clamping (mirrored offsets, negative mixes), Setup Mix/Offset editing, Tree icon, rename | Fitted to 300 runtime observations; Transform Lab and two game rigs match the runtime. Transform Map Lab and the cow front match too. Local/additive modes, cross-property and scale/shear mappings, mapping editing and timelines remain. See [slice](slices/transform-constraints.md) |
+| Transform constraints | Full 4.3 data; world identity Rotate, mapped X/Y and one X→Rotate writer; shared Min/Max commands/query, Setup Mix/Offset and bounded native Properties editing | Existing labs plus 101 new runtime cases and the 122-request original MCP lab pass; exact installed roundtrip passes. Actual native typing, held cancellation/history, minimum controls and fresh reopen/playback pass; native/MCP saves are byte-identical. Tree pane resizing remains unverified. Precision-conflict/overflow poses refuse explicitly. Local/additive modes, other cross/scale/shear mappings, reconnection/creation and timelines remain. See [data slice](slices/transform-constraints.md) and [authoring scope](slices/transform-mapping-authoring.md) |
 | Slot animation | Attachment swaps/hide and RGBA authoring through shared native/MCP commands, typed Attach/RGBA rows, mixed clipboards and curve-preserving color insertion | Native input/history/persistence and both final authored exports pass; 104 split parameters match installed 4.3.26. Separate rgb/alpha/dark tint, sequences and name-override editor interchange remain. See [slot authoring](slices/slot-authoring.md) |
 | Events | Definitions and timed keys (with per-key overrides) import, export and migrate; reference scale stored | The doggy-scene female opens and matches the runtime; no Events view or event authoring yet. See [events](slices/events.md) |
 | Linked meshes | Import, export, drawing, deform-key following and source-edit propagation | Linked Mesh Lab matches the runtime in every skin; no create/unlink commands yet. See [linked meshes](slices/linked-mesh.md) |

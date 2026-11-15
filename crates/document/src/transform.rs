@@ -167,9 +167,9 @@ impl TransformConstraint {
     }
 
     /// The bounded subset the engine evaluates and the adapter imports: world
-    /// mode, not additive; each mapping drives its own property. Rotate must be
-    /// an identity mapping (and is not clamped); X and Y may use offsets, scale
-    /// and clamping. Everything else is refused explicitly.
+    /// mode, not additive; X/Y may drive themselves, and X may drive Rotate.
+    /// Rotate-to-Rotate must be identity and unclamped. Each destination has one
+    /// writer; cross-property mappings other than X-to-Rotate remain refused.
     pub fn supported_subset(&self) -> Result<(), String> {
         let context = || format!("Transform {}", self.name);
         if self.local_source || self.local_target || self.additive {
@@ -178,24 +178,37 @@ impl TransformConstraint {
                 context()
             ));
         }
+        let mut destinations = std::collections::BTreeSet::new();
         for mapping in &self.mappings {
             let same_property = mapping.to.len() == 1 && mapping.to[0].property == mapping.from;
-            let supported = same_property
-                && match mapping.from {
-                    TransformProperty::Rotate => {
-                        !self.clamp
-                            && mapping.offset == 0.0
-                            && mapping.to[0].offset == 0.0
-                            && mapping.to[0].scale == 1.0
-                    }
-                    TransformProperty::X | TransformProperty::Y => true,
-                    _ => false,
-                };
+            let cross_rotate = mapping.from == TransformProperty::X
+                && mapping.to.len() == 1
+                && mapping.to[0].property == TransformProperty::Rotate;
+            let supported = cross_rotate
+                || (same_property
+                    && match mapping.from {
+                        TransformProperty::Rotate => {
+                            !self.clamp
+                                && mapping.offset == 0.0
+                                && mapping.to[0].offset == 0.0
+                                && mapping.to[0].scale == 1.0
+                        }
+                        TransformProperty::X | TransformProperty::Y => true,
+                        _ => false,
+                    });
             if !supported {
                 return Err(format!(
-                    "{}: only X/Y mappings to the same property (with offsets, scale or clamping) and unclamped identity Rotate mappings are supported",
+                    "{}: only X/Y mappings to the same property (with offsets, scale or clamping), unclamped identity Rotate mappings, and X to one Rotate target are supported",
                     context()
                 ));
+            }
+            for target in &mapping.to {
+                if !destinations.insert(target.property) {
+                    return Err(format!(
+                        "{}: each mapped destination must have exactly one writer",
+                        context()
+                    ));
+                }
             }
         }
         Ok(())

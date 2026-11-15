@@ -848,3 +848,70 @@ The public JSON format guide supplies terminology; observed current inputs and
 outputs determine this policy. See [the contract](slices/export-targets.md).
 No proprietary source, vendor example art or artist files were inspected or
 modified for these probes. Native screenshots use original Peach Bot only.
+
+## World X-to-Rotate Transform mapping — November 15, 2026
+
+The official [4.3 release post](https://esotericsoftware.com/blog/Spine-4.3-released),
+[Transform guide](https://esotericsoftware.com/spine-transform-constraints),
+[JSON-format page](https://esotericsoftware.com/spine-json-format) and
+[changelog](https://esotericsoftware.com/spine-changelog) were retrieved through
+agent-reach on November 15. The release post establishes cross-property mapping,
+clamping and separate source/target spaces. The guide/JSON prose still uses older
+controls/fields, so current layout and range editing come from permitted visible
+installed 4.3.26 controls and original generated inputs/outputs, not assumed
+defaults or proprietary implementation.
+
+An original six-bone input reuses one committed geometric PNG. Nine independently
+inspected range cases establish preserved partner endpoints, retained reversal
+and equal-endpoint Max = Min + 100 repair in both groups. Actual reference Undo,
+Redo and Clamp are checked against exported data. An expanded Offset capture
+shows Translate X/Y numeric fields/sliders. Pointer measurements fit a nominal
+−50..50 span over 107 coordinate units, with edits extrapolating outside it;
+there is no hard clamp in the measured paths. Two-decimal exports do not prove
+internal quantization, and private `clamped` filenames retain an initial
+hypothesis rather than an accepted behavior. Image dimensions/scales are explicit
+in the fresh MCP fixture,
+rather than concealing the earlier editor import's image-size canonicalization.
+
+Shared range queries/actions and X-to-Rotate evaluation were independently
+derived from these controls, general arithmetic and the separately licensed
+runtime's public-API outputs. The existing published f32 FK remains unchanged.
+A wider FK diagnostic uses current applied locals/inheritance without another
+constraint-solver pass to detect angular branch ambiguity. Paired native controls
+point down with unbiased/biased −180 inputs; the external JS consumer points up
+for the biased case. That case is explicitly refused, not called a runtime pass.
+Large-angle calibration fixes conversion-to-radians before mix; unrelated
+identity-Rotate behavior retains its established path.
+
+The final 103-case matrix has 101 evaluated cases within unchanged 0.001 world
+tolerance, one shared-consumer precision refusal and one finite-f32 overflow
+refusal. The fresh root-only `actual-mcp-04` study uses 122 actual stdio requests,
+53 commands/13 tools, an original PNG and no finished rig input; its authored
+project and external-runtime samples verify separately from native interaction.
+Persistent native format22 is unchanged. Raw finite native data remains distinct
+from adapter/evaluation capability, and imports do not apply semantic range repair.
+
+The exact `actual-mcp-04` Editor artifact also passes installed 4.3.26 CLI
+import/re-export and 52 source-versus-returned poses: 1,872 world, 832 region and
+832 UV values have zero error, with colors/order/images matching. Raw authored
+keys, mappings, region dimensions/transforms and other authored sections remain
+exact. The imported project name changes and JSON defaults/metadata canonicalize;
+Editor-roundtrip byte identity is not claimed. Immutable inputs and executable
+hashes stay unchanged.
+
+Actual native typed range repair/reversal, Clamp and Rotate mix 0.5 reach a saved
+project byte-identical to the final MCP source. Separate final native input
+verifies coalesced right-edge Mix preview/Escape, held re-entry blocking,
+numeric/offset history and cancellation, owned-field Save and pending Rotate 13.5
+exclusion. A raw-zero-scale SourceMax field stays blank; untouched Enter preserves
+redo, while typed 0 repairs the range to 100. Fresh public no-history reopen,
+one image and actual SourceMin/TargetMax/Clamp/Offset Y edits with exact Undo at
+1120×740 pass. Playback advances with Loop enabled and stops at zero; a wrap was
+not observed. All owned GUI instances are closed. The attempted Tree-pane resize
+is explicitly unverified. These native results do not broaden the separate
+runtime consumer-precision refusal.
+See [the bounded contract](slices/transform-mapping-authoring.md) and
+[capture gallery](evidence/transform-mapping.html). Licensed reference
+captures/logs and original scalar records stay private in the existing
+`transform-mapping/` task. No proprietary editor/runtime implementation, artist
+asset, vendor project, icon or interface asset was inspected or copied into source.

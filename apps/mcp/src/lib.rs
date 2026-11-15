@@ -8,7 +8,7 @@ use rmcp::{
     ServerHandler, handler::server::wrapper::Parameters, model::CallToolResult, tool, tool_handler,
     tool_router,
 };
-use schema::{AnimationKeyInput, CommandInput};
+use schema::{AnimationKeyInput, CommandInput, TransformPropertyInput};
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde_json::{Value, json};
@@ -201,6 +201,16 @@ struct MeshWeightsInput {
 
 #[derive(Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
+struct TransformMappingInput {
+    expected_revision: u64,
+    /// Exact constraint index from get_document.
+    constraint: usize,
+    from: TransformPropertyInput,
+    to: TransformPropertyInput,
+}
+
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 struct SaveInput {
     expected_revision: u64,
     /// Fresh directory to create under --root. Its parent must exist. Writes project.peachy and loose images, never overwrites.
@@ -388,6 +398,29 @@ impl AnimatorServer {
             Ok(json!({"revision":state.revision,"attachment":query.selection.attachment,
                 "vertices":query.selection.vertices,"bone":query.selection.bone,
                 "weights":query.weights.iter().map(|entry|json!({"vertex":entry.vertex,"weight":entry.weight})).collect::<Vec<_>>(),"value":value}))
+        })
+    }
+
+    #[tool(
+        description = "Read exact endpoint ranges for one unique supported world X-to-Rotate Transform mapping. Returns sourceMin, sourceMax, targetMin and targetMax as raw f64 readback; sourceMax is null when raw zero scale leaves it undefined. No invented display span, document mutation, history or revision change. Use editTransformMappingRange through apply_commands to author an endpoint; the complete raw setTransformConstraint payload remains separate.",
+        annotations(read_only_hint = true, idempotent_hint = true, open_world_hint = false)
+    )]
+    fn get_transform_mapping(
+        &self,
+        Parameters(input): Parameters<TransformMappingInput>,
+    ) -> CallToolResult {
+        self.access(|state| {
+            state.check_revision(input.expected_revision)?;
+            let range = peachy_engine::transform_mapping_range(
+                state.project()?.session.document(),
+                input.constraint,
+                input.from.0,
+                input.to.0,
+            )?;
+            Ok(
+                json!({"revision":state.revision,"constraint":input.constraint,
+                "from":input.from.0,"to":input.to.0,"range":range}),
+            )
         })
     }
 

@@ -1,5 +1,56 @@
 # First-slice validation — November 5, 2026
 
+## World X→Rotate mapping — November 15, 2026
+
+The current engine/MCP/adapter gates pass: **22** transform-filter engine checks
+(including **9** cross-mapping and **6** semantic-range checks), **12** MCP schema,
+**17** protocol (**15** stdio) and **4** new/**2** legacy adapter checks, with two
+workers/threads. Final Desktop filters pass **26** Transform (including **12**
+constraint cases), **39** weights and **51** curve cases. These filters overlap
+and are not a full-suite total. Formatting, all-target workspace Clippy, workspace
+build and seven-crate architecture checks pass. Temporary diagnostics are removed.
+
+The rebuilt CLI implementation matrix accounts for **103** original cases:
+**101** successful runtime comparisons at **0.001**, max world error
+**0.00001611465881978802**, plus one explicit mapped-angle overflow refusal and
+one separately measured consumer precision refusal. Installed Spine points down
+at both unbiased and biased −180-degree half-turn controls, while the JavaScript
+runtime points up for the biased source point −180.0000027846124. The shared
+engine refuses that conflicting branch explicitly. The wide FK diagnostic uses
+already applied locals without another constraint solve; legacy pose arithmetic
+stays unchanged. Original failed matrix evidence is retained privately.
+
+Fresh actual MCP recreation uses one committed original PNG and no finished rig:
+**122** requests, root-only creation, endpoint sequence/repair/reversal, exact
+no-op redo, four rejected atomic batches, stale query and Save/reopen pass.
+The resulting six-bone/two-region lab SHA256 is
+`62a637db493f5abf41bd197c4cdb5db03c83120d95acae6e4fd24f285204757d`.
+Its **52** runtime poses compare **1,872** world values (max
+**1.6592621648214845e-5**), **832** region coordinates (max
+**1.52587890625e-5**), **52** draw orders, **104** images and **416** color values.
+
+Exact installed 4.3.26 import/re-export passes another **52** poses with zero
+world/region/UV error; authored mappings, keys and attachment transforms/dimensions
+remain exact. Report SHA256 is
+`bcac0d57b1124c57d57372d24cbcde2ce81494df0968b080f87652a42dac3df2`.
+The source project and binary hashes remain unchanged during verification.
+Actual native typing reproduces the repair/reversal sequence, Clamp and Mix with
+a byte-identical MCP save. Held Escape, secondary input while primary remains
+held, fresh-release editing, one-step Undo/Redo, Offset typing/extrapolation, owned
+field Save/stale Enter and pending rotation 13.5 Save exclusion pass. A fresh
+zero-scale fixture stays blank and preserves redo on untouched Enter; genuine
+typed 0 resolves Max to 100 within storage precision. The final rebuilt app passes
+the coalesced edge drag after reserving the outer scrollbar.
+
+Fresh public reopen has one image and no history; playback with Loop enabled
+advances from 0.2441903 to 1.0249436 and Q stops at 0. At 1120×740, actual horizontal/
+vertical scrolling reaches SourceMin, TargetMax, Clamp and OffsetY; edits Undo to
+the exact canonical document. Three original-art captures are published. All
+owned windows are closed. Tree-pane resizing was attempted without verified
+change and remains a UI gap; loop boundary wrap is not claimed.
+See [contract](slices/transform-mapping-authoring.md), [scalar evidence](evidence/transform-mapping.json)
+and [gallery](evidence/transform-mapping.html). Hosted CI still gates main.
+
 ## Multi-vertex Direct weights — November 15, 2026
 
 Focused two-worker checks pass: engine multi-weights **10**, inheritance snapshots

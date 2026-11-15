@@ -209,6 +209,59 @@ pub fn world_pose_with(doc: &Document, locals: &[Transform], inherits: &[Inherit
     world
 }
 
+/// Precision diagnostic for new discontinuous mappings. This reconstructs FK
+/// from the already applied locals; it never solves a constraint or changes
+/// the established f32 published pose. Earlier applied-local rounding remains
+/// a limit, so this is not a replacement for an arbitrary consumer's pose.
+pub(crate) fn world_pose_wide(
+    doc: &Document,
+    locals: &[Transform],
+    inherits: &[Inherit],
+) -> Result<Vec<[f64; 6]>, String> {
+    if locals.len() != doc.bones.len() || inherits.len() != doc.bones.len() {
+        return Err("Wide FK needs one applied local and inheritance mode per bone".into());
+    }
+    let mut world: Vec<[f64; 6]> = Vec::with_capacity(doc.bones.len());
+    for (index, (bone, local)) in doc.bones.iter().zip(locals).enumerate() {
+        if !finite_transform(*local) {
+            return Err(format!(
+                "Bone {}: wide FK requires finite applied locals",
+                bone.name
+            ));
+        }
+        let (linear, x, y) = match bone.parent {
+            None => (
+                local_linear(*local, f64::from(local.rotation)),
+                f64::from(local.x),
+                f64::from(local.y),
+            ),
+            Some(parent) => {
+                let p = world
+                    .get(parent)
+                    .ok_or("Wide FK requires a valid bone hierarchy")?;
+                let linear = inherit_linear(inherits[index], [p[0], p[1], p[2], p[3]], *local)
+                    .ok_or_else(|| {
+                        format!(
+                            "Bone {}: wide FK inheritance is outside the supported domain",
+                            bone.name
+                        )
+                    })?;
+                (
+                    linear,
+                    p[0] * f64::from(local.x) + p[1] * f64::from(local.y) + p[4],
+                    p[2] * f64::from(local.x) + p[3] * f64::from(local.y) + p[5],
+                )
+            }
+        };
+        let matrix = [linear[0], linear[1], linear[2], linear[3], x, y];
+        if !matrix.into_iter().all(f64::is_finite) {
+            return Err(format!("Bone {}: wide FK frame is nonfinite", bone.name));
+        }
+        world.push(matrix);
+    }
+    Ok(world)
+}
+
 /// The keyed inheritance mode of every bone at `time`, falling back to Setup.
 pub fn inherit_pose(doc: &Document, animation: Option<usize>, time: f32) -> Vec<Inherit> {
     let mut modes: Vec<_> = doc.bones.iter().map(|bone| bone.inherit).collect();

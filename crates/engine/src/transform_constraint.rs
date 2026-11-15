@@ -8,6 +8,9 @@
 //!   (x, y) offset, by mixX/mixY. A mapping turns each coordinate p into
 //!   (p − from offset) × scale + to offset, clamped between the to offset and
 //!   max when the constraint clamps.
+//! - X to Rotate: map that same source-point X to degrees, ignoring the
+//!   constraint's rotation offset. Correct the angular difference once into
+//!   the measured range (strictly below -180 or above 180), then apply mixRotate.
 //!
 //! The result is written back as the bone's applied local transform relative to
 //! its parent, so children, bindings and tools see one consistent pose.
@@ -64,6 +67,16 @@ fn normalized(mut degrees: f64) -> f64 {
     degrees
 }
 
+fn cross_rotation_branch(degrees: f64) -> i8 {
+    if degrees > 180. {
+        -1
+    } else if degrees < -180. {
+        1
+    } else {
+        0
+    }
+}
+
 pub(crate) fn apply(
     doc: &Document,
     constraint: &TransformConstraint,
@@ -92,7 +105,7 @@ pub(crate) fn apply(
     let source = wide(world[constraint.source]);
     let offset = |p: TransformProperty| f64::from(constraint.offsets.get(p));
     let mirrored = source[0] * source[3] - source[1] * source[2] < 0.;
-    let target_angle = source[2].atan2(source[0]) / OBSERVED_DEGREES_TO_RADIANS
+    let identity_target_angle = source[2].atan2(source[0]) / OBSERVED_DEGREES_TO_RADIANS
         + if mirrored { -1. } else { 1. } * offset(TransformProperty::Rotate);
     let (ox, oy) = (offset(TransformProperty::X), offset(TransformProperty::Y));
     let mapped = |property: TransformProperty, value: f64| {
@@ -119,12 +132,64 @@ pub(crate) fn apply(
             source[2] * ox + source[3] * oy + source[5],
         ),
     ];
+    let cross_rotate = constraint.mappings.iter().any(|mapping| {
+        mapping.from == TransformProperty::X && mapping.to[0].property == TransformProperty::Rotate
+    });
+    let target_angle = if cross_rotate && mix_rotate != 0. {
+        // The mapping clamps before this bound. Finite input fields can still
+        // produce a value outside f32; do not hide it in a finite trig result.
+        if !(target[0] as f32).is_finite() {
+            return Err("X to Rotate mapped angle is outside the finite f32 range".into());
+        }
+        target[0]
+    } else {
+        identity_target_angle
+    };
+    let cross_precision = if cross_rotate && mix_rotate != 0. {
+        let frames = crate::pose::world_pose_wide(doc, locals, inherits)?;
+        let source = frames[constraint.source];
+        let angle = mapped(
+            TransformProperty::X,
+            source[0] * ox + source[1] * oy + source[4],
+        );
+        Some((frames, angle))
+    } else {
+        None
+    };
     for &bone in &constraint.bones {
         let [mut a, mut b, mut c, mut d, mut x, mut y] = wide(world[bone]);
         if mix_rotate != 0. {
             let current = c.atan2(a) / OBSERVED_DEGREES_TO_RADIANS;
-            let turn =
-                normalized(target_angle - current) * mix_rotate * OBSERVED_DEGREES_TO_RADIANS;
+            let delta = target_angle - current;
+            if let Some((frames, angle)) = &cross_precision {
+                let precise = frames[bone];
+                let precise_delta =
+                    angle - precise[2].atan2(precise[0]) / OBSERVED_DEGREES_TO_RADIANS;
+                if cross_rotation_branch(delta) != cross_rotation_branch(precise_delta) {
+                    // Installed 4.3.26 and the external JS runtime choose
+                    // opposite half-turns for the original biased -180 case.
+                    // Keep the native f32 policy; do not publish a pose whose
+                    // branch fidelity cannot be shared by both consumers.
+                    return Err(format!(
+                        "bone {}: X to Rotate native/editor and runtime branches differ at a coordinate precision boundary; this pose is unsupported",
+                        doc.bones[bone].name
+                    ));
+                }
+            }
+            // Exact -180 differs from the established identity-Rotate helper.
+            // Keep its arithmetic unchanged and isolate the observed new rule.
+            let delta = if cross_rotate {
+                delta + f64::from(cross_rotation_branch(delta)) * 360.
+            } else {
+                normalized(delta)
+            };
+            let turn = if cross_rotate {
+                // Native f32 payloads expose the operation order at very large
+                // angles: convert the difference to radians before mixing.
+                delta * OBSERVED_DEGREES_TO_RADIANS * mix_rotate
+            } else {
+                delta * mix_rotate * OBSERVED_DEGREES_TO_RADIANS
+            };
             let (s, k) = turn.sin_cos();
             (a, b, c, d) = (k * a - s * c, k * b - s * d, s * a + k * c, s * b + k * d);
         }
@@ -135,6 +200,10 @@ pub(crate) fn apply(
     *world = world_pose_with(doc, locals, inherits);
     Ok(())
 }
+
+#[cfg(test)]
+#[path = "cross_mapping_tests.rs"]
+mod cross_mapping_tests;
 
 /// Decompose a constrained world frame into a local transform under the bone's
 /// parent: rotation and Scale X from the X axis, Scale Y and Shear Y from the Y

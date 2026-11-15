@@ -1,5 +1,31 @@
 # Views audit and implemented scope
 
+Transform Properties continuation (November 15, **bounded acceptance passed**): the
+Tree inspector now follows the observed Source/Targets, Offset, Mix, six-row
+Properties and Options groups for bounded world Translate X → Rotate mapping.
+Source/target Min/Max use the same semantic range operation as MCP; Mix Rotate
+has numeric/slider input, Clamp is editable, and expanded Offset has paired
+Translate X/Y numbers and extrapolating sliders. Undefined zero-scale Source Max
+stays blank until genuine finite text; viewing does not rewrite data. All these
+numerics share one owned Session preview/cancel lifecycle. Other mapping-range
+metadata stays read-only; supported same-property Mix/Offset controls remain
+available. Unsupported Match/local/additive controls are disabled.
+This adds contextual Tree controls, not a new view. See
+[the measured contract](slices/transform-mapping-authoring.md).
+
+The natural-width mapping table and Offset row use horizontal scrolling in a
+narrow Tree; the outer vertical Properties scrollbar reserves its own hit area.
+Actual native range/history, held cancellation/blocking, Offset extrapolation,
+owned-field Save and pending-pose Save exclusion pass. The final rebuilt native
+editor verifies the coalesced scrollbar-edge Mix drag and Escape, blank zero-scale
+Source Max/no-op redo/typed-zero repair, actual minimum-window control access
+and exact Undo, and fresh no-history public reopen with its image. Playback time
+advances with Loop enabled and Q stops at time 0; boundary wrapping was not
+observed. See the [gallery](evidence/transform-mapping.html) and
+[public lab](../examples/peach-bot/transform-mapping-bot.peachy).
+**Tree-pane resizing remains unverified** after a staged edge drag made no width
+change; scrolling, not resize acceptance, establishes narrow control access.
+
 Curves continuation (November 14): the separate Animate relative-transition pane
 now shares typed Dopesheet selection and engine actions with Scalar/Deform/RGBA
 Graph. Fitted handles, Match/Separate, exact presets, scalar tangents and numeric
@@ -54,12 +80,16 @@ availability and bounded feature scopes are explicit below.
 | Skins | New searchable named-skin list. Click activates, right-click selects Tree properties, Clear skin uses shared default attachments. Single active skin only. |
 | Slot Color | New inline Setup HSV/Hue/Alpha chooser and exact #RRGGBBAA entry for a typed slot or attachment's owner. Persistent native7 RGBA tint reaches all image views. Animate is read-only; color timelines/dark tint remain pending. |
 | Timeline | New compact Animate ruler below the viewport. Shared cursor/transport/Loop, exact all-track key markers, decimal frame entry, snapped or Shift-subframe scrubbing, wheel/slider zoom, right-drag pan and Zoom Keys. Works with Dopesheet closed. |
-| Tree | Existing typed outline, filters, activation dots and contextual properties. The Slots filter shows draw order; Spine has no separate Slots view in this inventory. |
+| Tree | Typed outline, filters, activation dots and contextual properties, including the accepted bounded six-row X→Rotate editor with shared range/Clamp/Mix/Offset commands. Native narrow control access is verified through scrolling; Tree-pane resize parity remains unverified. The Slots filter shows draw order; Spine has no separate Slots view in this inventory. |
 | Weights | Dedicated vertical Weights pane; Bind/Remove all/Add binding and single-/multi-vertex Direct numeric/slider/viewport editing through the shared engine/MCP. Brush, Auto/Smooth, Update and locks remain. See [multi-vertex scope](slices/weight-multivertex.md). |
 
 All 15 views now have bounded implementations; no view remains a disabled placeholder.
 
-Animations, Audio, Ghosting, Mesh Tools, Metrics, Outline, Playback, Preview, Skins, Slot Color and Weights use a resizable tabbed panel in the right rail. Graph and Dopesheet now share tabs in the bottom animation area, including when Tree is closed.
+Animations, Audio, Ghosting, Mesh Tools, Metrics, Outline, Playback, Preview,
+Skins and Slot Color use a resizable tabbed panel in the right rail. Weights and
+Animate Curves have separate vertical panes between viewport and Tree, ordered
+viewport → Weights → Curves → Tree when both are open. Graph and Dopesheet share
+tabs in the full-width bottom animation area, including when Tree is closed.
 With the Tree closed, they use that rail's full height. Opening an already open
 entry focuses its tab. Individual close buttons are present on these views, Tree
 and Dopesheet; they reopen from Views. F9 stores/restores all view visibility,

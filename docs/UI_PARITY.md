@@ -1,5 +1,55 @@
 # Spine workspace and interaction parity
 
+## World Translate X to Rotate mapping — November 15, 2026
+
+**Bounded native/MCP acceptance passed.** Installed Spine
+4.3.26 shows Source/Targets links, expandable Offset and Mix groups, a six-row
+Properties table and Options. Peachy follows this arrangement for the bounded
+world-space **Translate X → Rotate** mapping: source Min/Max on the left,
+target Min/Max on the right, independently drawn colored nodes/connection,
+Rotate mix as a percent number and slider, and Clamp. Expanded Offset contains
+paired **Translate X/Y** numbers and sliders; it does not expose the ineffective
+Rotate offset for this cross mapping. The rails extrapolate beyond their nominal
+−50..50 span without clamping or rounding existing values.
+
+All four endpoint controls use shared engine range queries and semantic edits,
+also available through MCP. Equal endpoints repair Max to Min+100; reversed
+ranges remain reversed. Raw zero scale displays a blank, undefined Source Max.
+Only genuine finite text resolves that endpoint; focus/no-op entry never invents
+a range. Numeric/slider previews own one frozen Session transaction, preserve
+unrelated pending poses and block a canceled held primary pointer until release.
+The Properties table and paired Offset row scroll horizontally in a narrow Tree;
+this preserves legible controls instead of reproducing native tiny-field
+truncation. The outer Properties scrollbar reserves its own hit area.
+
+Actual native input has verified range repair/reversal, Clamp, Mix 50%, exact
+one-step Undo/Redo, held Escape and secondary-button blocking, Offset X 12.5 and
+an extrapolated rail value of 77.1028 with cancellation, owned-field Save/stale
+Enter protection, and exclusion of a pending 13.5-degree bone pose from Save.
+The saved native outcome matches the independent MCP-authored canonical data.
+The rebuilt native editor also verifies a coalesced right-edge Mix drag to 0.92
+and Escape, untouched zero-scale Source Max preserving redo and typed 0 repairing
+Max to 100. At **1120×740**, actual scrolling reaches Source Min, Target Max,
+Clamp and Offset Y; edits undo exactly. A fresh public-lab process starts with
+no history and loads its one original image. Playback advances from 0.244 to
+1.025 seconds with Loop enabled, then Q stops at time 0; boundary wrapping was
+not observed. All owned GUI instances are closed. Whole-workspace tests cover staged and coalesced press/
+move input; the affected 26 Transform, 39 Weights and 51 Curves checks, formatting,
+Clippy, build and architecture checks pass.
+
+See the [capture gallery](evidence/transform-mapping.html),
+[original public lab](../examples/peach-bot/transform-mapping-bot.peachy) and
+[measured contract](slices/transform-mapping-authoring.md). **Tree-pane resizing
+remains unverified**: a staged edge drag did not change its width. Successful
+horizontal/vertical scrolling establishes control access; it does not establish
+resize parity.
+
+Other cross-property destinations, local/additive modes, connection creation/removal,
+Properties Match and Transform timelines remain outside this slice. Existing
+same-property mappings retain their supported evaluation and read-only mapping
+metadata. No complete Transform or pixel parity is claimed. This supersedes the
+November 9 Properties checkpoint below within the stated scope only.
+
 ## Multi-vertex Direct weights — November 15, 2026
 
 The installed 4.3.26 reference shows a dedicated Weights column, explicit
@@ -915,6 +965,9 @@ comparison with the installed editor; keying inheritance is not offered yet.
 
 
 ## Transform constraint properties — November 9, 2026
+
+Historical checkpoint; the November 15 X-to-Rotate continuation above adds
+observed mapping controls, shared range edits and an owned numeric lifecycle.
 
 Transform constraints appear in the Constraints folder with an original
 follow icon. Properties show Source and constrained Bones as links and, for each

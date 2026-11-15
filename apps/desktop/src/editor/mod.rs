@@ -46,6 +46,7 @@ mod timeline_model;
 mod timeline_view;
 mod tools;
 mod transform_constraint;
+mod transform_constraint_edit;
 mod transform_gesture;
 use transform_gesture::TransformEdit;
 mod tree;
@@ -147,6 +148,7 @@ pub(crate) struct Editor {
     curve_interaction: curve_gesture::CurveInteraction,
     curves: curves::CurvesView,
     slot_color: slot_color::SlotColorView,
+    transform_constraint_view: transform_constraint_edit::TransformConstraintView,
     weights: weights::WeightsState,
     weight_edit: Option<weight_direct::WeightEdit>,
     weight_blocked: Option<egui::Id>,
@@ -270,6 +272,7 @@ impl Editor {
             timeline_view: Default::default(),
             show_weights: false,
             weights: Default::default(),
+            transform_constraint_view: Default::default(),
             weight_edit: None,
             weight_blocked: None,
             weight_controls: None,
@@ -323,6 +326,7 @@ impl Editor {
     }
 
     fn dispatch(&mut self, command: Command) -> bool {
+        self.cancel_constraint_edit();
         self.export_dialog = None;
         self.cancel_slot_color_edit();
         self.cancel_graph_edit();
@@ -420,6 +424,7 @@ impl Editor {
         mut local: Transform,
         properties: &[Property],
     ) {
+        self.cancel_constraint_edit();
         self.cancel_slot_color_edit();
         self.cancel_graph_edit();
         self.cancel_ik_edit();
@@ -529,6 +534,7 @@ impl Editor {
         }
     }
     fn reconcile_selection(&mut self) {
+        self.reconcile_constraint_context();
         self.reconcile_transform_edit();
         self.reconcile_weight_edit();
         if self.key_drag.as_ref().is_some_and(|drag| {
@@ -567,6 +573,10 @@ impl Editor {
         self.reconcile_dopesheet_selection();
     }
     fn undo(&mut self) {
+        if self.constraint_edit_active() {
+            self.cancel_constraint_edit();
+            return;
+        }
         self.cancel_timeline_interaction();
         if self.weights.pointer.is_some() || self.weights.vertex_press.is_some() {
             self.cancel_gesture();
@@ -614,6 +624,10 @@ impl Editor {
         self.reconcile_selection();
     }
     fn redo(&mut self) {
+        if self.constraint_edit_active() {
+            self.cancel_constraint_edit();
+            return;
+        }
         self.cancel_timeline_interaction();
         if self.weights.pointer.is_some() || self.weights.vertex_press.is_some() {
             self.cancel_gesture();
@@ -709,6 +723,7 @@ impl Editor {
                     self.audio.reset_document();
                     self.graph.reset_document();
                     self.slot_color.reset_document();
+                    self.transform_constraint_view = Default::default();
                     self.weight_blocked = None;
                     self.weight_controls = None;
                     self.ik_edit = None;
@@ -796,6 +811,7 @@ impl Editor {
         self.reconcile_graph_input(&ctx);
         self.reconcile_draw_order_input(&ctx);
         self.reconcile_slot_color_input(&ctx);
+        self.reconcile_constraint_input(&ctx);
         self.shortcuts(&ctx);
         if self.export_dialog.is_some() {
             ui.disable();
@@ -889,6 +905,10 @@ impl Editor {
                             .resizable(true)
                             .frame(egui::Frame::new().fill(PANEL).inner_margin(6))
                             .show(ui, |ui| {
+                                // Keep fields and sliders out of the vertical
+                                // scrollbar's hit area, including a coalesced
+                                // press and move near a control's right edge.
+                                ui.spacing_mut().scroll = egui::style::ScrollStyle::solid();
                                 egui::ScrollArea::vertical()
                                     .id_salt("properties-scroll")
                                     .min_scrolled_height(0.)
@@ -1085,6 +1105,7 @@ impl Editor {
                 report["weightedMeshCount"] = self.weighted_mesh_count().into();
                 report["weightsContext"] = self.weights_diagnostic();
                 report["weightsDirect"] = self.weight_direct_diagnostic();
+                report["transformConstraint"] = self.constraint_edit_diagnostic();
                 report["ik"] = self.ik_diagnostic();
                 report["evaluatedPose"] = match self
                     .session

@@ -33,6 +33,24 @@ impl JsonSchema for CommandInput {
 #[serde(transparent)]
 pub struct AnimationKeyInput(pub peachy_engine::AnimationKey);
 
+#[derive(Debug, Deserialize)]
+#[serde(transparent)]
+pub struct TransformPropertyInput(pub peachy_document::TransformProperty);
+
+impl JsonSchema for TransformPropertyInput {
+    fn schema_name() -> Cow<'static, str> {
+        "PeachyTransformProperty".into()
+    }
+    fn json_schema(_: &mut SchemaGenerator) -> Schema {
+        Schema::try_from(transform_property_schema())
+            .expect("Transform property schema is an object")
+    }
+}
+
+fn transform_property_schema() -> Value {
+    json!({"type":"string","enum":["rotate","x","y","scaleX","scaleY","shearY"]})
+}
+
 impl JsonSchema for AnimationKeyInput {
     fn schema_name() -> Cow<'static, str> {
         "PeachyAnimationKey".into()
@@ -261,8 +279,7 @@ pub fn command_schema() -> Value {
     let settings = [
         "inertia", "strength", "damping", "mass", "wind", "gravity", "mix",
     ];
-    let transform_property =
-        json!({"type":"string","enum":["rotate","x","y","scaleX","scaleY","shearY"]});
+    let transform_property = transform_property_schema();
     let transform_values =
         object(&["rotate", "x", "y", "scale_x", "scale_y", "shear_y"].map(|name| (name, number())));
     let transform_constraint = object(&[
@@ -279,7 +296,7 @@ pub fn command_schema() -> Value {
                 (
                     "to",
                     list(object(&[
-                        ("property", transform_property),
+                        ("property", transform_property.clone()),
                         ("offset", number()),
                         ("max", number()),
                         ("scale", number()),
@@ -506,6 +523,22 @@ pub fn command_schema() -> Value {
         command(
             "setTransformConstraint",
             &[("constraint", index()), ("value", transform_constraint)],
+        ),
+        command(
+            "editTransformMappingRange",
+            &[
+                ("constraint", index()),
+                ("from", transform_property.clone()),
+                ("to", transform_property),
+                (
+                    "field",
+                    json!({"type":"string","enum":["sourceMin","sourceMax","targetMin","targetMax"]}),
+                ),
+                (
+                    "value",
+                    json!({"type":"number","description":"Finite f64 endpoint for the unique supported world X-to-Rotate mapping. Preserve the other endpoints; equal endpoints repair Max to Min+100, reversed ranges remain reversed. Use get_transform_mapping for exact readback. Raw zero-scale sourceMax is undefined until a resolving sourceMax edit."}),
+                ),
+            ],
         ),
         command(
             "setPathConstraint",
@@ -747,6 +780,7 @@ mod tests {
             Command::SetIkConstraint { .. } => "setIkConstraint",
             Command::AddTransformConstraint { .. } => "addTransformConstraint",
             Command::SetTransformConstraint { .. } => "setTransformConstraint",
+            Command::EditTransformMappingRange { .. } => "editTransformMappingRange",
             Command::SetPathConstraint { .. } => "setPathConstraint",
             Command::AddPhysicsConstraint { .. } => "addPhysicsConstraint",
             Command::SetPhysicsConstraint { .. } => "setPhysicsConstraint",
@@ -842,7 +876,7 @@ mod tests {
     fn every_published_shape_decodes_through_strict_engine_serde() {
         let schema = command_schema();
         let variants = schema["oneOf"].as_array().unwrap();
-        assert_eq!(variants.len(), 52);
+        assert_eq!(variants.len(), 53);
         for variant in variants {
             let payload = sample(variant);
             let command: CommandInput = serde_json::from_value(payload.clone()).unwrap();
@@ -852,6 +886,52 @@ mod tests {
             unknown_field["futureField"] = json!(true);
             assert!(serde_json::from_value::<CommandInput>(unknown_field).is_err());
         }
+    }
+
+    #[test]
+    fn transform_mapping_ranges_publish_strict_f64_endpoints() {
+        let schema = command_schema();
+        let shape = schema["oneOf"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|shape| shape["properties"]["command"]["const"] == "editTransformMappingRange")
+            .unwrap();
+        assert_eq!(shape["additionalProperties"], false);
+        assert_eq!(shape["properties"]["from"], transform_property_schema());
+        assert_eq!(shape["properties"]["to"], transform_property_schema());
+        assert_eq!(
+            shape["properties"]["field"]["enum"],
+            json!(["sourceMin", "sourceMax", "targetMin", "targetMax"])
+        );
+        let payload = json!({"command":"editTransformMappingRange","constraint":0,
+            "from":"x","to":"rotate","field":"sourceMax","value":1.0000000000000002_f64});
+        for field in ["sourceMin", "sourceMax", "targetMin", "targetMax"] {
+            let mut command = payload.clone();
+            command["field"] = json!(field);
+            let decoded: CommandInput = serde_json::from_value(command.clone()).unwrap();
+            assert_eq!(serde_json::to_value(decoded.0).unwrap(), command);
+        }
+        for (field, value) in [
+            ("field", json!("source_min")),
+            ("field", Value::Null),
+            ("from", json!("rotation")),
+            ("to", Value::Null),
+            ("value", Value::Null),
+            ("value", json!("100")),
+            ("future", json!(true)),
+        ] {
+            let mut invalid = payload.clone();
+            invalid[field] = value;
+            assert!(serde_json::from_value::<CommandInput>(invalid).is_err());
+        }
+        for field in ["constraint", "from", "to", "field", "value"] {
+            let mut invalid = payload.clone();
+            invalid.as_object_mut().unwrap().remove(field);
+            assert!(serde_json::from_value::<CommandInput>(invalid).is_err());
+        }
+        assert!(serde_json::from_value::<TransformPropertyInput>(json!("rotation")).is_err());
+        assert!(serde_json::from_value::<TransformPropertyInput>(Value::Null).is_err());
     }
 
     #[test]

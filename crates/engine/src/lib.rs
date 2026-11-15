@@ -25,6 +25,7 @@ mod slot_authoring;
 mod timeline;
 mod tools;
 mod transform_constraint;
+mod transform_mapping;
 
 pub use authoring::{IkPoseEdit, KeyState, PoseEdits, transform_group};
 pub use clipping::ClippedGeometry;
@@ -79,6 +80,10 @@ pub use tools::{
     Axes, TransformGesture, TransformTool, drag_transform, drag_transform_in_frame,
     parse_transform_input, set_transform_value, transform_axes, transform_axes_from_world,
     transform_values,
+};
+pub use transform_mapping::{
+    TransformMappingRange, TransformMappingRangeField, edited_transform_mapping_range,
+    transform_mapping_range,
 };
 
 #[cfg(test)]

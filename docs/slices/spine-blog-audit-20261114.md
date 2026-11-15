@@ -3,6 +3,8 @@
 Public sources were checked November 14 after the slot authoring commit
 `f345fdd`. The implementation record includes verified export-target, Curves,
 global draw-order and November 15 multi-vertex Direct continuations below.
+The bounded November 15 world X-to-Rotate continuation also passes native/MCP/
+runtime/Editor acceptance; its remaining feature and resize limits stay explicit.
 The November 15 update reconciles accepted local evidence without a new web
 fetch. This is a backlog and reference record, not a claim of full Spine parity.
 Installed-editor observations and native screenshots are recorded
@@ -80,12 +82,41 @@ The former immediate gaps are now closed within their documented bounds:
   [capture gallery](../evidence/weight-multivertex.html). Auto/Smooth, brushes,
   locks, Update, multiple bones, sparse Deform remapping and Pies/overlay remain.
 
-Native format remains **22**. MCP now exposes **52 strict commands / 12 tools**,
+### World X-to-Rotate mapping — bounded November 15 acceptance
+
+The [bounded mapping continuation](transform-mapping-authoring.md) now evaluates
+one world Translate X→Rotate writer and exposes the same range query/semantic
+endpoint command through native Properties and MCP. Installed 4.3.26 controls
+establish the Source/Targets links, expandable Offset/Mix, six-row source/target
+Min/Max table, colored nodes/connection and Options. Peachy implements those
+controls, Rotate mix, Clamp and paired Translate X/Y Offset numerics/sliders;
+unsupported Match/local/additive choices remain disabled. Natural-width table
+and Offset rows scroll in a narrow Tree instead of reproducing tiny-field
+truncation. Existing same-property mappings retain their supported behavior.
+
+Shared engine/MCP, original root-only authoring, external runtime and exact
+installed-editor interchange checks pass within the linked contract. Native
+typed range/history, held Escape and input blocking, Offset X 12.5 and rail
+extrapolation to 77.1028, owned-field Save and pending 13.5-degree pose exclusion
+have passed, and the canonical native save matches the MCP-authored data.
+The final rebuilt editor additionally verifies a coalesced scrollbar-edge Mix
+drag/Escape, zero-scale blank/no-op redo/typed-zero repair, actual 1120×740
+range/Clamp/Offset Y edits with exact Undo, and fresh no-history public reopen
+with its image. Playback time advances with Loop enabled and Q stops at time 0;
+boundary wrapping was not observed. The [public lab](../../examples/peach-bot/transform-mapping-bot.peachy)
+and [gallery](../evidence/transform-mapping.html) retain that bounded result.
+Tree-pane resize parity remains unverified after a staged edge drag made no
+width change; control access is verified through scrolling. Broader mappings
+and local/additive domains remain separate work; this does not close the
+release post's whole Transform feature area.
+
+Native format remains **22**. MCP now exposes **53 strict commands / 13 tools**,
 including semantic `editMeshBoneWeights` and read-only `get_mesh_weights`, raw/semantic global
 draw-order authoring and complete hidden-slot order readback, value-preserving
 `setDeformCurve`, `setSlotColorCurves`, float `insertSlotColorKey` and read-only
 typed copying, plus exact `setKeyCurve`/`setIkCurve` and shared
-`applyCurvePreset`/`editCurveHandle`. Source at the earlier `f345fdd` lacked
+`applyCurvePreset`/`editCurveHandle`, plus `editTransformMappingRange` and
+read-only `get_transform_mapping`. Source at the earlier `f345fdd` lacked
 scalar tangents/typed synchronization and Curves; those bounded gaps now have
 the linked native/MCP acceptance. Stored preset/default preferences, grouped
 properties and several coupled domains remain open.
@@ -151,7 +182,7 @@ been exhaustively observed.
 | 1: accepted bounded continuation | Selected-owner Curves and scalar interpolation editing | Native/MCP/runtime acceptance covers shared exact setters/actions, typed selection, fitted relative handles, repeated reset, final-key rules and calibrated normal coupling. Stored presets/defaults, grouped properties and uncalibrated coupling remain; see [contract](curves-authoring.md). |
 | 2: accepted bounded continuation | Global Animate draw-order editing | The Look around demo's global ordering now has shared pending/key/Reset/typed timeline and MCP authoring. Actual native input/fresh reopen, both authored runtime checks and installed 4.3.26 interchange pass; see [contract](draw-order-authoring.md) and [review](../evidence/draw-order-authoring.html). Per-folder keys, Setup reordering, compact property sizing and cross-layout mapping remain separate slices. |
 | 3: accepted weight foundation | Multiple selected vertices, one mesh/bone, Direct mode | Native selection, absolute/relative shared command, raw mixed/uniform MCP query, atomic history/pending guards and ordered sparse insertion now pass native/MCP/runtime/Editor acceptance. See [contract](weight-multivertex.md). Auto/Smooth, brushes, locks, Update, multiple bones, sparse Deform remapping, Pies/overlay and exact styling remain separate work. |
-| 4: next major 4.3 rigging gap | One world-space cross-property transform mapping | Existing data and MCP add/set constraint payloads are present, but evaluation refuses translation-to-rotation/scale mappings used by the announcement. Calibrate one mapping, implement it in the engine, expose real mapping controls and evaluate an MCP-authored rig against the external oracle. Local/additive modes remain separate. |
+| 4: accepted bounded continuation | One world-space cross-property transform mapping | X→Rotate evaluation, six-row Properties/Offset controls and shared semantic ranges pass native/MCP/runtime/installed-editor acceptance, including edge drag/cancel, minimum control access, zero-scale entry and fresh reopen/playback. Tree-pane resizing, other destinations, connection creation, local/additive and timelines remain separate; see [contract](transform-mapping-authoring.md). |
 | 5: larger new model | A manually driven slider constraint | Add explicit animation/frame/mix ownership, model validation, shared evaluation, adapter, creation/key controls and strict MCP commands. Detect self-reference/cycles and unsupported timeline domains. A copied pose or an ordinary slot fade is not slider evaluation. Bone-driven sliders extend this slice later. |
 
 The [4.1 release post, July 4, 2022](https://esotericsoftware.com/blog/Spine-4-1-released)
@@ -186,7 +217,7 @@ not complete this broader objective.
 | --- | --- |
 | Dopesheet-centric synchronization and curve refinements | Shared scalar/Deform/slot selection and bounded Curves/Graph actions pass native/MCP/runtime acceptance. Stored preset library, default curve preferences, native grouping and uncalibrated/generalized handle adjustment remain. |
 | Sliders | No native model, evaluation, import/export or creation workflow; add shared commands and strict schemas with independently derived behavior. |
-| Transform property mapping and local/world choices | Data is modeled, but evaluation is restricted and mapping editing is pending; do not equate accepted data with working constrained motion. |
+| Transform property mapping and local/world choices | One world X→Rotate writer now has accepted evaluation and shared native/MCP endpoint authoring. Tree-pane resizing remains unverified; other cross-property destinations, general connection/source/target editing, Match, local/additive and Transform timelines are absent. See [bounded contract](transform-mapping-authoring.md). |
 | Multiple-mesh tracing and weight workflows | Explicit payload creation and bounded one-mesh/one-bone Direct selection/editing exist through shared native/MCP paths. Native topology generation, multiple-mesh/bone workflows, Auto/Smooth/brush/locks/Update, sparse Deform remapping and Pies/overlay remain. |
 | Draw order folder keys | Current keyed draw order is separate; folders need a model, adapter, evaluation and authoring surface. |
 | Inverse clipping | Existing clipping is bounded and refuses inverse behavior; add geometry/evaluation plus controls and automation commands. |

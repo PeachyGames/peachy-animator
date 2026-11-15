@@ -1,6 +1,6 @@
 use crate::{
     AnimationKey, AnimationKeyClipboard, CurvePreset, CurveSelection, KeyClipboard, KeyOwner,
-    MeshBindPose, MeshWeightEdit, MeshWeightSelection, TimelineKey,
+    MeshBindPose, MeshWeightEdit, MeshWeightSelection, TimelineKey, TransformMappingRangeField,
 };
 use peachy_document::*;
 use serde::{Deserialize, Serialize};
@@ -23,6 +23,13 @@ pub enum Command {
     SetTransformConstraint {
         constraint: usize,
         value: TransformConstraint,
+    },
+    EditTransformMappingRange {
+        constraint: usize,
+        from: TransformProperty,
+        to: TransformProperty,
+        field: TransformMappingRangeField,
+        value: f64,
     },
     SetPathConstraint {
         constraint: usize,
@@ -559,6 +566,21 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
                 return Err("Unknown transform constraint".into());
             };
             *slot = Constraint::Transform(value);
+        }
+        Command::EditTransformMappingRange {
+            constraint,
+            from,
+            to,
+            field,
+            value,
+        } => {
+            let current = doc
+                .constraints
+                .get(constraint)
+                .and_then(Constraint::as_transform)
+                .ok_or("Unknown transform constraint")?;
+            let next = crate::edited_transform_mapping_range(current, from, to, field, value)?;
+            doc.constraints[constraint] = Constraint::Transform(next);
         }
         Command::SetPathConstraint { constraint, value } => {
             let Some(slot @ Constraint::Path(_)) = doc.constraints.get_mut(constraint) else {

@@ -4,6 +4,52 @@ Written November 10, 2026, at the end of the import-parity push. Read this
 first, then `AGENTS.md`. The workspace rules in `../AGENTS.md` and `../CLAUDE.md`
 still apply.
 
+## November 15 Transform mapping continuation
+
+World X→Rotate now passes shared core/MCP, actual native acceptance and both
+external-runtime/installed-editor gates. Native v22 stays, with **53 commands /
+13 tools**. See [scope](slices/transform-mapping-authoring.md),
+[gallery](evidence/transform-mapping.html) and [scalar evidence](evidence/transform-mapping.json).
+
+Native typing, repair/reversal, Clamp/Mix, held cancellation/input blocking,
+Undo/Redo, Offset extrapolation, owned/pending Save, zero-scale blank/recovery,
+minimum 1120×740 controls and fresh public reopen/playback pass. Native and the
+122-request root-only MCP recipe save byte-identical
+`examples/peach-bot/transform-mapping-bot.peachy` (SHA256
+`62a637db493f5abf41bd197c4cdb5db03c83120d95acae6e4fd24f285204757d`).
+The native coalesced edge-drag exposed floating scrollbar overlap; a reserved
+solid outer scrollbar fixes it, with a whole-workspace regression and native
+replay. The regression settles egui's scrollbar animation before freezing geometry.
+Temporary diagnostics are removed. Pane resizing was attempted without verified
+change; exact styling/docking and that native resize remain gaps.
+
+The 103-case matrix records 101 runtime passes at unchanged 0.001 tolerance,
+one overflow refusal and one measured consumer-precision refusal. Installed
+Spine points down for the paired biased/unbiased −180 controls; its JS runtime
+points up for the biased source. Do not relabel this refusal as a runtime pass.
+Published f32 poses remain; the private wide FK never solves constraints again.
+Exact final 04 installed interchange passes 52 poses with zero world/region/UV error
+and exact raw authored sections, including mappings/keys/attachment dimensions.
+Final desktop filters of 26 Transform, 39 weight and 51 curve cases filters, prior core/MCP/adapter checks,
+fmt, all-target Clippy, workspace build and seven-crate architecture pass.
+
+All task-owned reference/native windows are closed. Public original lab/captures
+and scalar evidence are committed with this slice. Private calibration sources,
+selected licensed captures, final 04 requests/recipes/reports and consumer outputs
+remain only for active PR review, until integrated or superseded. Task-owned
+superseded outputs, temporary native helpers and redundant raw diagnostics retire
+at this checkpoint. The shared Cargo target remains required by ongoing parity
+work; no extra target/worktree/repository copy was created. PR1 remains draft;
+required hosted CI still gates main integration.
+
+Continue the [blog backlog](slices/spine-blog-audit-20261114.md): manually driven
+Slider constraints need native/public-runtime calibration before a new model;
+other mappings, creation/reconnection, stored Curves defaults/presets,
+Auto/Smooth/brush weights and locks/Update also remain. Prioritize the recorded
+native pane-resize gap when reviewing workspace parity. Problems, broader Color,
+Pies/overlay and exact styling/docking remain open. The canceled female-pose full
+verification stays canceled.
+
 ## November 15 multi-vertex Direct continuation
 
 Multi-vertex Direct weights now has a dedicated native pane, additive/marquee

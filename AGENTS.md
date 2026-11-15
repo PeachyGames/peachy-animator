@@ -68,10 +68,21 @@ chain bones must inherit normally. See docs/slices/inherit-modes.md.
 
 Native v11 adds `Constraint::Transform` with complete 4.3 data; only the
 `TransformConstraint::supported_subset` (world; identity Rotate; X/Y with
-offsets, scale, clamp) evaluates.
+offsets, scale, clamp; one X→Rotate writer) evaluates.
 Constraints run in list order inside `ik_solver::apply`; transform results are
 written back as applied locals (`transform_constraint::local_from_world`). IK
 chain ancestors may be transformed; constrained IK bones still need unit axes.
+
+World X→Rotate maps the source frame's offset point X into degrees, then clamps
+and mixes with the measured single angular correction. Its exact negative
+half-turn and multiplication association differ from the preserved identity
+Rotate path. A private wide FK diagnostic reconstructs already applied locals;
+it never solves constraints again or replaces published f32 poses. Conflicting
+native/runtime wrap branches fail explicitly. Range controls use the shared
+`edited_transform_mapping_range` helper and `EditTransformMappingRange` command;
+raw-derived SourceMax is undefined at zero scale. Never invent or normalize it
+on query/focus. Equal endpoint edits repair Max to Min+100 in the measured scope;
+reversed endpoints stay reversed. See docs/slices/transform-mapping-authoring.md.
 
 Native v12 adds `Document.skin_scope`. Evaluate through `AuthoredPose::with_skin`
 (Session holds the active skin as view state; the shell syncs it every frame).

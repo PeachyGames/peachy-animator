@@ -95,6 +95,394 @@ async fn open(client: &RunningService<RoleClient, ()>) -> Value {
     )
 }
 
+fn write_transform_mapping_fixture(root: &Path) -> Vec<u8> {
+    let mut fixture = serde_json::to_value(
+        peachy_document::Document::new("Transform mapping ranges".into(), 60).unwrap(),
+    )
+    .unwrap();
+    for (name, parent, x, rotation) in [
+        ("driver", 0, 20.0, 0.0),
+        ("follower", 0, 0.0, 30.0),
+        ("tip", 2, 120.0, 0.0),
+    ] {
+        fixture["bones"].as_array_mut().unwrap().push(json!({
+            "name":name,"parent":parent,"length":120.0,"inherit":"normal",
+            "setup":{"x":x,"y":0.0,"rotation":rotation,"scale_x":1.0,
+                "scale_y":1.0,"shear_x":0.0,"shear_y":0.0}
+        }));
+    }
+    fixture["constraints"] = json!([{
+        "type":"transform","name":"driver X to follower Rotate","source":1,"bones":[2],
+        "offsets":{"rotate":11.0,"x":7.0,"y":-3.0,"scale_x":0.0,"scale_y":0.0,"shear_y":0.0},
+        "mix":{"rotate":0.5,"x":0.0,"y":0.0,"scale_x":0.0,"scale_y":0.0,"shear_y":0.0},
+        "mappings":[
+            {"from":"x","offset":10.0,"to":[{"property":"rotate","offset":-30.0,"max":150.0,"scale":2.0}]},
+            {"from":"y","offset":7.0,"to":[{"property":"y","offset":9.0,"max":11.0,"scale":0.5}]}
+        ],
+        "local_source":false,"local_target":false,"additive":false,"clamp":false
+    }]);
+    let mut fixture: peachy_document::Document = serde_json::from_value(fixture).unwrap();
+    fixture.animations.push(peachy_document::Animation::new(
+        "calibration",
+        vec![peachy_document::Track {
+            bone: 1,
+            property: peachy_document::Property::X,
+            keys: vec![
+                peachy_document::Keyframe {
+                    time: 0.0,
+                    value: 0.0,
+                    curve: peachy_document::Curve::Linear,
+                },
+                peachy_document::Keyframe {
+                    time: 1.0,
+                    value: 80.0,
+                    curve: peachy_document::Curve::Linear,
+                },
+            ],
+        }],
+    ));
+    fixture.validate().unwrap();
+    peachy_io::create_project(&root.join("mapping.peachy"), &fixture).unwrap();
+    fs::read(root.join("mapping.peachy")).unwrap()
+}
+
+fn transform_range_edit(field: &str, value: f64) -> Value {
+    json!({"command":"editTransformMappingRange","constraint":0,
+        "from":"x","to":"rotate","field":field,"value":value})
+}
+
+async fn apply_transform_range_commands(
+    client: &RunningService<RoleClient, ()>,
+    commands: Vec<Value>,
+) -> Value {
+    let revision = doc(client).await["state"]["revision"].clone();
+    success(
+        call(
+            client,
+            "apply_commands",
+            json!({"expected_revision":revision,"commands":commands}),
+        )
+        .await,
+    )
+}
+
+async fn transform_range_query(client: &RunningService<RoleClient, ()>) -> Value {
+    let revision = doc(client).await["state"]["revision"].clone();
+    success(
+        call(
+            client,
+            "get_transform_mapping",
+            json!({"expected_revision":revision,"constraint":0,"from":"x","to":"rotate"}),
+        )
+        .await,
+    )
+}
+
+async fn transform_range_history(client: &RunningService<RoleClient, ()>, action: &str) {
+    let revision = doc(client).await["state"]["revision"].clone();
+    success(
+        call(
+            client,
+            "history",
+            json!({"expected_revision":revision,"action":action}),
+        )
+        .await,
+    );
+}
+
+#[tokio::test]
+async fn stdio_transform_mapping_ranges_author_endpoints_history_and_persistence() {
+    let root = Sandbox::new();
+    let original = write_transform_mapping_fixture(&root.0);
+    let client = start(&root.0).await;
+    let tools = client.list_tools(Default::default()).await.unwrap().tools;
+    let query_tool = tools
+        .iter()
+        .find(|tool| tool.name == "get_transform_mapping")
+        .unwrap();
+    assert_eq!(query_tool.input_schema["additionalProperties"], false);
+    let required = query_tool.input_schema["required"].as_array().unwrap();
+    assert_eq!(required.len(), 4);
+    for field in ["expected_revision", "constraint", "from", "to"] {
+        assert!(required.contains(&json!(field)));
+    }
+    success(
+        call(
+            &client,
+            "open_project",
+            json!({"expected_revision":0,"path":"mapping.peachy"}),
+        )
+        .await,
+    );
+    let before = doc(&client).await;
+    let query = transform_range_query(&client).await;
+    assert_eq!(query["revision"], 1);
+    assert_eq!(query["constraint"], 0);
+    assert_eq!(query["from"], "x");
+    assert_eq!(query["to"], "rotate");
+    assert_eq!(
+        query["range"],
+        json!({"sourceMin":10.0,"sourceMax":100.0,"targetMin":-30.0,"targetMax":150.0})
+    );
+    assert_eq!(doc(&client).await, before);
+
+    // One user batch crosses both reversed and equal endpoint states.
+    apply_transform_range_commands(
+        &client,
+        vec![
+            transform_range_edit("sourceMax", -30.0),
+            transform_range_edit("targetMax", -30.0),
+            transform_range_edit("sourceMin", -30.0),
+            transform_range_edit("targetMin", 70.0),
+        ],
+    )
+    .await;
+    assert_eq!(
+        transform_range_query(&client).await["range"],
+        json!({"sourceMin":-30.0,"sourceMax":70.0,"targetMin":70.0,"targetMax":170.0})
+    );
+    let edited = doc(&client).await;
+    let mut expected = before["document"].clone();
+    expected["constraints"][0]["mappings"][0] = json!({"from":"x","offset":-30.0,
+        "to":[{"property":"rotate","offset":70.0,"max":170.0,"scale":1.0}]});
+    assert_eq!(edited["document"], expected);
+    transform_range_history(&client, "undo").await;
+    let undone = doc(&client).await;
+    assert_eq!(undone["document"], before["document"]);
+    assert_eq!(undone["state"]["canUndo"], false);
+    assert_eq!(undone["state"]["canRedo"], true);
+    assert_eq!(
+        transform_range_query(&client).await["range"],
+        query["range"]
+    );
+    assert_eq!(doc(&client).await, undone);
+
+    // Exact readback is a raw-data/history no-op, even with redo waiting.
+    apply_transform_range_commands(&client, vec![transform_range_edit("sourceMax", 100.0)]).await;
+    let no_op = doc(&client).await;
+    assert_eq!(no_op["document"], undone["document"]);
+    assert_eq!(no_op["state"]["canUndo"], false);
+    assert_eq!(no_op["state"]["canRedo"], true);
+    assert_eq!(no_op["state"]["dirty"], false);
+    transform_range_history(&client, "redo").await;
+    assert_eq!(doc(&client).await["document"], edited["document"]);
+    let revision = doc(&client).await["state"]["revision"].clone();
+    let saved = success(
+        call(
+            &client,
+            "save_project",
+            json!({"expected_revision":revision,"directory":"saved"}),
+        )
+        .await,
+    );
+    assert_eq!(saved["state"]["dirty"], false);
+    assert_eq!(
+        serde_json::from_slice::<Value>(&fs::read(root.0.join("saved/project.peachy")).unwrap())
+            .unwrap(),
+        edited["document"]
+    );
+    success(
+        call(
+            &client,
+            "open_project",
+            json!({"expected_revision":saved["state"]["revision"],"path":"saved/project.peachy"}),
+        )
+        .await,
+    );
+    let reopened = doc(&client).await;
+    assert_eq!(reopened["document"], edited["document"]);
+    assert_eq!(reopened["state"]["canUndo"], false);
+    assert_eq!(reopened["state"]["canRedo"], false);
+    assert_eq!(fs::read(root.0.join("mapping.peachy")).unwrap(), original);
+    client.cancel().await.unwrap();
+}
+
+#[tokio::test]
+async fn stdio_transform_mapping_range_failures_and_raw_zero_preserve_session() {
+    let root = Sandbox::new();
+    let original = write_transform_mapping_fixture(&root.0);
+    let client = start(&root.0).await;
+    success(
+        call(
+            &client,
+            "open_project",
+            json!({"expected_revision":0,"path":"mapping.peachy"}),
+        )
+        .await,
+    );
+    let mut raw = doc(&client).await["document"]["constraints"][0].clone();
+    raw.as_object_mut().unwrap().remove("type");
+    apply_transform_range_commands(&client, vec![transform_range_edit("targetMax", 160.0)]).await;
+    let edited = doc(&client).await["document"].clone();
+    transform_range_history(&client, "undo").await;
+    let before = doc(&client).await;
+    assert_eq!(before["state"]["canRedo"], true);
+    let revision = before["state"]["revision"].as_u64().unwrap();
+    let query = json!({"expected_revision":revision,"constraint":0,"from":"x","to":"rotate"});
+    let mut invalid_queries = vec![];
+    for (field, value) in [
+        ("expected_revision", json!(revision - 1)),
+        ("constraint", json!(99)),
+        ("from", json!("y")),
+        ("to", json!("x")),
+        ("from", json!("rotation")),
+        ("to", Value::Null),
+        ("future", json!(true)),
+    ] {
+        let mut invalid = query.clone();
+        invalid[field] = value;
+        invalid_queries.push(invalid);
+    }
+    for args in invalid_queries {
+        let result = client
+            .call_tool(
+                CallToolRequestParams::new("get_transform_mapping")
+                    .with_arguments(args.as_object().unwrap().clone()),
+            )
+            .await;
+        assert!(
+            result.is_err()
+                || result
+                    .as_ref()
+                    .is_ok_and(|value| value.is_error == Some(true))
+        );
+        assert_eq!(doc(&client).await, before);
+    }
+    for (field, value) in [
+        ("constraint", json!(99)),
+        ("from", json!("y")),
+        ("to", json!("x")),
+        ("field", json!("source_min")),
+        ("value", Value::Null),
+        ("value", json!(1e308_f64)),
+        ("future", json!(true)),
+    ] {
+        let mut invalid = transform_range_edit("targetMax", 170.0);
+        invalid[field] = value;
+        let args = json!({"expected_revision":revision,"commands":[
+            {"command":"renameBone","bone":0,"name":"must-rollback"},invalid]});
+        let result = client
+            .call_tool(
+                CallToolRequestParams::new("apply_commands")
+                    .with_arguments(args.as_object().unwrap().clone()),
+            )
+            .await;
+        assert!(
+            result.is_err()
+                || result
+                    .as_ref()
+                    .is_ok_and(|value| value.is_error == Some(true))
+        );
+        assert_eq!(doc(&client).await, before);
+    }
+    error(
+        call(
+            &client,
+            "apply_commands",
+            json!({"expected_revision":revision-1,
+        "commands":[transform_range_edit("targetMax",170.0)]}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await, before);
+    transform_range_history(&client, "redo").await;
+    assert_eq!(doc(&client).await["document"], edited);
+
+    // The complete raw setter still accepts data without manufacturing endpoints.
+    let mut ambiguous = raw.clone();
+    ambiguous["mappings"]
+        .as_array_mut()
+        .unwrap()
+        .push(json!({"from":"rotate","offset":0.0,
+        "to":[{"property":"rotate","offset":0.0,"max":1.0,"scale":1.0}]}));
+    apply_transform_range_commands(
+        &client,
+        vec![json!({"command":"setTransformConstraint",
+        "constraint":0,"value":ambiguous})],
+    )
+    .await;
+    let ambiguous_before = doc(&client).await;
+    error(
+        call(
+            &client,
+            "get_transform_mapping",
+            json!({"expected_revision":ambiguous_before["state"]["revision"],
+        "constraint":0,"from":"x","to":"rotate"}),
+        )
+        .await,
+    );
+    error(
+        call(
+            &client,
+            "apply_commands",
+            json!({"expected_revision":ambiguous_before["state"]["revision"],
+        "commands":[{"command":"renameBone","bone":0,"name":"must-rollback"},
+            transform_range_edit("targetMax",170.0)]}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await, ambiguous_before);
+
+    raw["mappings"][0]["to"][0]["scale"] = json!(0.0);
+    apply_transform_range_commands(
+        &client,
+        vec![json!({"command":"setTransformConstraint",
+        "constraint":0,"value":raw})],
+    )
+    .await;
+    let zero_before = doc(&client).await;
+    let zero_query = transform_range_query(&client).await;
+    assert_eq!(
+        zero_query["range"],
+        json!({"sourceMin":10.0,"sourceMax":null,"targetMin":-30.0,"targetMax":150.0})
+    );
+    assert_eq!(doc(&client).await, zero_before);
+    error(
+        call(
+            &client,
+            "apply_commands",
+            json!({"expected_revision":zero_before["state"]["revision"],
+        "commands":[{"command":"renameBone","bone":0,"name":"must-rollback"},
+            transform_range_edit("sourceMin",11.0)]}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await, zero_before);
+    apply_transform_range_commands(&client, vec![transform_range_edit("sourceMin", 10.0)]).await;
+    assert_eq!(doc(&client).await["document"], zero_before["document"]);
+    apply_transform_range_commands(&client, vec![transform_range_edit("sourceMax", 100.0)]).await;
+    assert_eq!(
+        transform_range_query(&client).await["range"],
+        json!({"sourceMin":10.0,"sourceMax":100.0,"targetMin":-30.0,"targetMax":150.0})
+    );
+    let mut flat_raw = zero_before["document"]["constraints"][0].clone();
+    flat_raw.as_object_mut().unwrap().remove("type");
+    flat_raw["mappings"][0]["to"][0]["max"] = json!(-30.0);
+    apply_transform_range_commands(
+        &client,
+        vec![json!({"command":"setTransformConstraint",
+        "constraint":0,"value":flat_raw})],
+    )
+    .await;
+    let flat_before = doc(&client).await;
+    assert_eq!(
+        transform_range_query(&client).await["range"],
+        json!({"sourceMin":10.0,"sourceMax":null,"targetMin":-30.0,"targetMax":-30.0})
+    );
+    error(
+        call(
+            &client,
+            "apply_commands",
+            json!({"expected_revision":flat_before["state"]["revision"],
+        "commands":[transform_range_edit("sourceMax",100.0)]}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await, flat_before);
+    assert_eq!(fs::read(root.0.join("mapping.peachy")).unwrap(), original);
+    client.cancel().await.unwrap();
+}
+
 fn write_multi_vertex_weight_fixture(root: &Path) -> Vec<u8> {
     let mut fixture = serde_json::to_value(
         peachy_document::Document::new("Direct weight matrix".into(), 60).unwrap(),
@@ -469,7 +857,7 @@ async fn stdio_discovery_atomic_edit_history_save_and_export() {
     let original = fs::read(&source).unwrap();
     let client = start(&root.0).await;
     let tools = client.list_tools(Default::default()).await.unwrap().tools;
-    assert_eq!(tools.len(), 12);
+    assert_eq!(tools.len(), 13);
     assert!(tools.iter().all(|tool| !tool.input_schema.is_empty()));
     let apply = tools
         .iter()

@@ -53,16 +53,17 @@ client's working directory. Absolute paths are accepted only inside that root.
 | `create_project` | New in-memory root-only native document with an empty default skin. Uses an existing asset directory within `--root`; no finished rig is loaded and no file is written. Source is null until Save. |
 | `inspect_file` | Read-only native validation or Spine capability report. Does not replace the working document. |
 | `open_project` | Load `.peachy` (including supported legacy migrations) or supported Spine 4.3 JSON into a new Session. Failed imports leave the current session intact. |
-| `get_command_schema` | Full JSON Schema for the 52 supported flat command variants; the same schema appears inline in `apply_commands` discovery. |
+| `get_command_schema` | Full JSON Schema for the 53 supported flat command variants; the same schema appears inline in `apply_commands` discovery. |
 | `apply_commands` | Apply a nonempty flat list through one engine Batch, atomically and as one undo step. No file writes. |
 | `copy_animation_keys` | Read-only capture of exact keys from one bone, IK constraint, Deform attachment, slot or global draw order. Slot clipboards can mix attachment and color keys with one relative origin; Deform includes vertex/influence layout. Draw order requires the identical ordered slot-name layout on paste. Requires the current revision. |
 | `get_mesh_weights` | Read exact selected weights and a uniform/mixed aggregate through the engine; absent influences of an already bound bone read zero. Requires the current revision and exact attachment identity. |
+| `get_transform_mapping` | Read raw-derived Min/Max endpoints of one exact world X→Rotate constraint mapping at the current revision. Undefined SourceMax is null; querying never repairs stored coefficients or changes history. |
 | `history` | Undo or redo one complete edit using the shared Session history. |
 | `evaluate_pose` | Setup or a named animation at a nonnegative time in seconds, with optional skin. Returns authored locals, IK-applied locals, per-bone `inherits` modes, world matrices, raw `slotAttachments`/`slotColors`, complete back-to-front `drawOrder` including hidden/empty slots, textured vertex/UV/index buffers and bounds. |
 | `save_project` | Create a new directory containing `project.peachy` and the required loose `images/`; marks the headless Session saved. |
 | `export_project` | New Spine JSON file, or a fresh packed JSON/atlas/PNG directory inside an existing parent. Optional `target` defaults to `spineEditor43`; use `runtime43` to retain independent attachment names/placeholders for runtime consumers. Does not mark the native document saved. |
 
-These 12 tools publish parameter schemas, descriptions and behavior annotations through
+These 13 tools publish parameter schemas, descriptions and behavior annotations through
 MCP `tools/list`. Successful results include both `structuredContent` and matching
 serialized text for older clients. Operational failures return `isError: true`
 with the current revision; malformed tool arguments use the SDK's protocol error.
@@ -560,3 +561,41 @@ must have one valid mode per bone; `null` is rejected. Native captures and new
 MCP recipes include the array so animated inheritance is retained when binding.
 See [the measured contract](slices/weight-multivertex.md) for native-reference
 calibration, differences and verification limits.
+
+## World X to Rotate mapping
+
+Native v22 is unchanged. The current schema has **53 commands / 13 tools**.
+An existing world-space X→Rotate transform constraint can be edited by the same
+semantic range operation as the native Min/Max controls:
+
+```json
+{"command":"editTransformMappingRange","constraint":0,"from":"x","to":"rotate","field":"sourceMax","value":100}
+```
+
+`field` is exactly `sourceMin`, `sourceMax`, `targetMin` or `targetMax`; `value`
+is a finite f64 endpoint with checked f32 storage. The operation retains the
+other endpoints subject to stored coefficient precision, repairs an edited equal span by setting Max to Min+100, and
+retains reversed ranges. Put ordered field edits in one `apply_commands` list
+for one atomic history entry. Existing raw `addTransformConstraint` and
+`setTransformConstraint` still expose complete native data.
+
+Call `get_transform_mapping` with:
+
+```json
+{"expected_revision":1,"constraint":0,"from":"x","to":"rotate"}
+```
+
+The response includes `revision`, exact mapping identity and
+`range: {sourceMin, sourceMax, targetMin, targetMax}`. Endpoints are derived from
+stored offsets, max and scale without rounding or mutation. A zero raw scale
+returns `sourceMax: null`; known-field no-ops preserve that data. An explicit
+SourceMax edit can resolve it when the target span is nonzero. Other unresolved
+edits, collapsed/nonrepresentable storage and ambiguous writers reject atomically.
+
+The evaluated subset is world source/target, nonadditive and one X→Rotate writer;
+legacy identity Rotate and same-property X/Y mappings remain supported. Other
+cross mappings, local/additive modes and transform timelines remain outside this
+slice. `evaluate_pose` reports the observed native/runtime precision conflict at
+certain half-turn boundaries explicitly; it does not publish a guessed pose.
+The separately calibrated 0.001 comparisons count that refusal separately from
+successful runtime evaluations. See [the measured scope and evidence](slices/transform-mapping-authoring.md).

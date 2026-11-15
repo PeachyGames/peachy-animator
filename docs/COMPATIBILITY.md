@@ -4,6 +4,26 @@ Target: Spine **4.3.x JSON**, with export metadata `4.3.26`. The initial externa
 oracle is separately installed `@esotericsoftware/spine-core` **4.3.13**.
 Compatibility applies to the subset below, not every 4.3 project or future patch.
 
+World X→Rotate addition (November 15): world source/target, nonadditive constraints
+can map the source frame's offset-point X to rotation, with offsets, signed scale,
+reversed clamp bounds and signed Mix. Each destination has one writer. The exact
+negative half-turn uses the observed strict boundary; identity Rotate and the
+existing same-property X/Y arithmetic remain unchanged. Native v22 stays, with
+**53 commands / 13 MCP tools**, including shared Min/Max edits and raw-derived
+endpoint readback. A zero scale leaves SourceMax undefined until explicitly
+resolved; imports and queries do not repair it.
+
+The implementation matrix passes 101 evaluated cases at the unchanged 0.001
+tolerance. One mapped-angle overflow and one measured native/runtime half-turn
+precision conflict are explicit refusals, counted separately. A private wide FK
+diagnostic uses applied locals without another constraint solve; published f32
+poses remain unchanged. The 122-request root-only MCP lab passes external runtime
+and exact installed-editor roundtrip checks. Actual native typing, held-input
+cancellation/history, minimum layout, pending Save and fresh reopen/playback
+pass with byte-identical native/MCP authored data. Local/additive modes, other cross mappings, multiple destination writers,
+transform timelines and native mapping creation/reconnection remain unsupported.
+See [the precise contract](slices/transform-mapping-authoring.md).
+
 Multi-vertex Direct addition (November 15): one bound bone can be edited across
 an explicit vertex set through native numeric/slider/viewport controls and the
 shared MCP command. Exact raw uniform/mixed readback brings MCP to **52 commands /

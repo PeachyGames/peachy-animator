@@ -3,6 +3,7 @@ use super::*;
 
 impl Editor {
     pub(super) fn cancel_gesture(&mut self) {
+        self.cancel_constraint_edit();
         self.cancel_weights_pointer();
         self.export_dialog = None;
         self.cancel_timeline_interaction();
@@ -241,6 +242,7 @@ impl Editor {
             return;
         }
         if self.slot_color_shortcuts(ctx)
+            || self.constraint_edit_shortcuts(ctx)
             || self.ik_shortcuts(ctx)
             || self.transform_shortcuts(ctx)
             || self.weight_edit_shortcuts(ctx)
