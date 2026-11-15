@@ -1,7 +1,7 @@
 //! Transient animation poses. These values never belong to a saved/exported document.
 use crate::{
-    AuthoredPose, Command, EditTarget, apply_command, ik_keyframe_at, local_pose,
-    sample_authored_pose,
+    AuthoredPose, Command, EditTarget, SlotPoseEdit, SlotProperty, apply_command, ik_keyframe_at,
+    local_pose, sample_authored_pose,
 };
 use peachy_document::*;
 use serde::{Deserialize, Serialize};
@@ -14,6 +14,18 @@ pub struct PoseEdits {
     values: Vec<PoseValue>,
     ik_values: Vec<IkPoseValue>,
     deform_values: Vec<DeformPoseValue>,
+    slot_attachments: Vec<SlotAttachmentPoseValue>,
+    slot_colors: Vec<SlotColorPoseValue>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize)]
+struct SlotAttachmentPoseValue {
+    slot: usize,
+    attachment: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize)]
+struct SlotColorPoseValue {
+    slot: usize,
+    color: [f32; 4],
 }
 #[derive(Clone, Debug, PartialEq, Serialize)]
 struct DeformPoseValue {
@@ -96,7 +108,120 @@ pub fn transform_group(properties: &[Property]) -> Vec<Property> {
 
 impl PoseEdits {
     pub fn is_empty(&self) -> bool {
-        self.values.is_empty() && self.ik_values.is_empty() && self.deform_values.is_empty()
+        self.values.is_empty()
+            && self.ik_values.is_empty()
+            && self.deform_values.is_empty()
+            && self.slot_attachments.is_empty()
+            && self.slot_colors.is_empty()
+    }
+    pub fn has_slot(&self, animation: usize, slot: usize, property: SlotProperty) -> bool {
+        self.animation == Some(animation)
+            && match property {
+                SlotProperty::Attachment => {
+                    self.slot_attachments.iter().any(|value| value.slot == slot)
+                }
+                SlotProperty::Color => self.slot_colors.iter().any(|value| value.slot == slot),
+            }
+    }
+    pub fn slot_key_state(
+        &self,
+        doc: &Document,
+        animation: usize,
+        time: f32,
+        slot: usize,
+        property: SlotProperty,
+    ) -> Result<KeyState, String> {
+        let key = crate::slot_key_time(doc, animation, time, slot, property)?;
+        Ok(if self.has_slot(animation, slot, property) {
+            KeyState::Edited
+        } else if key.is_some() {
+            KeyState::Keyed
+        } else {
+            KeyState::Absent
+        })
+    }
+    pub(crate) fn edit_slot(
+        &self,
+        doc: &Document,
+        animation: usize,
+        time: f32,
+        slot: usize,
+        edits: &[SlotPoseEdit],
+    ) -> Result<Self, String> {
+        crate::slot_authoring::validate_edits(doc, slot, edits)?;
+        let sampled = sample_authored_pose(doc, Some(animation), time)?;
+        let base = crate::SlotPose::from_authored(&sampled, slot)?;
+        let mut next = if self.animation == Some(animation) {
+            self.clone()
+        } else {
+            Self::default()
+        };
+        for edit in edits {
+            match edit {
+                SlotPoseEdit::Attachment { attachment } => {
+                    next.slot_attachments.retain(|value| value.slot != slot);
+                    if *attachment != base.attachment {
+                        next.slot_attachments.push(SlotAttachmentPoseValue {
+                            slot,
+                            attachment: attachment.clone(),
+                        });
+                    }
+                }
+                SlotPoseEdit::Color { color } => {
+                    next.slot_colors.retain(|value| value.slot != slot);
+                    if *color != base.color {
+                        next.slot_colors.push(SlotColorPoseValue {
+                            slot,
+                            color: *color,
+                        });
+                    }
+                }
+            }
+        }
+        next.slot_attachments.sort_by_key(|value| value.slot);
+        next.slot_colors.sort_by_key(|value| value.slot);
+        next.animation = if next.is_empty() {
+            None
+        } else {
+            Some(animation)
+        };
+        Ok(next)
+    }
+    pub(crate) fn remove_slot(
+        &mut self,
+        animation: usize,
+        slot: usize,
+        properties: &[SlotProperty],
+    ) {
+        if self.animation == Some(animation) {
+            if properties.contains(&SlotProperty::Attachment) {
+                self.slot_attachments.retain(|value| value.slot != slot);
+            }
+            if properties.contains(&SlotProperty::Color) {
+                self.slot_colors.retain(|value| value.slot != slot);
+            }
+            if self.is_empty() {
+                self.animation = None;
+            }
+        }
+    }
+    pub(crate) fn slot_targets(&self, animation: usize) -> BTreeMap<usize, Vec<SlotProperty>> {
+        let mut targets: BTreeMap<usize, Vec<SlotProperty>> = BTreeMap::new();
+        if self.animation == Some(animation) {
+            for value in &self.slot_attachments {
+                targets
+                    .entry(value.slot)
+                    .or_default()
+                    .push(SlotProperty::Attachment);
+            }
+            for value in &self.slot_colors {
+                targets
+                    .entry(value.slot)
+                    .or_default()
+                    .push(SlotProperty::Color);
+            }
+        }
+        targets
     }
     /// `attachment` is a canonical deform target (Document::deform_target).
     pub fn has_deform(&self, animation: usize, attachment: &AttachmentRef) -> bool {
@@ -214,6 +339,22 @@ impl PoseEdits {
                 &value.offsets,
             )?;
         }
+        for value in &next.slot_attachments {
+            crate::slot_authoring::validate_edits(
+                after,
+                value.slot,
+                &[SlotPoseEdit::Attachment {
+                    attachment: value.attachment.clone(),
+                }],
+            )?;
+        }
+        for value in &next.slot_colors {
+            crate::slot_authoring::validate_edits(
+                after,
+                value.slot,
+                &[SlotPoseEdit::Color { color: value.color }],
+            )?;
+        }
         next.sort_deforms();
         Ok(next)
     }
@@ -278,6 +419,18 @@ impl PoseEdits {
                     IkPoseEdit::Mix { value } => ik.mix = f64::from(value),
                     IkPoseEdit::BendPositive { value } => ik.bend_positive = value,
                 }
+            }
+            for value in &self.slot_attachments {
+                *pose
+                    .slot_attachments
+                    .get_mut(value.slot)
+                    .ok_or("Unknown pending slot")? = value.attachment.clone();
+            }
+            for value in &self.slot_colors {
+                *pose
+                    .slot_colors
+                    .get_mut(value.slot)
+                    .ok_or("Unknown pending slot")? = value.color;
             }
             for value in &self.deform_values {
                 crate::deform_authoring::validate_offsets(doc, &value.attachment, &value.offsets)?;

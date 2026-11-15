@@ -4,6 +4,7 @@ use tree_model::{Entry, Filters, project, row_visible};
 enum Action {
     Key(usize),
     KeyIk(usize),
+    KeySlot(usize, peachy_engine::SlotProperty),
     Select(TreeItem),
     Rename(TreeItem),
     Dot(TreeItem, bool),
@@ -147,6 +148,25 @@ impl Editor {
                                 ));
                             }
                         }
+                        if !self.setup_mode {
+                            if let TreeItem::Slot(slot) = e.item {
+                                let property = peachy_engine::SlotProperty::Attachment;
+                                match self.slot_property_state(slot, property) {
+                                    Ok(state) => {
+                                        let enabled = self.slot_authoring_input_available(ui.ctx());
+                                        let key = ui.add_enabled_ui(enabled, |ui| super::animation::pose_key_button(ui, state)).inner;
+                                        if key.rect.intersects(ui.clip_rect()) {
+                                            self.record_target(&format!("slotAttachmentKey:{slot}"), key.rect);
+                                            if selected { self.record_target("slotAttachmentKey", key.rect); }
+                                        }
+                                        if key.on_hover_text("Key the shown attachment, or None to hide this slot").clicked() {
+                                            actions.push(Action::KeySlot(slot, property));
+                                        }
+                                    }
+                                    Err(error) => { ui.colored_label(ACCENT, "Key timing error").on_hover_text(error); }
+                                }
+                            } else { ui.add_space(22.); }
+                        }
                         ui.add_space(e.depth as f32 * 11.);
                         let (arrow, click) = ui.allocate_exact_size(vec2(13., 19.), Sense::click());
                         let collapsed =
@@ -259,6 +279,7 @@ impl Editor {
             match action {
                 Action::Key(bone) => self.key_edited(Some(bone)),
                 Action::KeyIk(index) => self.key_ik(index),
+                Action::KeySlot(slot, property) => self.key_slot_property(slot, property),
                 Action::Select(item) => {
                     self.select(item);
                     // A clicked row is already visible. Scrolling it here can move
@@ -304,13 +325,13 @@ impl Editor {
             TreeItem::Skin(s) => Some(&self.skin == s),
             TreeItem::Folder(Folder::Skins) => Some(self.skin == "default"),
             TreeItem::Animation(i) => Some(self.animation == *i),
-            TreeItem::Attachment(k) => item.slot(doc).map(|slot| {
-                doc.resolved_attachment(&self.skin, slot)
-                    .is_some_and(|(shown, _)| &shown == k)
-            }),
-            TreeItem::Placeholder { slot, name } => {
-                Some(doc.slots[*slot].attachment.as_ref() == Some(name))
-            }
+            TreeItem::Attachment(k) => item
+                .slot(doc)
+                .map(|slot| self.shown_slot_attachment(slot).as_ref() == Some(k)),
+            TreeItem::Placeholder { slot, name } => self
+                .current_slot_pose(*slot)
+                .ok()
+                .map(|pose| pose.attachment.as_ref() == Some(name)),
             _ => None,
         }
     }
@@ -345,38 +366,41 @@ impl Editor {
             TreeItem::Folder(Folder::Skins) => self.activate_skin("default".into()),
             TreeItem::Animation(i) => self.activate_animation(*i),
             TreeItem::Attachment(k) => {
-                if self.setup_mode {
-                    if k.skin != "default" && k.skin != self.skin {
+                if self.setup_mode || self.attachment_editable(k) {
+                    if self.setup_mode && k.skin != "default" && k.skin != self.skin {
                         self.activate_skin(k.skin.clone());
                     }
                     if let Some(slot) = item.slot(self.session.document()) {
-                        self.dispatch(Command::SetSlotAttachment {
+                        self.edit_slot_attachment(
                             slot,
-                            attachment: if was_visible {
+                            if was_visible {
                                 None
                             } else {
                                 Some(k.placeholder.clone())
                             },
-                        });
+                        );
                     }
                 } else {
-                    self.status="Attachment timelines are not implemented; change the setup attachment in Setup.".into();
+                    self.status =
+                        "Activate this attachment's skin before editing its slot pose.".into();
                 }
             }
-            TreeItem::Placeholder { slot, name } if self.setup_mode => {
+            TreeItem::Placeholder { slot, name } => {
                 self.toggle_slot_attachment(*slot, name);
             }
             _ => {}
         }
     }
     fn toggle_slot_attachment(&mut self, slot: usize, name: &str) {
-        let attachment = if self.session.document().slots[slot].attachment.as_deref() == Some(name)
+        let attachment = if self
+            .current_slot_pose(slot)
+            .is_ok_and(|pose| pose.attachment.as_deref() == Some(name))
         {
             None
         } else {
             Some(name.into())
         };
-        self.dispatch(Command::SetSlotAttachment { slot, attachment });
+        self.edit_slot_attachment(slot, attachment);
     }
 }
 

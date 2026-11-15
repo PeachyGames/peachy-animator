@@ -118,6 +118,29 @@ pub enum Command {
         slot: usize,
         color: [u8; 4],
     },
+    SetSlotAttachmentKey {
+        animation: usize,
+        slot: usize,
+        key: AttachmentKey,
+    },
+    SetSlotColorKey {
+        animation: usize,
+        slot: usize,
+        key: ColorKey,
+    },
+    SetSlotColorCurves {
+        animation: usize,
+        slot: usize,
+        time: f32,
+        curves: [Curve; 4],
+    },
+    /// Insert an authored color while preserving adjacent curve geometry.
+    InsertSlotColorKey {
+        animation: usize,
+        slot: usize,
+        time: f32,
+        color: [f32; 4],
+    },
     SetKey {
         animation: usize,
         bone: usize,
@@ -341,6 +364,36 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
         }
         Command::SetSlotColor { slot, color } => {
             doc.slots.get_mut(slot).ok_or("Unknown slot")?.color = color;
+        }
+        Command::SetSlotAttachmentKey {
+            animation,
+            slot,
+            key,
+        } => {
+            crate::slot_authoring::set_attachment_key(doc, animation, slot, key)?;
+        }
+        Command::SetSlotColorKey {
+            animation,
+            slot,
+            key,
+        } => {
+            crate::slot_authoring::set_color_key(doc, animation, slot, key)?;
+        }
+        Command::SetSlotColorCurves {
+            animation,
+            slot,
+            time,
+            curves,
+        } => {
+            crate::slot_authoring::set_color_curves(doc, animation, slot, time, curves)?;
+        }
+        Command::InsertSlotColorKey {
+            animation,
+            slot,
+            time,
+            color,
+        } => {
+            crate::slot_authoring::insert_color_pose(doc, animation, slot, time, color)?;
         }
         Command::ConvertRegionToMesh { attachment } => {
             let value = doc
@@ -733,7 +786,7 @@ pub(crate) fn snapped_time(fps: u32, time: f32) -> Result<f32, String> {
     Ok(((f64::from(time) * f64::from(fps)).round() / f64::from(fps)) as f32)
 }
 
-fn key_index_by_time<T>(
+pub(crate) fn key_index_by_time<T>(
     keys: &[T],
     time: f32,
     read: fn(&T) -> f32,

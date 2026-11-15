@@ -1,6 +1,7 @@
 //! Functional animation core and the in-memory session that records its results.
 mod authoring;
 mod clipping;
+mod color_curve_split;
 mod commands;
 mod deform_authoring;
 mod ghosting;
@@ -17,6 +18,7 @@ mod playback;
 mod pose;
 mod scene;
 mod session;
+mod slot_authoring;
 mod timeline;
 mod tools;
 mod transform_constraint;
@@ -55,9 +57,10 @@ pub use scene::{
     checked_scene_from_authored, checked_setup_scene_from_locals, evaluate_scene,
 };
 pub use session::Session;
+pub use slot_authoring::{SlotPose, SlotPoseEdit, SlotProperty, slot_color_bytes, slot_key_time};
 pub use timeline::{
     AnimationKey, AnimationKeyClipboard, ClipboardKey, DeformLayout, KeyClipboard, KeyOwner,
-    TimelineKey, copy_animation_keys, copy_keys, deform_key_owner,
+    TimelineKey, copy_animation_keys, copy_keys, deform_key_owner, pasted_animation_keys,
 };
 pub use tools::{
     Axes, TransformGesture, TransformTool, drag_transform, drag_transform_in_frame,
@@ -111,6 +114,12 @@ mod scene_checks_tests;
 mod shear_tests;
 #[cfg(test)]
 mod skin_scope_tests;
+#[cfg(test)]
+mod slot_authoring_tests;
+#[cfg(test)]
+mod slot_color_insert_observations;
+#[cfg(test)]
+mod slot_color_insert_tests;
 #[cfg(test)]
 mod slot_color_tests;
 #[cfg(test)]

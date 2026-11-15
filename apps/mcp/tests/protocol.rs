@@ -791,3 +791,251 @@ async fn stdio_deform_timeline_copy_curve_retime_paste_and_persistence() {
     assert_eq!(fs::read(source).unwrap(), original);
     client.cancel().await.unwrap();
 }
+
+#[tokio::test]
+async fn stdio_slot_authoring_mixed_clipboard_curves_and_persistence() {
+    let root = Sandbox::new();
+    root.fixture();
+    let source = root.0.join("source/slot-bot.peachy");
+    let original = fs::read(&source).unwrap();
+    let client = start(&root.0).await;
+    success(
+        call(
+            &client,
+            "open_project",
+            json!({"expected_revision":0,"path":"source/slot-bot.peachy"}),
+        )
+        .await,
+    );
+    let baseline = doc(&client).await;
+    let curves = json!([{"bezier":[0.25,0.0,0.75,1.0]},"linear",{"bezierOffset":[0.25,0.125,0.75,-0.125]},"linear"]);
+    success(call(&client,"apply_commands",json!({"expected_revision":1,"commands":[
+        {"command":"setSlotAttachmentKey","animation":1,"slot":8,"key":{"time":0.25,"attachment":"fist"}},
+        {"command":"setSlotAttachmentKey","animation":1,"slot":8,"key":{"time":0.75,"attachment":null}},
+        {"command":"setSlotAttachmentKey","animation":1,"slot":8,"key":{"time":1.25,"attachment":"hand.L"}},
+        {"command":"setSlotColorKey","animation":1,"slot":8,"key":{"time":0.25,"color":[255,128,64,255],"curves":curves}},
+        {"command":"setSlotColorKey","animation":1,"slot":8,"key":{"time":0.75,"color":[0,40,200,0],"curves":["stepped","stepped","stepped","stepped"]}},
+        {"command":"setSlotColorKey","animation":1,"slot":8,"key":{"time":1.25,"color":[255,255,255,255],"curves":["linear","linear","linear","linear"]}}
+    ]})).await);
+    let authored = doc(&client).await;
+    assert_eq!(authored["document"]["slots"], baseline["document"]["slots"]);
+    let identities = json!([
+        {"type":"slotAttachment","slot":8,"time":0.25},{"type":"slotColor","slot":8,"time":0.25},
+        {"type":"slotAttachment","slot":8,"time":0.75},{"type":"slotColor","slot":8,"time":0.75}
+    ]);
+    let copied = success(
+        call(
+            &client,
+            "copy_animation_keys",
+            json!({"expected_revision":2,"animation":1,"keys":identities}),
+        )
+        .await,
+    );
+    assert_eq!(copied["revision"], 2);
+    assert_eq!(doc(&client).await, authored);
+    let clipboard = &copied["clipboard"];
+    assert_eq!(clipboard["type"], "slot");
+    assert_eq!(
+        clipboard["attachment_keys"],
+        json!([{"time":0.0,"attachment":"fist"},{"time":0.5,"attachment":null}])
+    );
+    assert_eq!(clipboard["color_keys"][0]["time"], 0.0);
+    assert_eq!(clipboard["color_keys"][0]["curves"], curves);
+    assert_eq!(clipboard["color_keys"][1]["color"], json!([0, 40, 200, 0]));
+    success(call(&client,"apply_commands",json!({"expected_revision":2,"commands":[
+        {"command":"setSlotColorCurves","animation":1,"slot":8,"time":0.25,"curves":["linear","linear","linear","linear"]},
+        {"command":"moveAnimationKeys","animation":1,"keys":[{"type":"slotAttachment","slot":8,"time":1.25},{"type":"slotColor","slot":8,"time":1.25}],"delta":0.25,"copy":false},
+        {"command":"pasteAnimationKeys","animation":0,"target":{"type":"slot","slot":8},"time":2.75,"clipboard":clipboard}
+    ]})).await);
+    let edited = doc(&client).await;
+    let attachment = &edited["document"]["animations"][1]["attachment_tracks"][0]["keys"];
+    let color = &edited["document"]["animations"][1]["color_tracks"][0]["keys"];
+    assert_eq!(attachment[2]["time"], 1.5);
+    assert_eq!(color[2]["time"], 1.5);
+    assert_eq!(color[0]["color"], json!([255, 128, 64, 255]));
+    assert_eq!(
+        color[0]["curves"],
+        json!(["linear", "linear", "linear", "linear"])
+    );
+    let pasted = &edited["document"]["animations"][0]["color_tracks"];
+    assert!(pasted.as_array().unwrap().iter().any(|t| t["slot"] == 8
+        && t["keys"][0]["time"] == 2.75
+        && t["keys"][0]["curves"] == curves));
+    for command in [
+        json!({"command":"setSlotColorCurves","animation":1,"slot":8,"time":0.25,"curves":["stepped","linear","linear","linear"]}),
+        json!({"command":"setSlotColorCurves","animation":1,"slot":8,"time":9.0,"curves":["linear","linear","linear","linear"]}),
+        json!({"command":"setSlotAttachmentKey","animation":1,"slot":8,"key":{"time":0.0,"attachment":" "}}),
+        json!({"command":"setSlotColorKey","animation":1,"slot":999,"key":{"time":0.25,"color":[255,255,255,255],"curves":curves}}),
+    ] {
+        error(call(&client,"apply_commands",json!({"expected_revision":3,"commands":[{"command":"renameBone","bone":0,"name":"must-rollback"},command]})).await);
+        assert_eq!(doc(&client).await, edited);
+    }
+    error(
+        call(
+            &client,
+            "copy_animation_keys",
+            json!({"expected_revision":2,"animation":1,"keys":identities}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await, edited);
+    success(
+        call(
+            &client,
+            "history",
+            json!({"expected_revision":3,"action":"undo"}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await["document"], authored["document"]);
+    success(
+        call(
+            &client,
+            "history",
+            json!({"expected_revision":4,"action":"redo"}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await["document"], edited["document"]);
+    success(call(&client,"apply_commands",json!({"expected_revision":5,"commands":[
+        {"command":"deleteAnimationKeys","animation":1,"keys":[{"type":"slotAttachment","slot":8,"time":0.25}]}
+    ]})).await);
+    let deleted = doc(&client).await;
+    assert_eq!(
+        deleted["document"]["animations"][1]["color_tracks"],
+        edited["document"]["animations"][1]["color_tracks"]
+    );
+    assert_eq!(
+        deleted["document"]["animations"][1]["attachment_tracks"][0]["keys"]
+            .as_array()
+            .unwrap()
+            .len(),
+        2
+    );
+    success(
+        call(
+            &client,
+            "history",
+            json!({"expected_revision":6,"action":"undo"}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await["document"], edited["document"]);
+    success(
+        call(
+            &client,
+            "save_project",
+            json!({"expected_revision":7,"directory":"slot-edited"}),
+        )
+        .await,
+    );
+    success(
+        call(
+            &client,
+            "open_project",
+            json!({"expected_revision":8,"path":"slot-edited/project.peachy"}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await["document"], edited["document"]);
+    for time in [0.0, 0.25, 0.5, 0.75, 1.5, 0.125] {
+        let pose = success(
+            call(
+                &client,
+                "evaluate_pose",
+                json!({"animation":"idle","time":time,"skin":"peach"}),
+            )
+            .await,
+        );
+        assert!(!pose["attachments"].as_array().unwrap().is_empty());
+        assert_eq!(pose["slotColors"].as_array().unwrap().len(), 14);
+        if time < 0.25 {
+            assert_eq!(pose["slotAttachments"][8], "hand.L");
+            assert_eq!(pose["slotColors"][8], json!([1.0, 1.0, 1.0, 1.0]));
+        } else if time == 0.5 {
+            assert_eq!(pose["slotAttachments"][8], "fist");
+            assert!((pose["slotColors"][8][3].as_f64().unwrap() * 255.0 - 127.5).abs() < 0.0001);
+        } else if time == 0.75 {
+            assert!(pose["slotAttachments"][8].is_null());
+            assert_eq!(pose["slotColors"][8][3], 0.0);
+            assert!(
+                pose["attachments"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .all(|draw| draw["slot"] != 8)
+            );
+        } else if time == 1.5 {
+            assert_eq!(pose["slotAttachments"][8], "hand.L");
+            assert_eq!(pose["slotColors"][8], json!([1.0, 1.0, 1.0, 1.0]));
+        }
+    }
+    error(
+        call(
+            &client,
+            "evaluate_pose",
+            json!({"animation":"idle","time":-0.1,"skin":"peach"}),
+        )
+        .await,
+    );
+    let sampled = success(
+        call(
+            &client,
+            "evaluate_pose",
+            json!({"animation":"idle","time":0.5,"skin":"peach"}),
+        )
+        .await,
+    );
+    success(call(&client,"apply_commands",json!({"expected_revision":9,"commands":[
+        {"command":"insertSlotColorKey","animation":1,"slot":8,"time":0.5,"color":sampled["slotColors"][8]}
+    ]})).await);
+    let split = doc(&client).await;
+    let split_keys = &split["document"]["animations"][1]["color_tracks"][0]["keys"];
+    assert_eq!(split_keys.as_array().unwrap().len(), 4);
+    assert_eq!(split_keys[1]["time"], 0.5);
+    assert_eq!(split_keys[0]["color"], color[0]["color"]);
+    assert_eq!(split_keys[2]["color"], color[1]["color"]);
+    assert_eq!(
+        split["document"]["animations"][1]["attachment_tracks"],
+        edited["document"]["animations"][1]["attachment_tracks"]
+    );
+    let after = success(
+        call(
+            &client,
+            "evaluate_pose",
+            json!({"animation":"idle","time":0.5,"skin":"peach"}),
+        )
+        .await,
+    );
+    for (before, after) in sampled["slotColors"][8]
+        .as_array()
+        .unwrap()
+        .iter()
+        .zip(after["slotColors"][8].as_array().unwrap())
+    {
+        assert!((before.as_f64().unwrap() - after.as_f64().unwrap()).abs() <= 0.5 / 255.0 + 1e-6);
+    }
+    success(
+        call(
+            &client,
+            "history",
+            json!({"expected_revision":10,"action":"undo"}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await["document"], edited["document"]);
+    success(
+        call(
+            &client,
+            "export_project",
+            json!({"expected_revision":11,"kind":"json","path":"slot-edited.json"}),
+        )
+        .await,
+    );
+    let exported: Value =
+        serde_json::from_slice(&fs::read(root.0.join("slot-edited.json")).unwrap()).unwrap();
+    assert!(exported["animations"]["idle"]["slots"]["hand.L"]["attachment"].is_array());
+    assert!(exported["animations"]["idle"]["slots"]["hand.L"]["rgba"].is_array());
+    assert_eq!(fs::read(source).unwrap(), original);
+    client.cancel().await.unwrap();
+}

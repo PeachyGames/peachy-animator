@@ -160,6 +160,14 @@ impl KeyDrag {
                     attachment: attachment.clone(),
                     time: time + offset,
                 },
+                AnimationKey::SlotAttachment { slot, time } => AnimationKey::SlotAttachment {
+                    slot: *slot,
+                    time: time + offset,
+                },
+                AnimationKey::SlotColor { slot, time } => AnimationKey::SlotColor {
+                    slot: *slot,
+                    time: time + offset,
+                },
             })
             .collect()
     }

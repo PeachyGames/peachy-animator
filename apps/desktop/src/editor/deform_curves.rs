@@ -402,14 +402,23 @@ impl Editor {
                             enabled,
                             egui::TextEdit::singleline(&mut draft.text[index])
                                 .id_salt(("deform-curve-number", index))
+                                .event_filter(egui::EventFilter {
+                                    horizontal_arrows: true,
+                                    vertical_arrows: true,
+                                    escape: true,
+                                    ..Default::default()
+                                })
                                 .desired_width(90.),
                         );
                         targets.push((format!("graphDeformValue:{index}"), response.rect));
                         draft.changed |= response.changed();
                         if response.has_focus()
-                            && ui.input(|input| input.key_pressed(egui::Key::Escape))
+                            && ui.input_mut(|input| {
+                                input.consume_key(egui::Modifiers::NONE, egui::Key::Escape)
+                            })
                         {
                             cancel = true;
+                            response.surrender_focus();
                         }
                         apply |= draft.changed && response.lost_focus();
                         if !horizontal {

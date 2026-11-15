@@ -1,7 +1,7 @@
 use crate::{
     AuthoredPose, Command, EditTarget, EvaluatedPose, IkPoseEdit, MeshBindPose, PoseEdits,
-    apply_command, checked_pose_from_authored, ik_keyframe_at, sample_authored_pose,
-    transform_group,
+    SlotPose, SlotPoseEdit, SlotProperty, apply_command, checked_pose_from_authored,
+    ik_keyframe_at, sample_authored_pose, transform_group,
 };
 use peachy_document::{
     AttachmentRef, Constraint, Document, IkCurve, IkKeyframe, Property, Transform,
@@ -12,6 +12,14 @@ use std::collections::{BTreeMap, BTreeSet};
 struct WorkingState {
     document: Document,
     pose: PoseEdits,
+}
+
+#[derive(Default)]
+struct KeyTargets {
+    bones: BTreeMap<usize, Vec<Property>>,
+    iks: BTreeSet<usize>,
+    deforms: Vec<AttachmentRef>,
+    slots: BTreeMap<usize, Vec<SlotProperty>>,
 }
 
 impl WorkingState {
@@ -67,9 +75,10 @@ impl WorkingState {
                     candidate.key_targets(
                         animation,
                         time,
-                        BTreeMap::new(),
-                        BTreeSet::from([constraint]),
-                        vec![],
+                        KeyTargets {
+                            iks: BTreeSet::from([constraint]),
+                            ..Default::default()
+                        },
                     )
                 } else {
                     Ok(candidate)
@@ -83,10 +92,14 @@ impl WorkingState {
         &self,
         animation: usize,
         time: f32,
-        bones: BTreeMap<usize, Vec<Property>>,
-        iks: BTreeSet<usize>,
-        deforms: Vec<AttachmentRef>,
+        targets: KeyTargets,
     ) -> Result<Self, String> {
+        let KeyTargets {
+            bones,
+            iks,
+            deforms,
+            slots,
+        } = targets;
         let target = EditTarget::Animate { animation, time };
         let authored = self.authored_pose(target)?;
         let mut commands = vec![];
@@ -140,6 +153,16 @@ impl WorkingState {
                 crate::deform_authoring::offsets(&self.document, &authored, attachment)?,
             )?);
         }
+        for (&slot, properties) in &slots {
+            commands.extend(crate::slot_authoring::key_commands(
+                &self.document,
+                &authored,
+                animation,
+                time,
+                slot,
+                properties,
+            )?);
+        }
         let mut candidate = Self {
             document: apply_command(&self.document, Command::Batch { commands })?,
             pose: self.pose.clone(),
@@ -152,6 +175,16 @@ impl WorkingState {
         }
         for attachment in &deforms {
             candidate.pose.remove_deform(animation, attachment);
+        }
+        for (&slot, properties) in &slots {
+            candidate.pose.remove_slot(animation, slot, properties);
+        }
+        if !slots.is_empty() {
+            crate::slot_authoring::check_key_continuity(
+                &authored,
+                &candidate.authored_pose(target)?,
+                &slots,
+            )?;
         }
         if !iks.is_empty() {
             let before = checked_pose_from_authored(&self.document, &authored)?;
@@ -212,6 +245,59 @@ impl WorkingState {
             }
         }
     }
+    fn edit_slot_pose(
+        &self,
+        slot: usize,
+        target: EditTarget,
+        edits: &[SlotPoseEdit],
+        auto_key: bool,
+    ) -> Result<Self, String> {
+        crate::slot_authoring::validate_edits(&self.document, slot, edits)?;
+        match target {
+            EditTarget::Setup => {
+                let commands = edits
+                    .iter()
+                    .map(|edit| match edit {
+                        SlotPoseEdit::Attachment { attachment } => Ok(Command::SetSlotAttachment {
+                            slot,
+                            attachment: attachment.clone(),
+                        }),
+                        SlotPoseEdit::Color { color } => Ok(Command::SetSlotColor {
+                            slot,
+                            color: crate::slot_color_bytes(*color)?,
+                        }),
+                    })
+                    .collect::<Result<Vec<_>, String>>()?;
+                Ok(Self {
+                    document: apply_command(&self.document, Command::Batch { commands })?,
+                    pose: self.pose.clone(),
+                })
+            }
+            EditTarget::Animate { animation, time } => {
+                let candidate = Self {
+                    document: self.document.clone(),
+                    pose: self
+                        .pose
+                        .edit_slot(&self.document, animation, time, slot, edits)?,
+                };
+                if auto_key && !edits.is_empty() {
+                    candidate.key_targets(
+                        animation,
+                        time,
+                        KeyTargets {
+                            slots: BTreeMap::from([(
+                                slot,
+                                edits.iter().map(SlotPoseEdit::property).collect(),
+                            )]),
+                            ..Default::default()
+                        },
+                    )
+                } else {
+                    Ok(candidate)
+                }
+            }
+        }
+    }
     fn edit_deform_pose(
         &self,
         attachment: AttachmentRef,
@@ -239,9 +325,10 @@ impl WorkingState {
             let candidate = posed.key_targets(
                 animation,
                 time,
-                BTreeMap::new(),
-                BTreeSet::new(),
-                vec![canonical],
+                KeyTargets {
+                    deforms: vec![canonical],
+                    ..Default::default()
+                },
             )?;
             crate::deform_authoring::check_key_continuity(
                 &posed.document,
@@ -344,6 +431,53 @@ impl Session {
             .authored_pose(target)?
             .with_skin(self.document(), &self.skin))
     }
+    /// Full sampled/pending slot state, before attachment tint or display quantization.
+    pub fn slot_pose(&self, slot: usize, target: EditTarget) -> Result<SlotPose, String> {
+        SlotPose::from_authored(&self.authored_pose(target)?, slot)
+    }
+    pub fn edit_slot_pose(
+        &mut self,
+        slot: usize,
+        target: EditTarget,
+        edits: &[SlotPoseEdit],
+        auto_key: bool,
+    ) -> Result<(), String> {
+        let candidate = self.state.edit_slot_pose(slot, target, edits, auto_key)?;
+        self.replace(candidate);
+        Ok(())
+    }
+    /// Recompute a picker/hex preview from the entire fixed transaction baseline.
+    pub fn preview_edit_slot_pose(
+        &mut self,
+        slot: usize,
+        target: EditTarget,
+        edits: &[SlotPoseEdit],
+        auto_key: bool,
+    ) -> Result<(), String> {
+        let base = self.transaction.as_ref().ok_or("No active transaction")?;
+        let candidate = base.edit_slot_pose(slot, target, edits, auto_key)?;
+        self.state = candidate;
+        Ok(())
+    }
+    pub fn key_slot_pose(
+        &mut self,
+        animation: usize,
+        time: f32,
+        slot: usize,
+        properties: &[SlotProperty],
+    ) -> Result<(), String> {
+        self.document().slots.get(slot).ok_or("Unknown slot")?;
+        let candidate = self.state.key_targets(
+            animation,
+            time,
+            KeyTargets {
+                slots: BTreeMap::from([(slot, properties.to_vec())]),
+                ..Default::default()
+            },
+        )?;
+        self.replace(candidate);
+        Ok(())
+    }
     /// Dense sampled offsets, including pending mesh edits and linked-mesh following.
     pub fn deform_offsets(
         &self,
@@ -433,9 +567,10 @@ impl Session {
         let candidate = self.state.key_targets(
             animation,
             time,
-            BTreeMap::new(),
-            BTreeSet::new(),
-            vec![canonical.clone()],
+            KeyTargets {
+                deforms: vec![canonical.clone()],
+                ..Default::default()
+            },
         )?;
         self.check_deform_key_candidate(
             &candidate,
@@ -496,9 +631,10 @@ impl Session {
         let candidate = self.state.key_targets(
             animation,
             time,
-            BTreeMap::new(),
-            BTreeSet::from([constraint]),
-            vec![],
+            KeyTargets {
+                iks: BTreeSet::from([constraint]),
+                ..Default::default()
+            },
         )?;
         self.replace(candidate);
         Ok(())
@@ -608,14 +744,15 @@ impl Session {
         let candidate = self.state.key_targets(
             animation,
             time,
-            BTreeMap::from([(bone, properties.to_vec())]),
-            BTreeSet::new(),
-            vec![],
+            KeyTargets {
+                bones: BTreeMap::from([(bone, properties.to_vec())]),
+                ..Default::default()
+            },
         )?;
         self.replace(candidate);
         Ok(())
     }
-    /// K keys every edited bone, IK constraint and mesh deform in one atomic transition.
+    /// K keys every edited bone, IK constraint, mesh deform and slot property atomically.
     /// A Tree bone's orange key button supplies an explicit bone instead.
     pub fn key_edited(
         &mut self,
@@ -634,9 +771,20 @@ impl Session {
         } else {
             vec![]
         };
-        let candidate = self
-            .state
-            .key_targets(animation, time, targets, iks, deforms.clone())?;
+        let candidate = self.state.key_targets(
+            animation,
+            time,
+            KeyTargets {
+                bones: targets,
+                iks,
+                deforms: deforms.clone(),
+                slots: if bone.is_none() {
+                    self.state.pose.slot_targets(animation)
+                } else {
+                    BTreeMap::new()
+                },
+            },
+        )?;
         self.check_deform_key_candidate(
             &candidate,
             EditTarget::Animate { animation, time },

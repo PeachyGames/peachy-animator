@@ -270,6 +270,8 @@ impl Editor {
             "Slot · Bone: {}",
             self.session.document().bones[s.bone].name
         ));
+        self.slot_color_properties(ui, slot);
+        let s = &self.session.document().slots[slot];
         let choices: BTreeSet<_> = self
             .session
             .document()
@@ -278,9 +280,16 @@ impl Editor {
             .filter_map(|skin| skin.get(&s.name))
             .flat_map(|entries| entries.keys().cloned())
             .collect();
-        let mut selected = s.attachment.clone();
+        let mut selected = match self.current_slot_pose(slot) {
+            Ok(pose) => pose.attachment,
+            Err(error) => {
+                ui.colored_label(ACCENT, error);
+                return;
+            }
+        };
         let before = selected.clone();
-        ui.add_enabled_ui(self.setup_mode, |ui| {
+        let enabled = self.slot_authoring_input_available(ui.ctx());
+        ui.add_enabled_ui(enabled, |ui| {
             let combo = egui::ComboBox::from_id_salt("slot-attachment")
                 .selected_text(selected.as_deref().unwrap_or("None"))
                 .show_ui(ui, |ui| {
@@ -292,29 +301,22 @@ impl Editor {
             self.record_target("slotAttachment", combo.response.rect);
         });
         if selected != before {
-            self.dispatch(Command::SetSlotAttachment {
-                slot,
-                attachment: selected,
-            });
+            self.edit_slot_attachment(slot, selected);
         }
-        if let Some((key, _)) = self
-            .session
-            .document()
-            .resolved_attachment(&self.skin, slot)
-        {
-            let key = key.clone();
+        ui.horizontal(|ui| {
+            self.slot_property_key_controls(
+                ui,
+                slot,
+                peachy_engine::SlotProperty::Attachment,
+                "slotAttachmentProperty",
+            )
+        });
+        if let Some(key) = self.shown_slot_attachment(slot) {
             let button = ui.button("Select attachment");
             self.record_target("selectSlotAttachment", button.rect);
             if button.clicked() {
                 self.select(TreeItem::Attachment(key));
             }
-        }
-        if !self.setup_mode {
-            ui.label(
-                RichText::new("Setup attachment only; attachment timelines are not implemented.")
-                    .small()
-                    .color(MUTED),
-            );
         }
     }
 

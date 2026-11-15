@@ -65,6 +65,13 @@ impl AuthoredPose {
     pub fn ik_poses(&self) -> &[IkPose] {
         &self.ik
     }
+    pub fn slot_attachments(&self) -> &[Option<String>] {
+        &self.slot_attachments
+    }
+    /// Sampled unmultiplied float RGBA, without display clamping/quantization.
+    pub fn slot_colors(&self) -> &[[f32; 4]] {
+        &self.slot_colors
+    }
 }
 
 impl EvaluatedPose {

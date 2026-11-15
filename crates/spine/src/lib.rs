@@ -881,6 +881,17 @@ pub(crate) fn flat_curve(
     if (handles[1] - value).abs() <= 1e-5 && (handles[3] - value).abs() <= 1e-5 {
         return Ok(Curve::Linear);
     }
+    retained_flat_curve(time, next_time, value, handles)
+}
+
+/// Keep an explicitly authored flat Bezier's time handles and even tiny value
+/// offsets. Slot Graph authoring/key insertion needs this source information.
+pub(crate) fn retained_flat_curve(
+    time: f32,
+    next_time: f32,
+    value: f32,
+    handles: [f32; 4],
+) -> Result<Curve, String> {
     let offset = |handle: f32| {
         let offset = handle - value;
         if offset.is_finite() {

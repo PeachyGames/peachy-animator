@@ -711,3 +711,21 @@ painting uses egui's MIT-licensed cubic Bezier primitive. No proprietary editor
 or runtime implementation, icons or UI assets were inspected/copied. Committed
 screenshots show original Peach Bot artwork in our application only. Installed
 reference captures and native-input attempt logs remain local.
+
+## Slot authoring and native insertion calibration — November 14, 2026
+
+Independent slot controls and RGBA Graph follow permitted installed Spine 4.3.26
+observations and the public [Keys](https://esotericsoftware.com/spine-keys),
+[Graph](https://esotericsoftware.com/spine-graph#New-keys),
+[Slots](https://esotericsoftware.com/spine-slots) and
+[4.3 release](https://esotericsoftware.com/blog/Spine-4.3-released) references.
+Original 16-slot JSON fixtures and native Key Shown exports supply 52 initial plus
+52 held-out numeric split observations. Ordinary cubic finite differences and
+de Casteljau subdivision were derived independently and calibrated against those
+inputs/outputs. Only original numeric cases and observed indices enter engine
+regressions; proprietary implementation, icons and reference screenshots do not.
+
+Runtime checks use the separately installed official runtime as an external
+black box through its public API. No official code/dependency is added here.
+Native/reference screenshots remain private; committed captures contain Peachy
+and original Peach Bot artwork only. See [the scope](slices/slot-authoring.md).

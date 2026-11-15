@@ -4,6 +4,34 @@ Written November 10, 2026, at the end of the import-parity push. Read this
 first, then `AGENTS.md`. The workspace rules in `../AGENTS.md` and `../CLAUDE.md`
 still apply.
 
+## November 14 slot authoring continuation
+
+Slot swaps/hiding and RGBA fades now have native/MCP authoring, shared float
+pending poses, Auto Key/K, exact typed keys/clipboard and four-channel Graph
+editing. Properties matches the observed Set slot color dialog and adjacent key.
+Native v22 stays; MCP has 45 strict commands/11 tools and raw hidden-slot arrays.
+New color keys share the calibrated split command with MCP; 104 independently
+observed native split parameters match, including a nonzero-origin holdout.
+
+Actual native modal/Graph/keyboard/history/pending Save/reopen/playback checks
+pass; both authored three-clip exports match the external runtime. Focused checks,
+formatting, Clippy, build and architecture pass. See
+[review gallery](evidence/slot-authoring.html), [contract](slices/slot-authoring.md)
+and [scalar evidence](evidence/slot-authoring.json). Private reference comparisons,
+authored projects and MCP logs remain in
+`.local/training-spine-20261114/slot-authoring/` until review. Temporary helpers,
+invalid probes, redundant captures and verified duplicate Save backups retire at
+closure. The shared Cargo target remains needed for continuing parity work.
+
+Next concrete gap found by this work: default-skin attachment name overrides can
+be renamed by Spine's JSON importer, clearing attachment keys. Design a compatible
+export/import naming contract without discarding valid native/runtime metadata.
+Then continue multi-vertex/Auto/brush tools, all-keyed row hierarchy/mixed Graph,
+Offset, broader Color and current blog features. Byte sampling ties/extreme-time
+fallback remain explicit limits. Hosted workflow registration still returns zero;
+keep the feature PR draft and main gated on required hosted CI. Do not restart
+the canceled female-pose full check.
+
 ## November 14 Deform timeline continuation
 
 Deform Dopesheet rows, exact retime/copy/delete and typed clipboards now share

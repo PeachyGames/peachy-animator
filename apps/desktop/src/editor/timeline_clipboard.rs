@@ -1,8 +1,8 @@
 //! Clipboard presentation coordinates the shared key commands and editor-session state.
-use super::dopesheet_selection::{KeyId, SelectionScope};
+use super::dopesheet_selection::SelectionScope;
 use super::icons::Icon;
 use super::*;
-use peachy_engine::{AnimationKeyClipboard, KeyOwner, copy_animation_keys};
+use peachy_engine::{AnimationKeyClipboard, copy_animation_keys, pasted_animation_keys};
 
 fn clipboard_text(clipboard: &AnimationKeyClipboard) -> String {
     serde_json::json!({
@@ -22,38 +22,10 @@ pub(super) fn clipboard_len(clipboard: &AnimationKeyClipboard) -> usize {
         AnimationKeyClipboard::Bone { keys } => keys.len(),
         AnimationKeyClipboard::Ik { keys } => keys.len(),
         AnimationKeyClipboard::Deform { keys, .. } => keys.len(),
-    }
-}
-
-fn pasted_keys(
-    clipboard: &AnimationKeyClipboard,
-    target: KeyOwner,
-    time: f32,
-) -> Result<Vec<KeyId>, String> {
-    match (clipboard, target) {
-        (AnimationKeyClipboard::Bone { keys }, KeyOwner::Bone { bone }) => Ok(keys
-            .iter()
-            .map(|key| KeyId::Bone {
-                bone,
-                property: key.property,
-                time: key.key.time + time,
-            })
-            .collect()),
-        (AnimationKeyClipboard::Ik { keys }, KeyOwner::Ik { constraint }) => Ok(keys
-            .iter()
-            .map(|key| KeyId::Ik {
-                constraint,
-                time: key.time + time,
-            })
-            .collect()),
-        (AnimationKeyClipboard::Deform { keys, .. }, KeyOwner::Deform { attachment }) => Ok(keys
-            .iter().map(|key| KeyId::Deform {
-                attachment: attachment.clone(), time: key.time + time,
-            }).collect()),
-        _ => Err(
-            "Copied keys and target must have the same kind: bone transforms, IK constraint or mesh deform."
-                .into(),
-        ),
+        AnimationKeyClipboard::Slot {
+            attachment_keys,
+            color_keys,
+        } => attachment_keys.len() + color_keys.len(),
     }
 }
 
@@ -261,7 +233,9 @@ impl Editor {
     }
 
     pub(super) fn timeline_clipboard_shortcuts(&mut self, ctx: &egui::Context) {
-        let focused = (self.dopesheet_has_focus(ctx) || self.deform_graph_has_focus(ctx))
+        let focused = (self.dopesheet_has_focus(ctx)
+            || self.deform_graph_has_focus(ctx)
+            || self.slot_graph_has_focus(ctx))
             && ctx.input(|input| input.focused);
         let actions = ctx.input_mut(|input| {
             take_timeline_actions(&mut input.events, focused, &mut self.timeline_input)
@@ -307,7 +281,13 @@ impl Editor {
             return false;
         };
         let time = self.time;
-        let selected = match pasted_keys(&clipboard, target.clone(), time) {
+        let selected = match pasted_animation_keys(
+            self.session.document(),
+            self.animation,
+            target.clone(),
+            time,
+            &clipboard,
+        ) {
             Ok(keys) => keys,
             Err(error) => {
                 self.status = error;
@@ -323,9 +303,9 @@ impl Editor {
         }) {
             return false;
         }
-        let count = selected.len();
         self.key_selection.replace(selected);
         self.reconcile_dopesheet_selection();
+        let count = self.key_selection.len();
         self.clipboard_status("Pasted", count);
         true
     }
@@ -383,7 +363,10 @@ impl Editor {
 
 #[cfg(test)]
 mod tests {
-    use super::super::test_support::{editor_context, editor_fixture, select_rotation};
+    use super::super::dopesheet_selection::KeyId;
+    use super::super::test_support::{
+        editor_context, editor_fixture, select_rotation, workspace_frame,
+    };
     use super::*;
 
     #[test]
@@ -425,6 +408,115 @@ mod tests {
         editor.undo();
         assert_eq!(editor.session.document(), &before);
         assert!(editor.key_selection.is_empty());
+    }
+
+    fn missing_attachment_paste_fixture(with_color: bool) -> (Editor, egui::Context, String) {
+        let mut editor = editor_fixture();
+        let mut document = editor.session.document().clone();
+        document.animations[0].attachment_tracks = vec![AttachmentTrack {
+            slot: 0,
+            keys: vec![AttachmentKey {
+                time: 0.75,
+                attachment: document.slots[0].attachment.clone(),
+            }],
+        }];
+        document.animations[0]
+            .color_tracks
+            .retain(|track| track.slot != 0);
+        editor.session = Session::new(document).unwrap();
+        editor.select(TreeItem::Slot(0));
+        editor.time = 0.75;
+        editor.reconcile_selection();
+        let clipboard = AnimationKeyClipboard::Slot {
+            attachment_keys: vec![AttachmentKey {
+                time: 0.,
+                attachment: Some("missing-other-slot-art".into()),
+            }],
+            color_keys: if with_color {
+                vec![ColorKey {
+                    time: 0.,
+                    color: [23, 61, 121, 201],
+                    curves: [Curve::Linear; 4],
+                }]
+            } else {
+                vec![]
+            },
+        };
+        let text = clipboard_text(&clipboard);
+        editor.timeline_clipboard = Some(clipboard);
+        let ctx = editor_context();
+        for _ in 0..3 {
+            workspace_frame(&mut editor, &ctx, vec![]);
+        }
+        ctx.memory_mut(|memory| memory.request_focus(Editor::dopesheet_id()));
+        (editor, ctx, text)
+    }
+
+    #[test]
+    fn native_slot_paste_skips_unknown_attachment_selection_and_delete_keeps_existing_key() {
+        let (mut editor, ctx, text) = missing_attachment_paste_fixture(true);
+        let original = editor.session.document().clone();
+        workspace_frame(&mut editor, &ctx, vec![egui::Event::Paste(text)]);
+        assert_eq!(
+            editor.key_selection.keys(),
+            &[KeyId::SlotColor {
+                slot: 0,
+                time: 0.75
+            }]
+        );
+        assert!(editor.status.starts_with("Pasted 1 key"));
+        assert_eq!(
+            editor.session.document().animations[0].attachment_tracks,
+            original.animations[0].attachment_tracks
+        );
+        assert_eq!(
+            editor.session.document().animations[0].color_tracks[0].keys[0].color,
+            [23, 61, 121, 201]
+        );
+        workspace_frame(&mut editor, &ctx, vec![delete_event(egui::Key::Delete)]);
+        assert_eq!(editor.session.document(), &original);
+        assert!(editor.key_selection.is_empty());
+        editor.undo();
+        assert_eq!(
+            editor.session.document().animations[0].attachment_tracks,
+            original.animations[0].attachment_tracks
+        );
+        assert_eq!(
+            editor.session.document().animations[0].color_tracks[0].keys[0].time,
+            0.75
+        );
+    }
+
+    #[test]
+    fn native_all_skipped_slot_paste_preserves_document_history_and_clears_untouched_selection() {
+        let (mut editor, ctx, text) = missing_attachment_paste_fixture(false);
+        editor
+            .session
+            .dispatch(Command::RenameAnimation {
+                animation: 0,
+                name: "redo sentinel".into(),
+            })
+            .unwrap();
+        editor.session.undo();
+        assert!(!editor.session.can_undo());
+        assert!(editor.session.can_redo());
+        editor.key_selection.replace(vec![KeyId::SlotAttachment {
+            slot: 0,
+            time: 0.75,
+        }]);
+        let original = editor.session.document().clone();
+        let pending = editor.session.pose_edits().clone();
+        workspace_frame(&mut editor, &ctx, vec![egui::Event::Paste(text)]);
+        assert!(editor.key_selection.is_empty());
+        assert!(editor.status.starts_with("Pasted 0 keys"));
+        assert_eq!(editor.session.document(), &original);
+        assert_eq!(editor.session.pose_edits(), &pending);
+        assert!(!editor.session.can_undo());
+        assert!(editor.session.can_redo());
+        workspace_frame(&mut editor, &ctx, vec![delete_event(egui::Key::Delete)]);
+        assert_eq!(editor.session.document(), &original);
+        assert!(!editor.session.can_undo());
+        assert!(editor.session.can_redo());
     }
 
     fn clipboard() -> AnimationKeyClipboard {

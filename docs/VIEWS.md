@@ -1,5 +1,15 @@
 # Views audit and implemented scope
 
+Slot continuation (November 14): Slot Color now edits sampled/pending Animate
+poses as well as Setup. Properties opens the observed Color dialog with explicit
+OK/Cancel, HSB/RGBA/hex fields and adjacent key control. The RGBA Graph overlays
+four percentage-value curves with per-channel presets, tangent/numeric edits and
+shared typed clipboard/history. Actual native input, cancellation, playback and
+Save/reopen pass. This supersedes earlier Setup-only/Animate-read-only statements
+for these controls; full current Color targets and separate RGB/alpha remain open.
+See [the verified slot contract](slices/slot-authoring.md) and
+[review gallery](evidence/slot-authoring.html).
+
 Installed-reference update (November 14): the actual Spine 4.3.26 Views menu
 contains 17 entries, including Metrics. Peachy's current 15 views lack Curves and
 Problems, and `Slot Color` still needs the broader `Color` behavior and name.

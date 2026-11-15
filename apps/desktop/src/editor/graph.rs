@@ -62,6 +62,7 @@ struct GraphEdit {
 
 pub(super) struct GraphView {
     pub(super) deform: super::deform_curves::DeformCurveView,
+    pub(super) slot: super::slot_curves::SlotCurveView,
     property: Property,
     context: Option<GraphContext>,
     selected: Option<f32>,
@@ -79,6 +80,7 @@ impl Default for GraphView {
     fn default() -> Self {
         Self {
             deform: Default::default(),
+            slot: Default::default(),
             property: Property::Rotation,
             context: None,
             selected: None,
@@ -276,11 +278,14 @@ impl Editor {
     }
 
     pub(super) fn graph_edit_active(&self) -> bool {
-        self.graph.edit.is_some() || self.deform_curve_edit_active()
+        self.graph.edit.is_some()
+            || self.deform_curve_edit_active()
+            || self.slot_curve_edit_active()
     }
 
     pub(super) fn cancel_graph_edit(&mut self) {
         self.cancel_deform_curve_edit();
+        self.cancel_slot_curve_edit();
         if self.graph.edit.take().is_some() {
             self.session.cancel_transaction();
             self.graph.blocked = true;
@@ -289,6 +294,7 @@ impl Editor {
 
     pub(super) fn reconcile_graph_input(&mut self, ctx: &egui::Context) {
         self.reconcile_deform_curve_input(ctx);
+        self.reconcile_slot_curve_input(ctx);
         if !ctx.input(|input| input.pointer.primary_down()) {
             self.graph.blocked = false;
         }
@@ -322,6 +328,7 @@ impl Editor {
     pub(super) fn settle_graph_input(&mut self, ctx: &egui::Context) {
         self.reconcile_graph_input(ctx);
         self.settle_deform_curve_input(ctx);
+        self.settle_slot_curve_input(ctx);
         if !ctx.input(|input| input.pointer.primary_down())
             && self
                 .graph
@@ -359,7 +366,7 @@ impl Editor {
         if ctx.input_mut(|input| input.consume_key(egui::Modifiers::NONE, egui::Key::F9)) {
             self.toggle_views();
         }
-        if self.deform_graph_has_focus(ctx) {
+        if self.deform_graph_has_focus(ctx) || self.slot_graph_has_focus(ctx) {
             self.timeline_clipboard_shortcuts(ctx);
         }
         true
@@ -527,6 +534,9 @@ impl Editor {
         self.graph.rendered_keys = 0;
         self.graph.rendered_points = 0;
         if self.deform_graph_panel(ui) {
+            return;
+        }
+        if self.slot_graph_panel(ui) {
             return;
         }
         self.animation_controls(ui);
@@ -829,6 +839,7 @@ impl Editor {
         serde_json::json!({
             "visible":self.graph_visible(), "property":self.graph.property,
             "deform":self.deform_curve_diagnostic(),
+            "slot":self.slot_curve_diagnostic(),
             "context":self.graph.context.map(|context|serde_json::json!({"animation":context.animation,"bone":context.bone,"property":context.property})),
             "selectedTime":self.graph.selected,"blocked":self.graph.blocked,"error":self.graph.error,
             "bounds":self.graph.bounds.map(|bounds|[bounds.time_min,bounds.time_max,bounds.value_min,bounds.value_max]),

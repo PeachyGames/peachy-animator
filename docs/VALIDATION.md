@@ -1,5 +1,48 @@
 # First-slice validation — November 5, 2026
 
+## Slot attachment/RGBA authoring, Graph and MCP — November 14, 2026
+
+Integrated checks pass with two Cargo workers/test threads: engine slot filter
+37; desktop slot 37, Graph 33, clipboard 15 and numeric Escape 2; MCP schema 6
+and actual stdio 4; adapter slot keys 3. Filters overlap and are not additive
+full-suite totals. Formatting, all-target workspace Clippy, workspace build and
+seven-crate architecture checks pass. Review also fixed skipped-paste selection
+of untouched keys and Graph numeric Escape losing its owner selection.
+
+A 16-case original native 4.3.26 Key Shown probe measures 52 split parameters;
+a fresh nonzero-origin holdout measures another 52. The independently derived
+300-step absolute-f32 finite-difference scan matches all 104. Native import-only
+round-trip proves that whole-flat RGBA becoming Stepped is import optimization;
+raw authoring retains its supplied curve types. Slot import now preserves flat
+Bezier time handles and tiny value offsets. Extreme-time/adjacent-f32 fallback
+and pre-existing half-byte sampling differences remain documented.
+
+Actual native mouse/key input verifies Properties Color placement, typed Alpha
+128.9 becoming 128, full modal Cancel rollback, unedited raw RGB preservation,
+pending Save exclusion, attachment swapping, and mixed K as one Undo/Redo.
+RGBA Graph acceptance verifies R tangent dragging, actual 80% handle entry,
+unchanged other curves/key bytes, numeric Escape retaining the exact slot/key,
+held-tangent cancellation without rearming, color-only keyboard clipboard/Delete,
+exact saved-state equality and fresh-process playback/persistence. All ten images
+load with no evaluation errors; all owned native/reference processes are closed.
+
+Actual final 45-command stdio MCP authoring verifies mixed-row copying, retiming,
+curve-preserving insertion, per-channel curves, hidden RGB, raw pose arrays,
+atomic failures, history and Save/reopen/export. All 15 source hashes stay unchanged.
+Both final MCP- and native-authored three-clip projects pass the external 4.3
+runtime across all three skins: 42,120 bone values (max 0.00002654), 49,032 region
+values (max 0.00003052), 24,516 color values and 468 draw-order checks. Geometry uses
+the unchanged 0.001 tolerance; finite samples do not prove full compatibility.
+
+Native clipboard positive controls and target exports establish that missing
+attachment names are skipped. The shared eligibility helper now also predicts
+selection, so subsequent Delete cannot target an untouched colliding key.
+Default-attachment name overrides have a separate editor-import mismatch;
+RGB/alpha separation, dark tint, broader Color targets and mixed-owner Graph
+remain open. Hosted CI still lists zero registered workflows; no hosted pass or
+main integration is claimed. See [gallery](evidence/slot-authoring.html),
+[scalar evidence](evidence/slot-authoring.json) and [contract](slices/slot-authoring.md).
+
 ## Deform timeline, Graph and MCP clipboard — November 14, 2026
 
 The integrated shared-engine, native and actual stdio MCP slice passes focused

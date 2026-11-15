@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Slot swaps and RGBA authoring — Peachy Animator</title>
+<style>
+:root{color-scheme:dark;font:16px/1.5 system-ui;background:#202226;color:#e9eaec}body{max-width:1500px;margin:auto;padding:24px}h1{font-size:1.7rem}h2{font-size:1.2rem}a{color:#a5d7fa}input{font:inherit;padding:10px;width:min(90%,600px);background:#30343b;color:inherit;border:1px solid #7b818e;border-radius:5px}.pair{display:grid;grid-template-columns:1fr 1fr;gap:16px}article{border:1px solid #515865;border-radius:8px;margin:24px 0;padding:16px}figure{margin:0}img{width:100%;height:auto;display:block}figcaption{padding:8px 0;color:#d3d5d9}table{border-collapse:collapse;width:100%}td,th{text-align:left;vertical-align:top;border-bottom:1px solid #515865;padding:8px}@media(max-width:900px){.pair{grid-template-columns:1fr}}
+</style>
+<h1>Slot swaps and RGBA authoring</h1>
+<p>November 14, 2026 · Actual native captures at 1500×960, original Peach Bot artwork only. Select any image for the full-size PNG.</p>
+<p>Installed Spine 4.3.26 establishes the slot key placement, Color dialog, Attach/RGBA rows and four percentage-value curves. Its screenshots remain private. These images show independently implemented Peachy controls.</p>
+<label for="search">Filter evidence</label><br><input id="search" type="search" placeholder="Try native, pending, RGBA, MCP, clipboard…">
+<article data-search="native before after slots attachment color dopesheet keys">
+<h2>Slot authoring · Before and after</h2>
+<p>Inspection: rendered native captures and actual mouse/key input. The after view demonstrates the newly authored frame; poses and frame positions differ.</p>
+<div class="pair">
+<figure><a href="slot-authoring-before.png"><img src="slot-authoring-before.png" alt="Earlier Peachy editor with Setup-only slot controls and no typed slot timeline rows" loading="lazy"></a><figcaption>Before: imported swaps/fades render, but Animate slot controls are read-only.</figcaption></figure>
+<figure><a href="slot-authoring-after.png"><img src="slot-authoring-after.png" alt="Native slot controls with adjacent key buttons and gray Attach and pink RGBA keys" loading="lazy"></a><figcaption>After: contextual key controls and distinct Attach/RGBA rows share typed selection, history and clipboard commands.</figcaption></figure>
+</div></article>
+<article data-search="native color modal rgba hsv alpha pending cancel save k history">
+<h2>Properties · Set slot color</h2>
+<p>Inspection: actual Alpha 128.9 entry yields128. Cancel restores the entire starting document, pending state and history. With Auto Key off, OK creates a pending color; Save excludes it. Global K keys pending color and attachment together in one undo step.</p>
+<figure><a href="slot-authoring-dialog.png"><img src="slot-authoring-dialog.png" alt="Peachy Set slot color dialog with vertical alpha, saturation/value square, hue strip, HSB/RGBA fields and OK/Cancel" loading="lazy"></a><figcaption>Only explicitly edited channels change; opening or inspecting a rounded field preserves raw sampled colors.</figcaption></figure>
+</article>
+<article data-search="native graph rgba curves tangent numeric percent escape playback">
+<h2>RGBA Graph · Channel values</h2>
+<p>Inspection: actual tangent drag, whole-document one-step Undo/Redo, 80% numeric handle entry, numeric Escape, held-gesture cancellation, keyboard clipboard/Delete and fresh-process persistence. Editing R preserves G/B/A curves, all key bytes and exact times.</p>
+<figure><a href="slot-authoring-graph.png"><img src="slot-authoring-graph.png" alt="Four red green blue and purple channel curves on the full-width native RGBA Graph, with a selected red tangent" loading="lazy"></a><figcaption>Frame axis and percentage channel values; these are actual RGBA values rather than Deform pose-transition progress.</figcaption></figure>
+</article>
+<article data-search="verification engine mcp runtime stdio clipboard calibration limits parity">
+<h2>Verification and limits</h2>
+<table><thead><tr><th>Level</th><th>Evidence</th><th>Limit</th></tr></thead><tbody>
+<tr><td>Shared core and shell</td><td>Focused engine, native-event UI, adapter and actual MCP stdio checks; formatting, Clippy, build and architecture pass with two workers.</td><td>Filters overlap; no additive full-suite or hosted-CI pass is claimed.</td></tr>
+<tr><td>Installed editor</td><td>16 original cases establish104 measured split parameters, including a held-out nonzero-origin interval. Known same-slot clipboard paste succeeds; missing-name target paste leaves all exported data unchanged.</td><td>Extreme-time fallback and every skin/name combination are not native-calibrated. Byte sampling can differ at half-byte ties.</td></tr>
+<tr><td>Actual MCP</td><td>45 strict commands / 11 tools; real swaps/fades, mixed typed copying, retime, curve-preserving insertion, atomic history, raw hidden-slot samples and Save/reopen/export. 15 source hashes remain unchanged.</td><td>Independent headless session; no live desktop bridge.</td></tr>
+<tr><td>External runtime</td><td>Both final authored outputs agree across three clips/all three skins: 42,120 bone values, 49,032 region values and 24,516 color values; max region error 0.00003052 at 0.001 geometry tolerance.</td><td>Finite samples, not pixel equivalence or all-feature compatibility.</td></tr>
+<tr><td>Remaining authoring</td><td>Selected-slot RGBA and attachment authoring is implemented.</td><td>Separate RGB/alpha, dark tint, full Color targets, all-owner/mixed Graph, sliders and complete docking/styling remain. A default-attachment name-override interchange gap is recorded separately.</td></tr>
+</tbody></table>
+<p><a href="slot-authoring.json">Scalar evidence</a> · <a href="../slices/slot-authoring.md">Contract and limitations</a> · <a href="../MCP.md#slot-attachment-and-rgba-authoring">MCP usage</a> · <a href="../slices/spine-blog-audit-20261114.md">Official-update backlog</a></p>
+</article>
+<script>
+document.querySelector('#search').addEventListener('input',event=>{const words=event.target.value.toLowerCase().trim().split(/\s+/);for(const article of document.querySelectorAll('article')){const text=(article.dataset.search+' '+article.textContent).toLowerCase();article.hidden=!words.every(word=>text.includes(word));}});
+</script>
+</html>

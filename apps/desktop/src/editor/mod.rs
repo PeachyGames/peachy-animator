@@ -28,7 +28,9 @@ mod scene_view;
 mod selection;
 mod selection_history;
 mod shortcuts;
+mod slot_authoring;
 mod slot_color;
+mod slot_curves;
 mod style;
 #[cfg(test)]
 mod test_support;
@@ -934,6 +936,7 @@ impl Editor {
         self.observe_audio_focus(&ctx);
         self.observe_graph_focus(&ctx);
         self.observe_slot_color_focus(&ctx);
+        self.slot_color_dialog(&ctx);
         if let Some(error) = self.error.clone() {
             egui::Window::new("Project needs attention")
                 .collapsible(false)

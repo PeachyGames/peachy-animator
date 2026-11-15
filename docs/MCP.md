@@ -53,15 +53,15 @@ client's working directory. Absolute paths are accepted only inside that root.
 | `create_project` | New in-memory root-only native document with an empty default skin. Uses an existing asset directory within `--root`; no finished rig is loaded and no file is written. Source is null until Save. |
 | `inspect_file` | Read-only native validation or Spine capability report. Does not replace the working document. |
 | `open_project` | Load `.peachy` (including supported legacy migrations) or supported Spine 4.3 JSON into a new Session. Failed imports leave the current session intact. |
-| `get_command_schema` | Full JSON Schema for the 41 supported flat command variants; the same schema appears inline in `apply_commands` discovery. |
+| `get_command_schema` | Full JSON Schema for the 45 supported flat command variants; the same schema appears inline in `apply_commands` discovery. |
 | `apply_commands` | Apply a nonempty flat list through one engine Batch, atomically and as one undo step. No file writes. |
-| `copy_animation_keys` | Read-only capture of exact keys from one bone, IK constraint or Deform attachment. Returns relative times, curves and values; Deform includes vertex/influence layout for compatible cross-attachment paste. Requires the current revision. |
+| `copy_animation_keys` | Read-only capture of exact keys from one bone, IK constraint, Deform attachment or slot. Slot clipboards can mix attachment and color keys with one relative origin; Deform includes vertex/influence layout. Requires the current revision. |
 | `history` | Undo or redo one complete edit using the shared Session history. |
-| `evaluate_pose` | Setup or a named animation at a nonnegative time in seconds, with optional skin. Returns authored locals, IK-applied locals, world matrices, textured vertex/UV/index buffers and bounds. |
+| `evaluate_pose` | Setup or a named animation at a nonnegative time in seconds, with optional skin. Returns authored locals, IK-applied locals, world matrices, raw `slotAttachments`/`slotColors`, textured vertex/UV/index buffers and bounds. |
 | `save_project` | Create a new directory containing `project.peachy` and the required loose `images/`; marks the headless Session saved. |
 | `export_project` | New Spine JSON file, or a fresh packed JSON/atlas/PNG directory inside an existing parent. Does not mark the native document saved. |
 
-All tools publish parameter schemas, descriptions and behavior annotations through
+These 11 tools publish parameter schemas, descriptions and behavior annotations through
 MCP `tools/list`. Successful results include both `structuredContent` and matching
 serialized text for older clients. Operational failures return `isError: true`
 with the current revision; malformed tool arguments use the SDK's protocol error.
@@ -167,6 +167,13 @@ require seven fields: `x`, `y`, `rotation`, `scale_x`, `scale_y`, `shear_x`,
 `shear_y`. SetKey values use the native setup-relative convention; scale keys
 multiply setup. Shared engine validation and unsupported-feature gates apply.
 
+`slotAttachments` and `slotColors` are indexed by the document's slot list,
+including hidden slots. Attachment entries are placeholder names or null.
+Colors are finite, unmultiplied float RGBA in normalized channel units, before
+attachment tint, scene display conversion or byte rounding; finite Bezier
+overshoot may exceed 0–1. Reading them never quantizes or writes a key. Use these
+raw channels when keying a sampled slot, rather than a textured draw's tint.
+
 Save with `save_project`:
 
 ```json
@@ -207,6 +214,89 @@ complete dense offsets and curves, and apply atomically. `setDeformCurve` takes
 without replacing the key's geometry. All existing curve shapes remain native
 values. Clipboard compatibility is a documented engine policy, not a claim that
 every installed-editor weighted binding combination has been verified.
+
+## Slot attachment and RGBA authoring
+
+Four persistent commands author animation slots through the shared engine:
+
+| Command | Payload and behavior |
+| --- | --- |
+| `setSlotAttachmentKey` | `animation`, `slot`, `key:{time,attachment}`. Creates or replaces the exact key; null hides the slot. |
+| `setSlotColorKey` | `animation`, `slot`, `key:{time,color,curves}`. Stores four RGBA bytes and all four explicit outgoing curves, without splitting neighboring curves. |
+| `setSlotColorCurves` | `animation`, `slot`, exact `time`, `curves`. Changes only the existing key's four curves, preserving its bytes and identity; an absent exact key fails. |
+| `insertSlotColorKey` | `animation`, `slot`, `time`, `color`. Accepts four precise float RGBA channels, splits an interior interval's curves, then encodes the new key once at native byte precision. An existing exact key retains its curves. |
+
+Evaluation uses Setup before each channel's first key and holds its last key
+after the track ends. Attachment swaps are discrete; null is an explicit hide.
+
+The four curve entries are ordered R, G, B, A. Linear and Bezier types can differ
+per channel; Stepped must apply to all four. Bezier handles must be finite;
+`bezierOffset` retains value offsets for flat endpoints and overshoot. When
+changing a value with `setSlotColorKey`, supply the existing four curves to
+preserve them. This explicit setter retains the complete supplied payload;
+interactive new-key insertion and MCP `insertSlotColorKey` share the separate
+curve-splitting command.
+
+For example, after opening `examples/peach-bot/slot-bot.peachy` at revision 1,
+create a fade with a hide key and insert its sampled midpoint in one undo step:
+
+```json
+{
+  "expected_revision": 1,
+  "commands": [
+    {"command":"setSlotAttachmentKey","animation":1,"slot":8,"key":{"time":0.75,"attachment":null}},
+    {"command":"setSlotColorKey","animation":1,"slot":8,"key":{"time":0.25,"color":[255,128,64,255],"curves":[{"bezier":[0.25,0,0.75,1]},"linear","linear","linear"]}},
+    {"command":"setSlotColorKey","animation":1,"slot":8,"key":{"time":0.75,"color":[0,128,64,0],"curves":["linear","linear","linear","linear"]}},
+    {"command":"insertSlotColorKey","animation":1,"slot":8,"time":0.5,"color":[0.5,0.5019608,0.2509804,0.5]}
+  ]
+}
+```
+
+Commands reject unknown fields. Times are finite nonnegative seconds stored as
+f32, not frame numbers. Reuse exact times returned by the document/copy tools;
+do not round fractional identities or infer them from a displayed frame. These
+persistent commands do not apply the desktop's interactive frame snapping.
+
+A slot owner is `{"type":"slot","slot":8}`. Typed identities distinguish
+`slotAttachment` from `slotColor`, including coincident keys. For a mixed copy:
+
+```json
+{
+  "expected_revision": 2,
+  "animation": 1,
+  "keys": [
+    {"type":"slotColor","slot":8,"time":0.5},
+    {"type":"slotAttachment","slot":8,"time":0.75}
+  ]
+}
+```
+
+Pass this to read-only `copy_animation_keys`. Its clipboard has
+`type:"slot"`, `attachment_keys` and `color_keys`; both arrays share the earliest
+copied time as zero. This example returns color time 0 and attachment time 0.25,
+with complete color values/curves. `pasteAnimationKeys` takes that clipboard,
+an animation index, a typed slot `target` and a destination `time` in seconds.
+The same identities support exact `moveAnimationKeys` and `deleteAnimationKeys`.
+
+Pasting a named attachment checks the target slot's placeholder names across
+all skins. An unavailable name skips only that incoming attachment key; hide
+keys and valid color keys still paste with the original shared timing origin.
+An existing destination key at a skipped identity remains untouched. All-skipped
+paste leaves document/history unchanged, though a successful `apply_commands`
+still advances the MCP revision. Explicit attachment-key setters and imports
+continue to retain nonempty names that do not currently resolve.
+
+Interior Bezier insertion uses an independently derived 300-step absolute-time
+scan calibrated against 104 native 4.3.26 channel parameters, including a separate
+nonzero-origin holdout. Subdivision retains precise float controls before rebasing
+them onto stored byte endpoints. Stepped intervals inherit Stepped. Extreme or
+adjacent f32 times that cannot support the scan use stable exact inversion;
+that fallback is outside the calibrated native range. Persistent color keys
+remain bytes in native v22: explicit keying can incur at most half a byte per
+channel, while unrepresentable colors fail atomically. Existing sampling
+arithmetic may differ from the installed editor by one encoded byte at
+half-byte ties; this is not a claim of lossless subbyte key storage or complete
+native UI acceptance.
 
 ## History and file boundaries
 
@@ -255,6 +345,11 @@ primary/output/image symlink escapes. A schema test decodes and reserializes eve
 published flat command shape using strict engine serde. Exact native GUI behavior
 and external runtime compatibility remain covered by their separate project
 acceptance checks; MCP does not establish additional Spine feature parity.
+
+Slot protocol coverage includes raw hidden-slot float evaluation, mixed
+attachment/color copy and paste, exact value/curve commands, curve-preserving
+insertion, undo/redo, failed-batch rollback and Save/reopen. Shared engine tests
+also verify skipped-name collisions cannot select or delete untouched keys.
 
 The fresh-creation protocol case starts with the actual `create_project` tool,
 authors a region and a weighted triangulated mesh, adds bone/deform animation,

@@ -86,3 +86,39 @@ fn unsupported_or_malformed_slot_keys_are_refused() {
             .contains("unknown slot ghost")
     );
 }
+
+#[test]
+fn slot_flat_color_beziers_keep_time_handles_and_subbyte_value_offsets() {
+    let mut input = fixture();
+    let value = f32::from(128u8) / 255.;
+    let mut handles = vec![];
+    for channel in 0..4 {
+        let offset = if channel == 1 { 0.000001f32 } else { 0.0 };
+        handles.extend([0.1f32, value + offset, 0.4, value - offset]);
+    }
+    input["animations"]["anim"]["slots"]["s"]["rgba"] = json!([
+        {"time":0.0,"color":"80808080","curve":handles},
+        {"time":0.5,"color":"80808080"}
+    ]);
+    let doc = import_json(&input, "Flat slot curves").unwrap();
+    let curves = doc.animations[0].color_tracks[0].keys[0].curves;
+    for (channel, curve) in curves.iter().enumerate() {
+        let Curve::BezierOffset([x1, y1, x2, y2]) = curve else {
+            panic!("Flat channel {channel} lost its authored Bezier: {curve:?}")
+        };
+        assert!((*x1 - 0.2).abs() < 1e-6 && (*x2 - 0.8).abs() < 1e-6);
+        if channel == 1 {
+            assert!(*y1 > 0. && *y2 < 0.);
+        } else {
+            assert_eq!((*y1, *y2), (0., 0.));
+        }
+    }
+    let output = export_json(&doc).unwrap();
+    let actual = output["animations"]["anim"]["slots"]["s"]["rgba"][0]["curve"]
+        .as_array()
+        .unwrap();
+    for (value, expected) in actual.iter().zip(handles) {
+        assert!((value.as_f64().unwrap() - f64::from(expected)).abs() < 1e-7);
+    }
+    assert_eq!(import_json(&output, "Flat slot curves").unwrap(), doc);
+}

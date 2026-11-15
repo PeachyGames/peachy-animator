@@ -4,6 +4,19 @@ Target: Spine **4.3.x JSON**, with export metadata `4.3.26`. The initial externa
 oracle is separately installed `@esotericsoftware/spine-core` **4.3.13**.
 Compatibility applies to the subset below, not every 4.3 project or future patch.
 
+Slot authoring addition (November 14): native controls and MCP now key attachment
+swaps/hiding and RGBA colors, with shared pending poses, Auto Key/K, typed
+retime/copy/delete/clipboard actions and exact four-channel curves. The selected
+slot's Graph edits percentage channel values; Properties uses an explicit Color
+OK/Cancel dialog. New color keys split adjacent curves. Native and MCP authored
+outputs pass the external runtime, while native input and fresh-process
+persistence pass separately. Native v22 stays unchanged. Persistent colors remain
+bytes; the established sampler can differ from the editor at half-byte ties.
+Extreme-time split fallback is outside native calibration. Default-attachment
+name overrides also have a recorded editor-import interchange gap. See the
+[precise scope and evidence](slices/slot-authoring.md); this does not add separate
+RGB/alpha, dark tint or the broader Color view's Setup targets.
+
 Current authoring addition (November 14): unweighted/weighted mesh deform keys
 can be created through single-vertex Animate drags/nudges, Auto Key, K or the
 attachment key control, and deleted at the current key. Pending offsets are

@@ -1,5 +1,13 @@
 # Peachy Animator
 
+Slot attachment swaps and RGBA fades now support Animate editing, pending poses,
+Auto Key and K through the same engine and MCP. Native Properties opens a Color
+dialog; typed Attach/RGBA rows and a four-channel Graph provide key, clipboard
+and curve editing. New color keys subdivide existing curves using independently
+calibrated Spine behavior. See the [review gallery](docs/evidence/slot-authoring.html)
+and [slot contract](docs/slices/slot-authoring.md). MCP exposes 45 strict commands
+and raw slot poses, including hidden slots; native format remains v22.
+
 Deform keys now have named Dopesheet rows, exact retiming and clipboard editing,
 and a frame-based Graph with 0–100% transitions and editable tangents. Graph and
 Dopesheet share bottom tabs beneath the Tree. MCP exposes the same typed key

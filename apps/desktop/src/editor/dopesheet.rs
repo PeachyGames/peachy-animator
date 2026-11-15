@@ -27,6 +27,10 @@ impl Editor {
     pub(super) fn timeline_owner(&self) -> Option<peachy_engine::KeyOwner> {
         match self.selection.as_ref() {
             Some(TreeItem::Bone(bone)) => Some(peachy_engine::KeyOwner::Bone { bone: *bone }),
+            Some(TreeItem::Slot(slot)) => Some(peachy_engine::KeyOwner::Slot { slot: *slot }),
+            Some(TreeItem::Placeholder { slot, .. }) => {
+                Some(peachy_engine::KeyOwner::Slot { slot: *slot })
+            }
             Some(TreeItem::Constraint(constraint)) => Some(peachy_engine::KeyOwner::Ik {
                 constraint: *constraint,
             }),
@@ -276,6 +280,26 @@ impl Editor {
                         Color32::from_rgb(45, 165, 235),
                     )
                 }
+                dopesheet_selection::TimelineRow::SlotAttachment => (
+                    if let Some(peachy_engine::KeyOwner::Slot { slot }) = &owner {
+                        format!("Attach: {}", self.session.document().slots[*slot].name)
+                    } else {
+                        "Attach".to_owned()
+                    },
+                    None,
+                    "timelineRow:attachment".to_owned(),
+                    Color32::from_rgb(180, 184, 190),
+                ),
+                dopesheet_selection::TimelineRow::SlotColor => (
+                    if let Some(peachy_engine::KeyOwner::Slot { slot }) = &owner {
+                        format!("RGBA: {}", self.session.document().slots[*slot].name)
+                    } else {
+                        "RGBA".to_owned()
+                    },
+                    None,
+                    "timelineRow:color".to_owned(),
+                    Color32::from_rgb(224, 106, 184),
+                ),
             };
             let label_rect = egui::Rect::from_min_max(
                 pos2(rect.left() + 6.0, y - 10.0),
@@ -299,10 +323,15 @@ impl Editor {
                 };
                 label.on_hover_text(format!("Select {name} tool · {shortcut}"))
             } else {
-                label.on_hover_text(if row == dopesheet_selection::TimelineRow::Deform {
-                    &name
-                } else {
-                    "IK constraint keys group Mix and Positive"
+                label.on_hover_text(match row {
+                    dopesheet_selection::TimelineRow::Deform => &name,
+                    dopesheet_selection::TimelineRow::SlotAttachment => {
+                        "Slot attachment swaps are stepped; None hides the slot."
+                    }
+                    dopesheet_selection::TimelineRow::SlotColor => {
+                        "Slot RGBA color keys preserve their four channel curves."
+                    }
+                    _ => "IK constraint keys group Mix and Positive",
                 })
             };
             label.widget_info(|| {
@@ -338,6 +367,8 @@ impl Editor {
                     KeyId::Bone { property, .. } => format!("timelineKey:{property:?}:{index}"),
                     KeyId::Ik { constraint, .. } => format!("timelineKey:ik:{constraint}:{index}"),
                     KeyId::Deform { .. } => format!("timelineKey:deform:{index}"),
+                    KeyId::SlotAttachment { .. } => format!("timelineKey:attachment:{index}"),
+                    KeyId::SlotColor { .. } => format!("timelineKey:color:{index}"),
                 };
                 self.record_target(&target, key_rect);
                 painter.rect_filled(

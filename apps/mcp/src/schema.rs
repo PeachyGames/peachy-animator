@@ -51,6 +51,8 @@ pub fn animation_key_schema() -> Value {
         object(&[("type",tag("bone")),("bone",index()),("property",property),("time",number())]),
         object(&[("type",tag("ik")),("constraint",index()),("time",number())]),
         object(&[("type",tag("deform")),("attachment",reference),("time",number())]),
+        object(&[("type",tag("slotAttachment")),("slot",index()),("time",number())]),
+        object(&[("type",tag("slotColor")),("slot",index()),("time",number())]),
     ]})
 }
 
@@ -179,7 +181,7 @@ pub fn command_schema() -> Value {
                 "attachment",
                 json!({"type":"null","description":"New slots start empty. Activate an attachment afterward with setSlotAttachment."}),
             ),
-            ("color", rgba),
+            ("color", rgba.clone()),
         ]),
         &[(
             "blend",
@@ -202,6 +204,13 @@ pub fn command_schema() -> Value {
         ("time", number()),
         ("curve", curve.clone()),
         ("offsets", list(number())),
+    ]);
+    let attachment_key = object(&[("time", number()), ("attachment", nullable(text()))]);
+    let color_curves = json!({"type":"array","items":curve.clone(),"minItems":4,"maxItems":4});
+    let color_key = object(&[
+        ("time", number()),
+        ("color", rgba),
+        ("curves", color_curves.clone()),
     ]);
     let timeline_key = object(&[
         ("bone", index()),
@@ -325,6 +334,7 @@ pub fn command_schema() -> Value {
         object(&[("type", tag("bone")), ("bone", index())]),
         object(&[("type", tag("ik")), ("constraint", index())]),
         object(&[("type", tag("deform")), ("attachment", attachment.clone())]),
+        object(&[("type", tag("slot")), ("slot", index())]),
     ]});
     let animation_key = animation_key_schema();
     let deform_layout = json!({"oneOf":[
@@ -335,8 +345,46 @@ pub fn command_schema() -> Value {
         object(&[("type", tag("bone")), ("keys", clipboard["properties"]["keys"].clone())]),
         object(&[("type", tag("ik")), ("keys", list(ik_key.clone()))]),
         object(&[("type",tag("deform")),("layout",deform_layout),("keys",list(deform_key.clone()))]),
+        object(&[("type",tag("slot")),("attachment_keys",list(attachment_key.clone())),("color_keys",list(color_key.clone()))]),
     ]});
     let variants = vec![
+        command(
+            "setSlotAttachmentKey",
+            &[
+                ("animation", index()),
+                ("slot", index()),
+                ("key", attachment_key),
+            ],
+        ),
+        command(
+            "setSlotColorKey",
+            &[
+                ("animation", index()),
+                ("slot", index()),
+                ("key", color_key),
+            ],
+        ),
+        command(
+            "setSlotColorCurves",
+            &[
+                ("animation", index()),
+                ("slot", index()),
+                ("time", number()),
+                ("curves", color_curves),
+            ],
+        ),
+        command(
+            "insertSlotColorKey",
+            &[
+                ("animation", index()),
+                ("slot", index()),
+                ("time", number()),
+                (
+                    "color",
+                    json!({"type":"array","items":{"type":"number"},"minItems":4,"maxItems":4,"description":"Unmultiplied normalized float RGBA, before explicit native-byte key encoding. Preserves neighboring curve transitions when inserting."}),
+                ),
+            ],
+        ),
         command("addSlot", &[("slot", slot)]),
         command(
             "addAttachment",
@@ -611,6 +659,10 @@ mod tests {
             Command::SetRegionTransform { .. } => "setRegionTransform",
             Command::SetSlotAttachment { .. } => "setSlotAttachment",
             Command::SetSlotColor { .. } => "setSlotColor",
+            Command::SetSlotAttachmentKey { .. } => "setSlotAttachmentKey",
+            Command::SetSlotColorKey { .. } => "setSlotColorKey",
+            Command::SetSlotColorCurves { .. } => "setSlotColorCurves",
+            Command::InsertSlotColorKey { .. } => "insertSlotColorKey",
             Command::SetKey { .. } => "setKey",
             Command::DeleteKey { .. } => "deleteKey",
             Command::MoveKeys { .. } => "moveKeys",
@@ -676,7 +728,7 @@ mod tests {
     fn every_published_shape_decodes_through_strict_engine_serde() {
         let schema = command_schema();
         let variants = schema["oneOf"].as_array().unwrap();
-        assert_eq!(variants.len(), 41);
+        assert_eq!(variants.len(), 45);
         for variant in variants {
             let payload = sample(variant);
             let command: CommandInput = serde_json::from_value(payload.clone()).unwrap();
@@ -916,5 +968,80 @@ mod tests {
             "target":{"type":"deform","attachment":reference},
             "clipboard":{"type":"deform","layout":{"type":"weighted","influence_counts":[1],"future":true},"keys":[]}});
         assert!(serde_json::from_value::<CommandInput>(bad).is_err());
+    }
+
+    #[test]
+    fn slot_authoring_schema_retains_both_key_kinds_exact_bytes_and_channel_curves() {
+        let curves = json!([{"bezier":[0.25,0.0,0.75,1.0]},"linear",{"bezierOffset":[0.25,2.0,0.75,-1.0]},"linear"]);
+        let attachment = json!({"time":0.25,"attachment":null});
+        let color = json!({"time":0.25,"color":[0,128,255,1],"curves":curves});
+        let keys = json!([
+            {"type":"slotAttachment","slot":8,"time":0.25},
+            {"type":"slotColor","slot":8,"time":0.25}
+        ]);
+        let payloads = [
+            json!({"command":"setSlotAttachmentKey","animation":0,"slot":8,"key":attachment}),
+            json!({"command":"setSlotColorKey","animation":0,"slot":8,"key":color}),
+            json!({"command":"setSlotColorCurves","animation":0,"slot":8,"time":0.25,"curves":curves}),
+            json!({"command":"insertSlotColorKey","animation":0,"slot":8,"time":0.5,"color":[1.0,0.5,0.25,0.0]}),
+            json!({"command":"moveAnimationKeys","animation":0,"keys":keys,"delta":0.5,"copy":false}),
+            json!({"command":"deleteAnimationKeys","animation":0,"keys":keys}),
+            json!({"command":"pasteAnimationKeys","animation":1,"target":{"type":"slot","slot":13},"time":1.0,
+                "clipboard":{"type":"slot","attachment_keys":[attachment],"color_keys":[color]}}),
+        ];
+        for payload in &payloads {
+            let parsed: CommandInput = serde_json::from_value(payload.clone()).unwrap();
+            assert_eq!(serde_json::to_value(parsed.0).unwrap(), *payload);
+            let mut bad = payload.clone();
+            bad["futureField"] = json!(true);
+            assert!(serde_json::from_value::<CommandInput>(bad).is_err());
+        }
+        for kind in ["slotAttachment", "slotColor"] {
+            let value = json!({"type":kind,"slot":8,"time":0.25});
+            let key: AnimationKeyInput = serde_json::from_value(value.clone()).unwrap();
+            assert_eq!(serde_json::to_value(key.0).unwrap(), value);
+            let mut bad = value;
+            bad["bone"] = json!(0);
+            assert!(serde_json::from_value::<AnimationKeyInput>(bad).is_err());
+        }
+        let schema = command_schema();
+        let set_color = schema["oneOf"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|v| v["properties"]["command"]["const"] == "setSlotColorKey")
+            .unwrap();
+        assert_eq!(
+            set_color["properties"]["key"]["additionalProperties"],
+            false
+        );
+        assert_eq!(
+            set_color["properties"]["key"]["properties"]["color"]["maxItems"],
+            4
+        );
+        assert_eq!(
+            set_color["properties"]["key"]["properties"]["curves"]["minItems"],
+            4
+        );
+        for invalid_color in [
+            json!([256, 0, 0, 0]),
+            json!([-1, 0, 0, 0]),
+            json!([0.5, 0, 0, 0]),
+            json!([0, 0, 0]),
+        ] {
+            let mut bad = payloads[1].clone();
+            bad["key"]["color"] = invalid_color;
+            assert!(serde_json::from_value::<CommandInput>(bad).is_err());
+        }
+        let mut missing_hide = payloads[0].clone();
+        missing_hide["key"]
+            .as_object_mut()
+            .unwrap()
+            .remove("attachment");
+        // Option fields retain the native serde contract: omitted and explicit null both hide.
+        assert!(serde_json::from_value::<CommandInput>(missing_hide).is_ok());
+        let mut unknown = payloads[6].clone();
+        unknown["clipboard"]["color_keys"][0]["futureField"] = json!(true);
+        assert!(serde_json::from_value::<CommandInput>(unknown).is_err());
     }
 }

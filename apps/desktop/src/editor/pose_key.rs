@@ -16,6 +16,10 @@ pub(super) enum PoseKeyAction {
     Deform {
         attachment: AttachmentRef,
     },
+    Slot {
+        slot: usize,
+        properties: Vec<peachy_engine::SlotProperty>,
+    },
 }
 
 pub(super) struct PoseKeyRequest {
@@ -41,7 +45,11 @@ impl Editor {
             animation: self.animation,
             time: self.time,
         };
-        if self.drag.is_some() || self.ik_edit.is_some() || self.deform_drag.is_some() {
+        if self.drag.is_some()
+            || self.ik_edit.is_some()
+            || self.deform_drag.is_some()
+            || self.slot_color_edit_active()
+        {
             self.pose_key_request = Some(request);
         } else {
             self.apply_pose_key(request);
@@ -66,18 +74,24 @@ impl Editor {
                 self.session
                     .key_deform_pose(request.animation, request.time, attachment)
             }
+            PoseKeyAction::Slot { slot, properties } => {
+                self.session
+                    .key_slot_pose(request.animation, request.time, slot, &properties)
+            }
         };
         match result {
             Ok(()) => {
                 self.seal_transform_for_key();
                 self.seal_ik_for_key();
                 self.seal_deform_for_key();
+                self.seal_slot_color_for_key();
                 self.session.commit_transaction();
                 self.status = "Keyed the current authored pose".into();
             }
             Err(error) => {
                 self.hold_transform_key_error(&error);
                 self.hold_ik_key_error(&error);
+                self.hold_slot_color_key_error(&error);
                 self.status = format!("Cannot key the current pose: {error}");
             }
         }
@@ -93,6 +107,7 @@ impl Editor {
         if let Err(error) = self
             .transform_key_ready()
             .and_then(|()| self.ik_key_ready())
+            .and_then(|()| self.slot_color_key_ready())
         {
             self.status = format!("Cannot key the current pose: {error}");
             return;

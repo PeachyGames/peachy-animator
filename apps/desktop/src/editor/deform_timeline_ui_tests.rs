@@ -480,6 +480,104 @@ fn deform_graph_numeric_percentage_entry_changes_curve_without_rewriting_offsets
 }
 
 #[test]
+fn deform_graph_numeric_escape_keeps_mesh_key_pending_pose_and_redo() {
+    for text in ["25", "NaN"] {
+        let (mut editor, attachment, ctx) = graph_fixture();
+        let mut pose = editor.session.local_pose(Some(0), editor.time)[8];
+        pose.rotation += 7.;
+        editor
+            .session
+            .edit_pose(
+                8,
+                EditTarget::Animate {
+                    animation: 0,
+                    time: editor.time,
+                },
+                pose,
+                &[Property::Rotation],
+                false,
+            )
+            .unwrap();
+        editor
+            .session
+            .dispatch(Command::RenameAnimation {
+                animation: 0,
+                name: "retained redo".into(),
+            })
+            .unwrap();
+        let redo = editor.session.document().clone();
+        editor.session.undo();
+        let original = editor.session.document().clone();
+        let pending = editor.session.pose_edits().clone();
+        let selection = editor.selection.clone();
+        let keys = editor.key_selection.keys().to_vec();
+        let open = target(&editor, "graphDeformHandles");
+        pointer(&mut editor, &ctx, open, true);
+        pointer(&mut editor, &ctx, open, false);
+        for _ in 0..20 {
+            workspace_frame(&mut editor, &ctx, vec![]);
+        }
+        let field = target(&editor, "graphDeformValue:1");
+        pointer(&mut editor, &ctx, field, true);
+        pointer(&mut editor, &ctx, field, false);
+        workspace_frame(
+            &mut editor,
+            &ctx,
+            vec![
+                egui::Event::Key {
+                    key: egui::Key::A,
+                    physical_key: Some(egui::Key::A),
+                    pressed: true,
+                    repeat: false,
+                    modifiers: egui::Modifiers::COMMAND,
+                },
+                egui::Event::Key {
+                    key: egui::Key::A,
+                    physical_key: Some(egui::Key::A),
+                    pressed: false,
+                    repeat: false,
+                    modifiers: egui::Modifiers::COMMAND,
+                },
+                egui::Event::Paste(text.into()),
+            ],
+        );
+        assert!(ctx.text_edit_focused());
+        assert!(editor.graph.deform.draft.as_ref().unwrap().changed);
+        workspace_frame(
+            &mut editor,
+            &ctx,
+            vec![egui::Event::Key {
+                key: egui::Key::Escape,
+                physical_key: Some(egui::Key::Escape),
+                pressed: true,
+                repeat: false,
+                modifiers: egui::Modifiers::NONE,
+            }],
+        );
+        settle(&mut editor, &ctx);
+        assert!(!ctx.text_edit_focused());
+        assert_eq!(editor.selection, selection, "Escape changed mesh selection");
+        assert_eq!(editor.key_selection.keys(), keys);
+        assert_eq!(
+            editor.timeline_owner(),
+            Some(KeyOwner::Deform { attachment })
+        );
+        assert_eq!(editor.session.document(), &original);
+        assert_eq!(editor.session.pose_edits(), &pending);
+        assert!(editor.session.can_redo());
+        let row = target(&editor, "graphDeformRow");
+        pointer(&mut editor, &ctx, row, true);
+        pointer(&mut editor, &ctx, row, false);
+        settle(&mut editor, &ctx);
+        assert_eq!(editor.session.document(), &original);
+        assert_eq!(editor.session.pose_edits(), &pending);
+        editor.redo();
+        assert_eq!(editor.session.document(), &redo);
+        assert_eq!(editor.session.pose_edits(), &pending);
+    }
+}
+
+#[test]
 fn deform_graph_canvas_routes_native_clipboard_and_delete_to_exact_mesh_keys() {
     let (mut editor, attachment, ctx) = graph_fixture();
     let original = editor.session.document().clone();

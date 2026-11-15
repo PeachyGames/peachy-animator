@@ -1,6 +1,9 @@
-//! Exact unmultiplied slot bytes; this view owns input, Session owns transaction history.
+//! Unmultiplied sampled slot color; this view owns input, Session owns pose/history.
 use super::*;
 use egui::ecolor::Hsva;
+#[path = "slot_color_dialog.rs"]
+mod dialog;
+use dialog::ColorDialog;
 
 #[derive(Clone, PartialEq)]
 struct Context {
@@ -12,6 +15,9 @@ struct Context {
     animation: usize,
     time: f32,
     tool: Tool,
+    axes: Axes,
+    auto_key: bool,
+    pose_generation: u64,
 }
 
 #[derive(Clone, Copy, PartialEq)]
@@ -22,7 +28,8 @@ enum Input {
 
 struct Edit {
     context: Context,
-    baseline: [u8; 4],
+    baseline: [f32; 4],
+    pose: peachy_engine::PoseEdits,
     control: egui::Id,
     input: Input,
     commit_requested: bool,
@@ -32,6 +39,7 @@ struct Edit {
 pub(super) struct SlotColorView {
     context: Option<Context>,
     color: [u8; 4],
+    raw: [f32; 4],
     hsv: Hsva,
     hex: String,
     edit: Option<Edit>,
@@ -41,6 +49,7 @@ pub(super) struct SlotColorView {
     aborted: Option<egui::Id>,
     controls: Vec<egui::Id>,
     last_focus: Option<egui::Id>,
+    dialog: Option<ColorDialog>,
 }
 
 impl Default for SlotColorView {
@@ -48,7 +57,8 @@ impl Default for SlotColorView {
         Self {
             context: None,
             color: [255; 4],
-            hsv: Hsva::from_srgba_unmultiplied([255; 4]),
+            raw: [1.; 4],
+            hsv: slot_hsv([1.; 4]),
             hex: hex([255; 4]),
             edit: None,
             error: None,
@@ -57,6 +67,7 @@ impl Default for SlotColorView {
             aborted: None,
             controls: Vec::new(),
             last_focus: None,
+            dialog: None,
         }
     }
 }
@@ -72,16 +83,38 @@ impl SlotColorView {
 }
 
 impl Editor {
+    pub(super) fn slot_color_properties(&mut self, ui: &mut egui::Ui, slot: usize) {
+        let Ok(pose) = self.current_slot_pose(slot) else {
+            return;
+        };
+        let Ok(color) = peachy_engine::slot_color_bytes(pose.color) else {
+            return;
+        };
+        ui.horizontal(|ui| {
+            ui.label("Color");
+            let (rect, response) = ui.allocate_exact_size(vec2(70., 20.), Sense::click());
+            paint_swatch(ui.painter(), rect, color);
+            self.record_target("slotColorButton", rect);
+            if response
+                .on_hover_text("Slot Color · RGBA before attachment tint")
+                .clicked()
+                && self.slot_authoring_input_available(ui.ctx())
+            {
+                self.open_slot_color_dialog(ui.ctx());
+            }
+            self.slot_property_key_controls(
+                ui,
+                slot,
+                peachy_engine::SlotProperty::Color,
+                "slotColor",
+            );
+        });
+    }
+
     fn slot_color_context(&self) -> Option<Context> {
         let doc = self.session.document();
         let selection = self.selection.as_ref()?;
-        let slot = match selection {
-            TreeItem::Slot(slot) if *slot < doc.slots.len() => *slot,
-            TreeItem::Attachment(key) if doc.attachment(key).is_some() => {
-                doc.slots.iter().position(|slot| slot.name == key.slot)?
-            }
-            _ => return None,
-        };
+        let slot = self.selected_slot()?;
         Some(Context {
             slot,
             name: doc.slots[slot].name.clone(),
@@ -91,17 +124,34 @@ impl Editor {
             animation: self.animation,
             time: self.time,
             tool: self.tool,
+            axes: self.axes,
+            auto_key: self.auto_key,
+            pose_generation: self.pose_view_generation,
         })
     }
 
     pub(super) fn slot_color_edit_active(&self) -> bool {
-        self.slot_color.edit.is_some()
+        self.slot_color.edit.is_some() || self.slot_color.dialog.is_some()
+    }
+
+    fn slot_color_input_visible(&self) -> bool {
+        self.slot_color_visible() || self.slot_color.dialog.is_some()
+    }
+
+    fn slot_color_input_available(&self, ctx: &egui::Context) -> bool {
+        ctx.input(|input| input.focused)
+            && self.error.is_none()
+            && self.rename.is_none()
+            && self.duplicate_animation.is_none()
+            && !egui::Popup::is_any_open(ctx)
     }
 
     pub(super) fn cancel_slot_color_edit(&mut self) {
-        if let Some(edit) = self.slot_color.edit.take() {
+        let edit = self.slot_color.edit.take();
+        let dialog = self.slot_color.dialog.take();
+        if edit.is_some() || dialog.is_some() {
             self.session.cancel_transaction();
-            self.slot_color.aborted = Some(edit.control);
+            self.slot_color.aborted = edit.map(|edit| edit.control).or(self.slot_color.last_focus);
             self.slot_color.blocked = true;
             self.slot_color.context = None;
             self.slot_color.epoch = self.slot_color.epoch.wrapping_add(1);
@@ -115,52 +165,82 @@ impl Editor {
             self.slot_color.blocked = false;
         }
         let context = self.slot_color_context();
+        if self.slot_color.dialog.as_ref().is_some_and(|dialog| {
+            Some(&dialog.context) != context.as_ref()
+                || !self.slot_color_input_available(ctx)
+                || self.session.pose_edits() != &dialog.pose
+                || !self
+                    .current_slot_pose(dialog.context.slot)
+                    .is_ok_and(|pose| pose.color == dialog.color)
+        }) {
+            self.cancel_slot_color_edit();
+        }
         if self.slot_color.edit.as_ref().is_some_and(|edit| {
             Some(&edit.context) != context.as_ref()
-                || !self.setup_mode
-                || !self.slot_color_visible()
+                || !self.slot_color_input_visible()
                 || !ctx.input(|input| input.focused)
                 || self.error.is_some()
                 || self.rename.is_some()
                 || self.duplicate_animation.is_some()
                 || egui::Popup::is_any_open(ctx)
+                || self.session.pose_edits() != &edit.pose
+                || !self
+                    .current_slot_pose(edit.context.slot)
+                    .is_ok_and(|pose| pose.color == self.slot_color.raw)
         }) {
             self.cancel_slot_color_edit();
         }
         if let Some(id) = self.slot_color.aborted.take() {
             ctx.memory_mut(|memory| memory.surrender_focus(id));
         }
-        let color = context
-            .as_ref()
-            .map(|context| self.session.document().slots[context.slot].color);
+        let color = context.as_ref().and_then(|context| {
+            self.current_slot_pose(context.slot)
+                .ok()
+                .map(|pose| pose.color)
+        });
         if self.slot_color.context != context
             || (self.slot_color.edit.is_none()
-                && color.is_some_and(|color| color != self.slot_color.color))
+                && color.is_some_and(|color| color != self.slot_color.raw))
         {
             self.slot_color.context = context;
             self.slot_color.epoch = self.slot_color.epoch.wrapping_add(1);
             self.slot_color.last_focus = None;
             self.slot_color.error = None;
             if let Some(color) = color {
-                self.slot_color.color = color;
-                self.slot_color.hsv = Hsva::from_srgba_unmultiplied(color);
-                self.slot_color.hex = hex(color);
+                self.slot_color.raw = color;
+                if let Ok(bytes) = peachy_engine::slot_color_bytes(color) {
+                    self.slot_color.color = bytes;
+                    self.slot_color.hsv = slot_hsv(color);
+                    self.slot_color.hsv.a = color[3].clamp(0., 1.);
+                    self.slot_color.hex = hex(bytes);
+                }
             }
         }
     }
 
-    fn begin_slot_color_edit(&mut self, control: egui::Id, input: Input) -> bool {
-        let Some(context) = self.slot_color_context().filter(|context| context.setup) else {
+    fn begin_slot_color_edit(
+        &mut self,
+        ctx: &egui::Context,
+        control: egui::Id,
+        input: Input,
+    ) -> bool {
+        let Some(context) = self.slot_color_context() else {
             return false;
         };
-        if self.slot_color.blocked || !self.slot_color_visible() {
+        if self.slot_color.blocked
+            || !self.slot_color_input_visible()
+            || !self.slot_color_input_available(ctx)
+        {
             return false;
         }
-        self.cancel_gesture();
-        self.session.commit_transaction();
-        self.session.begin_transaction();
+        if self.slot_color.dialog.is_none() {
+            self.cancel_gesture();
+            self.session.commit_transaction();
+            self.session.begin_transaction();
+        }
         self.slot_color.edit = Some(Edit {
-            baseline: self.session.document().slots[context.slot].color,
+            baseline: self.slot_color.raw,
+            pose: self.session.pose_edits().clone(),
             context,
             control,
             input,
@@ -171,21 +251,87 @@ impl Editor {
     }
 
     fn preview_slot_color(&mut self, color: [u8; 4]) {
-        let Some(edit) = self.slot_color.edit.as_ref() else {
+        self.preview_slot_color_raw(color.map(|channel| f32::from(channel) / 255.));
+    }
+
+    fn preview_slot_color_raw(&mut self, color: [f32; 4]) {
+        let Some(context) = self
+            .slot_color
+            .edit
+            .as_ref()
+            .map(|edit| &edit.context)
+            .or_else(|| {
+                self.slot_color
+                    .dialog
+                    .as_ref()
+                    .map(|dialog| &dialog.context)
+            })
+            .cloned()
+        else {
             return;
         };
-        match self.session.preview_transaction(Command::SetSlotColor {
-            slot: edit.context.slot,
-            color,
-        }) {
+        let target = if context.setup {
+            EditTarget::Setup
+        } else {
+            EditTarget::Animate {
+                animation: context.animation,
+                time: context.time,
+            }
+        };
+        let slot = context.slot;
+        match self.session.preview_edit_slot_pose(
+            slot,
+            target,
+            &[peachy_engine::SlotPoseEdit::Color { color }],
+            context.auto_key,
+        ) {
             Ok(()) => {
-                self.slot_color.color = color;
+                if let Ok(pose) = self.current_slot_pose(slot) {
+                    self.slot_color.raw = pose.color;
+                    if let Ok(bytes) = peachy_engine::slot_color_bytes(pose.color) {
+                        self.slot_color.color = bytes;
+                    }
+                }
+                if let Some(edit) = self.slot_color.edit.as_mut() {
+                    edit.pose = self.session.pose_edits().clone();
+                }
+                self.sync_slot_color_dialog();
                 self.slot_color.error = None;
             }
             Err(error) => {
                 self.cancel_slot_color_edit();
                 self.slot_color.error = Some(error);
             }
+        }
+    }
+
+    pub(super) fn slot_color_key_ready(&mut self) -> Result<(), String> {
+        let Some(edit) = self.slot_color.edit.as_mut() else {
+            return Ok(());
+        };
+        edit.finish_pending = false;
+        if edit.input == Input::Hex {
+            let color = parse_hex(&self.slot_color.hex)
+                .ok_or_else(|| "Enter a valid #RRGGBBAA color before keying".to_owned())?;
+            if color != self.slot_color.color {
+                self.preview_slot_color(color);
+            }
+        }
+        self.slot_color.error.clone().map_or(Ok(()), Err)
+    }
+
+    pub(super) fn seal_slot_color_for_key(&mut self) {
+        if let Some(edit) = self.slot_color.edit.take() {
+            self.slot_color.aborted = Some(edit.control);
+            self.slot_color.blocked = true;
+            self.slot_color.context = None;
+        }
+    }
+
+    pub(super) fn hold_slot_color_key_error(&mut self, error: &str) {
+        if let Some(edit) = self.slot_color.edit.as_mut() {
+            edit.finish_pending = false;
+            self.slot_color.error = Some(error.into());
         }
     }
 
@@ -199,7 +345,9 @@ impl Editor {
                 .is_some_and(|edit| edit.finish_pending)
         {
             let edit = self.slot_color.edit.take().unwrap();
-            self.session.commit_transaction();
+            if self.slot_color.dialog.is_none() {
+                self.session.commit_transaction();
+            }
             if edit.input == Input::Hex {
                 ctx.memory_mut(|memory| memory.surrender_focus(edit.control));
             }
@@ -212,11 +360,11 @@ impl Editor {
     pub(super) fn observe_slot_color_focus(&mut self, ctx: &egui::Context) {
         self.slot_color.last_focus = ctx
             .memory(|memory| memory.focused())
-            .filter(|id| self.slot_color_visible() && self.slot_color.controls.contains(id));
+            .filter(|id| self.slot_color_input_visible() && self.slot_color.controls.contains(id));
     }
 
     pub(super) fn slot_color_shortcuts(&mut self, ctx: &egui::Context) -> bool {
-        if !self.slot_color_visible() || !ctx.input(|input| input.focused) {
+        if !self.slot_color_input_visible() || !ctx.input(|input| input.focused) {
             return false;
         }
         let escape = ctx.input(|input| input.key_pressed(egui::Key::Escape));
@@ -224,7 +372,7 @@ impl Editor {
             .memory(|memory| memory.focused())
             .or_else(|| escape.then_some(self.slot_color.last_focus).flatten());
         let owns_focus = focus.is_some_and(|id| self.slot_color.controls.contains(&id));
-        if escape && (self.slot_color.edit.is_some() || owns_focus) {
+        if escape && (self.slot_color_edit_active() || owns_focus) {
             ctx.input_mut(|input| input.consume_key(egui::Modifiers::NONE, egui::Key::Escape));
             self.cancel_slot_color_edit();
             if let Some(id) = focus {
@@ -232,7 +380,7 @@ impl Editor {
             }
             return true;
         }
-        if (self.slot_color.edit.is_some() || owns_focus)
+        if (self.slot_color_edit_active() || owns_focus)
             && ctx.input_mut(|input| input.consume_key(egui::Modifiers::NONE, egui::Key::F9))
         {
             self.cancel_slot_color_edit();
@@ -263,7 +411,26 @@ impl Editor {
             // TextEdit receives text, Tab/Enter and its own undo before global tools/history.
             return true;
         }
-        false
+        if self.slot_color.dialog.is_some() && !ctx.text_edit_focused() {
+            for (key, action) in [
+                (egui::Key::S, 0),
+                (egui::Key::O, 1),
+                (egui::Key::E, 2),
+                (egui::Key::Z, 3),
+            ] {
+                if ctx.input_mut(|input| input.consume_key(egui::Modifiers::COMMAND, key)) {
+                    self.cancel_slot_color_edit();
+                    match action {
+                        0 => self.save_project(),
+                        1 => self.open_project(ctx),
+                        2 => self.export(),
+                        _ => {}
+                    }
+                    return true;
+                }
+            }
+        }
+        self.slot_color.dialog.is_some()
     }
 
     fn slot_color_control(&mut self, name: &str, response: &egui::Response) {
@@ -272,17 +439,23 @@ impl Editor {
     }
 
     pub(super) fn slot_color_panel(&mut self, ui: &mut egui::Ui) {
+        if self.slot_color.dialog.is_some() {
+            ui.label("Set slot color dialog is open.");
+            return;
+        }
         self.reconcile_slot_color_input(ui.ctx());
         self.slot_color.controls.clear();
         self.record_target("slotColorPanelClip", ui.clip_rect());
+        // Widget rectangles round to pixels; keep the first rounded row inside
+        // a sidebar clip whose resizable boundary may fall between pixels.
+        ui.add_space((ui.clip_rect().top().ceil() - ui.cursor().top()).max(0.));
         let Some(context) = self.slot_color.context.clone() else {
             ui.label("Select a slot or attachment to inspect its slot color.");
             return;
         };
         let title = ui.add(egui::Label::new(format!("Slot: {}", context.name)).truncate());
         self.record_target("slotColorTarget", title.rect);
-        let enabled = context.setup
-            && !self.slot_color.blocked
+        let enabled = !self.slot_color.blocked
             && ui.input(|input| input.focused)
             && self.error.is_none()
             && self.rename.is_none()
@@ -300,13 +473,6 @@ impl Editor {
                 .monospace(),
             );
             self.record_target("slotColorRGBA", feedback.rect);
-            if !context.setup {
-                ui.label(
-                    RichText::new("Setup color only. Slot color animation is not available yet.")
-                        .small()
-                        .color(MUTED),
-                );
-            }
             if let Some(error) = self.slot_color.error.as_ref() {
                 ui.label(RichText::new(error).small().color(ACCENT));
             }
@@ -379,7 +545,7 @@ impl Editor {
 
     fn slot_color_hex(&mut self, ui: &mut egui::Ui, enabled: bool) {
         ui.horizontal(|ui| {
-            ui.label("Hex");
+            if self.slot_color.dialog.is_none() { ui.label("Hex"); }
             let id = ui.make_persistent_id("hex");
             let response = ui.add_enabled(enabled,egui::TextEdit::singleline(&mut self.slot_color.hex)
                 .id(id).desired_width(100.).char_limit(9).font(egui::TextStyle::Monospace))
@@ -387,7 +553,7 @@ impl Editor {
             response.widget_info(||egui::WidgetInfo::labeled(egui::WidgetType::TextEdit,enabled,"Slot Color RGBA hex"));
             self.slot_color_control("slotColorHex",&response);
             if enabled && (response.gained_focus() || response.has_focus()) && self.slot_color.edit.is_none() {
-                self.begin_slot_color_edit(id,Input::Hex);
+                self.begin_slot_color_edit(ui.ctx(),id,Input::Hex);
             }
             if self.slot_color.edit.as_ref().is_some_and(|edit|edit.input == Input::Hex && edit.control == id) {
                 let commit = self.slot_color.edit.as_ref().unwrap().commit_requested;
@@ -396,8 +562,8 @@ impl Editor {
                     match parse_hex(&self.slot_color.hex) {
                         Some(color) => {
                             let changed = color != self.slot_color.color;
-                            self.preview_slot_color(color);
-                            if changed {self.slot_color.hsv = Hsva::from_srgba_unmultiplied(color);}
+                            if changed {self.preview_slot_color(color);}
+                            if changed {self.slot_color.hsv = slot_hsv(self.slot_color.raw);}
                             if let Some(edit) = self.slot_color.edit.as_mut() {edit.finish_pending = true;}
                         }
                         None => {
@@ -405,14 +571,21 @@ impl Editor {
                             response.request_focus();
                         }
                     }
-                } else if response.lost_focus() {
-                    self.cancel_slot_color_edit();
+                } else if response.lost_focus() && self.pose_key_request.is_none() {
+                    if self.slot_color.dialog.is_some() {
+                        if let Some(color) = parse_hex(&self.slot_color.hex) {
+                            if color != self.slot_color.color { self.preview_slot_color(color); }
+                            self.slot_color.edit = None;
+                        } else { self.slot_color.error = Some("Use #RRGGBBAA: eight hex digits.".into()); }
+                    } else { self.cancel_slot_color_edit(); }
                 }
                 if response.changed() && !commit {self.slot_color.error = None;}
             }
-            let (_,rect) = ui.allocate_space(vec2(44.,20.));
-            self.record_target("slotColorSwatch",rect);
-            paint_swatch(ui.painter(),rect,self.slot_color.color);
+            if self.slot_color.dialog.is_none() {
+                let (_,rect) = ui.allocate_space(vec2(44.,20.));
+                self.record_target("slotColorSwatch",rect);
+                paint_swatch(ui.painter(),rect,self.slot_color.color);
+            }
         });
     }
 
@@ -440,7 +613,7 @@ impl Editor {
         {
             return;
         }
-        if !active && !self.begin_slot_color_edit(response.id, Input::Picker) {
+        if !active && !self.begin_slot_color_edit(&response.ctx, response.id, Input::Picker) {
             return;
         }
         response.request_focus();
@@ -454,28 +627,42 @@ impl Editor {
         let x = ((pointer.x - response.rect.left()) / response.rect.width()).clamp(0., 1.);
         let y = ((response.rect.bottom() - pointer.y) / response.rect.height()).clamp(0., 1.);
         let old = self.slot_color.hsv;
+        let vertical = axis != 0 && response.rect.height() > response.rect.width();
         match axis {
             0 => {
                 self.slot_color.hsv.s = x;
                 self.slot_color.hsv.v = y;
             }
-            1 => self.slot_color.hsv.h = x,
-            _ => self.slot_color.hsv.a = x,
+            1 => self.slot_color.hsv.h = if vertical { 1. - y } else { x },
+            _ => self.slot_color.hsv.a = if vertical { y } else { x },
         }
         if old != self.slot_color.hsv {
-            let color = self.slot_color.hsv.to_srgba_unmultiplied();
-            self.preview_slot_color(color);
+            let color = slot_hsv_bytes(self.slot_color.hsv);
+            let mut raw = self.slot_color.raw;
+            if axis == 2 {
+                raw[3] = self.slot_color.hsv.a;
+            } else if color[..3] != self.slot_color.color[..3] {
+                for index in 0..3 {
+                    raw[index] = f32::from(color[index]) / 255.;
+                }
+            }
+            if raw != self.slot_color.raw {
+                self.preview_slot_color_raw(raw);
+            }
             self.slot_color.hex = hex(color);
         }
     }
 
     pub(super) fn slot_color_diagnostic(&self) -> serde_json::Value {
         let context = self.slot_color_context();
-        let color = context
-            .as_ref()
-            .map(|context| self.session.document().slots[context.slot].color);
+        let raw = context.as_ref().and_then(|context| {
+            self.current_slot_pose(context.slot)
+                .ok()
+                .map(|pose| pose.color)
+        });
+        let color = raw.and_then(|color| peachy_engine::slot_color_bytes(color).ok());
         serde_json::json!({"slot":context.as_ref().map(|context|context.slot),"name":context.as_ref().map(|context|&context.name),
-        "color":color,"hex":color.map(hex),"setup":self.setup_mode,"visible":self.slot_color_visible(),
+        "color":color,"rawColor":raw,"hex":color.map(hex),"setup":self.setup_mode,"visible":self.slot_color_visible(),"dialog":self.slot_color.dialog.is_some(),
         "blocked":self.slot_color.blocked,"error":self.slot_color.error,"active":self.slot_color.edit.as_ref().map(|edit|serde_json::json!({
             "slot":edit.context.slot,"baseline":edit.baseline,"kind":if edit.input == Input::Hex {"hex"} else {"picker"},"finishPending":edit.finish_pending
         }))})
@@ -487,6 +674,21 @@ fn hex(color: [u8; 4]) -> String {
         "#{:02X}{:02X}{:02X}{:02X}",
         color[0], color[1], color[2], color[3]
     )
+}
+
+// Slot RGB is authored in straight color-channel space. HSV conversion must
+// neither premultiply hidden RGB nor apply an extra gamma transform.
+fn slot_hsv(color: [f32; 4]) -> Hsva {
+    let [r, g, b, a] = color.map(|value| value.clamp(0., 1.));
+    Hsva::from_rgba_unmultiplied(r, g, b, a)
+}
+fn slot_hsv_bytes(hsv: Hsva) -> [u8; 4] {
+    hsv.to_rgba_unmultiplied()
+        .map(|value| (value.clamp(0., 1.) * 255.).round() as u8)
+}
+fn slot_hsv_color(hsv: Hsva) -> Color32 {
+    let [r, g, b, a] = slot_hsv_bytes(hsv);
+    Color32::from_rgba_unmultiplied(r, g, b, a)
 }
 fn parse_hex(text: &str) -> Option<[u8; 4]> {
     let digits = text.trim().strip_prefix('#').unwrap_or(text.trim());
@@ -540,7 +742,7 @@ fn paint_sv(painter: &egui::Painter, rect: egui::Rect, h: f32) {
                     rect.left() + s * rect.width(),
                     rect.bottom() - v * rect.height(),
                 ),
-                Color32::from(Hsva { h, s, v, a: 1. }),
+                slot_hsv_color(Hsva { h, s, v, a: 1. }),
             );
         }
     }
@@ -562,7 +764,7 @@ fn paint_strip(painter: &egui::Painter, rect: egui::Rect, hsv: Hsva, alpha: bool
     const N: u32 = 32;
     for index in 0..=N {
         let value = index as f32 / N as f32;
-        let color = Color32::from(if alpha {
+        let color = slot_hsv_color(if alpha {
             Hsva { a: value, ..hsv }
         } else {
             Hsva {

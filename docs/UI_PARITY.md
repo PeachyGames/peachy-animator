@@ -1,5 +1,26 @@
 # Spine workspace and interaction parity
 
+## Slot attachment and RGBA authoring — November 14, 2026
+
+Installed 4.3.26 observations put attachment keys beside the slot row and color
+keys beside its Properties swatch. Properties opens Set slot color: vertical
+alpha, SV square, hue strip, HSB/RGBA/hex fields and explicit OK/Cancel. Native
+Dopesheet labels are Attach and RGBA; grouped RGBA curves show R/G/B/A values in
+percent. Peachy now follows those controls with independent drawings and math,
+neutral Attach markers and pink RGBA markers.
+
+Actual native input verifies integer Alpha entry (128.9 becomes 128), full Cancel
+rollback, pending Save exclusion, mixed-property K in one undo step, R tangent
+editing at 80%, keyboard clipboard/Delete, numeric/held Escape cancellation and
+fresh-process persistence/playback. Native exact-key labels use short frame
+presentation while retaining exact f32 identities. See the
+[before/after and controls gallery](evidence/slot-authoring.html).
+
+Remaining differences include full Color-view Setup targets, separate RGB/alpha,
+all-bone/all-owner rows and curves, exact styling, arbitrary docking and native
+sub-byte precision/half-byte sampling ties. Numeric native calibration is a
+separate gate from visual placement; neither establishes pixel equivalence.
+
 ## Deform timeline comparison — November 14, 2026
 
 Matched 1500×960 client-area captures from an owned installed Spine 4.3.26 window

@@ -9,6 +9,8 @@ pub(super) enum TimelineRow {
     Bone(Property),
     Ik,
     Deform,
+    SlotAttachment,
+    SlotColor,
 }
 impl TimelineRow {
     pub fn matches(self, key: AnimationKey) -> bool {
@@ -16,6 +18,8 @@ impl TimelineRow {
             (Self::Bone(a), AnimationKey::Bone { property: b, .. }) => a == b,
             (Self::Ik, AnimationKey::Ik { .. }) => true,
             (Self::Deform, AnimationKey::Deform { .. }) => true,
+            (Self::SlotAttachment, AnimationKey::SlotAttachment { .. }) => true,
+            (Self::SlotColor, AnimationKey::SlotColor { .. }) => true,
             _ => false,
         }
     }
@@ -25,6 +29,7 @@ pub(super) fn rows(owner: Option<KeyOwner>) -> Vec<TimelineRow> {
         Some(KeyOwner::Bone { .. }) => Property::ALL.into_iter().map(TimelineRow::Bone).collect(),
         Some(KeyOwner::Ik { .. }) => vec![TimelineRow::Ik],
         Some(KeyOwner::Deform { .. }) => vec![TimelineRow::Deform],
+        Some(KeyOwner::Slot { .. }) => vec![TimelineRow::SlotAttachment, TimelineRow::SlotColor],
         None => vec![],
     }
 }
@@ -77,6 +82,34 @@ pub(super) fn row_keys(
                     .iter()
                     .map(|key| AnimationKey::Deform {
                         attachment: attachment.clone(),
+                        time: key.time,
+                    })
+                    .collect()
+            }),
+        (KeyOwner::Slot { slot }, TimelineRow::SlotAttachment) => clip
+            .attachment_tracks
+            .iter()
+            .find(|track| track.slot == slot)
+            .map_or_else(Vec::new, |track| {
+                track
+                    .keys
+                    .iter()
+                    .map(|key| AnimationKey::SlotAttachment {
+                        slot,
+                        time: key.time,
+                    })
+                    .collect()
+            }),
+        (KeyOwner::Slot { slot }, TimelineRow::SlotColor) => clip
+            .color_tracks
+            .iter()
+            .find(|track| track.slot == slot)
+            .map_or_else(Vec::new, |track| {
+                track
+                    .keys
+                    .iter()
+                    .map(|key| AnimationKey::SlotColor {
+                        slot,
                         time: key.time,
                     })
                     .collect()
