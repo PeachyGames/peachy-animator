@@ -1,6 +1,13 @@
 //! Pure typed presentation selection. Playhead movement never implies key selection.
-use peachy_document::{Document, Property, SliderProperty};
-use peachy_engine::{AnimationKey, Command, KeyOwner};
+use std::sync::Arc;
+
+#[cfg(test)]
+use peachy_document::Document;
+use peachy_document::{Property, SliderProperty};
+use peachy_engine::{
+    AnimationKey, Command, KeyOwner, Session, UnsupportedAnimationTimeline,
+    animation_key_inventory, animation_keys,
+};
 
 pub(super) type KeyId = AnimationKey;
 
@@ -42,6 +49,7 @@ pub(super) fn rows(owner: Option<KeyOwner>) -> Vec<TimelineRow> {
         None => vec![],
     }
 }
+#[cfg(test)]
 pub(super) fn row_keys(
     document: &Document,
     animation: usize,
@@ -155,37 +163,178 @@ pub(super) enum SelectionScope {
     Shown,
 }
 
+#[derive(Clone, Default)]
+pub(super) struct ShownKeys {
+    pub owners: Vec<KeyOwner>,
+    pub keys: Vec<AnimationKey>,
+    pub unsupported: Vec<UnsupportedAnimationTimeline>,
+    pub readonly_owners: Vec<KeyOwner>,
+}
+
+struct TimelineCache {
+    generation: u64,
+    animation: Option<usize>,
+    owner: Option<KeyOwner>,
+    shown: Result<Arc<ShownKeys>, String>,
+}
+
 #[derive(Default)]
 pub(super) struct KeySelection {
     context: (Option<usize>, Option<KeyOwner>),
     keys: Vec<AnimationKey>,
+    primary: Option<AnimationKey>,
+    cache: Option<TimelineCache>,
     expansion: SelectionScope,
 }
 impl KeySelection {
+    #[cfg(test)]
+    pub fn invalidate_cache(&mut self) {
+        self.cache = None;
+    }
+    /// Cache validated metadata, never mesh payloads, by the accepted Session document.
+    pub fn prepare(
+        &mut self,
+        session: &Session,
+        animation: Option<usize>,
+        owner: Option<KeyOwner>,
+    ) -> Result<(), String> {
+        let generation = session.document_generation();
+        if self.cache.as_ref().is_none_or(|cached| {
+            cached.generation != generation
+                || cached.animation != animation
+                || cached.owner != owner
+        }) {
+            let shown = (|| {
+                let Some(animation) = animation else {
+                    return Ok(Arc::new(ShownKeys::default()));
+                };
+                let (owners, unsupported) = if let Some(owner) = &owner {
+                    (vec![owner.clone()], None)
+                } else {
+                    let inventory = animation_key_inventory(session.document(), animation)?;
+                    (inventory.owners, Some(inventory.unsupported_timelines))
+                };
+                let query = animation_keys(session.document(), animation, &owners)?;
+                Ok(Arc::new(ShownKeys {
+                    owners,
+                    keys: query.keys,
+                    unsupported: unsupported.unwrap_or(query.unsupported_timelines),
+                    readonly_owners: vec![],
+                }))
+            })();
+            self.cache = Some(TimelineCache {
+                generation,
+                animation,
+                owner: owner.clone(),
+                shown,
+            });
+        }
+        let shown = self
+            .cache
+            .as_ref()
+            .unwrap()
+            .shown
+            .as_ref()
+            .map_err(Clone::clone)?;
+        let shown_keys = &shown.keys;
+        if self.context.0 != animation {
+            self.keys.clear();
+            self.primary = None;
+            self.expansion = SelectionScope::None;
+        }
+        if self.context != (animation, owner.clone()) {
+            self.expansion = SelectionScope::None;
+        }
+        self.context = (animation, owner);
+        let previous_len = self.keys.len();
+        self.keys.retain(|key| shown_keys.contains(key));
+        if self.keys.len() != previous_len {
+            self.expansion = SelectionScope::None;
+        }
+        if self
+            .primary
+            .as_ref()
+            .is_none_or(|key| !self.keys.contains(key))
+        {
+            self.primary = self.keys.first().cloned();
+        }
+        Ok(())
+    }
+    pub fn shown(&self) -> Arc<ShownKeys> {
+        self.cache
+            .as_ref()
+            .and_then(|cache| cache.shown.as_ref().ok())
+            .cloned()
+            .unwrap_or_default()
+    }
+    #[cfg(test)]
     pub fn reconcile(
         &mut self,
         document: &Document,
         animation: Option<usize>,
         owner: Option<KeyOwner>,
     ) {
-        let context = (animation, owner.clone());
-        if self.context != context {
-            self.clear();
-            self.context = context;
-        }
-        let shown: Vec<_> = animation
-            .zip(owner)
-            .map_or_else(Vec::new, |(animation, owner)| {
+        // Legacy pure selection fixtures do not have a live Session cache token.
+        let shown = animation.map_or_else(Vec::new, |animation| {
+            if let Some(owner) = &owner {
                 rows(Some(owner.clone()))
                     .into_iter()
                     .flat_map(|row| row_keys(document, animation, owner.clone(), row))
                     .collect()
-            });
+            } else {
+                animation_key_inventory(document, animation)
+                    .ok()
+                    .and_then(|inventory| {
+                        animation_keys(document, animation, &inventory.owners).ok()
+                    })
+                    .map_or_else(Vec::new, |query| query.keys)
+            }
+        });
+        if self.context.0 != animation {
+            self.clear();
+        }
+        if self.context != (animation, owner.clone()) {
+            self.expansion = SelectionScope::None;
+        }
+        self.context = (animation, owner);
         let previous_len = self.keys.len();
         self.keys.retain(|key| shown.contains(key));
         if self.keys.len() != previous_len {
             self.expansion = SelectionScope::None;
         }
+        if self
+            .primary
+            .as_ref()
+            .is_none_or(|key| !self.keys.contains(key))
+        {
+            self.primary = self.keys.first().cloned();
+        }
+    }
+    pub fn mark_readonly(&mut self, owners: Vec<KeyOwner>) {
+        if let Some(cache) = &mut self.cache
+            && let Ok(shown) = &mut cache.shown
+        {
+            if shown.readonly_owners != owners {
+                Arc::make_mut(shown).readonly_owners = owners;
+            }
+            self.keys
+                .retain(|key| !shown.readonly_owners.contains(&key.owner()));
+            if self
+                .primary
+                .as_ref()
+                .is_none_or(|key| !self.keys.contains(key))
+            {
+                self.primary = self.keys.first().cloned();
+            }
+        }
+    }
+    pub fn primary(&self) -> Option<&AnimationKey> {
+        self.primary.as_ref()
+    }
+    pub fn set_primary(&mut self, primary: Option<AnimationKey>) {
+        self.primary = primary
+            .filter(|key| self.keys.contains(key))
+            .or_else(|| self.keys.first().cloned());
     }
     pub fn select(&mut self, key: AnimationKey, toggle: bool) {
         self.expansion = SelectionScope::None;
@@ -198,6 +347,14 @@ impl KeySelection {
         } else {
             self.keys.clear();
             self.keys.push(key);
+        }
+        if !toggle
+            || self
+                .primary
+                .as_ref()
+                .is_none_or(|key| !self.keys.contains(key))
+        {
+            self.primary = self.keys.first().cloned();
         }
     }
     pub fn contains(&self, key: AnimationKey) -> bool {
@@ -213,12 +370,15 @@ impl KeySelection {
                 self.keys.push(key);
             }
         }
+        self.primary = self.keys.first().cloned();
     }
     pub fn clear(&mut self) {
         self.keys.clear();
+        self.primary = None;
         self.expansion = SelectionScope::None;
     }
     /// Expand to selected rows, then all shown rows. A grouped IK key has one row.
+    #[cfg(test)]
     pub fn select_all(
         &mut self,
         document: &Document,
@@ -259,15 +419,56 @@ impl KeySelection {
                 scope == SelectionScope::Shown
                     || shown_rows.iter().any(|&row| {
                         row.matches(key.clone())
-                            && self
-                                .keys
-                                .iter()
-                                .any(|selected| row.matches(selected.clone()))
+                            && self.keys.iter().any(|selected| {
+                                selected.owner() == key.owner() && row.matches(selected.clone())
+                            })
                     })
             })
             .collect();
+        self.set_primary(self.primary.clone());
         self.expansion = scope;
         scope
+    }
+    pub fn select_all_shown(&mut self) -> Result<SelectionScope, String> {
+        let shown = self.shown();
+        let scope = if self.keys.is_empty() || self.expansion != SelectionScope::None {
+            SelectionScope::Shown
+        } else {
+            SelectionScope::Rows
+        };
+        if scope == SelectionScope::Shown
+            && (!shown.unsupported.is_empty() || !shown.readonly_owners.is_empty())
+        {
+            return Err(
+                "Shown timelines include read-only keys. Select editable key rows explicitly."
+                    .into(),
+            );
+        }
+        let selected = &self.keys;
+        let keys = shown
+            .keys
+            .iter()
+            .filter(|key| !shown.readonly_owners.contains(&key.owner()))
+            .filter(|key| {
+                scope == SelectionScope::Shown
+                    || selected.iter().any(|selected| {
+                        selected.owner() == key.owner()
+                            && rows(Some(key.owner())).into_iter().any(|row| {
+                                row.matches((**key).clone()) && row.matches(selected.clone())
+                            })
+                    })
+            })
+            .cloned()
+            .collect();
+        let primary = self.primary.clone();
+        self.replace(keys);
+        self.set_primary(primary);
+        self.expansion = if self.keys.is_empty() {
+            SelectionScope::None
+        } else {
+            scope
+        };
+        Ok(self.expansion)
     }
     pub fn is_empty(&self) -> bool {
         self.keys.is_empty()
@@ -276,7 +477,7 @@ impl KeySelection {
         self.keys.len()
     }
     pub fn deletion(&self) -> Option<Command> {
-        let (Some(animation), Some(_)) = &self.context else {
+        let (Some(animation), _) = &self.context else {
             return None;
         };
         (!self.keys.is_empty()).then(|| Command::DeleteAnimationKeys {
@@ -285,7 +486,11 @@ impl KeySelection {
         })
     }
     pub fn diagnostic(&self) -> serde_json::Value {
-        serde_json::json!({"animation":self.context.0,"owner":self.context.1,"keys":self.keys})
+        serde_json::json!({"animation":self.context.0,"owner":self.context.1,"keys":self.keys,"primary":self.primary,
+            "shownOwners":self.cache.as_ref().and_then(|cache| cache.shown.as_ref().ok()).map(|shown| &shown.owners),
+            "readOnlyTimelines":self.cache.as_ref().and_then(|cache| cache.shown.as_ref().ok()).map(|shown| &shown.unsupported),
+            "readOnlyOwners":self.cache.as_ref().and_then(|cache| cache.shown.as_ref().ok()).map(|shown| &shown.readonly_owners),
+            "documentGeneration":self.cache.as_ref().map(|cache| cache.generation)})
     }
 }
 

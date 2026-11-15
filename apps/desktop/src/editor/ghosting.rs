@@ -501,6 +501,7 @@ mod slot_tint_tests {
             .unwrap();
         doc.slots[slot].color = [128, 255, 0, 64];
         editor.session = Session::new(doc).unwrap();
+        editor.session.set_skin(&editor.skin);
         let texture = ctx.load_texture(
             "ghost-slot-tint-proof",
             egui::ColorImage::from_rgba_unmultiplied([1, 1], &[255; 4]),

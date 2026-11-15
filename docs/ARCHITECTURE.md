@@ -253,6 +253,13 @@ exact destination keys are replaced while close neighbors remain separate. Every
 transition is a serializable command through the existing pure validation boundary.
 The engine uses no OS clipboard, event, clock or file APIs.
 
+`engine/timeline_inventory.rs` provides authored inventory and exact keys for
+explicit typed owners, shared by the desktop and revision-checked MCP
+`get_animation_keys`. Empty owners request inventory only. The full inventory
+and scoped result expose unsupported timeline descriptors; these are not editable
+IDs. Queries neither solve nor depend on skin, visibility, pending poses or UI
+selection. Canonical linked Deform aliases cannot duplicate an owner.
+
 `Session::preview_transaction` recomputes from a fixed document/pose baseline.
 Moving away from an overwritten key restores it during preview. Cancellation keeps
 the existing redo branch; commit creates one history entry. The desktop captures
@@ -270,11 +277,21 @@ system clipboard is not an engine dependency or native-project field.
 
 The pure `KeySelection` model keeps an explicit Rows/Shown expansion phase separate
 from key count. It reconciles exact identities before expanding and excludes keys
-outside the shown rows/current bone/clip. The desktop's ordered action stream
-combines Select All, clipboard and deletion. A release-aware input latch suppresses
+outside the shown owner set/rows/clip. With no selected editable Tree owner,
+bounded all-owner rows use the shared authored inventory; a typed selection
+retains its explicit primary owner for Graph dispatch. Read-only descriptors and
+inaccessible Deform owners cannot silently join an editable group. The desktop's
+ordered action stream combines Select All, clipboard and deletion. A release-aware input latch suppresses
 held repeats; passive observation after shortcut routing handles releases while a
 text field/modal owns input without consuming that control's events. Selection
 expansion never dispatches a document command or moves the playhead.
+Bounded two-bone scalar native acceptance verifies selection/retiming, one-step
+history, held cancellation, primary-owner Graph routing, minimum layout and
+Save/reopen. Cancellation preserves the exact selected set/primary and redo,
+blocking continued held movement until release. The native pending baseline is
+empty; nonempty pending preservation has headless coverage only. Group clipboard,
+Shift/Offset, Lock/Sync and general Tree multi-selection are separate capabilities;
+mixed Copy explicitly refuses instead of discarding owner identity.
 
 
 ## Key-derived duration

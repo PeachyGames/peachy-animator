@@ -4,7 +4,39 @@ Written November 10, 2026, at the end of the import-parity push. Read this
 first, then `AGENTS.md`. The workspace rules in `../AGENTS.md` and `../CLAUDE.md`
 still apply.
 
-## Verified Slider source/creation checkpoint — November 15, 2026
+## Multi-owner timeline checkpoint — November 15, 2026
+
+Current inventory is **63 commands /18 tools**, native v23 unchanged. The shared
+owner/key query and bounded all-owner Dopesheet UI pass **ordinary multi-owner
+native acceptance** on the original two-bone scalar case. Final MCP run03
+passes 41 requests/25 authored commands, exact mixed retiming/history/reopen and
+five rejected read-only queries. Baseline and moved runtime exports each pass 104
+poses at 0.001. See [the scope](slices/multi-owner-timeline.md),
+[review](evidence/multi-owner-timeline.html) and
+[scalar evidence](evidence/multi-owner-timeline.json).
+
+Native checks pass mixed selection/+5 displayed frames, one-step Undo/Redo, held
+Escape/continued-held blocking, eight-key Delete/Undo, Graph owner/channel
+retention/pruning, 1120×740 targets and exact Save/fresh-process reopen. Native
+pending state starts empty; nonempty pending preservation is headless-only.
+Mixed Copy refuses without changing document/selection/redo/internal clipboard.
+
+**Next action:** implement group clipboard with one common origin and explicit
+owner mapping, then calibrate Shift/Offset. Lock/Sync and general Tree
+multi-selection remain open; ordinary movement does not implement wrapping Offset.
+Reference Offset's three Undo operations restore all animation data exactly;
+the owned Spine window is closed with original bounds and Setup mode restored.
+All current owned native/MCP processes are closed; the public baseline is unchanged.
+
+The checkpoint retires 79 task-owned disposable files: generated runtime bundles,
+scratch projects, superseded MCP outputs, redundant captures and closed-native
+helpers/bytecode. Selected final recipes, requests, scalars and native-state/window
+witnesses remain for active PR review until integration or supersession. Original
+reference fixtures/exports remain for grouped clipboard and Offset calibration;
+the shared Cargo target remains needed by the continuing goal. No new checkout,
+target or repository copy was created, and no reclaimed-capacity amount is claimed.
+
+## Verified earlier Slider source/creation checkpoint — November 15, 2026
 
 **Bounded native source/creation acceptance passed.** Native v23 remains, with
 **63 commands /17 tools**. Implementation and final source-study04 pass 141 MCP
@@ -41,10 +73,10 @@ unchanged. Both104-pose geometry checks retain their earlier unchanged errors. A
 and reference bounds restored; no other-app input occurred. Final fitted
 1120×740 presentation has one image/empty history/full original art.
 
-**Next feature action: calibrate multi-owner Dopesheet group selection/timing and
-the Wind tutorial's Offset/Shift behavior in the installed editor.** The shared
-foundation is separate ongoing work; do not infer accepted UI or Offset semantics
-from it. Remaining Deform/event reference-domain transitions follow later.
+The multi-owner timing continuation above follows this verified source checkpoint.
+Installed ordinary movement, shared clipboard origin, single-property Shift and
+bounded repeated Offset are measured; Offset reselection memory remains unresolved.
+Remaining Deform/event reference-domain transitions follow later.
 The earlier November 15 held attempt stayed at8 and remains an excluded trial;
 the subsequent native replay closes changed-preview cancellation. Do not reopen
 creation/source as generically pending. Source interchange geometry passes104 poses, but four strict

@@ -224,6 +224,7 @@ mod tests {
         }
         editor.session = Session::new(doc).unwrap();
         let ctx = editor_context();
+        editor.session.set_skin(&editor.skin);
         assert!(editor.scene_for_view().unwrap().attachments.is_empty());
         for _ in 0..3 {
             workspace_frame(&mut editor, &ctx, vec![]);

@@ -442,7 +442,7 @@ pub fn deform_key_owner(
         attachment: canonical,
     })
 }
-fn canonical_owner(document: &Document, owner: KeyOwner) -> Result<KeyOwner, String> {
+pub(super) fn canonical_owner(document: &Document, owner: KeyOwner) -> Result<KeyOwner, String> {
     match &owner {
         KeyOwner::Bone { bone } if *bone >= document.bones.len() => Err("Unknown bone".into()),
         KeyOwner::Slot { slot } if *slot >= document.slots.len() => Err("Unknown slot".into()),
@@ -1310,16 +1310,27 @@ pub(super) fn move_animation_keys(
     delta: f32,
     copy: bool,
 ) -> Result<(), String> {
+    move_animation_keys_with_identities(document, animation, keys, delta, copy).map(|_| ())
+}
+
+pub(super) fn move_animation_keys_with_identities(
+    document: &mut Document,
+    animation: usize,
+    keys: &[AnimationKey],
+    delta: f32,
+    copy: bool,
+) -> Result<Vec<AnimationKey>, String> {
     if !delta.is_finite() {
         return Err("Key offset must be finite".into());
     }
     let sources = sources(document, animation, keys)?;
     let targets = checked_targets(&sources, delta)?;
+    let identities = targets.iter().map(OwnedKey::identity).collect();
     if !copy {
         remove_sources(document, animation, &sources);
     }
     insert_keys(document, animation, targets);
-    Ok(())
+    Ok(identities)
 }
 pub(super) fn delete_animation_keys(
     document: &mut Document,

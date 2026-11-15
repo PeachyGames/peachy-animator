@@ -143,14 +143,13 @@ impl Editor {
     fn select_all_dopesheet_keys(&mut self) {
         self.cancel_gesture();
         self.reconcile_dopesheet_selection();
-        let animation = self.active_animation();
-        let owner = self.timeline_owner();
-        let scope = self.key_selection.select_all(
-            self.session.document(),
-            animation,
-            owner.clone(),
-            &dopesheet_selection::rows(owner),
-        );
+        let scope = match self.key_selection.select_all_shown() {
+            Ok(scope) => scope,
+            Err(error) => {
+                self.status = error;
+                return;
+            }
+        };
         let count = self.key_selection.len();
         self.status = match scope {
             SelectionScope::None => "No keys shown".into(),
@@ -162,7 +161,6 @@ impl Editor {
     fn clipboard_context_available(&self) -> bool {
         !self.setup_mode
             && (self.dopesheet_visible() || self.graph_visible())
-            && self.timeline_owner().is_some()
             && self
                 .session
                 .document()
@@ -322,19 +320,30 @@ impl Editor {
         };
         let context = self.clipboard_context_available();
         let selected = context && !self.key_selection.is_empty();
+        let single_owner = self.key_selection.keys().first().is_none_or(|first| {
+            self.key_selection
+                .keys()
+                .iter()
+                .all(|key| key.owner() == first.owner())
+        });
         let copy = icons::toolbar_button(
             ui,
             Icon::Copy,
             "Copy keys",
             &format!("{command}+C"),
-            selected,
+            selected && single_owner,
         );
         self.record_target("timelineCopy", copy.rect);
         if copy.clicked() && self.copy_dopesheet_keys(ui.ctx()) {
             ui.memory_mut(|memory| memory.request_focus(Self::dopesheet_id()));
         }
-        let cut =
-            icons::toolbar_button(ui, Icon::Cut, "Cut keys", &format!("{command}+X"), selected);
+        let cut = icons::toolbar_button(
+            ui,
+            Icon::Cut,
+            "Cut keys",
+            &format!("{command}+X"),
+            selected && single_owner,
+        );
         self.record_target("timelineCut", cut.rect);
         if cut.clicked() && self.cut_dopesheet_keys(ui.ctx()) {
             ui.memory_mut(|memory| memory.request_focus(Self::dopesheet_id()));
@@ -347,6 +356,7 @@ impl Editor {
             ui.memory_mut(|memory| memory.request_focus(Self::dopesheet_id()));
         }
         let can_paste = context
+            && self.timeline_owner().is_some()
             && self
                 .timeline_clipboard
                 .as_ref()

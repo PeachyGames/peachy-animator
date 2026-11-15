@@ -3,6 +3,31 @@ use super::dopesheet_selection::KeyId;
 use super::icons::Icon;
 use super::key_drag::{ChartGeometry, KeyDrag, primary_pointer_event};
 use super::*;
+use peachy_engine::{KeyOwner, UnsupportedAnimationTimeline};
+
+#[cfg(test)]
+#[path = "multi_owner_dopesheet_tests.rs"]
+mod multi_owner_tests;
+
+#[derive(Clone)]
+enum ShownRow {
+    Owner(KeyOwner),
+    Channel(KeyOwner, dopesheet_selection::TimelineRow),
+    ReadOnly(UnsupportedAnimationTimeline),
+}
+
+pub(super) fn owner_id(owner: &KeyOwner) -> String {
+    match owner {
+        KeyOwner::Bone { bone } => format!("bone:{bone}"),
+        KeyOwner::Ik { constraint } => format!("ik:{constraint}"),
+        KeyOwner::Slider { constraint } => format!("slider:{constraint}"),
+        KeyOwner::Slot { slot } => format!("slot:{slot}"),
+        KeyOwner::DrawOrder {} => "drawOrder".into(),
+        KeyOwner::Deform { attachment } => {
+            format!("deform:{}", serde_json::to_string(attachment).unwrap())
+        }
+    }
+}
 
 impl Editor {
     pub(super) fn dopesheet_id() -> egui::Id {
@@ -22,8 +47,19 @@ impl Editor {
     pub(super) fn reconcile_dopesheet_selection(&mut self) {
         let animation = self.active_animation();
         let owner = self.timeline_owner();
-        self.key_selection
-            .reconcile(self.session.document(), animation, owner);
+        if let Err(error) = self.key_selection.prepare(&self.session, animation, owner) {
+            self.key_selection.clear();
+            self.status = error;
+        }
+        let readonly = self
+            .key_selection
+            .shown()
+            .owners
+            .iter()
+            .filter(|owner| !self.timeline_owner_editable(owner))
+            .cloned()
+            .collect();
+        self.key_selection.mark_readonly(readonly);
     }
     pub(super) fn timeline_owner(&self) -> Option<peachy_engine::KeyOwner> {
         match self.selection.as_ref() {
@@ -51,6 +87,105 @@ impl Editor {
                 peachy_engine::deform_key_owner(self.session.document(), attachment).ok()
             }
             _ => None,
+        }
+    }
+    /// A key's explicit primary owner drives Graph dispatch; Tree selection only
+    /// supplies a fallback when there is no authored key selection.
+    pub(super) fn graph_owner(&self) -> Option<KeyOwner> {
+        self.primary_graph_key()
+            .map(|key| key.owner())
+            .filter(|owner| self.timeline_owner_editable(owner))
+            .or_else(|| self.retained_graph_owner())
+            .or_else(|| self.timeline_owner())
+    }
+    pub(super) fn primary_graph_key(&self) -> Option<peachy_engine::AnimationKey> {
+        self.preferred_scalar_curve_selection()
+            .or_else(|| self.key_selection.primary().cloned())
+    }
+    fn timeline_owner_editable(&self, owner: &KeyOwner) -> bool {
+        let KeyOwner::Deform { attachment } = owner else {
+            return true;
+        };
+        if self.attachment_editable(attachment) {
+            return true;
+        }
+        self.session.document().skins.iter().any(|(skin, slots)| {
+            (skin == "default" || *skin == self.skin)
+                && slots.iter().any(|(slot, placeholders)| {
+                    placeholders.keys().any(|placeholder| {
+                        let candidate = AttachmentRef {
+                            skin: skin.clone(),
+                            slot: slot.clone(),
+                            placeholder: placeholder.clone(),
+                        };
+                        self.session.document().deform_target(&candidate) == *attachment
+                    })
+                })
+        })
+    }
+    fn timeline_owner_name(&self, owner: &KeyOwner) -> String {
+        let doc = self.session.document();
+        match owner {
+            KeyOwner::Bone { bone } => doc
+                .bones
+                .get(*bone)
+                .map_or("Bone", |bone| &bone.name)
+                .into(),
+            KeyOwner::Ik { constraint } | KeyOwner::Slider { constraint } => doc
+                .constraints
+                .get(*constraint)
+                .map_or("Constraint", Constraint::name)
+                .into(),
+            KeyOwner::Slot { slot } => doc
+                .slots
+                .get(*slot)
+                .map_or("Slot", |slot| &slot.name)
+                .into(),
+            KeyOwner::Deform { attachment } => {
+                format!("{}/{}", attachment.slot, attachment.placeholder)
+            }
+            KeyOwner::DrawOrder {} => "Draw order".into(),
+        }
+    }
+    fn select_timeline_owner(&mut self, owner: KeyOwner) {
+        let item = match owner {
+            KeyOwner::Bone { bone } => TreeItem::Bone(bone),
+            KeyOwner::Ik { constraint } | KeyOwner::Slider { constraint } => {
+                TreeItem::Constraint(constraint)
+            }
+            KeyOwner::Slot { slot } => TreeItem::Slot(slot),
+            KeyOwner::Deform { attachment } => TreeItem::Attachment(attachment),
+            KeyOwner::DrawOrder {} => TreeItem::DrawOrder,
+        };
+        self.select(item);
+    }
+    fn unsupported_timeline_name(&self, timeline: &UnsupportedAnimationTimeline) -> String {
+        let doc = self.session.document();
+        match timeline {
+            UnsupportedAnimationTimeline::Inherit { bone, .. } => {
+                format!("Inherit: {}", doc.bones[*bone].name)
+            }
+            UnsupportedAnimationTimeline::Sequence { attachment, .. } => {
+                format!("Sequence: {}/{}", attachment.slot, attachment.placeholder)
+            }
+            UnsupportedAnimationTimeline::Path {
+                constraint,
+                property,
+                ..
+            } => format!("Path {property:?}: {}", doc.constraints[*constraint].name()),
+            UnsupportedAnimationTimeline::Physics {
+                constraint,
+                property,
+                ..
+            } => format!(
+                "Physics {property:?}: {}",
+                constraint.map_or("Global", |index| doc.constraints[index].name())
+            ),
+            UnsupportedAnimationTimeline::PhysicsReset { constraint, .. } => format!(
+                "Physics Reset: {}",
+                constraint.map_or("Global", |index| doc.constraints[index].name())
+            ),
+            UnsupportedAnimationTimeline::Event { .. } => "Events".into(),
         }
     }
     pub(super) fn delete_dopesheet_keys(&mut self) {
@@ -239,216 +374,364 @@ impl Editor {
                 MUTED,
             );
         }
-        let owner = self.timeline_owner();
-        if owner == Some(peachy_engine::KeyOwner::DrawOrder {}) {
-            let group = egui::Rect::from_min_size(rect.min, vec2(label_width, 24.));
+        if self.timeline_owner() == Some(KeyOwner::DrawOrder {}) {
+            self.record_target(
+                "timelineGroup:drawOrder",
+                egui::Rect::from_min_size(rect.min, vec2(label_width, 24.)),
+            );
             painter.text(
-                pos2(group.left() + 12., group.center().y),
+                pos2(rect.left() + 12., rect.top() + 12.),
                 egui::Align2::LEFT_CENTER,
                 "Draw order",
                 FontId::proportional(12.),
                 Color32::from_rgb(80, 157, 224),
             );
-            self.record_target("timelineGroup:drawOrder", group);
         }
-        let rows = dopesheet_selection::rows(owner.clone());
+        let shown = self.key_selection.shown();
+        let single_owner = self.timeline_owner().is_some();
+        let mut rows = Vec::new();
+        for owner in &shown.owners {
+            if !single_owner {
+                rows.push(ShownRow::Owner(owner.clone()));
+            }
+            for row in dopesheet_selection::rows(Some(owner.clone())) {
+                if single_owner
+                    || shown
+                        .keys
+                        .iter()
+                        .any(|key| key.owner() == *owner && row.matches(key.clone()))
+                {
+                    rows.push(ShownRow::Channel(owner.clone(), row));
+                }
+            }
+        }
+        rows.extend(shown.unsupported.iter().cloned().map(ShownRow::ReadOnly));
         let mut key_targets = Vec::new();
-        for (i, row) in rows.into_iter().enumerate() {
-            let y = rect.top() + 26.0 + pitch * (i as f32 + 0.5);
-            let (name, tool, target, color) = match row {
-                dopesheet_selection::TimelineRow::Bone(property) => {
-                    let tool = match property {
-                        Property::Rotation => Tool::Rotate,
-                        Property::X | Property::Y => Tool::Move,
-                        Property::ScaleX | Property::ScaleY => Tool::Scale,
-                        Property::ShearX | Property::ShearY => Tool::Shear,
-                    };
-                    let color = match property {
-                        Property::Rotation => Color32::from_rgb(109, 189, 126),
-                        Property::X | Property::Y => Color32::from_rgb(105, 168, 225),
-                        Property::ScaleX | Property::ScaleY => Color32::from_rgb(211, 116, 116),
-                        Property::ShearX | Property::ShearY => Color32::from_rgb(190, 145, 210),
-                    };
-                    (
-                        property.label().to_owned(),
-                        Some(tool),
-                        format!("timelineRow:{property:?}"),
-                        color,
-                    )
-                }
-                dopesheet_selection::TimelineRow::Ik => {
-                    let Some(peachy_engine::KeyOwner::Ik { constraint }) = &owner else {
-                        continue;
-                    };
-                    (
-                        "IK constraint".to_owned(),
-                        None,
-                        format!("timelineRow:ik:{constraint}"),
-                        MINT,
-                    )
-                }
-                dopesheet_selection::TimelineRow::Slider(property) => (
-                    format!(
-                        "Slider {}",
-                        if property == SliderProperty::Time {
-                            "Time"
-                        } else {
-                            "Mix"
+        let row_area = egui::Rect::from_min_max(pos2(rect.left(), rect.top() + 26.), rect.max);
+        let mut row_ui = ui.new_child(
+            egui::UiBuilder::new()
+                .id_salt("dopesheet-rows")
+                .max_rect(row_area),
+        );
+        row_ui.spacing_mut().item_spacing.y = 0.;
+        egui::ScrollArea::vertical()
+            .id_salt("dopesheet-row-scroll")
+            .auto_shrink([false, false])
+            .max_height(row_area.height())
+            .show_rows(&mut row_ui, pitch, rows.len(), |ui, range| {
+                let rows_clip = ui.clip_rect().intersect(row_area);
+                self.record_target("timelineRowsClip", rows_clip);
+                let painter = ui.painter_at(rows_clip);
+                for i in range {
+                    let (_, row_rect) = ui.allocate_space(vec2(ui.available_width(), pitch));
+                    let y = row_rect.center().y;
+                    let (row_owner, row) = match &rows[i] {
+                        ShownRow::Owner(owner) => {
+                            let group = egui::Rect::from_min_max(
+                                pos2(rect.left() + 6., row_rect.top()),
+                                pos2(rect.left() + label_width - 6., row_rect.bottom()),
+                            )
+                            .intersect(rows_clip);
+                            let name = self.timeline_owner_name(owner);
+                            let response = ui.interact(
+                                group,
+                                ui.id().with(("timeline-owner", owner_id(owner))),
+                                Sense::click(),
+                            );
+                            painter.text(
+                                pos2(group.left() + 6., y),
+                                egui::Align2::LEFT_CENTER,
+                                &name,
+                                FontId::proportional(12.),
+                                Color32::LIGHT_GRAY,
+                            );
+                            self.record_target(
+                                &format!("timelineOwner:{}", owner_id(owner)),
+                                group,
+                            );
+                            if response.clicked() {
+                                self.select_timeline_owner(owner.clone());
+                            }
+                            continue;
                         }
-                    ),
-                    None,
-                    format!("timelineRow:slider:{property:?}"),
-                    if property == SliderProperty::Time {
-                        Color32::from_rgb(90, 180, 205)
-                    } else {
-                        Color32::from_rgb(195, 120, 205)
-                    },
-                ),
-                dopesheet_selection::TimelineRow::Deform => {
-                    let Some(peachy_engine::KeyOwner::Deform { attachment }) = &owner else {
-                        continue;
+                        ShownRow::ReadOnly(timeline) => {
+                            let name = self.unsupported_timeline_name(timeline);
+                            painter.text(
+                                pos2(rect.left() + 12., y),
+                                egui::Align2::LEFT_CENTER,
+                                format!("{name} · read-only"),
+                                FontId::proportional(12.),
+                                MUTED,
+                            );
+                            for time in timeline.times() {
+                                let x = (f64::from(geometry.start)
+                                    + f64::from(geometry.width) * *time
+                                        / f64::from(geometry.extent))
+                                    as f32;
+                                let point = pos2(x, y);
+                                if point.is_finite()
+                                    && rows_clip.contains(point)
+                                    && grid.contains(point)
+                                {
+                                    painter.rect_stroke(
+                                        egui::Rect::from_center_size(point, vec2(5., 11.)),
+                                        0.,
+                                        Stroke::new(1., MUTED),
+                                        egui::StrokeKind::Inside,
+                                    );
+                                }
+                            }
+                            let target = row_rect.intersect(rows_clip);
+                            if target.is_positive() {
+                                self.record_target(&format!("timelineReadOnly:{i}"), target);
+                            }
+                            continue;
+                        }
+                        ShownRow::Channel(owner, row) => (owner.clone(), *row),
                     };
-                    let name = self
-                        .session
-                        .document()
-                        .attachment(attachment)
-                        .and_then(|value| value.name().or_else(|| value.path()))
-                        .unwrap_or(&attachment.placeholder);
-                    (
-                        format!("Deform: {name}"),
-                        None,
-                        "timelineRow:deform".to_owned(),
-                        Color32::from_rgb(45, 165, 235),
+                    let editable = self.timeline_owner_editable(&row_owner);
+                    let owner = Some(row_owner.clone());
+                    let (name, tool, target, color) = match row {
+                        dopesheet_selection::TimelineRow::Bone(property) => {
+                            let tool = match property {
+                                Property::Rotation => Tool::Rotate,
+                                Property::X | Property::Y => Tool::Move,
+                                Property::ScaleX | Property::ScaleY => Tool::Scale,
+                                Property::ShearX | Property::ShearY => Tool::Shear,
+                            };
+                            let color = match property {
+                                Property::Rotation => Color32::from_rgb(109, 189, 126),
+                                Property::X | Property::Y => Color32::from_rgb(105, 168, 225),
+                                Property::ScaleX | Property::ScaleY => {
+                                    Color32::from_rgb(211, 116, 116)
+                                }
+                                Property::ShearX | Property::ShearY => {
+                                    Color32::from_rgb(190, 145, 210)
+                                }
+                            };
+                            (
+                                property.label().to_owned(),
+                                Some(tool),
+                                format!("timelineRow:{property:?}"),
+                                color,
+                            )
+                        }
+                        dopesheet_selection::TimelineRow::Ik => {
+                            let Some(peachy_engine::KeyOwner::Ik { constraint }) = &owner else {
+                                continue;
+                            };
+                            (
+                                "IK constraint".to_owned(),
+                                None,
+                                format!("timelineRow:ik:{constraint}"),
+                                MINT,
+                            )
+                        }
+                        dopesheet_selection::TimelineRow::Slider(property) => (
+                            format!(
+                                "Slider {}",
+                                if property == SliderProperty::Time {
+                                    "Time"
+                                } else {
+                                    "Mix"
+                                }
+                            ),
+                            None,
+                            format!("timelineRow:slider:{property:?}"),
+                            if property == SliderProperty::Time {
+                                Color32::from_rgb(90, 180, 205)
+                            } else {
+                                Color32::from_rgb(195, 120, 205)
+                            },
+                        ),
+                        dopesheet_selection::TimelineRow::Deform => {
+                            let Some(peachy_engine::KeyOwner::Deform { attachment }) = &owner
+                            else {
+                                continue;
+                            };
+                            let name = self
+                                .session
+                                .document()
+                                .attachment(attachment)
+                                .and_then(|value| value.name().or_else(|| value.path()))
+                                .unwrap_or(&attachment.placeholder);
+                            (
+                                format!("Deform: {name}"),
+                                None,
+                                "timelineRow:deform".to_owned(),
+                                Color32::from_rgb(45, 165, 235),
+                            )
+                        }
+                        dopesheet_selection::TimelineRow::SlotAttachment => (
+                            if let Some(peachy_engine::KeyOwner::Slot { slot }) = &owner {
+                                format!("Attach: {}", self.session.document().slots[*slot].name)
+                            } else {
+                                "Attach".to_owned()
+                            },
+                            None,
+                            "timelineRow:attachment".to_owned(),
+                            Color32::from_rgb(180, 184, 190),
+                        ),
+                        dopesheet_selection::TimelineRow::SlotColor => (
+                            if let Some(peachy_engine::KeyOwner::Slot { slot }) = &owner {
+                                format!("RGBA: {}", self.session.document().slots[*slot].name)
+                            } else {
+                                "RGBA".to_owned()
+                            },
+                            None,
+                            "timelineRow:color".to_owned(),
+                            Color32::from_rgb(224, 106, 184),
+                        ),
+                        dopesheet_selection::TimelineRow::DrawOrder => (
+                            "Default".to_owned(),
+                            None,
+                            "timelineRow:drawOrder".to_owned(),
+                            Color32::from_rgb(80, 157, 224),
+                        ),
+                    };
+                    let channel_id = match row {
+                        dopesheet_selection::TimelineRow::Bone(property) => format!("{property:?}"),
+                        dopesheet_selection::TimelineRow::Slider(property) => {
+                            format!("{property:?}")
+                        }
+                        dopesheet_selection::TimelineRow::Ik => "Mix".into(),
+                        dopesheet_selection::TimelineRow::Deform => "deform".into(),
+                        dopesheet_selection::TimelineRow::SlotAttachment => "attachment".into(),
+                        dopesheet_selection::TimelineRow::SlotColor => "color".into(),
+                        dopesheet_selection::TimelineRow::DrawOrder => "Default".into(),
+                    };
+                    let qualified = format!("{}:{channel_id}", owner_id(&row_owner));
+                    let label_rect = egui::Rect::from_min_max(
+                        pos2(rect.left() + 6.0, y - 10.0),
+                        pos2(rect.left() + label_width - 6.0, y + 10.0),
                     )
-                }
-                dopesheet_selection::TimelineRow::SlotAttachment => (
-                    if let Some(peachy_engine::KeyOwner::Slot { slot }) = &owner {
-                        format!("Attach: {}", self.session.document().slots[*slot].name)
+                    .intersect(rows_clip);
+                    let label = ui
+                        .interact(
+                            label_rect,
+                            ui.id().with(("timeline-row", &qualified)),
+                            Sense::click(),
+                        )
+                        .on_hover_cursor(egui::CursorIcon::PointingHand);
+                    let label = if let Some(tool) = tool {
+                        let (name, shortcut) = match tool {
+                            Tool::Rotate => ("Rotate", "C"),
+                            Tool::Move => ("Translate", "V"),
+                            Tool::Scale => ("Scale", "X"),
+                            Tool::Shear => ("Shear", "Z"),
+                            _ => ("Transform", ""),
+                        };
+                        label.on_hover_text(format!("Select {name} tool · {shortcut}"))
                     } else {
-                        "Attach".to_owned()
-                    },
-                    None,
-                    "timelineRow:attachment".to_owned(),
-                    Color32::from_rgb(180, 184, 190),
-                ),
-                dopesheet_selection::TimelineRow::SlotColor => (
-                    if let Some(peachy_engine::KeyOwner::Slot { slot }) = &owner {
-                        format!("RGBA: {}", self.session.document().slots[*slot].name)
-                    } else {
-                        "RGBA".to_owned()
-                    },
-                    None,
-                    "timelineRow:color".to_owned(),
-                    Color32::from_rgb(224, 106, 184),
-                ),
-                dopesheet_selection::TimelineRow::DrawOrder => (
-                    "Default".to_owned(),
-                    None,
-                    "timelineRow:drawOrder".to_owned(),
-                    Color32::from_rgb(80, 157, 224),
-                ),
-            };
-            let label_rect = egui::Rect::from_min_max(
-                pos2(rect.left() + 6.0, y - 10.0),
-                pos2(rect.left() + label_width - 6.0, y + 10.0),
-            )
-            .intersect(rect);
-            let label = ui
-                .interact(
-                    label_rect,
-                    ui.id().with(("timeline-row", i)),
-                    Sense::click(),
-                )
-                .on_hover_cursor(egui::CursorIcon::PointingHand);
-            let label = if let Some(tool) = tool {
-                let (name, shortcut) = match tool {
-                    Tool::Rotate => ("Rotate", "C"),
-                    Tool::Move => ("Translate", "V"),
-                    Tool::Scale => ("Scale", "X"),
-                    Tool::Shear => ("Shear", "Z"),
-                    _ => ("Transform", ""),
-                };
-                label.on_hover_text(format!("Select {name} tool · {shortcut}"))
-            } else {
-                label.on_hover_text(match row {
-                    dopesheet_selection::TimelineRow::Slider(_) => {
-                        "Slider Time/Mix keys; select a channel to edit its authored keys."
+                        label.on_hover_text(match row {
+                            dopesheet_selection::TimelineRow::Slider(_) => {
+                                "Slider Time/Mix keys; select a channel to edit its authored keys."
+                            }
+                            dopesheet_selection::TimelineRow::Deform => &name,
+                            dopesheet_selection::TimelineRow::SlotAttachment => {
+                                "Slot attachment swaps are stepped; None hides the slot."
+                            }
+                            dopesheet_selection::TimelineRow::SlotColor => {
+                                "Slot RGBA color keys preserve their four channel curves."
+                            }
+                            dopesheet_selection::TimelineRow::DrawOrder => {
+                                "Global slot order keys hold until the next key."
+                            }
+                            _ => "IK constraint keys group Mix and Positive",
+                        })
+                    };
+                    label.widget_info(|| {
+                        egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), &name)
+                    });
+                    if label.rect.is_positive() {
+                        self.record_target(&format!("timelineRow:{qualified}"), label.rect);
+                        if single_owner {
+                            self.record_target(&target, label.rect);
+                        }
                     }
-                    dopesheet_selection::TimelineRow::Deform => &name,
-                    dopesheet_selection::TimelineRow::SlotAttachment => {
-                        "Slot attachment swaps are stepped; None hides the slot."
+                    if label.clicked() {
+                        if let Some(tool) = tool {
+                            self.set_tool(tool);
+                        }
+                        ui.ctx()
+                            .memory_mut(|memory| memory.request_focus(Self::dopesheet_id()));
                     }
-                    dopesheet_selection::TimelineRow::SlotColor => {
-                        "Slot RGBA color keys preserve their four channel curves."
-                    }
-                    dopesheet_selection::TimelineRow::DrawOrder => {
-                        "Global slot order keys hold until the next key."
-                    }
-                    _ => "IK constraint keys group Mix and Positive",
-                })
-            };
-            label.widget_info(|| {
-                egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), &name)
-            });
-            self.record_target(&target, label.rect);
-            if label.clicked() {
-                if let Some(tool) = tool {
-                    self.set_tool(tool);
-                }
-                ui.ctx()
-                    .memory_mut(|memory| memory.request_focus(Self::dopesheet_id()));
-            }
-            ui.painter_at(label_rect).text(
-                pos2(
-                    rect.left()
-                        + if row == dopesheet_selection::TimelineRow::DrawOrder {
-                            26.
+                    ui.painter_at(label_rect).text(
+                        pos2(
+                            rect.left()
+                                + if row == dopesheet_selection::TimelineRow::DrawOrder {
+                                    26.
+                                } else {
+                                    12.
+                                },
+                            y,
+                        ),
+                        egui::Align2::LEFT_CENTER,
+                        name,
+                        FontId::proportional(12.0),
+                        if label.hovered() || label.has_focus() {
+                            ACCENT
                         } else {
-                            12.
+                            MUTED
                         },
-                    y,
-                ),
-                egui::Align2::LEFT_CENTER,
-                name,
-                FontId::proportional(12.0),
-                if label.hovered() || label.has_focus() {
-                    ACCENT
-                } else {
-                    MUTED
-                },
-            );
-            let keys = owner.clone().map_or_else(Vec::new, |owner| {
-                dopesheet_selection::row_keys(self.session.document(), self.animation, owner, row)
+                    );
+                    let keys = shown
+                        .keys
+                        .iter()
+                        .filter(|key| key.owner() == row_owner && row.matches((*key).clone()));
+                    for (index, key_id) in keys.enumerate() {
+                        let p = pos2(geometry.x_at(key_id.time()), y);
+                        let key_rect = egui::Rect::from_center_size(p, vec2(9., 9.));
+                        if !rows_clip.contains(p) || !grid.contains(p) {
+                            continue;
+                        }
+                        if editable {
+                            key_targets.push((key_id.clone(), p));
+                        }
+                        if editable {
+                            self.record_target(
+                                &format!("timelineKey:{qualified}:{index}"),
+                                key_rect.intersect(rows_clip),
+                            );
+                        }
+                        if single_owner && editable {
+                            let legacy = match key_id {
+                                KeyId::Slider {
+                                    constraint,
+                                    property,
+                                    ..
+                                } => {
+                                    format!("timelineKey:slider:{constraint}:{property:?}:{index}")
+                                }
+                                KeyId::Bone { property, .. } => {
+                                    format!("timelineKey:{property:?}:{index}")
+                                }
+                                KeyId::Ik { constraint, .. } => {
+                                    format!("timelineKey:ik:{constraint}:{index}")
+                                }
+                                KeyId::Deform { .. } => format!("timelineKey:deform:{index}"),
+                                KeyId::SlotAttachment { .. } => {
+                                    format!("timelineKey:attachment:{index}")
+                                }
+                                KeyId::SlotColor { .. } => format!("timelineKey:color:{index}"),
+                                KeyId::DrawOrder { .. } => format!("timelineKey:drawOrder:{index}"),
+                            };
+                            self.record_target(&legacy, key_rect.intersect(rows_clip));
+                        }
+                        painter.rect_filled(
+                            egui::Rect::from_center_size(p, vec2(5., 13.)),
+                            0.5,
+                            if self.key_selection.contains(key_id.clone()) {
+                                ACCENT
+                            } else if editable {
+                                color
+                            } else {
+                                MUTED
+                            },
+                        );
+                    }
+                }
             });
-            for (index, key_id) in keys.into_iter().enumerate() {
-                let p = pos2(geometry.x_at(key_id.time()), y);
-                let key_rect = egui::Rect::from_center_size(p, vec2(9., 9.));
-                key_targets.push((key_id.clone(), p));
-                let target = match &key_id {
-                    KeyId::Slider {
-                        constraint,
-                        property,
-                        ..
-                    } => format!("timelineKey:slider:{constraint}:{property:?}:{index}"),
-                    KeyId::Bone { property, .. } => format!("timelineKey:{property:?}:{index}"),
-                    KeyId::Ik { constraint, .. } => format!("timelineKey:ik:{constraint}:{index}"),
-                    KeyId::Deform { .. } => format!("timelineKey:deform:{index}"),
-                    KeyId::SlotAttachment { .. } => format!("timelineKey:attachment:{index}"),
-                    KeyId::SlotColor { .. } => format!("timelineKey:color:{index}"),
-                    KeyId::DrawOrder { .. } => format!("timelineKey:drawOrder:{index}"),
-                };
-                self.record_target(&target, key_rect);
-                painter.rect_filled(
-                    egui::Rect::from_center_size(p, vec2(5., 13.)),
-                    0.5,
-                    if self.key_selection.contains(key_id) {
-                        ACCENT
-                    } else {
-                        color
-                    },
-                );
-            }
-        }
         let playhead = geometry.x_at(self.time);
         painter.line_segment(
             [
@@ -483,6 +766,8 @@ impl Editor {
         {
             self.cancel_gesture();
             self.reconcile_dopesheet_selection();
+            let presentation_owner = self.timeline_owner();
+            let primary_before = self.key_selection.primary().cloned();
             self.key_drag = KeyDrag::new(
                 self.animation,
                 pressed,
@@ -491,6 +776,10 @@ impl Editor {
                 origin.x,
                 modifiers,
             );
+            if let Some(drag) = self.key_drag.as_mut() {
+                drag.presentation_owner = presentation_owner;
+                drag.primary_before = primary_before;
+            }
             response.request_focus();
         }
         let released = response.drag_stopped_by(egui::PointerButton::Primary);
@@ -564,8 +853,13 @@ impl Editor {
         let footer = ui.add(
             egui::Label::new(
                 RichText::new(format!(
-                    "{} selected · Delete to remove · Cmd/Ctrl-click toggles · Drag to retime",
-                    self.key_selection.len()
+                    "{} selected · Delete to remove · Cmd/Ctrl-click toggles · Drag to retime{}",
+                    self.key_selection.len(),
+                    if shown.unsupported.is_empty() && shown.readonly_owners.is_empty() {
+                        ""
+                    } else {
+                        " · read-only timelines shown; whole-group edits unavailable"
+                    }
                 ))
                 .small()
                 .color(MUTED),

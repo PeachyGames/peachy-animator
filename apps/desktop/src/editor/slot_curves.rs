@@ -208,19 +208,14 @@ impl Editor {
     }
 
     fn slot_curve_context(&self, slot: usize) -> Option<SlotContext> {
-        if self.setup_mode || self.timeline_owner() != Some(KeyOwner::Slot { slot }) {
+        if self.setup_mode || self.graph_owner() != Some(KeyOwner::Slot { slot }) {
             return None;
         }
         let track = self.slot_color_track(self.animation, slot)?;
-        let mut selected = self
-            .key_selection
-            .keys()
-            .iter()
-            .filter_map(|key| match key {
-                AnimationKey::SlotColor { slot: owner, time } if *owner == slot => Some(*time),
-                _ => None,
-            });
-        let selected_time = selected.next().filter(|_| selected.next().is_none());
+        let selected_time = self.primary_graph_key().and_then(|key| match key {
+            AnimationKey::SlotColor { slot: owner, time } if owner == slot => Some(time),
+            _ => None,
+        });
         let time = selected_time.unwrap_or(self.time);
         track
             .keys
@@ -236,7 +231,12 @@ impl Editor {
             .ok()?
             .into_iter()
             .find_map(|target| match target.key {
-                AnimationKey::SlotColor { slot: owner, time } if owner == slot => Some(time),
+                AnimationKey::SlotColor { slot: owner, time }
+                    if owner == slot
+                        && (time == selected_time.unwrap_or(self.time) || selection.len() == 1) =>
+                {
+                    Some(time)
+                }
                 _ => None,
             })?;
         Some(SlotContext {
@@ -251,7 +251,7 @@ impl Editor {
         self.graph_visible()
             && !self.setup_mode
             && self.slot_authoring_input_available(ctx)
-            && matches!(self.timeline_owner(), Some(KeyOwner::Slot { .. }))
+            && matches!(self.graph_owner(), Some(KeyOwner::Slot { .. }))
             && !ctx.text_edit_focused()
             && ctx.memory(|memory| memory.has_focus(Self::graph_id()))
     }
@@ -292,7 +292,7 @@ impl Editor {
             || self.error.is_some()
             || self.rename.is_some()
             || self.duplicate_animation.is_some()
-            || self.timeline_owner() != Some(KeyOwner::Slot { slot })
+            || self.graph_owner() != Some(KeyOwner::Slot { slot })
         {
             return;
         }
@@ -481,7 +481,7 @@ impl Editor {
     }
 
     pub(super) fn slot_graph_panel(&mut self, ui: &mut egui::Ui) -> bool {
-        let Some(KeyOwner::Slot { slot }) = self.timeline_owner() else {
+        let Some(KeyOwner::Slot { slot }) = self.graph_owner() else {
             return false;
         };
         if self.setup_mode {
@@ -647,7 +647,7 @@ impl Editor {
         }
         let enabled = self.slot_authoring_input_available(ui.ctx());
         ui.add_enabled_ui(enabled, |ui| self.animation_controls(ui));
-        if self.animation != owner.0 || self.timeline_owner() != Some(KeyOwner::Slot { slot }) {
+        if self.animation != owner.0 || self.graph_owner() != Some(KeyOwner::Slot { slot }) {
             return true;
         }
         let context = self.slot_curve_context(slot);

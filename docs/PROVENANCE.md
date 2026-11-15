@@ -1,5 +1,45 @@
 # Implementation provenance
 
+## Multi-owner timeline references and authored query — November 15, 2026
+
+The official [Dopesheet guide](https://esotericsoftware.com/spine-dopesheet),
+[Keys guide](https://esotericsoftware.com/spine-keys),
+[4.3 release](https://esotericsoftware.com/blog/Spine-4.3-released) and
+[changelog](https://esotericsoftware.com/spine-changelog) were retrieved through
+agent-reach routing on November 15. They distinguish selection/Sync, ordinary
+movement, Shift ripple and cycle Offset. The retained Wind transcript's grouped
+cloth/hair timing supplies the tutorial workflow, not implementation code.
+
+Owned installed 4.3.26 observations use an original six-bone/two-region fixture and
+one original blue PNG. Exact exported pairs establish mixed selected-key +5,
+Undo, one clipboard origin across two bones, single-property Shift and bounded
+repeated Offset. Reselection produces asymmetric per-track Offset data and remains
+unresolved. Three actual Undo operations restore all animation data exactly.
+The reference window is closed with original bounds and Setup mode restored.
+Unstable/interrupted attempts are excluded. No proprietary implementation or
+artist artwork was read/copied; licensed interface captures remain private.
+
+The independently implemented authored inventory exposes explicit typed owners,
+exact stored keys and read-only unsupported-timeline metadata without a pose
+solve. Current v23 has 63 commands/18 tools. A fresh actual MCP run creates the
+[public lab](../examples/peach-bot/multi-owner-bot.peachy), SHA256
+`88e6b67fdc058b4acb8bbf618dd1ebeb98fdbb3c765f24d301aebdf3d0c5c2cf`,
+from a blank root/one PNG through 25 authored commands in final03's 41 requests. Mixed move,
+read-only rejection, history/reopen and 12 retained poses pass. Baseline and moved
+exports each pass 104 separately licensed public-API runtime poses at 0.001; original
+inputs remain unchanged and the child is closed. Separate final Desktop
+`e1251a01…c70d1ee` native input verifies the original two-bone scalar group:
+Cmd-selection/move/history, held Escape/block/release, all-eight Delete/Undo,
+Graph owner/channel retention/pruning, 1120×740 targets and exact native Save/
+fresh-process reopen. The native pending baseline is empty; nonempty preservation
+is headless-only. Mixed Copy refuses without altering document/selection/redo or
+internal clipboard. Retimed saved SHA256 is
+`8c2ba3768e5f925f895d4348dfa09a56e496eca673eba2c779fe2d4f8dc2510d`;
+the public baseline stays unchanged. All owned native/MCP processes are closed.
+Group clipboard with explicit mapping/shared origin precedes Shift/Offset as the
+next slice; Lock/Sync and general Tree multi-selection remain separate. See [scope](slices/multi-owner-timeline.md) and
+[scalar evidence](evidence/multi-owner-timeline.json).
+
 ## Multi-vertex Direct weights and pose capture — November 15, 2026
 
 The official [Weights guide](https://esotericsoftware.com/spine-weights),

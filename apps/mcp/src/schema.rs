@@ -33,6 +33,70 @@ impl JsonSchema for CommandInput {
 #[serde(transparent)]
 pub struct AnimationKeyInput(pub peachy_engine::AnimationKey);
 
+/// Enforce JSON objects before delegating strict field decoding. Derived
+/// structs otherwise also accept positional arrays, contrary to the schema.
+pub(super) fn deserialize_object<'de, D, T>(deserializer: D) -> Result<T, D::Error>
+where
+    D: Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    struct ObjectVisitor<T>(std::marker::PhantomData<T>);
+    impl<'de, T: Deserialize<'de>> serde::de::Visitor<'de> for ObjectVisitor<T> {
+        type Value = T;
+        fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            formatter.write_str("an object")
+        }
+        fn visit_map<A: serde::de::MapAccess<'de>>(self, map: A) -> Result<T, A::Error> {
+            T::deserialize(serde::de::value::MapAccessDeserializer::new(map))
+        }
+    }
+    deserializer.deserialize_map(ObjectVisitor(std::marker::PhantomData))
+}
+
+#[derive(Debug)]
+pub struct KeyOwnerInput(pub peachy_engine::KeyOwner);
+
+impl<'de> Deserialize<'de> for KeyOwnerInput {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        struct AttachmentInput(peachy_document::AttachmentRef);
+        impl<'de> Deserialize<'de> for AttachmentInput {
+            fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+                Ok(Self(deserialize_object(deserializer)?))
+            }
+        }
+        #[derive(Deserialize)]
+        #[serde(tag = "type", rename_all = "camelCase", deny_unknown_fields)]
+        enum Wire {
+            Bone { bone: usize },
+            Ik { constraint: usize },
+            Slider { constraint: usize },
+            Deform { attachment: AttachmentInput },
+            Slot { slot: usize },
+            DrawOrder {},
+        }
+        use peachy_engine::KeyOwner;
+        Ok(Self(match deserialize_object(deserializer)? {
+            Wire::Bone { bone } => KeyOwner::Bone { bone },
+            Wire::Ik { constraint } => KeyOwner::Ik { constraint },
+            Wire::Slider { constraint } => KeyOwner::Slider { constraint },
+            Wire::Deform { attachment } => KeyOwner::Deform {
+                attachment: attachment.0,
+            },
+            Wire::Slot { slot } => KeyOwner::Slot { slot },
+            Wire::DrawOrder {} => KeyOwner::DrawOrder {},
+        }))
+    }
+}
+
+impl JsonSchema for KeyOwnerInput {
+    fn schema_name() -> Cow<'static, str> {
+        "PeachyKeyOwner".into()
+    }
+    fn json_schema(_: &mut SchemaGenerator) -> Schema {
+        Schema::try_from(key_owner_schema()).expect("Key owner schema is an object")
+    }
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(transparent)]
 pub struct TransformPropertyInput(pub peachy_document::TransformProperty);
@@ -78,6 +142,30 @@ pub fn animation_key_schema() -> Value {
         object(&[("type",tag("drawOrder")),("time",number())]),
         object(&[("type",tag("slider")),("constraint",index()),("property",slider_property_schema()),("time",number())]),
     ]})
+}
+
+fn key_owner_schema() -> Value {
+    let tag = |name: &str| json!({"const":name,"type":"string"});
+    json!({"oneOf":[
+        object(&[("type",tag("bone")),("bone",index())]),
+        object(&[("type",tag("ik")),("constraint",index())]),
+        object(&[("type",tag("slider")),("constraint",index())]),
+        object(&[("type",tag("deform")),("attachment",object(&[("skin",text()),("slot",text()),("placeholder",text())]))]),
+        object(&[("type",tag("slot")),("slot",index())]),
+        object(&[("type",tag("drawOrder"))]),
+    ]})
+}
+
+pub(super) fn animation_keys_query_schema() -> Value {
+    object(&[
+        ("expected_revision", index()),
+        ("animation", index()),
+        (
+            "owners",
+            json!({"type":"array","items":key_owner_schema(),"uniqueItems":true,
+            "description":"Required explicit represented owners. Empty requests full inventory with no selected keys. Duplicate canonical linked-owner aliases are also rejected."}),
+        ),
+    ])
 }
 
 fn object(fields: &[(&str, Value)]) -> Value {
@@ -383,14 +471,7 @@ pub fn command_schema() -> Value {
         ("bend_positive", json!({"type":"boolean"})),
         ("curve", ik_curve.clone()),
     ]);
-    let key_owner = json!({"oneOf":[
-        object(&[("type", tag("bone")), ("bone", index())]),
-        object(&[("type", tag("ik")), ("constraint", index())]),
-        object(&[("type", tag("slider")), ("constraint", index())]),
-        object(&[("type", tag("deform")), ("attachment", attachment.clone())]),
-        object(&[("type", tag("slot")), ("slot", index())]),
-        object(&[("type", tag("drawOrder"))]),
-    ]});
+    let key_owner = key_owner_schema();
     let animation_key = animation_key_schema();
     let curve_selection = object(&[
         ("key", animation_key.clone()),

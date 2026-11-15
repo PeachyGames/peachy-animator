@@ -8,6 +8,7 @@ use peachy_engine::{
 pub(super) struct CurvesView {
     primary: Option<(AnimationKey, usize)>,
     selection: Vec<AnimationKey>,
+    selection_primary: Option<AnimationKey>,
     bounds: Option<[f64; 4]>,
     pub(super) error: Option<String>,
     pub(super) match_handles: bool,
@@ -21,6 +22,7 @@ impl Default for CurvesView {
         Self {
             primary: None,
             selection: Vec::new(),
+            selection_primary: None,
             bounds: None,
             error: None,
             match_handles: true,
@@ -185,47 +187,21 @@ fn channel_color(channel: &CurveChannel) -> Color32 {
 
 impl Editor {
     pub(super) fn preferred_scalar_curve_selection(&self) -> Option<AnimationKey> {
-        if self.curves.selection.as_slice() != self.key_selection.keys() {
+        if self.curves.selection.as_slice() != self.key_selection.keys()
+            || self.curves.selection_primary.as_ref() != self.key_selection.primary()
+        {
             return None;
         }
         let (primary, _) = self.curves.primary.as_ref()?;
         self.key_selection
             .keys()
             .iter()
-            .find(|key| match (primary, *key) {
-                (
-                    AnimationKey::Bone {
-                        bone,
-                        property,
-                        time,
-                    },
-                    AnimationKey::Bone {
-                        bone: selected_bone,
-                        property: selected_property,
-                        time: selected_time,
-                    },
-                ) => {
-                    selected_bone == bone
-                        && selected_property == property
-                        && (selected_time == time || self.key_selection.len() == 1)
-                }
-                (
-                    AnimationKey::Slider {
-                        constraint,
-                        property,
-                        time,
-                    },
-                    AnimationKey::Slider {
-                        constraint: selected_constraint,
-                        property: selected_property,
-                        time: selected_time,
-                    },
-                ) => {
-                    selected_constraint == constraint
-                        && selected_property == property
-                        && (selected_time == time || self.key_selection.len() == 1)
-                }
-                _ => false,
+            .find(|key| {
+                key.owner() == primary.owner()
+                    && dopesheet_selection::rows(Some(primary.owner()))
+                        .into_iter()
+                        .any(|row| row.matches((*key).clone()) && row.matches(primary.clone()))
+                    && (key.time() == primary.time() || self.key_selection.len() == 1)
             })
             .cloned()
     }
@@ -364,14 +340,30 @@ impl Editor {
             }
         };
         if self.curves.selection.as_slice() != self.key_selection.keys()
+            || self.curves.selection_primary.as_ref() != self.key_selection.primary()
             || !channels.iter().any(|channel| {
                 self.curves.primary.as_ref() == Some(&(channel.target.key.clone(), channel.channel))
             })
         {
             self.curves.primary = channels
-                .first()
+                .iter()
+                .find(|channel| {
+                    self.key_selection.primary().is_some_and(|key| {
+                        key.owner() == channel.target.key.owner()
+                            && dopesheet_selection::rows(Some(key.owner()))
+                                .into_iter()
+                                .any(|row| {
+                                    row.matches(key.clone())
+                                        && row.matches(channel.target.key.clone())
+                                })
+                            && (key.time() == channel.target.key.time()
+                                || self.key_selection.len() == 1)
+                    })
+                })
+                .or_else(|| channels.first())
                 .map(|channel| (channel.target.key.clone(), channel.channel));
             self.curves.selection = self.key_selection.keys().to_vec();
+            self.curves.selection_primary = self.key_selection.primary().cloned();
             self.curves.error = None;
         }
         ui.horizontal(|ui| {

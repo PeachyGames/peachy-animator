@@ -109,7 +109,14 @@ struct GraphEdit {
     finish_pending: bool,
 }
 
+struct RetainedGraphOwner {
+    animation: usize,
+    presentation: Option<TreeItem>,
+    owner: peachy_engine::KeyOwner,
+}
+
 pub(super) struct GraphView {
+    owner: Option<RetainedGraphOwner>,
     pub(super) deform: super::deform_curves::DeformCurveView,
     pub(super) slot: super::slot_curves::SlotCurveView,
     property: Property,
@@ -129,6 +136,7 @@ pub(super) struct GraphView {
 impl Default for GraphView {
     fn default() -> Self {
         Self {
+            owner: None,
             deform: Default::default(),
             slot: Default::default(),
             property: Property::Rotation,
@@ -308,8 +316,29 @@ impl Editor {
         egui::Id::new("graph-value-canvas")
     }
 
+    pub(super) fn retained_graph_owner(&self) -> Option<peachy_engine::KeyOwner> {
+        let retained = self.graph.owner.as_ref()?;
+        (!self.setup_mode
+            && retained.animation == self.animation
+            && retained.presentation == self.selection)
+            .then(|| retained.owner.clone())
+    }
+    pub(super) fn reconcile_retained_graph_owner(&mut self) {
+        if self.graph.owner.is_some() && self.retained_graph_owner().is_none() {
+            self.graph.owner = None;
+        }
+    }
+    fn retain_graph_owner(&mut self) {
+        self.graph.owner = self.graph_owner().map(|owner| RetainedGraphOwner {
+            animation: self.animation,
+            presentation: self.selection.clone(),
+            owner,
+        });
+    }
     fn graph_context(&self) -> Option<GraphContext> {
-        let bone = self.selected_bone()?;
+        let peachy_engine::KeyOwner::Bone { bone } = self.graph_owner()? else {
+            return None;
+        };
         (!self.setup_mode
             && bone < self.session.document().bones.len()
             && self.animation < self.session.document().animations.len())
@@ -387,7 +416,12 @@ impl Editor {
     }
 
     fn selected_scalar_key(&self) -> Option<(usize, Property, f32)> {
-        let selected_bone = self.selected_bone()?;
+        let peachy_engine::KeyOwner::Bone {
+            bone: selected_bone,
+        } = self.graph_owner()?
+        else {
+            return None;
+        };
         if let Some(peachy_engine::AnimationKey::Bone {
             bone,
             property,
@@ -397,14 +431,18 @@ impl Editor {
         {
             return Some((bone, property, time));
         }
-        self.key_selection.keys().iter().find_map(|key| match key {
-            peachy_engine::AnimationKey::Bone {
-                bone,
-                property,
-                time,
-            } if *bone == selected_bone => Some((*bone, *property, *time)),
-            _ => None,
-        })
+        self.key_selection
+            .primary()
+            .into_iter()
+            .chain(self.key_selection.keys())
+            .find_map(|key| match key {
+                peachy_engine::AnimationKey::Bone {
+                    bone,
+                    property,
+                    time,
+                } if *bone == selected_bone => Some((*bone, *property, *time)),
+                _ => None,
+            })
     }
 
     fn select_scalar_graph_key(&mut self, context: GraphContext, time: f32, toggle: bool) {
@@ -419,7 +457,7 @@ impl Editor {
     pub(super) fn scalar_graph_has_focus(&self, ctx: &egui::Context) -> bool {
         self.graph_visible()
             && matches!(
-                self.timeline_owner(),
+                self.graph_owner(),
                 Some(peachy_engine::KeyOwner::Bone { .. })
             )
             && !ctx.text_edit_focused()
@@ -754,9 +792,26 @@ impl Editor {
         if self.slider_graph_panel(ui) {
             return;
         }
-        if self.timeline_owner() == Some(peachy_engine::KeyOwner::DrawOrder {}) {
+        if self.graph_owner() == Some(peachy_engine::KeyOwner::DrawOrder {}) {
             self.animation_controls(ui);
             ui.label("Draw order keys hold the slot order. Edit their timing in the Dopesheet.");
+            return;
+        }
+        if matches!(self.graph_owner(), Some(peachy_engine::KeyOwner::Ik { .. })) {
+            self.animation_controls(ui);
+            ui.label(
+                "IK Mix curves are available in Curves. Edit grouped key timing in the Dopesheet.",
+            );
+            return;
+        }
+        if matches!(
+            self.primary_graph_key(),
+            Some(peachy_engine::AnimationKey::SlotAttachment { .. })
+        ) {
+            self.animation_controls(ui);
+            ui.label(
+                "Attachment keys hold until the next key. Edit their timing in the Dopesheet.",
+            );
             return;
         }
         if self.deform_graph_panel(ui) {
@@ -782,6 +837,7 @@ impl Editor {
             });
         self.record_target("graphPropertyPicker", picker.response.rect);
         if previous != self.graph.property {
+            self.retain_graph_owner();
             self.cancel_gesture();
             self.key_selection.clear();
             self.graph.selected = None;

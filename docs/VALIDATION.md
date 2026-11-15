@@ -1,6 +1,48 @@
 # First-slice validation — November 5, 2026
 
-## Slider checkpoint — November 15, 2026
+## Multi-owner timing checkpoint — November 15, 2026 (bounded acceptance passed)
+
+Native v23 retains 63 commands and now 18 tools. Final focused checks pass: six
+engine, two generation, 16 schema, three query and one actual-stdio case. Desktop
+filters pass Dopesheet 28, Graph 46, Curves 51, Slot 42, Slider 34, Deform 26,
+key-drag 4 and clipboard 15. Filters overlap; these are not a full-suite total. Final fmt,
+all-target Clippy, workspace build and seven-crate architecture checks pass.
+Final actual MCP run03 starts
+from a blank root and one original PNG and passes 41 requests/25 authored commands,
+five rejected read-only queries, exact mixed movement matching installed frames/
+values, Undo/Redo and Save/reopen; 12 poses are retained and the child is closed.
+The public [lab](../examples/peach-bot/multi-owner-bot.peachy) SHA256 is
+`88e6b67fdc058b4acb8bbf618dd1ebeb98fdbb3c765f24d301aebdf3d0c5c2cf`;
+its adjacent [25-command recipe](../examples/peach-bot/multi-owner-authoring-commands.json)
+starts from no finished rig.
+
+Baseline and moved runtime exports each compare 104 poses, 3,744 world values and
+1,664 region coordinates at unchanged 0.001 tolerance. World maxima are respectively
+1.200913195020803e−5 and 1.167843909399835e−5; region maximum is 1.52587890625e−5 for
+both. Installed reference ordinary movement/Undo and shared clipboard origin are
+measured. Three Offset Undo operations restore every animation exactly; the
+owned Spine window is closed with bounds and Setup mode restored.
+
+Final Desktop `e1251a01…c70d1ee` passes actual mixed Cmd-selection across bones 2/4,
++5 displayed frames at accepted raw delta 0.083333320915699 and one-step Undo/Redo.
+Held Escape restores document, selected keys/primary and redo; continued movement
+is blocked until release and a fresh gesture works. Native pending baseline is
+empty; nonempty pending preservation is headless-only. Cmd+A/Delete/Undo restores
+all eight keys and leaves the other clip unchanged. Graph owner/channel retention,
+header pruning and clear-to-no-context pass; all eight targets remain visible at
+1120×740. Mixed Copy explicitly refuses without changing document, selection,
+redo or internal clipboard.
+
+Native Save/fresh-process reopen recovers the exact full edited document with
+empty history and one image. The task-owned retimed file SHA256 is
+`8c2ba3768e5f925f895d4348dfa09a56e496eca673eba2c779fe2d4f8dc2510d`;
+the public baseline `88e6b67f…c2cf` remains unchanged. All current owned native/MCP
+processes are closed. Group clipboard with explicit mapping/shared origin is next;
+Shift/Offset, Lock/Sync and general Tree multi-selection remain open. See [scope](slices/multi-owner-timeline.md),
+[review](evidence/multi-owner-timeline.html) and
+[scalar evidence](evidence/multi-owner-timeline.json).
+
+## Earlier Slider checkpoint — November 15, 2026
 
 Native v23 exposes **58 commands /14 MCP tools**. Focused two-worker checks pass:
 4 document Slider, 4 document Sequence, 39 engine Slider, 16 skin, 40 slot,

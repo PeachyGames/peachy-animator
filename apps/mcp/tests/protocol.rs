@@ -859,7 +859,7 @@ async fn stdio_discovery_atomic_edit_history_save_and_export() {
     let original = fs::read(&source).unwrap();
     let client = start(&root.0).await;
     let tools = client.list_tools(Default::default()).await.unwrap().tools;
-    assert_eq!(tools.len(), 17);
+    assert_eq!(tools.len(), 18);
     assert!(tools.iter().all(|tool| !tool.input_schema.is_empty()));
     let apply = tools
         .iter()
@@ -3623,5 +3623,247 @@ async fn stdio_slider_source_choices_assignment_rollback_and_project_preferences
         doc(&client).await["document"]["constraints"][0]["property"],
         "rotate"
     );
+    client.cancel().await.unwrap();
+}
+
+#[tokio::test]
+async fn stdio_animation_keys_inventory_strict_queries_and_mixed_owner_timing() {
+    use peachy_document::*;
+    let root = Sandbox::new();
+    root.fixture();
+    let original_path = root.0.join("source/linked-mesh-bot.peachy");
+    let original = fs::read(&original_path).unwrap();
+    let mut fixture = peachy_io::decode_project(std::str::from_utf8(&original).unwrap()).unwrap();
+    let at = f32::from_bits(0.125_f32.to_bits() + 1);
+    fixture.constraints = vec![
+        Constraint::Slider(SliderConstraint::new("timing", 1)),
+        Constraint::Ik(IkConstraint {
+            name: "query IK".into(),
+            bones: vec![3],
+            target: 2,
+            setup: IkSetup {
+                mix: 0.5,
+                bend_positive: true,
+            },
+            stretch: false,
+        }),
+    ];
+    let clip = &mut fixture.animations[0];
+    clip.tracks
+        .retain(|track| !(track.bone == 0 && track.property == Property::X));
+    clip.tracks.push(Track {
+        bone: 0,
+        property: Property::X,
+        keys: vec![Keyframe {
+            time: at,
+            value: -3.5,
+            curve: Curve::Stepped,
+        }],
+    });
+    clip.ik_tracks = vec![IkTrack {
+        constraint: 1,
+        keys: vec![IkKeyframe {
+            time: at,
+            mix: 0.25,
+            bend_positive: false,
+            curve: IkCurve::Bezier {
+                time: [0.123456789012345, 0.876543210987654],
+                mix: [0.125, 0.875],
+            },
+        }],
+    }];
+    clip.slider_tracks = vec![SliderTrack {
+        constraint: 0,
+        property: SliderProperty::Mix,
+        keys: vec![Keyframe {
+            time: at,
+            value: 0.375,
+            curve: Curve::BezierOffset([0.2, -0., 0.8, 0.25]),
+        }],
+    }];
+    clip.inherit_tracks = vec![InheritTrack {
+        bone: 8,
+        keys: vec![InheritKey {
+            time: at,
+            inherit: Inherit::NoScale,
+        }],
+    }];
+    clip.attachment_tracks = vec![AttachmentTrack {
+        slot: 13,
+        keys: vec![AttachmentKey {
+            time: at,
+            attachment: Some("glove".into()),
+        }],
+    }];
+    clip.color_tracks = vec![ColorTrack {
+        slot: 13,
+        keys: vec![ColorKey {
+            time: at,
+            color: [20, 40, 80, 160],
+            curves: [Curve::Linear; 4],
+        }],
+    }];
+    clip.draw_order = vec![DrawOrderKey {
+        time: at,
+        offsets: vec![DrawOrderOffset {
+            slot: 13,
+            offset: -1,
+        }],
+    }];
+    fixture.validate().unwrap();
+    peachy_io::create_project(&root.0.join("source/inventory.peachy"), &fixture).unwrap();
+    let client = start(&root.0).await;
+    let tools = client.list_tools(Default::default()).await.unwrap().tools;
+    let tool = tools
+        .iter()
+        .find(|tool| tool.name == "get_animation_keys")
+        .unwrap();
+    assert_eq!(
+        tool.annotations.as_ref().unwrap().read_only_hint,
+        Some(true)
+    );
+    let schema = serde_json::to_value(&tool.input_schema).unwrap();
+    assert_eq!(schema["additionalProperties"], false);
+    assert!(
+        schema["required"]
+            .as_array()
+            .unwrap()
+            .contains(&json!("owners"))
+    );
+    success(
+        call(
+            &client,
+            "open_project",
+            json!({"expected_revision":0,"path":"source/inventory.peachy"}),
+        )
+        .await,
+    );
+    let before = doc(&client).await;
+    let inventory = success(
+        call(
+            &client,
+            "get_animation_keys",
+            json!({"expected_revision":1,"animation":0,"owners":[]}),
+        )
+        .await,
+    );
+    assert_eq!(inventory["selection"]["keys"], json!([]));
+    assert!(
+        inventory["inventory"]["unsupportedTimelines"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|timeline| timeline["type"] == "inherit")
+    );
+    let reference = json!({"skin":"default","slot":"hand.R","placeholder":"hand.R"});
+    let owners = json!([{ "type":"ik","constraint":1 }, { "type":"bone","bone":0 },
+        { "type":"slider","constraint":0 }, {"type":"deform","attachment":reference},
+        {"type":"slot","slot":13}, {"type":"drawOrder"}]);
+    let query = success(
+        call(
+            &client,
+            "get_animation_keys",
+            json!({"expected_revision":1,"animation":0,"owners":owners}),
+        )
+        .await,
+    );
+    assert_eq!(
+        query["selection"]["keys"][0],
+        json!({"type":"ik","constraint":1,"time":f64::from(at)})
+    );
+    assert_eq!(
+        query["selection"]["keys"][1],
+        json!({"type":"bone","bone":0,"property":"x","time":f64::from(at)})
+    );
+    let scoped = success(
+        call(
+            &client,
+            "get_animation_keys",
+            json!({"expected_revision":1,"animation":0,"owners":[{"type":"bone","bone":8}]}),
+        )
+        .await,
+    );
+    assert_eq!(
+        scoped["selection"]["unsupportedTimelines"][0]["times"],
+        json!([f64::from(at)])
+    );
+    assert_eq!(doc(&client).await, before);
+    let alias = json!({"skin":"default","slot":"hand.R","placeholder":"glove"});
+    for invalid in [
+        json!({"expected_revision":1,"animation":0}),
+        json!({"expected_revision":1,"animation":0,"owners":null}),
+        json!({"expected_revision":1,"animation":0,"owners":{}}),
+        json!({"expected_revision":1,"animation":0,"owners":[],"future":true}),
+        json!({"expected_revision":1,"animation":0,"owners":[{"type":"drawOrder","slot":0}]}),
+        json!({"expected_revision":1,"animation":0,"owners":[{"type":"deform","attachment":["default","hand.R","hand.R"]}]}),
+        json!({"expected_revision":1,"animation":0,"owners":[{"type":"bone","bone":999}]}),
+        json!({"expected_revision":1,"animation":0,"owners":[{"type":"ik","constraint":0}]}),
+        json!({"expected_revision":1,"animation":0,"owners":[{"type":"bone","bone":0},{"type":"bone","bone":0}]}),
+        json!({"expected_revision":1,"animation":0,"owners":[{"type":"deform","attachment":reference},{"type":"deform","attachment":alias}]}),
+        json!({"expected_revision":0,"animation":0,"owners":[]}),
+        json!({"expected_revision":1,"animation":99,"owners":[]}),
+    ] {
+        let result = client
+            .call_tool(
+                CallToolRequestParams::new("get_animation_keys")
+                    .with_arguments(invalid.as_object().unwrap().clone()),
+            )
+            .await;
+        assert!(
+            result.is_err()
+                || result
+                    .as_ref()
+                    .is_ok_and(|value| value.is_error == Some(true)),
+            "Accepted {invalid}"
+        );
+        assert_eq!(doc(&client).await, before);
+    }
+    let ik_ids: Vec<_> = query["selection"]["keys"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|key| key["type"] == "ik")
+        .cloned()
+        .collect();
+    let copied = success(
+        call(
+            &client,
+            "copy_animation_keys",
+            json!({"expected_revision":1,"animation":0,"keys":ik_ids}),
+        )
+        .await,
+    );
+    assert_eq!(
+        copied["clipboard"]["keys"][0]["curve"]["time"],
+        json!([0.123456789012345, 0.876543210987654])
+    );
+    assert_eq!(doc(&client).await, before);
+    let keys = query["selection"]["keys"].clone();
+    let typed = serde_json::from_value::<Vec<peachy_engine::AnimationKey>>(keys.clone()).unwrap();
+    let expected = peachy_engine::apply_command(
+        &fixture,
+        peachy_engine::Command::MoveAnimationKeys {
+            animation: 0,
+            keys: typed,
+            delta: 0.125,
+            copy: false,
+        },
+    )
+    .unwrap();
+    success(call(&client,"apply_commands",json!({"expected_revision":1,"commands":[{"command":"moveAnimationKeys","animation":0,"keys":keys,"delta":0.125,"copy":false}]})).await);
+    assert_eq!(
+        doc(&client).await["document"],
+        serde_json::to_value(expected).unwrap()
+    );
+    success(
+        call(
+            &client,
+            "history",
+            json!({"expected_revision":2,"action":"undo"}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await["document"], before["document"]);
+    assert_eq!(fs::read(&original_path).unwrap(), original);
     client.cancel().await.unwrap();
 }

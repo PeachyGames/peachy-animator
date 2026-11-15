@@ -1,0 +1,316 @@
+[
+  {
+    "command": "addBone",
+    "bone": {
+      "name": "source_parent",
+      "parent": 0,
+      "length": 0,
+      "setup": {
+        "x": 0,
+        "y": 120,
+        "rotation": 0,
+        "scale_x": 1,
+        "scale_y": 1,
+        "shear_x": 0,
+        "shear_y": 0
+      },
+      "inherit": "normal"
+    }
+  },
+  {
+    "command": "addBone",
+    "bone": {
+      "name": "driver",
+      "parent": 1,
+      "length": 60,
+      "setup": {
+        "x": 20,
+        "y": 0,
+        "rotation": 0,
+        "scale_x": 1,
+        "scale_y": 1,
+        "shear_x": 0,
+        "shear_y": 0
+      },
+      "inherit": "normal"
+    }
+  },
+  {
+    "command": "addBone",
+    "bone": {
+      "name": "follower_parent",
+      "parent": 0,
+      "length": 0,
+      "setup": {
+        "x": 0,
+        "y": -100,
+        "rotation": 0,
+        "scale_x": 1,
+        "scale_y": 1,
+        "shear_x": 0,
+        "shear_y": 0
+      },
+      "inherit": "normal"
+    }
+  },
+  {
+    "command": "addBone",
+    "bone": {
+      "name": "follower",
+      "parent": 3,
+      "length": 120,
+      "setup": {
+        "x": 0,
+        "y": 0,
+        "rotation": 30,
+        "scale_x": 1,
+        "scale_y": 1,
+        "shear_x": 0,
+        "shear_y": 0
+      },
+      "inherit": "normal"
+    }
+  },
+  {
+    "command": "addBone",
+    "bone": {
+      "name": "tip",
+      "parent": 4,
+      "length": 20,
+      "setup": {
+        "x": 120,
+        "y": 0,
+        "rotation": 0,
+        "scale_x": 1,
+        "scale_y": 1,
+        "shear_x": 0,
+        "shear_y": 0
+      },
+      "inherit": "normal"
+    }
+  },
+  {
+    "command": "addSlot",
+    "slot": {
+      "name": "driver_marker",
+      "bone": 2,
+      "attachment": null,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "blend": "normal"
+    }
+  },
+  {
+    "command": "addAttachment",
+    "attachment": {
+      "skin": "default",
+      "slot": "driver_marker",
+      "placeholder": "driver_marker"
+    },
+    "value": {
+      "type": "region",
+      "path": "blue_cutout",
+      "width": 128,
+      "height": 128,
+      "transform": {
+        "x": 0,
+        "y": 0,
+        "rotation": 0,
+        "scale_x": 0.1875,
+        "scale_y": 0.1875
+      }
+    }
+  },
+  {
+    "command": "setSlotAttachment",
+    "slot": 0,
+    "attachment": "driver_marker"
+  },
+  {
+    "command": "addSlot",
+    "slot": {
+      "name": "follower_bar",
+      "bone": 4,
+      "attachment": null,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "blend": "normal"
+    }
+  },
+  {
+    "command": "addAttachment",
+    "attachment": {
+      "skin": "default",
+      "slot": "follower_bar",
+      "placeholder": "follower_bar"
+    },
+    "value": {
+      "type": "region",
+      "path": "blue_cutout",
+      "width": 128,
+      "height": 128,
+      "transform": {
+        "x": 60,
+        "y": 0,
+        "rotation": 0,
+        "scale_x": 0.9375,
+        "scale_y": 0.1875
+      }
+    }
+  },
+  {
+    "command": "setSlotAttachment",
+    "slot": 1,
+    "attachment": "follower_bar"
+  },
+  {
+    "command": "addAnimation",
+    "name": "clipboard",
+    "duration": 0
+  },
+  {
+    "command": "addAnimation",
+    "name": "retime",
+    "duration": 0
+  },
+  {
+    "command": "setKey",
+    "animation": 0,
+    "bone": 2,
+    "property": "y",
+    "key": {
+      "time": 0.08333333333333333,
+      "value": 3,
+      "curve": "linear"
+    }
+  },
+  {
+    "command": "setKey",
+    "animation": 0,
+    "bone": 2,
+    "property": "y",
+    "key": {
+      "time": 0.4166666666666667,
+      "value": 14,
+      "curve": "linear"
+    }
+  },
+  {
+    "command": "setKey",
+    "animation": 0,
+    "bone": 4,
+    "property": "rotation",
+    "key": {
+      "time": 0.2,
+      "value": 11,
+      "curve": "linear"
+    }
+  },
+  {
+    "command": "setKey",
+    "animation": 0,
+    "bone": 4,
+    "property": "rotation",
+    "key": {
+      "time": 0.5833333333333334,
+      "value": -7,
+      "curve": "linear"
+    }
+  },
+  {
+    "command": "setKey",
+    "animation": 1,
+    "bone": 2,
+    "property": "y",
+    "key": {
+      "time": 0.0,
+      "value": 0,
+      "curve": "linear"
+    }
+  },
+  {
+    "command": "setKey",
+    "animation": 1,
+    "bone": 2,
+    "property": "y",
+    "key": {
+      "time": 0.16666666666666666,
+      "value": 12,
+      "curve": "linear"
+    }
+  },
+  {
+    "command": "setKey",
+    "animation": 1,
+    "bone": 2,
+    "property": "y",
+    "key": {
+      "time": 0.6666666666666666,
+      "value": -4,
+      "curve": "linear"
+    }
+  },
+  {
+    "command": "setKey",
+    "animation": 1,
+    "bone": 2,
+    "property": "y",
+    "key": {
+      "time": 1.0,
+      "value": 0,
+      "curve": "linear"
+    }
+  },
+  {
+    "command": "setKey",
+    "animation": 1,
+    "bone": 4,
+    "property": "rotation",
+    "key": {
+      "time": 0.08333333333333333,
+      "value": 0,
+      "curve": "linear"
+    }
+  },
+  {
+    "command": "setKey",
+    "animation": 1,
+    "bone": 4,
+    "property": "rotation",
+    "key": {
+      "time": 0.3333333333333333,
+      "value": 35,
+      "curve": "linear"
+    }
+  },
+  {
+    "command": "setKey",
+    "animation": 1,
+    "bone": 4,
+    "property": "rotation",
+    "key": {
+      "time": 0.75,
+      "value": -15,
+      "curve": "linear"
+    }
+  },
+  {
+    "command": "setKey",
+    "animation": 1,
+    "bone": 4,
+    "property": "rotation",
+    "key": {
+      "time": 1.0,
+      "value": 0,
+      "curve": "linear"
+    }
+  }
+]

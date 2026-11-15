@@ -109,7 +109,7 @@ impl Editor {
         else {
             return None;
         };
-        if self.timeline_owner()
+        if self.graph_owner()
             != Some(KeyOwner::Deform {
                 attachment: attachment.clone(),
             })
@@ -124,19 +124,13 @@ impl Editor {
             .deform_tracks
             .iter()
             .find(|track| track.attachment == attachment)?;
-        let selected = (self.key_selection.len() == 1)
-            .then(|| self.key_selection.keys())
-            .into_iter()
-            .flatten()
-            .find_map(|key| match key {
-                AnimationKey::Deform {
-                    attachment: owner,
-                    time,
-                } if *owner == attachment && track.keys.iter().any(|key| key.time == *time) => {
-                    Some(*time)
-                }
-                _ => None,
-            });
+        let selected = self.primary_graph_key().and_then(|key| match key {
+            AnimationKey::Deform {
+                attachment: owner,
+                time,
+            } if owner == attachment && track.keys.iter().any(|key| key.time == time) => Some(time),
+            _ => None,
+        });
         let time = selected.or_else(|| {
             track
                 .keys
@@ -160,7 +154,11 @@ impl Editor {
                 AnimationKey::Deform {
                     attachment: owner,
                     time,
-                } if owner == attachment => Some(time),
+                } if owner == attachment
+                    && (time == selected.unwrap_or(self.time) || selection.len() == 1) =>
+                {
+                    Some(time)
+                }
                 _ => None,
             })?;
         Some(CurveContext {
@@ -186,7 +184,7 @@ impl Editor {
     pub(super) fn deform_graph_has_focus(&self, ctx: &egui::Context) -> bool {
         self.graph_visible()
             && self.deform_curve_input_available(ctx)
-            && matches!(self.timeline_owner(), Some(KeyOwner::Deform { .. }))
+            && matches!(self.graph_owner(), Some(KeyOwner::Deform { .. }))
             && !ctx.text_edit_focused()
             && ctx.memory(|memory| memory.has_focus(Self::graph_id()))
     }
@@ -229,7 +227,7 @@ impl Editor {
         else {
             return;
         };
-        if self.timeline_owner() != Some(owner.clone()) {
+        if self.graph_owner() != Some(owner.clone()) {
             return;
         }
         let KeyOwner::Deform { attachment } = owner else {
@@ -350,7 +348,7 @@ impl Editor {
     }
 
     pub(super) fn deform_graph_panel(&mut self, ui: &mut egui::Ui) -> bool {
-        let Some(KeyOwner::Deform { attachment }) = self.timeline_owner() else {
+        let Some(KeyOwner::Deform { attachment }) = self.graph_owner() else {
             return false;
         };
         if self.setup_mode {

@@ -5,7 +5,16 @@ Public sources were checked November 14 after the slot authoring commit
 global draw-order and November 15 multi-vertex Direct continuations below.
 The bounded November 15 world X-to-Rotate continuation also passes native/MCP/
 runtime/Editor acceptance; its remaining feature and resize limits stay explicit.
-The later Slider checkpoints use native v23 and now63 commands/17 tools.
+Current inventory is native v23 and **63 commands/18 tools**. The authored
+owner/key query and bounded all-owner Dopesheet rows/ordinary mixed movement are
+verified by bounded native two-bone scalar editing, cancellation, Graph context,
+minimum layout and exact Save/reopen. Final actual MCP study03 passes
+41 requests/25 authored commands from a blank root/one PNG; baseline
+and moved exports each pass 104 runtime poses. See [scope](multi-owner-timeline.md),
+[review](../evidence/multi-owner-timeline.html) and
+[scalar evidence](../evidence/multi-owner-timeline.json).
+
+The earlier Slider source checkpoint used native v23 and 63 commands/17 tools.
 Manual/source authoring, semantic prepend/remapping, range memory and ordered
 evaluation pass within the [measured scope](slider-constraints.md). Native changed
 range preview10→13, held Escape/block/release and one-step commit/Undo/Redo are
@@ -13,14 +22,17 @@ also verified. The earlier58/14 evidence remains historical. Precision failures
 and lossy authored interchange remain open.
 
 The November15 primary-source refresh still lists4.3.27 Unreleased and4.3.26 as
-the installed release baseline; no newer release is evidenced. The next tutorial
-artist workflow is multi-owner Dopesheet timing from Wind, including measured
-Shift/Offset and group clipboard behavior. Raw mixed-owner Move/Delete already
-exist; single-owner native selection/drag/copy boundaries still limit this flow.
+the installed release baseline; no newer release is evidenced. The current
+tutorial workflow is multi-owner Dopesheet timing from Wind. Bounded all-owner
+rows and ordinary movement pass bounded native acceptance. Mixed Copy explicitly
+refuses; group clipboard with explicit mapping/shared origin is next, before
+Shift/Offset. Lock/Sync and general Tree multi-selection remain.
 The [Dopesheet](https://esotericsoftware.com/spine-dopesheet) and
 [Keys](https://esotericsoftware.com/spine-keys#Offset) guides distinguish uniform
 retiming from wrapping Offset/seam insertion and selection-scoped original-key
-memory. Installed-editor calibration is required before implementing Offset.
+memory. Installed reference now measures ordinary +5, one shared clipboard
+origin, single-property Shift and repeated Offset. Reselected Offset has
+asymmetric per-track results; a universal reset rule is not established.
 The November 15 update reconciles accepted local evidence without a new web
 fetch. This is a backlog and reference record, not a claim of full Spine parity.
 Installed-editor observations and native screenshots are recorded
@@ -233,8 +245,8 @@ not complete this broader objective.
 
 | Public update area | Current gap and required native/MCP work |
 | --- | --- |
-| Dopesheet-centric synchronization and curve refinements | Shared scalar/Deform/slot selection and bounded Curves/Graph actions pass native/MCP/runtime acceptance. Stored preset library, default curve preferences, native grouping and uncalibrated/generalized handle adjustment remain. |
-| Sliders | Model/adapters, manual keying/Graph, bounded ordered evaluation and MCP recreation are verified. Native creation needs prepend/identity remapping; source assignment/clear/ranges and derived display need shared semantic APIs. Referenced Physics/events and remaining Deform/Sequence cases, extreme precision and lossless authored conversion remain open. See [contract](slider-constraints.md). |
+| Dopesheet-centric synchronization and curve refinements | Shared scalar/Deform/slot selection and bounded Curves/Graph actions pass their earlier acceptance. Authored owner/key query and bounded all-owner Dopesheet rows/ordinary movement pass MCP plus original two-bone native checks. Mixed Copy refuses; explicit mapping/shared-origin group clipboard is next. Shift/Offset, Lock/Sync, general Tree multi-selection, stored presets/defaults, native grouping and uncalibrated handles remain. See [timing scope](multi-owner-timeline.md). |
+| Sliders | Bounded manual/source checkpoints include semantic prepend/remapping, source assignment/clear/property/ranges, process-view memory and own-turn display through native/shared MCP APIs. Referenced Physics/events and remaining Deform transitions, extreme precision and lossless authored conversion remain open. Earlier failed strict interchange and two raw extreme mismatches stay failures. See [contract](slider-constraints.md). |
 | Transform property mapping and local/world choices | One world X→Rotate writer now has accepted evaluation and shared native/MCP endpoint authoring. Tree/Properties resizing now passes bounded native checks; other cross-property destinations, general connection/source/target editing, Match, local/additive and Transform timelines are absent. See [bounded contract](transform-mapping-authoring.md). |
 | Multiple-mesh tracing and weight workflows | Explicit payload creation and bounded one-mesh/one-bone Direct selection/editing exist through shared native/MCP paths. Native topology generation, multiple-mesh/bone workflows, Auto/Smooth/brush/locks/Update, sparse Deform remapping and Pies/overlay remain. |
 | Draw order folder keys | Current keyed draw order is separate; folders need a model, adapter, evaluation and authoring surface. |

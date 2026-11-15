@@ -101,7 +101,7 @@ lists every frame.
 Native v23 adds strict Slider constraints and required `Animation.slider_tracks`.
 The v22 decoder inserts empty lists in memory; keep historical public fixtures'
 bytes unchanged. The verified manual checkpoint has 58 commands /14 MCP tools;
-the source/creation continuation has 63/17. Actual MCP/source geometry checks
+the preceding source/creation checkpoint used 63/17. Actual MCP/source geometry checks
 and bounded native creation/source checks pass. Native held-range Source Min
 10→13, Escape restoration of document/redo, continued-held blocking, release
 and fresh-gesture one-step Undo/Redo also pass on the final wire-hardened build. Slider
@@ -120,6 +120,20 @@ Source-range payloads require objects, source-property payloads require strings;
 keep the final actual-MCP rejection/Undo evidence separate from historical runs.
 See
 `docs/slices/slider-constraints.md` for calibrated domains and precision refusals.
+
+The following multi-owner timing checkpoint retains v23 and 63 commands, with
+18 MCP tools. `get_animation_keys` requires explicit typed owners; an empty list
+means inventory only, never all keys. It returns authored exact identities and
+explicit unsupported-timeline metadata without skin/visibility filtering, solving
+or changing Session state. Bounded all-owner Dopesheet rows and ordinary mixed
+retiming use that shared inventory; bounded two-bone scalar native acceptance
+passes selection/move/history, cancellation, Graph ownership, minimum layout and
+exact Save/reopen. Native cancellation starts with empty pending edits; nonempty
+pending preservation has headless coverage only. Mixed-owner Copy refuses
+explicitly without changing document/selection/redo/internal clipboard.
+Keep group clipboard, Shift/Offset, Lock/Sync, general Tree multi-selection and
+unsupported families explicit. Next add shared-origin group clipboard with
+explicit owner mapping before Shift/Offset; do not infer it from mixed-key moves.
 
 Native v21 adds `IkConstraint.stretch`. IK bones may have equal-magnitude
 scale (mirrored first bone allowed); see docs/slices/ik-scale-stretch.md for the

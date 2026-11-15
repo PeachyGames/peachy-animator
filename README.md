@@ -1,8 +1,24 @@
 # Peachy Animator
 
-The current engine/MCP interface provides **63 commands / 17 tools**, with
-**native v23 unchanged**. The Slider continuation adds semantic creation,
-bone-source assignment/clear, explicit property-range snapshots and own-turn
+The current engine/MCP interface provides **63 commands / 18 tools**, with
+**native v23 unchanged**. `get_animation_keys` exposes exact authored owner/key
+inventory for shared mixed-owner retiming. Bounded all-owner Dopesheet rows and
+ordinary group movement pass **bounded native acceptance**. The original
+two-bone replay verifies selection, move/history, held Escape, Graph ownership,
+minimum layout and exact Save/reopen. Group clipboard, Shift/Offset, Lock/Sync and general Tree
+multi-selection remain separate gaps.
+
+The actual MCP study starts from a blank root and one original PNG: **41 requests,
+25 authoring commands**, exact mixed move/Undo/Redo and Save/reopen. Open the
+[original Multi-owner Lab](examples/peach-bot/multi-owner-bot.peachy) or inspect its
+[25-command recipe](examples/peach-bot/multi-owner-authoring-commands.json).
+Baseline and moved exports each pass **104 runtime poses** at 0.001. See the
+[scope](docs/slices/multi-owner-timeline.md),
+[review](docs/evidence/multi-owner-timeline.html) and
+[scalar evidence](docs/evidence/multi-owner-timeline.json) for scope and remaining gates.
+
+The preceding Slider source checkpoint used **63 commands / 17 tools** and added
+semantic creation, bone-source assignment/clear, explicit property-range snapshots and own-turn
 evaluation queries. In Setup, select an animation in the Tree and use
 **New → Slider**; creation prepends and returns shared constraint-index effects.
 
@@ -312,6 +328,11 @@ with no selection it selects all shown keys immediately. Click a property row la
 to select its Rotate/Translate/Scale tool. Escape cancels a live drag; each
 committed edit is one undo step.
 
+The bounded all-owner continuation shows represented keyed owners together when
+no editable Tree owner is selected. Ordinary typed-key moves can cross owners;
+clipboard copy/paste remains one-owner. Shift currently bypasses snapping;
+Spine-style Shift ripple and cycle Offset remain separate unimplemented controls.
+
 The workspace follows Spine’s default arrangement: viewport left, Tree and item
 properties right, transform controls below the viewport, and Dopesheet below those
 in Animate mode. UI parity is an ongoing acceptance requirement; see the
@@ -547,8 +568,8 @@ cargo build -p peachy-mcp --locked
 ./target/debug/peachy-mcp --root /absolute/path/to/animation-workspace
 ```
 
-It communicates over stdio and exposes **63 commands / 17 tools** for project
-inspection, validated command batches, typed key copying, undo/redo, pose
+It communicates over stdio and exposes **63 commands / 18 tools** for project
+inspection, exact owner/key inventory, validated command batches, typed key copying, undo/redo, pose
 evaluation and new-output saves/exports through the same engine as the desktop.
 Each server owns an independent session; it does not
 control an existing editor window. See [MCP setup, tools and limits](docs/MCP.md)

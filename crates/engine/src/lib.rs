@@ -33,6 +33,7 @@ mod slider_setup;
 mod slider_source;
 mod slot_authoring;
 mod timeline;
+mod timeline_inventory;
 mod tools;
 mod transform_constraint;
 mod transform_mapping;
@@ -95,6 +96,10 @@ pub use timeline::{
     copy_keys, curve_channels, curve_channels_for_targets, curve_targets, deform_key_owner,
     pasted_animation_keys,
 };
+pub use timeline_inventory::{
+    AnimationKeyInventory, AnimationKeyQuery, UnsupportedAnimationTimeline,
+    animation_key_inventory, animation_key_owners, animation_keys,
+};
 pub use tools::{
     Axes, TransformGesture, TransformTool, drag_transform, drag_transform_in_frame,
     parse_transform_input, set_transform_value, transform_axes, transform_axes_from_world,
@@ -149,6 +154,8 @@ mod linked_mesh_tests;
 mod mesh_soft_selection_tests;
 #[cfg(test)]
 mod mesh_weights_tests;
+#[cfg(test)]
+mod multi_owner_timeline_tests;
 #[cfg(test)]
 mod overlay_tests;
 #[cfg(test)]

@@ -53,6 +53,9 @@ impl ChartGeometry {
 pub(super) struct KeyDrag {
     pub animation: usize,
     pub owner: KeyOwner,
+    pub presentation_owner: Option<KeyOwner>,
+    pub primary_before: Option<KeyId>,
+    pressed: KeyId,
     pub geometry: ChartGeometry,
     pub sources: Vec<AnimationKey>,
     selection_before: Vec<KeyId>,
@@ -73,10 +76,7 @@ impl KeyDrag {
         origin_x: f32,
         modifiers: egui::Modifiers,
     ) -> Option<Self> {
-        if !geometry.is_valid()
-            || !origin_x.is_finite()
-            || selected.iter().any(|key| key.owner() != pressed.owner())
-        {
+        if !geometry.is_valid() || !origin_x.is_finite() {
             return None;
         }
         let keys = if selected.contains(&pressed) {
@@ -87,6 +87,9 @@ impl KeyDrag {
         Some(Self {
             animation,
             owner: pressed.owner(),
+            presentation_owner: Some(pressed.owner()),
+            primary_before: selected.first().cloned(),
+            pressed: pressed.clone(),
             geometry,
             sources: keys,
             selection_before: selected.to_vec(),
@@ -131,6 +134,7 @@ impl KeyDrag {
         let earliest = self.sources.iter().map(|key| key.time()).reduce(f32::min)?;
         Some(offset.max(-earliest))
     }
+    #[cfg(test)]
     fn command(&self, delta: f32) -> Command {
         Command::MoveAnimationKeys {
             animation: self.animation,
@@ -139,6 +143,7 @@ impl KeyDrag {
             copy: self.copy,
         }
     }
+    #[cfg(test)]
     fn selection_at(&self, offset: f32) -> Vec<KeyId> {
         self.sources
             .iter()
@@ -186,7 +191,7 @@ impl KeyDrag {
     pub fn diagnostic(&self) -> serde_json::Value {
         serde_json::json!({
             "active":self.active,"animation":self.animation,"owner":self.owner,
-            "sources":self.sources,"offset":self.offset,"copy":self.copy,
+            "sources":self.sources,"offset":self.offset,"copy":self.copy,"presentationOwner":self.presentation_owner,
             "toggle":self.toggle,
             "pressedTime":self.pressed_time,"originX":self.origin_x,
             "chart":{"start":self.geometry.start,"width":self.geometry.width,"extent":self.geometry.extent}
@@ -201,6 +206,7 @@ impl Editor {
                 self.session.cancel_transaction();
             }
             self.key_selection.replace(drag.selection_before);
+            self.key_selection.set_primary(drag.primary_before);
             self.reconcile_dopesheet_selection();
         }
     }
@@ -213,25 +219,39 @@ impl Editor {
             self.session.commit_transaction();
             self.session.begin_transaction();
             drag.active = true;
-            self.key_selection.replace(drag.selection_at(0.));
+            self.key_selection.replace(drag.sources.clone());
+            self.key_selection.set_primary(Some(drag.pressed.clone()));
         }
         self.playing = false;
         let offset = drag.offset_at(pointer_x, self.session.document().fps, unsnapped);
         let result = offset
             .ok_or_else(|| "Invalid key drag position".to_string())
             .and_then(|offset| {
-                self.session.preview_transaction(drag.command(offset))?;
-                Ok(offset)
+                let selected = self.session.preview_move_animation_keys(
+                    drag.animation,
+                    &drag.sources,
+                    offset,
+                    drag.copy,
+                )?;
+                Ok((offset, selected))
             });
         match result {
-            Ok(offset) => {
+            Ok((offset, selected)) => {
                 drag.offset = offset;
-                self.key_selection.replace(drag.selection_at(offset));
+                let primary = drag
+                    .sources
+                    .iter()
+                    .position(|key| key == &drag.pressed)
+                    .and_then(|index| selected.get(index))
+                    .cloned();
+                self.key_selection.replace(selected);
+                self.key_selection.set_primary(primary);
                 self.key_drag = Some(drag);
             }
             Err(error) => {
                 self.session.cancel_transaction();
                 self.key_selection.replace(drag.selection_before);
+                self.key_selection.set_primary(drag.primary_before);
                 self.reconcile_dopesheet_selection();
                 self.error = Some(error);
             }

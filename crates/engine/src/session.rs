@@ -542,6 +542,7 @@ struct Transaction {
 }
 
 pub struct Session {
+    document_generation: u64,
     state: WorkingState,
     undo: Vec<HistoryEntry>,
     redo: Vec<HistoryEntry>,
@@ -558,6 +559,7 @@ impl Session {
     pub fn new(document: Document) -> Result<Self, String> {
         document.validate()?;
         Ok(Self {
+            document_generation: 0,
             saved: document.clone(),
             state: WorkingState {
                 document,
@@ -582,6 +584,12 @@ impl Session {
     }
     pub fn document(&self) -> &Document {
         &self.state.document
+    }
+    /// Opaque, wrapping cache token for accepted document contents in this Session.
+    /// Pending poses, view preferences and saved state do not advance it.
+    /// Reset client caches when replacing the Session; this is not a persistent revision.
+    pub fn document_generation(&self) -> u64 {
+        self.document_generation
     }
     pub fn pose_edits(&self) -> &PoseEdits {
         &self.state.pose
@@ -1364,6 +1372,9 @@ impl Session {
         }
         self.last_effects = crate::EditEffects::default();
         if let Some(previous) = self.undo.pop() {
+            if self.state.document != previous.state.document {
+                self.document_generation = self.document_generation.wrapping_add(1);
+            }
             self.last_effects = previous.effects.inverse();
             if self.source_view.remap(&self.last_effects).is_err() {
                 self.source_view.focus = None;
@@ -1378,6 +1389,9 @@ impl Session {
         self.commit_transaction();
         self.last_effects = crate::EditEffects::default();
         if let Some(next) = self.redo.pop() {
+            if self.state.document != next.state.document {
+                self.document_generation = self.document_generation.wrapping_add(1);
+            }
             self.last_effects = next.effects.clone();
             if self.source_view.remap(&self.last_effects).is_err() {
                 self.source_view.focus = None;
@@ -1420,6 +1434,36 @@ impl Session {
             view,
         )
     }
+    /// Retime exact mixed-owner keys against this gesture's fixed baseline.
+    /// Result identities are canonical, retain input source order, and are
+    /// returned only after all document/pending validation and publication.
+    /// Failed previews preserve the previous accepted preview and history.
+    pub fn preview_move_animation_keys(
+        &mut self,
+        animation: usize,
+        sources: &[crate::AnimationKey],
+        delta: f32,
+        copy: bool,
+    ) -> Result<Vec<crate::AnimationKey>, String> {
+        let base = &self
+            .transaction
+            .as_ref()
+            .ok_or("No active transaction")?
+            .state;
+        let mut identities = Vec::new();
+        let document = crate::commands::apply_prepared(&base.document, |document| {
+            identities = crate::timeline::move_animation_keys_with_identities(
+                document, animation, sources, delta, copy,
+            )?;
+            Ok(())
+        })?;
+        let pose = base.pose.after_document(&base.document, &document)?;
+        self.publish_preview(
+            WorkingState { document, pose },
+            crate::EditEffects::default(),
+        )?;
+        Ok(identities)
+    }
     pub fn commit_transaction(&mut self) {
         self.last_effects = crate::EditEffects::default();
         if let Some(previous) = self.transaction.take()
@@ -1431,6 +1475,9 @@ impl Session {
     pub fn cancel_transaction(&mut self) {
         self.last_effects = crate::EditEffects::default();
         if let Some(previous) = self.transaction.take() {
+            if self.state.document != previous.state.document {
+                self.document_generation = self.document_generation.wrapping_add(1);
+            }
             self.last_effects = previous.effects.inverse();
             self.state = previous.state;
             self.source_view = previous.source_view;
@@ -1462,6 +1509,9 @@ impl Session {
             return Ok(());
         }
         let effects = transaction.effects.inverse().then(&baseline_effects)?;
+        if self.state.document != candidate.document {
+            self.document_generation = self.document_generation.wrapping_add(1);
+        }
         self.state = candidate;
         transaction.effects = baseline_effects;
         self.source_view = view;
@@ -1479,9 +1529,15 @@ impl Session {
         }
         if let Some(transaction) = self.transaction.as_mut() {
             let combined = transaction.effects.then(&effects)?;
+            if self.state.document != candidate.document {
+                self.document_generation = self.document_generation.wrapping_add(1);
+            }
             self.state = candidate;
             transaction.effects = combined;
         } else {
+            if self.state.document != candidate.document {
+                self.document_generation = self.document_generation.wrapping_add(1);
+            }
             let previous = std::mem::replace(&mut self.state, candidate);
             self.record(previous, effects.clone());
         }
@@ -1491,6 +1547,9 @@ impl Session {
     fn replace(&mut self, candidate: WorkingState) {
         self.last_effects = crate::EditEffects::default();
         if candidate != self.state {
+            if self.state.document != candidate.document {
+                self.document_generation = self.document_generation.wrapping_add(1);
+            }
             let previous = std::mem::replace(&mut self.state, candidate);
             if self.transaction.is_none() {
                 self.record(previous, crate::EditEffects::default());
@@ -1508,3 +1567,7 @@ impl Session {
         self.redo.clear();
     }
 }
+
+#[cfg(test)]
+#[path = "document_generation_tests.rs"]
+mod document_generation_tests;

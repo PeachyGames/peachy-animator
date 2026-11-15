@@ -576,11 +576,12 @@ impl Editor {
             self.setup_mode
                 || !self.dopesheet_visible()
                 || self.animation != drag.animation
-                || self.timeline_owner() != Some(drag.owner.clone())
+                || self.timeline_owner() != drag.presentation_owner
         }) {
             self.cancel_dopesheet_drag();
         }
         selection::reconcile(&mut self.selection, self.session.document());
+        self.reconcile_retained_graph_owner();
         self.reconcile_slider_source_focus();
         self.ghosting.reconcile(self.session.document().bones.len());
         self.reconcile_ik();

@@ -82,6 +82,7 @@ fn curve_editor() -> (Editor, egui::Context) {
             .collect();
     }
     editor.session = Session::new(document).unwrap();
+    editor.key_selection.invalidate_cache();
     editor.key_selection.replace(vec![AnimationKey::Bone {
         bone: 8,
         property: Property::Rotation,
@@ -359,6 +360,7 @@ fn curves_gray_handle_becomes_primary_and_match_off_edits_only_that_curve() {
     editor.curves.match_handles = false;
     editor.open_graph_view();
     settle(&mut editor, &ctx);
+    let selected_keys = editor.key_selection.keys().to_vec();
     let original = editor.session.document().clone();
     let area = rect(&editor, "curvesPlot").shrink2(vec2(12., 15.));
     let from = point(area, 0.2, 0.9);
@@ -397,6 +399,15 @@ fn curves_gray_handle_becomes_primary_and_match_off_edits_only_that_curve() {
         serde_json::json!(Property::X)
     );
     assert_eq!(editor.key_selection.len(), 2);
+    assert_eq!(editor.key_selection.keys(), selected_keys);
+    assert_eq!(
+        editor.curves.primary.as_ref().map(|(key, _)| key),
+        Some(&AnimationKey::Bone {
+            bone: 8,
+            property: Property::X,
+            time: 0.,
+        })
+    );
 }
 
 #[test]

@@ -6,8 +6,10 @@ native window. The server calls the same document, command, Session, checked pos
 evaluation and file services as the desktop. It uses the official
 [Rust MCP SDK](https://github.com/modelcontextprotocol/rust-sdk), pinned by Cargo.lock.
 
-The current native format is **v23**, with **58 commands / 14 tools**. Slider
-Time/Mix data uses the same strict model and checked engine as the native editor.
+The current native format is **v23**, with **63 commands / 18 tools**. The shared
+authored owner/key query supports ordinary mixed-owner timing. Actual MCP and
+separate bounded two-bone scalar native acceptance pass. Group
+clipboard, Shift/Offset, Lock/Sync and general Tree multi-selection remain open.
 
 Each server process owns an independent headless document and history. It does
 **not** attach to a running desktop editor, change its selection, refresh its open
@@ -56,22 +58,93 @@ client's working directory. Absolute paths are accepted only inside that root.
 | `create_project` | New in-memory root-only native document with an empty default skin. Uses an existing asset directory within `--root`; no finished rig is loaded and no file is written. Source is null until Save. |
 | `inspect_file` | Read-only native validation or Spine capability report. Does not replace the working document. |
 | `open_project` | Load `.peachy` (including supported legacy migrations) or supported Spine 4.3 JSON into a new Session. Failed imports leave the current session intact. |
-| `get_command_schema` | Full JSON Schema for the 58 supported flat command variants; the same schema appears inline in `apply_commands` discovery. |
+| `get_command_schema` | Full JSON Schema for the 63 supported flat command variants; the same schema appears inline in `apply_commands` discovery. |
 | `apply_commands` | Apply a nonempty flat list through one engine Batch, atomically and as one undo step. No file writes. |
+| `get_animation_keys` | Revision-checked authored inventory and exact keys for required explicit owners. Empty owners return inventory with no selected keys. Reports unsupported timeline families; no pending pose, geometry solve, visibility filtering or mutation. See the strict contract below. |
 | `copy_animation_keys` | Read-only capture of exact keys from one bone, IK or Slider constraint, Deform attachment, slot or global draw order. Slider clipboards retain independent Time/Mix identities and one relative origin. Slot clipboards can mix attachment and color keys; Deform includes vertex/influence layout. Draw order requires the identical ordered slot-name layout on paste. Requires the current revision. |
 | `get_mesh_weights` | Read exact selected weights and a uniform/mixed aggregate through the engine; absent influences of an already bound bone read zero. Requires the current revision and exact attachment identity. |
 | `get_transform_mapping` | Read raw-derived Min/Max endpoints of one exact world X→Rotate constraint mapping at the current revision. Undefined SourceMax is null; querying never repairs stored coefficients or changes history. |
 | `get_slider_pose` | Read a Slider's authored Time/Mix at a host animation cursor, or Setup. Time is referenced-animation seconds; this query does not solve geometry or substitute bone-derived effective time. Requires the current revision. |
+| `get_slider_mapping` | Revision-checked raw-derived bone-source endpoints in referenced-animation seconds. Undefined SourceMax is null. Does not solve, repair, capture Time or change history. |
+| `get_slider_source_choices` | Revision-checked six property/range choices for a bound Slider from Session view preferences. Each includes an explicit `setSliderSourceProperty` command snapshot; querying does not remember a choice or alter preferences. |
+| `get_slider_evaluation` | Revision-checked own-turn snapshot from one checked solve: incoming/applied settings, eligibility and effective `sampleTime` after Loop. `sampleTime` is null when no application occurs. Accepts Setup or an exact host animation name, host seconds and skin; never recomputes from a later final source pose. |
 | `history` | Undo or redo one complete edit using the shared Session history. |
 | `evaluate_pose` | Setup or a named animation at a nonnegative time in seconds, with optional skin. Returns authored `locals`, ordered-constraint `appliedLocals`, effective `inherits`, world matrices, raw `slotAttachments`/`slotColors`, complete `drawOrder`, `authoredSliderPoses`/`appliedSliderPoses`, textured geometry and bounds from one checked solve. |
 | `save_project` | Create a new directory containing `project.peachy` and the required loose `images/`; marks the headless Session saved. |
 | `export_project` | New Spine JSON file, or a fresh packed JSON/atlas/PNG directory inside an existing parent. Optional `target` defaults to `spineEditor43`; use `runtime43` to retain independent attachment names/placeholders for runtime consumers. Does not mark the native document saved. |
 
-These 14 tools publish parameter schemas, descriptions and behavior annotations through
+These 18 tools publish parameter schemas, descriptions and behavior annotations through
 MCP `tools/list`. Successful results include both `structuredContent` and matching
 serialized text for older clients. Operational failures return `isError: true`
 with the current revision; malformed tool arguments use the SDK's protocol error.
 Read-only tools do not change session state.
+
+## Exact authored key inventory and mixed timing
+
+`get_animation_keys` requires an object with exactly `expected_revision`,
+`animation` (an index) and `owners` (an array). Each owner is an explicit object:
+`{"type":"bone","bone":2}`, `{"type":"ik","constraint":0}`,
+`{"type":"slider","constraint":0}`, `{"type":"slot","slot":0}`,
+`{"type":"drawOrder"}`, or `{"type":"deform","attachment":{"skin":"default","slot":"cloth","placeholder":"mesh"}}`
+with exact attachment strings. Missing/null fields, positional arrays,
+unknown fields/variants, invalid indices and duplicate owners—including linked
+aliases resolving to the same Deform owner—reject. No implicit current selection
+or wildcard is accepted.
+
+```json
+{"expected_revision":2,"animation":1,"owners":[]}
+```
+
+The response contains `revision`, `animation`, `inventory:{owners,
+unsupportedTimelines}` and `selection:{keys,unsupportedTimelines}`. An empty
+request means **inventory only**, not all selected keys. To request keys, pass
+explicit inventory owners; keys preserve requested owner order and exact stored
+f32 times. For example:
+
+```json
+{"expected_revision":2,"animation":1,"owners":[{"type":"bone","bone":4},{"type":"bone","bone":2}]}
+```
+
+The query covers represented Bone, IK, Slider Time/Mix, Deform, Slot
+attachment/RGBA and DrawOrder keys independently of skin/visibility. Inherit,
+Sequence, Path, Physics/reset and Event markers remain read-only metadata.
+`inventory.unsupportedTimelines` describes the full clip;
+`selection.unsupportedTimelines` describes scoped omissions. Inspect both before
+treating the editable subset as a complete group. The query does not include
+pending poses, solve geometry or change document, history, preferences or revision.
+Stale-revision and invalid requests leave the Session untouched.
+
+Pass returned exact IDs to existing `moveAnimationKeys` with one animation,
+finite seconds `delta` and explicit `copy:false` for an atomic mixed-owner move.
+Do not round source IDs to frames. `copy_animation_keys` still captures one
+owner; its name does not promise a portable multi-owner clipboard or cycle Offset.
+
+The public [25-command recipe](../examples/peach-bot/multi-owner-authoring-commands.json)
+recreates the [original Multi-owner Lab](../examples/peach-bot/multi-owner-bot.peachy)
+without opening a finished rig:
+
+1. Start this server with the repository checkout as `--root`. Call
+   `create_project` with `expected_revision:0`, a name, `fps:60` and
+   `asset_root:"examples/peach-bot"`; only the original `images/blue_cutout.png`
+   is referenced.
+2. Send the file's 25-command array as `apply_commands.commands` at revision 1.
+   It creates six bones, two regions and `clipboard`/`retime` clips.
+3. Query animation 1 at revision 2, first with `owners:[]`, then explicit bones 4/2.
+   Reuse the returned IDs for follower Rotate Frames 5/20 and driver Y Frame 40;
+   move those three keys by 5/60 seconds in one command.
+4. Check Undo/Redo and Save into a fresh directory, then reopen it. Query the
+   current revision before each mutation; Save/Open also advance it.
+
+Final actual stdio study03 passes 41 requests, including 25 authoring commands,
+five rejected read-only queries, exact mixed movement/history/reopen and 12 pose
+samples. Baseline and moved exports each pass 104 external-runtime poses at 0.001.
+Separate native ordinary-move acceptance passes; mixed Copy explicitly refuses.
+Group clipboard with explicit owner mapping/shared origin is next, before
+Shift/Offset. Lock/Sync and general Tree multi-selection also remain open. See
+[scope](slices/multi-owner-timeline.md), [review](evidence/multi-owner-timeline.html)
+and [scalar evidence](evidence/multi-owner-timeline.json).
+
+## Export targets
 
 `export_project.target` accepts only `spineEditor43` or `runtime43`. Editor
 export rejects default-skin attachment name overrides and named/default
@@ -680,7 +753,7 @@ calibration, differences and verification limits.
 
 ## World X to Rotate mapping
 
-The current native format is v23, with **58 commands / 14 tools**.
+The current native format is v23, with **63 commands / 18 tools**.
 An existing world-space X→Rotate transform constraint can be edited by the same
 semantic range operation as the native Min/Max controls:
 

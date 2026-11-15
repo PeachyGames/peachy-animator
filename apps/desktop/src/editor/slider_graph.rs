@@ -25,18 +25,22 @@ impl Editor {
         {
             return Some((property, time));
         }
-        self.key_selection.keys().iter().find_map(|key| match key {
-            AnimationKey::Slider {
-                constraint: selected,
-                property,
-                time,
-            } if *selected == constraint => Some((*property, *time)),
-            _ => None,
-        })
+        self.key_selection
+            .primary()
+            .into_iter()
+            .chain(self.key_selection.keys())
+            .find_map(|key| match key {
+                AnimationKey::Slider {
+                    constraint: selected,
+                    property,
+                    time,
+                } if *selected == constraint => Some((*property, *time)),
+                _ => None,
+            })
     }
 
     pub(super) fn value_graph_context(&self) -> Option<GraphContext> {
-        if let Some(KeyOwner::Slider { constraint }) = self.timeline_owner() {
+        if let Some(KeyOwner::Slider { constraint }) = self.graph_owner() {
             (!self.setup_mode).then_some(GraphContext::Slider {
                 animation: self.animation,
                 constraint,
@@ -49,7 +53,7 @@ impl Editor {
 
     pub(in crate::editor) fn slider_graph_has_focus(&self, ctx: &egui::Context) -> bool {
         self.graph_visible()
-            && matches!(self.timeline_owner(), Some(KeyOwner::Slider { .. }))
+            && matches!(self.graph_owner(), Some(KeyOwner::Slider { .. }))
             && !ctx.text_edit_focused()
             && self.slot_authoring_input_available(ctx)
             && ctx.memory(|memory| memory.has_focus(Self::graph_id()))
@@ -57,6 +61,7 @@ impl Editor {
 
     fn choose_slider_graph_property(&mut self, property: SliderProperty) {
         if property != self.graph.slider_property {
+            self.retain_graph_owner();
             self.cancel_gesture();
             self.key_selection.clear();
             self.graph.slider_property = property;
@@ -65,7 +70,7 @@ impl Editor {
     }
 
     pub(super) fn slider_graph_panel(&mut self, ui: &mut egui::Ui) -> bool {
-        let Some(KeyOwner::Slider { constraint }) = self.timeline_owner() else {
+        let Some(KeyOwner::Slider { constraint }) = self.graph_owner() else {
             return false;
         };
         self.animation_controls(ui);

@@ -128,6 +128,7 @@ pub(super) fn editor_fixture() -> Editor {
         capture_directory: PathBuf::new(),
         frames: 0,
     };
+    editor.session.set_skin(&editor.skin);
     editor.reconcile_selection();
     select_rotation(&mut editor);
     editor

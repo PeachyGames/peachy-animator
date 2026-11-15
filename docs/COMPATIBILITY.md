@@ -4,7 +4,31 @@ Target: Spine **4.3.x JSON**, with export metadata `4.3.26`. The initial externa
 oracle is separately installed `@esotericsoftware/spine-core` **4.3.13**.
 Compatibility applies to the subset below, not every 4.3 project or future patch.
 
-## Slider source/creation continuation — November 15, 2026 (bounded acceptance passed)
+## Multi-owner timing — November 15, 2026 (bounded acceptance passed)
+
+Current native v23 exposes **63 commands /18 tools**. A revision-checked authored
+key query returns explicit Bone/IK/Slider/Deform/Slot/DrawOrder owners and exact
+keys. Empty owners request inventory without selecting keys; unsupported Inherit,
+Sequence, Path, Physics/reset and Event timelines remain visible metadata rather
+than editable group members. Querying never solves, includes pending poses or
+changes history/revision. The bounded all-owner UI passes native selection,
+ordinary movement/history, held cancellation, Graph identity, minimum layout and
+exact Save/fresh-process reopen on the original two-bone scalar fixture.
+Mixed-owner Copy explicitly refuses without changing document, selection, redo or
+internal clipboard. Native cancellation has empty pending state; preservation of
+nonempty pending edits is headless coverage only.
+
+The final03 blank-root/one-PNG MCP recipe passes 41 requests/25 authored commands,
+mixed-owner movement matching installed frames/values, exact Undo/Redo and
+Save/reopen. Its baseline and moved exports each pass 104 runtime poses at 0.001;
+maximum world errors are 1.200913195020803e−5 and 1.167843909399835e−5, with region
+maximum 1.52587890625e−5 for both. Group clipboard, Shift/Offset, Lock/Sync and general
+Tree multi-selection remain outside this checkpoint. Prior Slider precision,
+lossy interchange and referenced-domain guards below are unchanged. See
+[the contract](slices/multi-owner-timeline.md) and
+[scalar evidence](evidence/multi-owner-timeline.json).
+
+## Earlier Slider source/creation continuation — November 15, 2026 (bounded acceptance passed)
 
 The native format remains **v23**, with **63 commands /17 tools**. Actual source
 study04 passes 141 MCP requests and 15 retained poses from a blank project/one PNG;

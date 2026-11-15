@@ -1,6 +1,36 @@
 # Spine workspace and interaction parity
 
-## Slider source and creation continuation — November 15, 2026
+## Multi-owner Dopesheet continuation — November 15, 2026
+
+The current interface is **63 commands /18 tools**, native v23 unchanged. Shared
+authored inventory drives bounded all-owner Dopesheet rows and ordinary mixed
+selection/retiming. **Bounded native acceptance passes** on the original two-bone
+scalar fixture, separately from MCP. Final blank-root/one-PNG MCP run03 passes
+41 requests/25 authored commands, exact mixed move/history/reopen and read-only
+errors; baseline/moved exports each pass
+104 runtime poses. See [scope](slices/multi-owner-timeline.md),
+[review](evidence/multi-owner-timeline.html) and
+[scalar evidence](evidence/multi-owner-timeline.json).
+
+Actual Cmd-selection spans three keys on bones 2/4; a +5 displayed-frame move
+matches the shared command at accepted raw delta 0.083333320915699, with one-step
+Undo/Redo. Held Escape restores document, selected keys/primary and redo; held
+movement stays blocked until release, then a fresh gesture works. Pending state
+is empty here; nonempty preservation is headless-only. Cmd+A/Delete/Undo restores
+all eight keys and leaves the other clip unchanged. Graph follows the selected
+key's owner/channel while Tree holds the animation; owner-header pruning and
+Space clear remove stale context. All eight targets remain visible at 1120×740.
+Mixed Copy refuses with document/selection/redo/internal clipboard unchanged.
+Native Save/fresh-process reopen preserves the full edited document with empty
+history and one image; the public baseline source remains unchanged.
+
+Installed 4.3.26 establishes selected-key +5 movement, exact Undo, one clipboard
+origin across two bones, single-property Shift and bounded repeated Offset.
+Offset reselection is not a general reset contract. Group clipboard, Shift/Offset,
+Lock/Sync, general Tree multi-selection and simultaneous curves from multiple
+owners in Graph remain separate gaps.
+
+## Earlier Slider source and creation continuation — November 15, 2026
 
 The installed 4.3.26 reference now establishes New → Slider prepend/automatic
 numeric naming, the source Bone/Property/Local arrangement, paired source and
@@ -274,9 +304,10 @@ presentation while retaining exact f32 identities. See the
 [before/after and controls gallery](evidence/slot-authoring.html).
 
 Remaining differences include full Color-view Setup targets, separate RGB/alpha,
-all-bone/all-owner rows and curves, exact styling, arbitrary docking and native
+all-owner curves, exact styling, arbitrary docking and native
 sub-byte precision/half-byte sampling ties. Numeric native calibration is a
 separate gate from visual placement; neither establishes pixel equivalence.
+Bounded all-owner Dopesheet rows have the separate ordinary-move acceptance above.
 
 ## Deform timeline comparison — November 14, 2026
 
@@ -526,9 +557,11 @@ Dopesheet clicks select exact source keys independently of playhead position.
 Cmd/Ctrl-click toggles keys; Delete/Backspace requires focus in the visible canvas.
 Double-click deletes the clicked key. The toolbar offers the same deletion command
 with an independent icon. Rotation/translation/scale keys use narrow green/blue/red
-bars, following the public row images. Only the selected bone's supported scalar
-tracks are covered; multi-bone rows, overview rows, box selection
-and Graph synchronization remain pending. Jump-to-key is on;
+bars, following the public row images. The original single-bone scope is extended
+by bounded all-owner represented rows and ordinary mixed-key movement, with
+bounded native two-bone acceptance. Full overview/group selection, box selection,
+Lock/Sync, general Tree multi-selection and Graph synchronization remain pending.
+Jump-to-key is on;
 configurable selection/scrubbing preferences remain pending.
 
 
