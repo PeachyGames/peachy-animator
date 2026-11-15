@@ -155,8 +155,9 @@ independent headless session, not a bridge to an open native window.
 
 Focused engine Transform checks total **22**; MCP schema/unit and protocol groups
 total **12** and **17**, with CLI/MCP builds passing. Desktop filters pass **26**
-Transform checks (including **12** constraint-control checks), **39** weight and
-**51** curve checks; these filters overlap. Formatting, all-target Clippy,
+Transform checks (including **12** constraint-control checks), **40** weight,
+**52** curve and **26** Deform checks; **5** pane checks cover the bounded resize
+continuation. These filters overlap. Formatting, all-target Clippy,
 workspace build and architecture checks pass. Strict schema and actual
 stdio tests cover endpoint authoring, unrelated-data
 preservation, exact no-op/redo, Save/reopen, stale/unsupported/ambiguous queries,
@@ -223,7 +224,7 @@ raw-derived f64 readback is approximately `100.00000223517424` after f32 storage
 This is a measured edit, not an invented value on display or an asserted native
 default.
 
-Final native executable SHA256 is
+The mapping-authoring native executable SHA256 is
 `9048ecf435ec6abf840698ad2d930a21016f3faac353179076fb366ac56794ec`.
 A fresh public-project open has **one image**, no history and unchanged saved
 bytes. At **1120×740**, actual SourceMin, TargetMax, Clamp and Offset Y edits are
@@ -233,8 +234,36 @@ separately rather than claiming all columns fit simultaneously.
 
 Actual playback advances from `0.2441903` to `1.0249436` with **Loop enabled**,
 then stops at zero with Q. A loop wrap was not observed in this run. All owned
-GUI instances are closed. The attempted Tree-pane resize produced no verified
-change and remains an explicit interaction gap.
+GUI instances are closed. This first mapping run did not establish Tree-pane
+resizing; the separate workspace continuation below does.
+
+## Bounded workspace resize continuation
+
+The subsequent native executable
+`a8cfabddb25112361a3ffb3464e88e0266d34914873f82be38fb9132fc39c7f6`
+verifies actual Tree-divider starts at its center and **−2 / +2** offsets. Each
+start resizes the viewport/Tree while preserving document, history and selection.
+Properties-divider resizing exposes the full six-row mapping table, and a held
+Mix edit followed by Escape restores the canonical document after resizing.
+The [full editor capture](../evidence/transform-mapping-editor.png) records this
+later workspace state; the minimum captures retain the earlier mapping run.
+The exact owned process **41530** is closed and the canonical project remains
+unchanged.
+
+This resolves the earlier Tree/Properties resize gap within the tested bounds.
+The five automated pane checks do not establish native Weights/Curves divider
+behavior; those dividers remain unverified with actual native input.
+
+A separate native run on the same `a8cfabdd` build verifies an original converted
+**unweighted mesh**. ArrowRight creates a pending Deform pose; Key then Undo
+restores that pending pose. Shrinking Properties preserves pending edits and redo,
+and offscreen Key/Delete hit targets are absent. One actual **80-pixel wheel
+event** exposes the Key target at Y `565..586`; clicking Key creates the track,
+and Delete restores the baseline document. The source file stays unchanged and
+owned process **42475** is closed. Weighted and unweighted paths have **26**
+focused event checks; this native run covers the unweighted fixture only.
+
+Cross-restart docking and arbitrary workspace behavior are not claimed.
 
 ## Exact installed-editor interchange
 
@@ -266,7 +295,10 @@ Licensed CLI logs remain private; no broad lossless-conversion claim follows.
 Properties Match, mapping connection creation/removal, general source/target changes,
 remaining cross-property/local/additive domains,
 Transform timeline authoring and full styling/docking remain separate work.
-Tree-pane resizing is unverified, and loop wrap was not observed during this
-native acceptance run. Slider behavior beyond the measured paths remains bounded.
+Native Weights/Curves divider behavior is not established by the Tree/Properties
+resize continuation. Native Deform resize/scroll/key coverage is unweighted;
+weighted coverage here is from focused event checks. Cross-restart docking
+remains open; loop wrap was not observed during the mapping native run.
+Slider behavior beyond the measured paths remains bounded.
 No full Spine, pixel or browser-render equivalence is claimed. Hosted CI remains
 a separate integration gate.

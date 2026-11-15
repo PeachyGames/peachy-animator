@@ -1,6 +1,10 @@
 use super::*;
 use peachy_engine::{geometry_bounds, pick_attachment};
 
+#[cfg(test)]
+#[path = "pane_resize_tests.rs"]
+mod tests;
+
 impl Editor {
     pub(super) fn canvas(&mut self, ui: &mut egui::Ui) {
         self.ghosting.rendered_samples = 0;
@@ -42,9 +46,24 @@ impl Editor {
                 }
             });
         });
-        let (rect, response) = ui.allocate_exact_size(ui.available_size(), Sense::click_and_drag());
+        let (_, rect) = ui.allocate_space(ui.available_size());
+        let mut input_rect = rect;
+        if self.show_tree || self.has_dock_views() || self.curves_visible() || self.show_weights {
+            let radius = ui.style().interaction.resize_grab_radius_side;
+            if radius.is_finite() && radius > 0. {
+                // Pane resize handles extend into the viewport. Rect::contains
+                // includes its right endpoint, so omit that shared endpoint too.
+                input_rect.max.x = (rect.right() - radius).next_down().max(rect.left());
+            }
+        }
+        let response = ui.interact(
+            input_rect,
+            egui::Id::new("viewport-input"),
+            Sense::click_and_drag(),
+        );
         self.record_target("viewport", rect);
-        self.prepare_viewport_transform_press(ui, rect);
+        self.record_target("viewportInput", input_rect);
+        self.prepare_viewport_transform_press(ui, input_rect);
         let painter = ui.painter_at(rect);
         painter.rect_filled(rect, 0., Color32::from_gray(43));
         let mut scene = match self.scene_for_view() {

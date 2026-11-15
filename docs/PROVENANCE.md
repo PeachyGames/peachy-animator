@@ -907,9 +907,23 @@ exclusion. A raw-zero-scale SourceMax field stays blank; untouched Enter preserv
 redo, while typed 0 repairs the range to 100. Fresh public no-history reopen,
 one image and actual SourceMin/TargetMax/Clamp/Offset Y edits with exact Undo at
 1120×740 pass. Playback advances with Loop enabled and stops at zero; a wrap was
-not observed. All owned GUI instances are closed. The attempted Tree-pane resize
-is explicitly unverified. These native results do not broaden the separate
-runtime consumer-precision refusal.
+not observed. All owned GUI instances are closed. This initial mapping run used
+native executable `9048ecf4` and did not establish Tree-pane resizing. These native
+results do not broaden the separate runtime consumer-precision refusal.
+
+A later bounded workspace continuation, native executable `a8cfabdd`, verifies
+actual Tree-divider grabs at center/−2/+2, Properties resizing with the full
+mapping table visible, unchanged document/history/selection and held Mix Escape
+after resizing. Owned process 41530 is closed. The updated full-table capture
+shows that later build; the minimum captures remain the original mapping run.
+An additional actual native `a8cfabdd` run on an original converted unweighted
+mesh verifies ArrowRight pending Deform, Key/Undo restoring pending work,
+Properties shrink preserving pending/redo, absent offscreen Key/Delete targets
+and one 80-pixel wheel event exposing Key. Actual Key creates the track and
+Delete restores the baseline; the source is unchanged and owned process 42475
+is closed. Native coverage is unweighted; weighted/unweighted event checks are
+separate. Automated pane checks do not establish actual native Weights/Curves
+divider behavior or cross-restart docking. Those remain explicit limits.
 See [the bounded contract](slices/transform-mapping-authoring.md) and
 [capture gallery](evidence/transform-mapping.html). Licensed reference
 captures/logs and original scalar records stay private in the existing

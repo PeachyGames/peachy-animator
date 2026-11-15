@@ -1,5 +1,40 @@
 # Spine workspace and interaction parity
 
+## Workspace divider input — November 15, 2026
+
+The canvas now leaves the nearest right pane's native egui resize grab band to
+the pane. Only its click/drag input rectangle is inset; the full painted
+viewport, Fit, scene/mesh projection and the 320-pixel minimum viewport budget
+are unchanged. The same stable canvas input owner handles drags begun inside,
+including continuation across the strip. With no right pane, the full viewport
+accepts input. No arbitrary resize width, docking model or saved workspace
+preference was added.
+
+Actual native input on the rebuilt editor verifies all three Tree grabs at
+**−2, 0 and +2 logical points** from its border, preserving document, history and
+selection. Properties resizing then exposes the complete six-row mapping table
+and Options; held Mix/Escape still works after resizing. The updated
+[full-table capture](evidence/transform-mapping-editor.png) records that layout.
+Five focused whole-workspace tests cover all three Tree/Weights-only/Curves-only
+grab starts, view-only pending/history preservation, within-session released-size
+persistence, minimum layout and an owned canvas Move continuing across the band.
+Weights/Curves divider coverage is **headless only**; native checks here establish
+Tree and Properties behavior, not every pane or cross-restart docking.
+
+The same regression sweep found old Deform key/Delete capture targets below the
+visible inspector. They now report only positive, finite visible intersections.
+The existing weighted/unweighted keying test wheels the actual Properties pane
+until the button is visible and checks every reported key/Delete target against
+the clip before clicking. Shared keying behavior is unchanged. Native input on
+an original converted **unweighted** mesh verifies Arrow Right posing, Key/Undo
+restoring the pending pose, and Properties shrinking with pending pose/redo intact.
+Offscreen key/Delete targets disappear; an actual 80-pixel wheel reveals Key,
+then Key/Delete returns to the baseline document. Source artwork is unchanged
+and the owned window is closed. Weighted/unweighted cases retain focused event
+coverage; this new native replay does not establish weighted-mesh input parity.
+All final affected checks pass: 5 pane, 26 Transform, 40 Weights, 52 Curves and
+26 Deform tests, formatting, Clippy, build and the architecture check.
+
 ## World Translate X to Rotate mapping — November 15, 2026
 
 **Bounded native/MCP acceptance passed.** Installed Spine
@@ -39,10 +74,9 @@ Clippy, build and architecture checks pass.
 
 See the [capture gallery](evidence/transform-mapping.html),
 [original public lab](../examples/peach-bot/transform-mapping-bot.peachy) and
-[measured contract](slices/transform-mapping-authoring.md). **Tree-pane resizing
-remains unverified**: a staged edge drag did not change its width. Successful
-horizontal/vertical scrolling establishes control access; it does not establish
-resize parity.
+[measured contract](slices/transform-mapping-authoring.md). The workspace
+continuation above resolves the former shared-edge Tree resize gap; general
+docking and cross-restart workspace persistence remain outside this acceptance.
 
 Other cross-property destinations, local/additive modes, connection creation/removal,
 Properties Match and Transform timelines remain outside this slice. Existing

@@ -1,5 +1,39 @@
 # First-slice validation — November 5, 2026
 
+## Workspace divider ownership and visible Deform targets — November 15, 2026
+
+Focused checks pass with two workers: **5** pane-resize, **26** Transform,
+**40** weight, **52** curve and **26** Deform cases. These filters overlap.
+Formatting, all-target workspace Clippy, workspace build and seven-crate
+architecture checks pass. The full paint/projection rectangle and minimum
+320-unit combined-view canvas stay unchanged; only input excludes the neighboring
+divider's grab strip. Owned canvas drags continue across it and release once.
+
+Actual native Tree grabs at offsets −2, 0 and +2 all resize, preserving the
+document, selection and history. Properties resizing exposes all mapping columns,
+rows and Options; post-resize Mix/Escape restores canonical data. Native build
+SHA256 is `a8cfabddb25112361a3ffb3464e88e0266d34914873f82be38fb9132fc39c7f6`.
+The refreshed editor PNG shows the complete table. Weights/Curves divider variants
+have focused event checks only; cross-restart docking is outside this acceptance.
+
+A broader Deform check exposed a test clicking y649.5 below the visible Properties
+clip ending at614.219. The failure reproduces with the preceding viewport and
+floating-scrollbar control. Key/Delete capture rectangles now include only their
+visible portions; the event check wheels Properties to the visible button.
+Native verification uses one original unweighted mesh: ArrowRight creates a
+pending deformation, Key/Undo restores it, and shrinking Properties preserves
+pending work/redo while hiding both targets. One actual wheel scroll reveals
+Key at y565..586; Key creates a track and Delete restores the baseline document.
+The source file stays unchanged and every owned window is closed. Weighted and
+unweighted key/delete behavior passes the focused event tests; native weighted
+replay is not claimed. CLI/MCP executable hashes are unchanged, so the existing
+actual-MCP/runtime/interchange evidence remains applicable.
+
+See the [updated gallery](evidence/transform-mapping.html) and
+[scalar evidence](evidence/transform-mapping.json). Required hosted CI remains
+unavailable: workflow lookup returns404 and automatic review rejected dispatch.
+The feature PR stays draft; no settings/spending or main-branch changes occurred.
+
 ## World X→Rotate mapping — November 15, 2026
 
 The current engine/MCP/adapter gates pass: **22** transform-filter engine checks

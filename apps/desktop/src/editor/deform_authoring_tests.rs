@@ -51,7 +51,52 @@ fn key(editor: &mut Editor, ctx: &egui::Context, key: egui::Key) {
 fn click(editor: &mut Editor, ctx: &egui::Context, target: &str) {
     // Key requests settle after this frame's properties were laid out. Render
     // their resulting enabled state before locating and pressing another button.
-    workspace_frame(editor, ctx, vec![]);
+    let settle_frames = (ctx.global_style().animation_time / ctx.input(|input| input.predicted_dt))
+        .ceil() as usize
+        + 2;
+    for _ in 0..settle_frames {
+        workspace_frame(editor, ctx, vec![]);
+    }
+    for _ in 0..12 {
+        let [left, top, right, bottom] = editor.capture_targets["properties"];
+        let clip = egui::Rect::from_min_max(pos2(left, top), pos2(right, bottom));
+        for name in ["meshDeformKey", "meshDeformDelete"] {
+            if let Some([left, top, right, bottom]) = editor.capture_targets.get(name).copied() {
+                let reported = egui::Rect::from_min_max(pos2(left, top), pos2(right, bottom));
+                assert!(reported.is_positive() && reported.is_finite());
+                assert!(
+                    clip.contains_rect(reported),
+                    "{name}: {reported:?} outside {clip:?}"
+                );
+            }
+        }
+        if editor.capture_targets.contains_key(target) {
+            break;
+        }
+        // Use the actual outer scroll viewport, inside its clip margin and
+        // left of any indented/nested controls.
+        let point = pos2(clip.left() + 12., clip.center().y);
+        workspace_frame(
+            editor,
+            ctx,
+            vec![
+                egui::Event::PointerMoved(point),
+                egui::Event::MouseWheel {
+                    unit: egui::MouseWheelUnit::Point,
+                    delta: vec2(0., -80.),
+                    phase: egui::TouchPhase::Move,
+                    modifiers: egui::Modifiers::NONE,
+                },
+            ],
+        );
+        for _ in 0..4 {
+            workspace_frame(editor, ctx, vec![]);
+        }
+    }
+    assert!(
+        editor.capture_targets.contains_key(target),
+        "{target} was not reachable by Properties scrolling"
+    );
     let [left, top, right, bottom] = editor.capture_targets[target];
     let p = pos2((left + right) * 0.5, (top + bottom) * 0.5);
     pointer(editor, ctx, p, true);

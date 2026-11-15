@@ -4,6 +4,42 @@ Written November 10, 2026, at the end of the import-parity push. Read this
 first, then `AGENTS.md`. The workspace rules in `../AGENTS.md` and `../CLAUDE.md`
 still apply.
 
+## November 15 workspace divider continuation
+
+The canvas now reserves the nearest right pane's actual egui resize grab band
+from input, using a stable canvas owner and a separate input rectangle. Full
+painting/Fit/projection and the 320-pixel minimum viewport budget are unchanged;
+already owned drags continue outside that rectangle, and all-hidden right panes
+restore full input. Native Tree grabs at −2/0/+2 logical border offsets preserve
+document/history/selection. Properties resizing exposes all mapping fields and
+Options, and held Mix/Escape still works after resizing. The public full-table
+capture is updated. Five focused tests additionally cover Weights-only/Curves-only
+boundaries, pending/history preservation, released-size persistence within the
+session and an owned Move across the reserved strip. These pane variants have
+headless coverage only; no new native or cross-restart docking acceptance follows.
+
+The affected checks pass: 5 pane, 26 Transform, 40 weight, 52 curve and 26 Deform,
+plus formatting, all-target Clippy, workspace build and the architecture check.
+A pre-existing Deform test clicked raw key metadata below the Properties clip
+on both the mapping checkpoint and floating-scrollbar control. Key/Delete
+capture targets now include only visible intersections; the real-event test
+wheels Properties until its button is visible and verifies clip containment.
+Shared key commands are unchanged. The final native unweighted replay passes:
+actual Arrow Right, Key/Undo preserving the pending pose, Properties shrinking
+with pending pose/redo intact, absent offscreen key/Delete captures, an 80-pixel
+wheel revealing Key, and Key/Delete restoring the baseline document. Artwork is
+unchanged and the owned window is closed. Weighted/unweighted cases pass focused
+event checks; no new native weighted-mesh claim follows. All current source and
+native gates for this bounded workspace follow-up pass.
+
+**Next feature action: calibrate manually driven Slider constraints from native
+controls and public runtime behavior, or the remaining bounded UI workflows in
+the [blog backlog](slices/spine-blog-audit-20261114.md).** Mapping checkpoint
+`54936e4` is already pushed with the draft PR updated; the coordinator handles
+this follow-up's cleanup, commit and publication. There is no native-format or
+MCP-schema change. Reference/native windows used for these checks are closed.
+See [UI parity](UI_PARITY.md#workspace-divider-input--november-15-2026).
+
 ## November 15 Transform mapping continuation
 
 World X→Rotate now passes shared core/MCP, actual native acceptance and both
@@ -20,8 +56,8 @@ minimum 1120×740 controls and fresh public reopen/playback pass. Native and the
 The native coalesced edge-drag exposed floating scrollbar overlap; a reserved
 solid outer scrollbar fixes it, with a whole-workspace regression and native
 replay. The regression settles egui's scrollbar animation before freezing geometry.
-Temporary diagnostics are removed. Pane resizing was attempted without verified
-change; exact styling/docking and that native resize remain gaps.
+Temporary diagnostics are removed. The workspace continuation above now resolves
+the former exact-edge resize gap; exact styling and general docking remain open.
 
 The 103-case matrix records 101 runtime passes at unchanged 0.001 tolerance,
 one overflow refusal and one measured consumer-precision refusal. Installed
@@ -30,7 +66,7 @@ points up for the biased source. Do not relabel this refusal as a runtime pass.
 Published f32 poses remain; the private wide FK never solves constraints again.
 Exact final 04 installed interchange passes 52 poses with zero world/region/UV error
 and exact raw authored sections, including mappings/keys/attachment dimensions.
-Final desktop filters of 26 Transform, 39 weight and 51 curve cases filters, prior core/MCP/adapter checks,
+At the mapping checkpoint, 26 Transform, 39 weight and 51 curve cases, prior core/MCP/adapter checks,
 fmt, all-target Clippy, workspace build and seven-crate architecture pass.
 
 All task-owned reference/native windows are closed. Public original lab/captures
@@ -45,8 +81,7 @@ required hosted CI still gates main integration.
 Continue the [blog backlog](slices/spine-blog-audit-20261114.md): manually driven
 Slider constraints need native/public-runtime calibration before a new model;
 other mappings, creation/reconnection, stored Curves defaults/presets,
-Auto/Smooth/brush weights and locks/Update also remain. Prioritize the recorded
-native pane-resize gap when reviewing workspace parity. Problems, broader Color,
+Auto/Smooth/brush weights and locks/Update also remain. Problems, broader Color,
 Pies/overlay and exact styling/docking remain open. The canceled female-pose full
 verification stays canceled.
 

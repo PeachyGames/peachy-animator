@@ -117,6 +117,9 @@ range/Clamp/Offset Y edits with exact Undo, and fresh no-history public reopen
 with its image. Playback time advances with Loop enabled and Q stops at time 0;
 boundary wrapping was not observed. See the [capture gallery](../evidence/transform-mapping.html)
 and [public lab](../../examples/peach-bot/transform-mapping-bot.peachy).
-Tree-pane resizing remains unverified after a staged edge drag made no width
-change. Native scrolling proves control access, not resize parity. This is
-bounded mapping acceptance, not full Transform/UI parity.
+A later workspace continuation resolves the shared-edge input conflict: actual
+Tree grabs on the left, center and right of its divider resize without document
+or history changes. Properties resizing exposes the complete table, and a
+post-resize Mix/Escape restores canonical data. Weights/Curves divider variants
+have focused event checks only; cross-restart docking and full styling remain
+separate. This is bounded mapping acceptance, not full Transform/UI parity.

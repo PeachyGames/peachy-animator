@@ -1,5 +1,27 @@
 # Views audit and implemented scope
 
+Workspace divider continuation (November 15): Tree resize input now owns the
+full advertised grab band beside the canvas. Native −2/0/+2 border grabs preserve
+document/history/selection, and Properties resizing exposes the complete mapping
+table/Options; Mix/Escape works afterward. Canvas painting, projection and the
+320-pixel minimum budget are unchanged: only its stable click/drag input rectangle
+excludes the adjacent egui resize radius. Already owned canvas drags continue
+through the strip; hiding all right panes restores full input. Five focused
+tests also cover Weights-only/Curves-only dividers, pending-pose safety, released
+size persistence within the session and the minimum workspace. Those pane
+variants have no new native divider acceptance, and cross-restart docking/
+workspace persistence is not claimed.
+
+Deform key/Delete capture targets now omit offscreen controls. The existing
+weighted/unweighted authoring test scrolls actual Properties to a visible button
+and asserts captured targets remain inside its clip. Shared keying is unchanged.
+Native input on an original converted unweighted mesh verifies nudge, Key/Undo,
+shrinking Properties with pending pose/redo intact, absent offscreen captures,
+one 80-pixel wheel revealing Key, and Key/Delete restoring the baseline document.
+The source image is unchanged and the owned window is closed. The existing
+weighted/unweighted event checks pass; no new native weighted-mesh claim follows.
+All final affected checks pass, including the five pane regressions.
+
 Transform Properties continuation (November 15, **bounded acceptance passed**): the
 Tree inspector now follows the observed Source/Targets, Offset, Mix, six-row
 Properties and Options groups for bounded world Translate X → Rotate mapping.
@@ -23,8 +45,8 @@ and exact Undo, and fresh no-history public reopen with its image. Playback time
 advances with Loop enabled and Q stops at time 0; boundary wrapping was not
 observed. See the [gallery](evidence/transform-mapping.html) and
 [public lab](../examples/peach-bot/transform-mapping-bot.peachy).
-**Tree-pane resizing remains unverified** after a staged edge drag made no width
-change; scrolling, not resize acceptance, establishes narrow control access.
+Tree/Properties resizing now has the bounded native acceptance described above;
+the earlier failed exact-edge probe identified overlapping canvas input.
 
 Curves continuation (November 14): the separate Animate relative-transition pane
 now shares typed Dopesheet selection and engine actions with Scalar/Deform/RGBA
@@ -80,7 +102,7 @@ availability and bounded feature scopes are explicit below.
 | Skins | New searchable named-skin list. Click activates, right-click selects Tree properties, Clear skin uses shared default attachments. Single active skin only. |
 | Slot Color | New inline Setup HSV/Hue/Alpha chooser and exact #RRGGBBAA entry for a typed slot or attachment's owner. Persistent native7 RGBA tint reaches all image views. Animate is read-only; color timelines/dark tint remain pending. |
 | Timeline | New compact Animate ruler below the viewport. Shared cursor/transport/Loop, exact all-track key markers, decimal frame entry, snapped or Shift-subframe scrubbing, wheel/slider zoom, right-drag pan and Zoom Keys. Works with Dopesheet closed. |
-| Tree | Typed outline, filters, activation dots and contextual properties, including the accepted bounded six-row X→Rotate editor with shared range/Clamp/Mix/Offset commands. Native narrow control access is verified through scrolling; Tree-pane resize parity remains unverified. The Slots filter shows draw order; Spine has no separate Slots view in this inventory. |
+| Tree | Typed outline, filters, activation dots and contextual properties, including the accepted bounded six-row X→Rotate editor with shared range/Clamp/Mix/Offset commands. Native scrolling and Tree/Properties resizing verify access, including −2/0/+2 border grabs. General docking and saved workspace preferences remain. The Slots filter shows draw order; Spine has no separate Slots view in this inventory. |
 | Weights | Dedicated vertical Weights pane; Bind/Remove all/Add binding and single-/multi-vertex Direct numeric/slider/viewport editing through the shared engine/MCP. Brush, Auto/Smooth, Update and locks remain. See [multi-vertex scope](slices/weight-multivertex.md). |
 
 All 15 views now have bounded implementations; no view remains a disabled placeholder.

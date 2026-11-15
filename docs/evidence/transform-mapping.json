@@ -49,12 +49,12 @@
     },
     "sourceUnchanged": true,
     "closed": true,
-    "treePaneResize": "Attempted, no verified change; remains explicit gap",
     "captures": {
       "editor": "public-editor.png",
       "minimumLeft": "public-minimum-left.png",
       "minimumRight": "public-minimum-right.png"
-    }
+    },
+    "initialTreePaneResize": "Attempted, no verified change; remains explicit gap; superseded by the verified workspace divider continuation below"
   },
   "earlierNativeInput": {
     "typedEndpointSequence": true,
@@ -218,7 +218,8 @@
   "captures": {
     "editor": {
       "path": "docs/evidence/transform-mapping-editor.png",
-      "sha256": "aa69d2f58a74828b387c1e6fa89ea1059abf32b49e3b948f1671939e40ed1db1"
+      "sha256": "d1f0c94db550c79b0615c43c2d7bfe918d8c6252d6f8ee07ed6092b1f2e5b607",
+      "nativeBinarySha256": "a8cfabddb25112361a3ffb3464e88e0266d34914873f82be38fb9132fc39c7f6"
     },
     "minimumLeft": {
       "path": "docs/evidence/transform-mapping-minimum-left.png",
@@ -233,9 +234,197 @@
     "World source and target, nonadditive, one X to Rotate writer per constrained property",
     "Other cross mappings, local/additive domains, Transform timelines, Match and native creation/reconnection remain open",
     "Undefined SourceMax resolution is an explicit shared range policy; not an observed Spine creation default",
-    "Tree pane resizing attempted without verified change; exact styling/general docking remain gaps",
     "Playback was observed with Loop enabled; boundary wrap not claimed",
     "No pixel equivalence or full Spine parity claim",
-    "Static gallery checked without browser-render verification"
-  ]
+    "Static gallery checked without browser-render verification",
+    "Tree and Properties native resizing is verified in this workspace continuation; Weights/Curves dividers have focused event checks only. General docking, cross-restart persistence and exact styling remain gaps."
+  ],
+  "workspaceDividerContinuation": {
+    "passed": true,
+    "nativeBinarySha256": "a8cfabddb25112361a3ffb3464e88e0266d34914873f82be38fb9132fc39c7f6",
+    "nativeActualTreeGrabOffsets": [
+      -2,
+      0,
+      2
+    ],
+    "treeCases": [
+      {
+        "offset": -2,
+        "viewportBefore": [
+          0.0,
+          59.0,
+          1190.0,
+          817.0
+        ],
+        "inputBefore": [
+          0.0,
+          59.0,
+          1186.9998779296875,
+          817.0
+        ],
+        "viewportAfter": [
+          0.0,
+          59.0,
+          1108.0,
+          817.0
+        ],
+        "treeBefore": [
+          1200.0,
+          42.0,
+          1491.0,
+          574.0
+        ],
+        "treeAfter": [
+          1118.0,
+          42.0,
+          1491.0,
+          574.0
+        ],
+        "documentAndHistoryUnchanged": true
+      },
+      {
+        "offset": 0,
+        "viewportBefore": [
+          0.0,
+          59.0,
+          1108.0,
+          817.0
+        ],
+        "inputBefore": [
+          0.0,
+          59.0,
+          1104.9998779296875,
+          817.0
+        ],
+        "viewportAfter": [
+          0.0,
+          59.0,
+          1028.0,
+          817.0
+        ],
+        "treeBefore": [
+          1118.0,
+          42.0,
+          1491.0,
+          574.0
+        ],
+        "treeAfter": [
+          1038.0,
+          42.0,
+          1491.0,
+          574.0
+        ],
+        "documentAndHistoryUnchanged": true
+      },
+      {
+        "offset": 2,
+        "viewportBefore": [
+          0.0,
+          59.0,
+          1028.0,
+          817.0
+        ],
+        "inputBefore": [
+          0.0,
+          59.0,
+          1024.9998779296875,
+          817.0
+        ],
+        "viewportAfter": [
+          0.0,
+          59.0,
+          950.0,
+          817.0
+        ],
+        "treeBefore": [
+          1038.0,
+          42.0,
+          1491.0,
+          574.0
+        ],
+        "treeAfter": [
+          960.0,
+          42.0,
+          1491.0,
+          574.0
+        ],
+        "documentAndHistoryUnchanged": true
+      }
+    ],
+    "nativePropertiesResize": {
+      "before": [
+        957.0,
+        584.0,
+        1484.0,
+        921.0
+      ],
+      "after": [
+        957.0,
+        417.0,
+        1494.0,
+        921.0
+      ]
+    },
+    "fullMappingTableVisible": true,
+    "mixHeldEscapeRestoresCanonical": true,
+    "fullPaintingAndProjectionRectUnchanged": true,
+    "nativeDocumentAndHistoryUnchanged": true,
+    "headlessMinimumViewportWidth": 320,
+    "headlessPaneResizeTests": 5,
+    "headlessDividerVariants": [
+      "Tree",
+      "Weights only",
+      "Curves only"
+    ],
+    "affectedDesktopFilters": {
+      "transform": 26,
+      "weight": 40,
+      "curve": 52,
+      "deform": 26
+    },
+    "filtersOverlap": true,
+    "fmt": true,
+    "clippyAllTargets": true,
+    "workspaceBuild": true,
+    "architectureCrates": 7,
+    "ownedNativeWindowClosed": true,
+    "nativeDeformScrollReplay": {
+      "passed": true,
+      "nativeActualInput": true,
+      "binarySha256": "a8cfabddb25112361a3ffb3464e88e0266d34914873f82be38fb9132fc39c7f6",
+      "fixtureSha256": "708d1dc2ff09d9f12cb1254cdd7a909a59db5c9dccf5405c67b408331bdb27bc",
+      "unweightedMesh": true,
+      "originalPngImages": 1,
+      "actualVertexNudge": true,
+      "keyUndoRestoresPending": true,
+      "resizePreservesPendingAndRedo": true,
+      "propertiesClipped": [
+        1195.9375,
+        417.21875,
+        1484.0,
+        614.21875
+      ],
+      "offscreenKeyAndDeleteTargetsAbsent": true,
+      "actualWheelSteps": 1,
+      "visibleKeyTarget": [
+        1252.78125,
+        565.0,
+        1274.78125,
+        586.0
+      ],
+      "actualKeyCreatesTrack": true,
+      "actualDeleteRestoresBaselineDocument": true,
+      "sourceFileUnchanged": true,
+      "closed": true,
+      "scope": "Original unweighted mesh only in native; weighted/unweighted checked by focused event tests"
+    },
+    "scope": "Native Tree/Properties only; other divider variants are event-driven headless checks; cross-restart docking is not claimed",
+    "allOwnedWindowsClosed": true,
+    "coreAndMcpUnchanged": true,
+    "binaryHashes": {
+      "peachy-animator": "a8cfabddb25112361a3ffb3464e88e0266d34914873f82be38fb9132fc39c7f6",
+      "peachy-cli": "4cfd17eae353de4fb042464ff698ca51e108e130bb9a7e2824029a0325c3bcd3",
+      "peachy-mcp": "aa1c1e9a4dd8fa6c1eff406b7ba8b0c4efd4a97be7f815ad9d5ffa76875e5c6e"
+    }
+  }
 }

@@ -105,10 +105,12 @@ range/Clamp/Offset Y edits with exact Undo, and fresh no-history public reopen
 with its image. Playback time advances with Loop enabled and Q stops at time 0;
 boundary wrapping was not observed. The [public lab](../../examples/peach-bot/transform-mapping-bot.peachy)
 and [gallery](../evidence/transform-mapping.html) retain that bounded result.
-Tree-pane resize parity remains unverified after a staged edge drag made no
-width change; control access is verified through scrolling. Broader mappings
-and local/additive domains remain separate work; this does not close the
-release post's whole Transform feature area.
+The later workspace continuation resolves shared-edge divider input. Actual
+Tree grabs at −2/0/+2 and Properties resizing preserve document/history and
+expose the complete table; post-resize Mix/Escape passes. Weights/Curves
+dividers have focused event checks only; cross-restart docking remains open.
+Broader mappings and local/additive domains remain separate work; this does not
+close the release post's whole Transform feature area.
 
 Native format remains **22**. MCP now exposes **53 strict commands / 13 tools**,
 including semantic `editMeshBoneWeights` and read-only `get_mesh_weights`, raw/semantic global
@@ -217,7 +219,7 @@ not complete this broader objective.
 | --- | --- |
 | Dopesheet-centric synchronization and curve refinements | Shared scalar/Deform/slot selection and bounded Curves/Graph actions pass native/MCP/runtime acceptance. Stored preset library, default curve preferences, native grouping and uncalibrated/generalized handle adjustment remain. |
 | Sliders | No native model, evaluation, import/export or creation workflow; add shared commands and strict schemas with independently derived behavior. |
-| Transform property mapping and local/world choices | One world X→Rotate writer now has accepted evaluation and shared native/MCP endpoint authoring. Tree-pane resizing remains unverified; other cross-property destinations, general connection/source/target editing, Match, local/additive and Transform timelines are absent. See [bounded contract](transform-mapping-authoring.md). |
+| Transform property mapping and local/world choices | One world X→Rotate writer now has accepted evaluation and shared native/MCP endpoint authoring. Tree/Properties resizing now passes bounded native checks; other cross-property destinations, general connection/source/target editing, Match, local/additive and Transform timelines are absent. See [bounded contract](transform-mapping-authoring.md). |
 | Multiple-mesh tracing and weight workflows | Explicit payload creation and bounded one-mesh/one-bone Direct selection/editing exist through shared native/MCP paths. Native topology generation, multiple-mesh/bone workflows, Auto/Smooth/brush/locks/Update, sparse Deform remapping and Pies/overlay remain. |
 | Draw order folder keys | Current keyed draw order is separate; folders need a model, adapter, evaluation and authoring surface. |
 | Inverse clipping | Existing clipping is bounded and refuses inverse behavior; add geometry/evaluation plus controls and automation commands. |

@@ -452,7 +452,12 @@ impl Editor {
             let key_button = ui.add_enabled_ui(visible.is_some(), |ui| {
                 super::animation::pose_key_button(ui, state)
             }).inner.on_hover_text("Key this mesh's complete deform pose at the current frame.");
-            self.record_target("meshDeformKey", key_button.rect);
+            let visible_key = key_button.rect.intersect(ui.clip_rect());
+            if visible_key.is_positive() && visible_key.is_finite() {
+                self.record_target("meshDeformKey", visible_key);
+            } else {
+                self.capture_targets.remove("meshDeformKey");
+            }
             if key_button.clicked() {
                 self.request_pose_key(super::pose_key::PoseKeyAction::Deform {
                     attachment: key.clone(),
@@ -462,7 +467,12 @@ impl Editor {
             let delete = ui.add_enabled(state == KeyState::Keyed,
                 egui::Button::new("Delete key"))
                 .on_hover_text("Delete this mesh's deform key at the current frame. Pending poses must be keyed or discarded first.");
-            self.record_target("meshDeformDelete", delete.rect);
+            let visible_delete = delete.rect.intersect(ui.clip_rect());
+            if visible_delete.is_positive() && visible_delete.is_finite() {
+                self.record_target("meshDeformDelete", visible_delete);
+            } else {
+                self.capture_targets.remove("meshDeformDelete");
+            }
             if delete.clicked() {
                 self.cancel_gesture();
                 self.dispatch(Command::DeleteDeformKey {

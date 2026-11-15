@@ -15,9 +15,23 @@ installed-editor evidence; see the [contract](slices/weight-multivertex.md),
 [scalar record](evidence/weight-multivertex.json) and
 [gallery](evidence/weight-multivertex.html).
 
+The bounded workspace continuation resolves shared-edge canvas/Tree resize
+input. Native −2/0/+2 Tree grabs and Properties resizing pass without document,
+history or selection changes; full canvas painting/projection and the 320-pixel
+minimum budget stay unchanged. Five focused tests also cover the Weights-only/
+Curves-only boundaries, pending poses, within-session size persistence and owned
+canvas drags crossing the reserved input band. Those pane variants are headless
+coverage, not new native or cross-restart docking claims. Deform key/Delete
+captures now omit offscreen controls and their real-event test scrolls to visible
+Properties buttons. Native unweighted nudge/Key/Undo, Properties shrinking with
+pending pose/redo intact, wheel-to-visible Key and Key/Delete baseline recovery
+pass with unchanged source artwork. Weighted variants have focused event coverage,
+not a new native claim. All final affected local checks pass. See
+[UI parity](UI_PARITY.md#workspace-divider-input--november-15-2026).
+
 | Spine capability | Current implementation | Evidence or remaining gate |
 | --- | --- | --- |
-| Workspace, controls and conventions | Layout/shortcut alignment plus typed Tree, contextual selection, filters, activation dots, picking and bounded Direct vertex multi-selection | See [UI parity](UI_PARITY.md); general Tree/tool multi-selection, remaining tools and docking remain before weight-painting UI |
+| Workspace, controls and conventions | Layout/shortcut alignment plus typed Tree, contextual selection, filters, activation dots, picking, bounded Direct vertex multi-selection and nonoverlapping canvas/divider input | Native Tree −2/0/+2 and Properties resizing pass with data/history/selection preserved; other divider variants have focused headless coverage. See [UI parity](UI_PARITY.md); general Tree/tool multi-selection, remaining tools and docking remain before weight-painting UI |
 | Views discovery and auxiliary panels | 16 bounded implemented views, including Curves, Metrics and a compact Timeline | Actual installed 4.3.26 menu has 17 entries: Problems is missing; Slot Color needs current Color behavior. Advanced Graph, Preview mixing and general docking remain. See [native inventory audit](slices/spine-blog-audit-20261114.md) |
 | Transform tools and axes | Rotate/Translate/Scale plus bounded bone Shear controls/handles; numeric operators, active-tool nudges and fixed-baseline previews | Shear currently displays local values; exact installed World/Parent display, empty-space/Shift/handle behavior and visual alignment remain gates |
 | Selection navigation | Page Up/Down history and Cmd/Ctrl+number storage / number recall for typed single-item groups | Session state only; multi-selection and persisted group preferences pending |
@@ -49,7 +63,7 @@ installed-editor evidence; see the [contract](slices/weight-multivertex.md),
 | Nested IK chains and child offsets | Leg-then-toe style chains solve sequentially in list order (either order); two-bone children may sit off the parent axis | Original Chain Lab and offset variants match the external runtime in forward and reversed order; a 62-bone game rig with 6 IK and 16 physics constraints round-trips with matching poses |
 | Physics constraints (data) | Import/edit/save/export every setting, Scale Y mode and Global flag; setting and reset timelines incl. global; Tree icon, typed Properties, rename, Timeline/W-S keys, Metrics | Installed 4.3.26 round trip and external 4.3.13 data/timeline checks pass; a game rig round-trips with identical simulated motion. **No editor simulation**, keying UI, creation UI, skin-required physics or reference scale yet. See [physics data](slices/physics-data.md) |
 | Physics simulation preview | Pending | Needs an independently derived model calibrated against the external runtime, Simulate/Deterministic/Reset controls and wind/gravity reference scale |
-| Transform constraints | Full 4.3 data; world identity Rotate, mapped X/Y and one X→Rotate writer; shared Min/Max commands/query, Setup Mix/Offset and bounded native Properties editing | Existing labs plus 101 new runtime cases and the 122-request original MCP lab pass; exact installed roundtrip passes. Actual native typing, held cancellation/history, minimum controls and fresh reopen/playback pass; native/MCP saves are byte-identical. Tree pane resizing remains unverified. Precision-conflict/overflow poses refuse explicitly. Local/additive modes, other cross/scale/shear mappings, reconnection/creation and timelines remain. See [data slice](slices/transform-constraints.md) and [authoring scope](slices/transform-mapping-authoring.md) |
+| Transform constraints | Full 4.3 data; world identity Rotate, mapped X/Y and one X→Rotate writer; shared Min/Max commands/query, Setup Mix/Offset and bounded native Properties editing | Existing labs plus 101 new runtime cases and the 122-request original MCP lab pass; exact installed roundtrip passes. Actual native typing, held cancellation/history, minimum controls and fresh reopen/playback pass; native/MCP saves are byte-identical. Native Tree/Properties resizing exposes all controls and preserves held Mix/Escape. Precision-conflict/overflow poses refuse explicitly. Local/additive modes, other cross/scale/shear mappings, reconnection/creation and timelines remain. See [data slice](slices/transform-constraints.md) and [authoring scope](slices/transform-mapping-authoring.md) |
 | Slot animation | Attachment swaps/hide and RGBA authoring through shared native/MCP commands, typed Attach/RGBA rows, mixed clipboards and curve-preserving color insertion | Native input/history/persistence and both final authored exports pass; 104 split parameters match installed 4.3.26. Separate rgb/alpha/dark tint, sequences and name-override editor interchange remain. See [slot authoring](slices/slot-authoring.md) |
 | Events | Definitions and timed keys (with per-key overrides) import, export and migrate; reference scale stored | The doggy-scene female opens and matches the runtime; no Events view or event authoring yet. See [events](slices/events.md) |
 | Linked meshes | Import, export, drawing, deform-key following and source-edit propagation | Linked Mesh Lab matches the runtime in every skin; no create/unlink commands yet. See [linked meshes](slices/linked-mesh.md) |
