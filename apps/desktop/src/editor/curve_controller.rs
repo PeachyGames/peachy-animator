@@ -138,6 +138,7 @@ impl Editor {
             let visible = match edit.gesture.owner {
                 CurveInputOwner::Curves => self.curves_visible(),
                 CurveInputOwner::ScalarGraph
+                | CurveInputOwner::SliderGraph
                 | CurveInputOwner::DeformGraph
                 | CurveInputOwner::SlotGraph => self.graph_visible(),
             };
@@ -253,6 +254,7 @@ impl Editor {
                         match owner {
                             CurveInputOwner::Curves => "curves",
                             CurveInputOwner::ScalarGraph => "graphScalar",
+                            CurveInputOwner::SliderGraph => "graphSlider",
                             CurveInputOwner::DeformGraph => "graphDeform",
                             CurveInputOwner::SlotGraph => "graphSlot",
                         }
@@ -394,8 +396,35 @@ impl Editor {
             owner,
             CurveInputOwner::SlotGraph | CurveInputOwner::DeformGraph
         );
+        let slider = owner == CurveInputOwner::SliderGraph;
+        let fps = f64::from(self.session.document().fps);
+        let start = f64::from(channel.target.key.time());
+        let duration = f64::from(channel.target.next_time) - start;
+        let value_factor = if slider {
+            if matches!(
+                channel.target.key,
+                AnimationKey::Slider {
+                    property: SliderProperty::Time,
+                    ..
+                }
+            ) {
+                fps
+            } else {
+                100.
+            }
+        } else if percent {
+            100.
+        } else {
+            1.
+        };
         let original_text: [String; 4] = std::array::from_fn(|index| {
-            (values[index] * if percent && index % 2 == 1 { 100. } else { 1. }).to_string()
+            if index % 2 == 1 {
+                (values[index] * value_factor).to_string()
+            } else if slider {
+                ((start + values[index] * duration) * fps).to_string()
+            } else {
+                values[index].to_string()
+            }
         });
         if self.curves.draft.as_ref().is_none_or(|draft| {
             draft.owner != owner || draft.source != *channel || draft.selection != selection
@@ -413,6 +442,7 @@ impl Editor {
         let prefix = match owner {
             CurveInputOwner::DeformGraph => "graphDeform",
             CurveInputOwner::SlotGraph => "graphSlot",
+            CurveInputOwner::SliderGraph => "graphSlider",
             _ => "graphScalar",
         };
         let fields = {
@@ -424,7 +454,24 @@ impl Editor {
                 draft.changed,
                 enabled,
                 horizontal,
-                if percent {
+                if slider
+                    && matches!(
+                        channel.target.key,
+                        AnimationKey::Slider {
+                            property: SliderProperty::Time,
+                            ..
+                        }
+                    )
+                {
+                    [
+                        "Host frame 1",
+                        "Referenced frame 1",
+                        "Host frame 2",
+                        "Referenced frame 2",
+                    ]
+                } else if slider {
+                    ["Host frame 1", "Mix 1 (%)", "Host frame 2", "Mix 2 (%)"]
+                } else if percent {
                     ["Time 1", "Value 1 (%)", "Time 2", "Value 2 (%)"]
                 } else {
                     ["Time 1", "Value 1", "Time 2", "Value 2"]
@@ -454,7 +501,15 @@ impl Editor {
                         text.parse::<f64>()
                             .ok()
                             .filter(|value| value.is_finite())
-                            .map(|value| value / if percent && index % 2 == 1 { 100. } else { 1. })
+                            .map(|value| {
+                                if index % 2 == 1 {
+                                    value / value_factor
+                                } else if slider {
+                                    (value / fps - start) / duration
+                                } else {
+                                    value
+                                }
+                            })
                     }
                 })
                 .collect();

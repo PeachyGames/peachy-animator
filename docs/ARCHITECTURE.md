@@ -22,7 +22,14 @@ setup-to-key conversion, frame snapping and curve preservation, shared by intera
 and automated clients. Session adds bounded snapshot history, dirty state and gesture
 transactions around that transition. Cancelled gestures preserve the prior redo branch.
 
-Evaluation starts from setup on every call. `evaluate_scene` resolves skins and returns
+Evaluation samples authored state with the selected skin before pending overlays,
+then uses one ordered effective state for bone/inheritance, constraint and slot
+domains. Inactive host slot/Slider tracks skip before explicit pending overrides.
+Slider samples referenced tracks into that state without recursively solving a
+second skeleton. `checked_scene_from_evaluated` consumes the resulting checked
+pose, so geometry/readback do not repeat the constraint solve. Authored locals
+and Slider Time/Mix remain separate from their applied values.
+`evaluate_scene` resolves skins and returns
 world transforms, textured vertex/UV/index buffers in draw order and their common bounds. Its optional
 preview remains available to pure callers; the desktop now uses cancellable command
 transactions for both bone and region pointer gestures. Rendering and fit-to-view use
@@ -70,6 +77,12 @@ v4 vertices. Complete strict schema, geometry, curve/order and legacy time-bound
 validation happens before v2 hold normalization. Native v3/v4 stale duration fields
 remain errors; migration does not use the Spine adapter or weaken unknown-field
 validation.
+
+Native v23 adds strict Slider constraints and per-animation `slider_tracks`.
+The decoder migrates v22 by adding empty lists in memory; legacy payloads reject
+injected new fields. Frozen example bytes remain unchanged. A test-only pure
+fixture builder upgrades known historical payloads for engine/adapter tests;
+production migration stays in I/O and the engine still depends only on document.
 
 The desktop owns dialogs, texture upload, camera and pointer coordinates, labels and
 platform events. Its entrypoint parses arguments and starts the app. `editor/mod.rs`

@@ -1,0 +1,375 @@
+{
+  "date": "2026-11-15",
+  "scope": "Bounded Slider authoring/evaluation checkpoint; full Spine parity remains open",
+  "nativeFormat": 23,
+  "commands": 58,
+  "mcpTools": 14,
+  "publicProject": "examples/peach-bot/slider-bot.peachy",
+  "publicProjectSha256": "f097c00c4542d46b7e2ee846d72d74606c9a6e5fad9bf41ccc1dcdc277a60dc6",
+  "originalImageSha256": "6e8f281942e95b5a77774e683622dac99ea2aef706c99f3627dad968d6c2120f",
+  "references": {
+    "editor": "4.3.26",
+    "externalRuntime": "4.3.13",
+    "implementationSourceInspected": false,
+    "licensedCapturesPublished": false
+  },
+  "matrices": [
+    {
+      "study": "domains",
+      "cases": 170,
+      "counts": {
+        "compared": 170
+      },
+      "complete": true,
+      "tolerance": 0.001,
+      "maxAbsoluteErrorAcrossCompared": 4.8177196504184394e-05,
+      "maxEngineFkResidual": 0.0,
+      "reportSha256": "85621d66e44bd4a83d15562cf23d6dc244a6faa0722e02a9a0a435643cfbecdd"
+    },
+    {
+      "study": "sequenceActivity",
+      "cases": 177,
+      "counts": {
+        "compared": 177
+      },
+      "complete": true,
+      "tolerance": 0.001,
+      "maxAbsoluteErrorAcrossCompared": 6.848346799870342e-06,
+      "maxEngineFkResidual": 0.0,
+      "reportSha256": "ea4c677fa119922b7abb3d0c1e73df028be544eac248ef4a352ddfedf50ad67e"
+    },
+    {
+      "study": "incomingHoldouts",
+      "cases": 101,
+      "counts": {
+        "compared": 101
+      },
+      "complete": true,
+      "tolerance": 0.001,
+      "maxAbsoluteErrorAcrossCompared": 1.2578223961057233e-05,
+      "maxEngineFkResidual": 0.0,
+      "reportSha256": "7e8d812fe1348f91cfd00b9bebf050af6bd5dd7c3e25fc77db84f2cad94c06c0"
+    },
+    {
+      "study": "otherSliders",
+      "cases": 21,
+      "counts": {
+        "compared": 21
+      },
+      "complete": true,
+      "tolerance": 0.001,
+      "maxAbsoluteErrorAcrossCompared": 2.4008293451061036e-06,
+      "maxEngineFkResidual": 0.0,
+      "reportSha256": "f6015c0019e40847fdee7f4fc9a2a35e5864725cc699059eb307cca9dbde2967"
+    },
+    {
+      "study": "bone",
+      "cases": 34,
+      "counts": {
+        "compared": 34
+      },
+      "complete": true,
+      "tolerance": 0.001,
+      "maxAbsoluteErrorAcrossCompared": 2.7846124055486143e-06,
+      "maxEngineFkResidual": 0.0,
+      "reportSha256": "3ae7fabb0f742ba1413e399206a531792c931d5e4b47cfda031b82ad1b3b6160"
+    },
+    {
+      "study": "source",
+      "cases": 75,
+      "counts": {
+        "compared": 72,
+        "deferredRefusal": 3
+      },
+      "complete": false,
+      "tolerance": 0.001,
+      "maxAbsoluteErrorAcrossCompared": 5.556361020353506e-05,
+      "maxEngineFkResidual": 0.0,
+      "reportSha256": "5a8ec32aaf255693b8bb846c0cf63417586cc380a36c49b15a6af63e8f804f21"
+    },
+    {
+      "study": "sourceMix",
+      "cases": 6,
+      "counts": {
+        "compared": 6
+      },
+      "complete": true,
+      "tolerance": 0.001,
+      "maxAbsoluteErrorAcrossCompared": 2.4008293451061036e-06,
+      "maxEngineFkResidual": 0.0,
+      "reportSha256": "d30226a984f67f3027e0af8d8df7cb5568a57f515a40154f7294ba82ac096aaa"
+    },
+    {
+      "study": "order",
+      "cases": 6,
+      "counts": {
+        "compared": 6
+      },
+      "complete": true,
+      "tolerance": 0.001,
+      "maxAbsoluteErrorAcrossCompared": 1.737138852320186e-05,
+      "maxEngineFkResidual": 0.0,
+      "reportSha256": "47f988e94750967bc11120b531852834cc8c4659b35a8953ba39081a731138a1"
+    },
+    {
+      "study": "nested",
+      "cases": 3,
+      "counts": {
+        "compared": 3
+      },
+      "complete": true,
+      "tolerance": 0.001,
+      "maxAbsoluteErrorAcrossCompared": 2.7846124055486143e-06,
+      "maxEngineFkResidual": 0.0,
+      "reportSha256": "08632c3a7c44db9c20b313a843a1a7d548aeb4373bbaa1b25e19a40851b50a88"
+    },
+    {
+      "study": "manualAdversarial",
+      "cases": 13,
+      "counts": {
+        "compared": 11,
+        "mismatch": 2
+      },
+      "complete": false,
+      "tolerance": 0.001,
+      "maxAbsoluteErrorAcrossCompared": 2.4008293451061036e-06,
+      "maxEngineFkResidual": 0.0,
+      "reportSha256": "76c3537785a165080346ca9210d8abaa0262d87fb3258869eb76d22ebf00f0ae"
+    },
+    {
+      "study": "sequenceWide",
+      "cases": 15,
+      "counts": {
+        "compared": 11,
+        "deferredRefusal": 4
+      },
+      "complete": false,
+      "tolerance": 0.001,
+      "maxAbsoluteErrorAcrossCompared": 2.4008293451061036e-06,
+      "maxEngineFkResidual": 0.0,
+      "reportSha256": "f70cb4ec1d34565dfe4950ad07b1fbbf83b900769c666986c6c279ace59edfa8"
+    },
+    {
+      "study": "sequenceInteger",
+      "cases": 16,
+      "counts": {
+        "compared": 8,
+        "deferredRefusal": 8
+      },
+      "complete": false,
+      "tolerance": 0.001,
+      "maxAbsoluteErrorAcrossCompared": 2.4008293451061036e-06,
+      "maxEngineFkResidual": 0.0,
+      "reportSha256": "ae93eeec5650facdff3889014ac84c7d67dd39f2bfd13d182cf8cd29a3c8b0e4"
+    },
+    {
+      "study": "drivenTime",
+      "cases": 12,
+      "counts": {
+        "compared": 12
+      },
+      "complete": true,
+      "tolerance": 0.001,
+      "maxAbsoluteErrorAcrossCompared": 2.4008293451061036e-06,
+      "maxEngineFkResidual": 0.0,
+      "reportSha256": "3af200d9e6c4202b28878c90a16c7c2322f06740aa8aaf44cec3bb0723a2d8de"
+    },
+    {
+      "study": "drivenMix",
+      "cases": 12,
+      "counts": {
+        "compared": 12
+      },
+      "complete": true,
+      "tolerance": 0.001,
+      "maxAbsoluteErrorAcrossCompared": 2.4008293451061036e-06,
+      "maxEngineFkResidual": 0.0,
+      "reportSha256": "d17db4d8e90c7624d5ea7a853bdc00b64818a76587b82252e5a3726ad5836b2e"
+    }
+  ],
+  "mcp": {
+    "actualStdio": true,
+    "requests": 84,
+    "poseSamples": 14,
+    "startedBlank": true,
+    "finishedRigImported": false,
+    "saveReopenExact": true,
+    "staleAndAtomicRollback": true,
+    "ownedChildExited": true,
+    "binarySha256": "f7975d474ee8e3b5df37c405c9cbc3a0dc2efee0153a4f29e6d794ed8ab1adbd"
+  },
+  "native": {
+    "actualOSInput": true,
+    "independentNativeRigCreation": false,
+    "manualFrameMixPendingSaveHistory": true,
+    "independentKeysAndK": true,
+    "autoKeyAtomicFlush": true,
+    "beyondEndFrame120": true,
+    "signedMix": true,
+    "setupLoopAdditive": true,
+    "heldEscapeAndFocusLoss": true,
+    "ownedDraftSave": true,
+    "graphNumbersTangentsClipboard": true,
+    "minimumInnerSize": [
+      1120,
+      740
+    ],
+    "freshPublicOpenImages": 1,
+    "freshPublicOpenHistoryEmpty": true,
+    "observedPlayingTime": 0.22470200061798096,
+    "finalTime": 0.0,
+    "loopWrapObserved": false,
+    "ownedWindowsClosed": true,
+    "finalBinarySha256": "47ca392adf56a9881bf54b845656fcc01af390aa7e52fff88b87d2038a12bde8"
+  },
+  "runtimeGeometry": {
+    "physicsConstraints": 0,
+    "physicsValues": 0,
+    "physicsTimelines": 0,
+    "physicsFrames": 0,
+    "regionComparisons": 1664,
+    "maxRegionError": 2.288818359375e-05,
+    "meshComparisons": 0,
+    "weightedMeshComparisons": 0,
+    "maxMeshError": 0,
+    "uvComparisons": 0,
+    "maxUVError": 0,
+    "runtime": "Spine 4.3 external oracle",
+    "bones": 6,
+    "slots": 2,
+    "skins": [
+      "default"
+    ],
+    "clips": [
+      {
+        "name": "calibration",
+        "nativeEnd": 1.5,
+        "runtimeEnd": 1.5,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default"
+        ],
+        "maxWorldError": 2.4008293451061036e-06
+      },
+      {
+        "name": "host",
+        "nativeEnd": 1.5,
+        "runtimeEnd": 1.5,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default"
+        ],
+        "maxWorldError": 1.838038693335875e-05
+      }
+    ],
+    "tolerance": 0.001,
+    "maxWorldError": 1.838038693335875e-05,
+    "comparisons": 3744,
+    "ikPoseComparisons": 0,
+    "maxIKMixError": 0,
+    "ikMixTolerance": 1e-06,
+    "drawOrderChecks": 104,
+    "imageChecks": 208,
+    "colorComparisons": 832
+  },
+  "installedInterchange": {
+    "strictRawReportPassed": false,
+    "poseCompatibilityPassed": true,
+    "losslessInterchange": false,
+    "tolerance": 0.001,
+    "poseComparison": {
+      "poses": 104,
+      "worldValues": 3744,
+      "regionCoordinates": 1664,
+      "uvValues": 1664,
+      "colorValues": 832,
+      "drawOrderChecks": 104,
+      "imageChecks": 208,
+      "maxWorldError": 1.52587890625e-05,
+      "maxRegionError": 1.52587890625e-05,
+      "maxUVError": 0.0,
+      "passed": true,
+      "orderScope": "All two slots are visible in this exact fixture; full attachment sequence compared. Hidden-slot order is outside this CLI report."
+    },
+    "allNonAnimationRawSectionsExact": true,
+    "tracks": [
+      {
+        "animation": "host",
+        "constraint": 0,
+        "property": "time",
+        "keyCount": 5,
+        "timesExact": true,
+        "maxValueDelta": 7.000000001866624e-08,
+        "maxNormalizedBezierDelta": 6.300000000014627e-07,
+        "sourceTrackIndex": 0,
+        "returnedTrackIndex": 1
+      },
+      {
+        "animation": "host",
+        "constraint": 0,
+        "property": "mix",
+        "keyCount": 3,
+        "timesExact": true,
+        "maxValueDelta": 0.0,
+        "maxNormalizedBezierDelta": 3.00000000119649e-08,
+        "sourceTrackIndex": 1,
+        "returnedTrackIndex": 0
+      }
+    ],
+    "sourceUnchanged": true,
+    "binariesUnchanged": true,
+    "interpretation": "Spine reverses Time/Mix storage order and recanonicalizes scalar/Bezier values. Identity-aligned times and keys remain; sampled geometry passes unchanged tolerance. This does not turn the failed exact-serialization check into a lossless pass."
+  },
+  "checks": {
+    "documentSlider": 4,
+    "documentSequence": 4,
+    "engineSlider": 39,
+    "engineSkin": 16,
+    "engineSlot": 40,
+    "engineAppliedState": 4,
+    "engineDeform": 29,
+    "engineIK": 55,
+    "enginePath": 6,
+    "engineTransform": 21,
+    "desktopSlider": 18,
+    "desktopCurve": 55,
+    "mcpSchema": 14,
+    "stdioSlider": 2,
+    "migrationSlider": 3,
+    "adapterSlider": 9,
+    "filtersOverlap": true,
+    "fmt": true,
+    "clippyAllTargets": true,
+    "workspaceBuild": true,
+    "architectureCrates": 7,
+    "hostedCI": "Unavailable; no dispatch attempted"
+  },
+  "screenshots": [
+    {
+      "file": "slider-before-pending.png",
+      "sha256": "37d592364e69da11f886fbbe84407f69b042329b52c0a40ada9ba74e2b673d22"
+    },
+    {
+      "file": "slider-after-pending.png",
+      "sha256": "e2a5750d2f34e6ed64469a60e5749475d43a7d891b0931db2498450c8c6bbc46"
+    },
+    {
+      "file": "slider-editor.png",
+      "sha256": "2216344a5f31b72fba39d5d14bb04eb6784973657912fd4ba6e2c9fa4ab6f74f"
+    },
+    {
+      "file": "slider-minimum.png",
+      "sha256": "7b73649235beaa4cae2d4f659edba052b0aa8cfad02ffc458d52c06ac63b5db4"
+    }
+  ],
+  "limits": [
+    "Native creation prepends; append-only raw command does not provide creation UI/remapping",
+    "Source assignment/clear/ranges and exact styling remain open",
+    "Physics/events and remaining Deform domains through Slider are explicit guards",
+    "Three Loop decimal precision and twelve Sequence counter cases are refusals, not passes",
+    "Two raw1e30 adversarial cases remain mismatches; no full numeric-domain parity claim",
+    "Installed geometry passes but exact authored serialization fails; no lossless interchange claim",
+    "MCP owns an independent session; no live desktop bridge or raster MCP preview",
+    "Static gallery links inspected locally; no browser rendering verification claim"
+  ]
+}

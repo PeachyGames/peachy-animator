@@ -23,7 +23,7 @@ pub(super) fn workspace_frame(editor: &mut Editor, ctx: &egui::Context, events: 
 }
 
 pub(super) fn editor_fixture() -> Editor {
-    let mut doc: Document = serde_json::from_str(include_str!(
+    let mut doc: Document = peachy_io::decode_project(include_str!(
         "../../../../examples/peach-bot/peach-bot.peachy"
     ))
     .unwrap();
@@ -87,6 +87,7 @@ pub(super) fn editor_fixture() -> Editor {
         show_weights: false,
         weights: Default::default(),
         transform_constraint_view: Default::default(),
+        slider_view: Default::default(),
         weight_edit: None,
         weight_blocked: None,
         weight_controls: None,
@@ -146,7 +147,8 @@ pub(super) fn select_rotation(editor: &mut Editor) {
 pub(super) fn animated_ik_editor() -> Editor {
     let mut editor = editor_fixture();
     let mut document: Document =
-        serde_json::from_str(include_str!("../../../../examples/peach-bot/ik-bot.peachy")).unwrap();
+        peachy_io::decode_project(include_str!("../../../../examples/peach-bot/ik-bot.peachy"))
+            .unwrap();
     document.animations[0].tracks.clear();
     document.animations[0].ik_tracks = vec![IkTrack {
         constraint: 1,

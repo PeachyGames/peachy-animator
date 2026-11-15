@@ -112,6 +112,9 @@ impl Editor {
             TreeItem::Constraint(index) if self.transform_constraint(index).is_some() => {
                 "transform constraint"
             }
+            TreeItem::Constraint(index) if self.slider_constraint(index).is_some() => {
+                "Slider constraint"
+            }
             TreeItem::Constraint(_) => "IK constraint",
             _ => return,
         };
@@ -166,6 +169,10 @@ impl Editor {
                             Some(Constraint::Path(mut value)) => {
                                 value.name = name;
                                 Command::SetPathConstraint { constraint, value }
+                            }
+                            Some(Constraint::Slider(mut value)) => {
+                                value.name = name;
+                                Command::SetSliderConstraint { constraint, value }
                             }
                             None => return,
                         }

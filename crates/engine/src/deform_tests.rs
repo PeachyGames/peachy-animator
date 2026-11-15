@@ -4,7 +4,7 @@ use crate::*;
 use peachy_document::*;
 
 fn lab() -> Document {
-    serde_json::from_str(include_str!(
+    crate::native_fixture::decode(include_str!(
         "../../../examples/peach-bot/deform-bot.peachy"
     ))
     .unwrap()

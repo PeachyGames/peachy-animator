@@ -4,13 +4,13 @@ use crate::*;
 use peachy_document::*;
 
 fn lab() -> Document {
-    serde_json::from_str(include_str!(
+    crate::native_fixture::decode(include_str!(
         "../../../examples/peach-bot/deform-bot.peachy"
     ))
     .unwrap()
 }
 fn linked_lab() -> Document {
-    serde_json::from_str(include_str!(
+    crate::native_fixture::decode(include_str!(
         "../../../examples/peach-bot/linked-mesh-bot.peachy"
     ))
     .unwrap()
@@ -626,14 +626,10 @@ fn deform_timeline_curve_edits_are_exact_and_change_geometry_without_modifying_d
 #[test]
 fn deform_timeline_also_edits_imported_path_and_clipping_tracks_without_mesh_conversion() {
     for document in [
-        serde_json::from_str::<Document>(include_str!(
-            "../../../examples/peach-bot/path-bot.peachy"
-        ))
-        .unwrap(),
-        serde_json::from_str::<Document>(include_str!(
-            "../../../examples/peach-bot/clip-bot.peachy"
-        ))
-        .unwrap(),
+        crate::native_fixture::decode(include_str!("../../../examples/peach-bot/path-bot.peachy"))
+            .unwrap(),
+        crate::native_fixture::decode(include_str!("../../../examples/peach-bot/clip-bot.peachy"))
+            .unwrap(),
     ] {
         let original = document.animations[0].deform_tracks[0].clone();
         let attachment = original.attachment.clone();

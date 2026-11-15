@@ -3,7 +3,8 @@ use crate::*;
 use peachy_document::*;
 
 fn path_lab() -> Document {
-    serde_json::from_str(include_str!("../../../examples/peach-bot/path-bot.peachy")).unwrap()
+    crate::native_fixture::decode(include_str!("../../../examples/peach-bot/path-bot.peachy"))
+        .unwrap()
 }
 
 #[test]
@@ -42,9 +43,7 @@ fn guides_use_evaluated_deforms_for_plain_and_weighted_paths_without_textured_dr
     assert_eq!(scene.overlays.len(), 2);
     let pose = checked_pose_from_authored(
         &doc,
-        &sample_authored_pose(&doc, Some(0), 1.)
-            .unwrap()
-            .with_skin(&doc, "peach"),
+        &sample_authored_pose_with_skin(&doc, Some(0), 1., "peach").unwrap(),
     )
     .unwrap();
     let mut weighted = false;
@@ -132,7 +131,8 @@ fn guides_resolve_active_skin_fallback_and_keyed_visibility() {
 #[test]
 fn clipping_guides_preserve_authored_polygon_even_when_clipping_uses_convex_hull() {
     let doc: Document =
-        serde_json::from_str(include_str!("../../../examples/peach-bot/clip-bot.peachy")).unwrap();
+        crate::native_fixture::decode(include_str!("../../../examples/peach-bot/clip-bot.peachy"))
+            .unwrap();
     let scene = checked_evaluate_scene(&doc, Some(0), 1.2, "peach", None).unwrap();
     assert_eq!(scene.overlays.len(), 2);
     assert!(

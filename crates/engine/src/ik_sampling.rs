@@ -29,6 +29,16 @@ impl From<IkSetup> for IkPose {
 
 /// Complete grouped settings: setup before the first key, absolute values after.
 pub fn sample_ik(track: &IkTrack, setup: IkSetup, time: f32) -> Result<IkPose, String> {
+    sample_ik_at_time(track, setup, f64::from(time))
+}
+
+/// The same calibrated curve sampler for a constraint-driven referenced time.
+/// Existing host f32 queries use the exact wrapper conversion above.
+pub(crate) fn sample_ik_at_time(
+    track: &IkTrack,
+    setup: IkSetup,
+    time: f64,
+) -> Result<IkPose, String> {
     if !time.is_finite() || time < 0. || !setup.mix.is_finite() {
         return Err("IK sampling requires finite settings and nonnegative finite time".into());
     }
@@ -40,7 +50,11 @@ pub fn sample_ik(track: &IkTrack, setup: IkSetup, time: f32) -> Result<IkPose, S
         }
         previous = key.time;
     }
-    let Some(index) = track.keys.iter().rposition(|key| key.time <= time) else {
+    let Some(index) = track
+        .keys
+        .iter()
+        .rposition(|key| f64::from(key.time) <= time)
+    else {
         return Ok(setup.into());
     };
     let left = track.keys[index];
@@ -51,12 +65,12 @@ pub fn sample_ik(track: &IkTrack, setup: IkSetup, time: f32) -> Result<IkPose, S
     let Some(right) = track.keys.get(index + 1) else {
         return Ok(value);
     };
-    if time == left.time || left.curve == IkCurve::Stepped {
+    if time == f64::from(left.time) || left.curve == IkCurve::Stepped {
         return Ok(value);
     }
     let start = f64::from(left.time);
     let end = f64::from(right.time);
-    let query = f64::from(time);
+    let query = time;
     value.mix = match left.curve {
         IkCurve::Linear => {
             f64::from(left.mix)
@@ -114,4 +128,45 @@ fn points([p0, p1, p2, p3]: [f64; 4]) -> Result<[f64; 11], String> {
         return Err("IK curve points exceed finite coordinate precision".into());
     }
     Ok(points)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use peachy_document::IkKeyframe;
+
+    #[test]
+    fn slider_wide_reference_time_does_not_alias_adjacent_ik_keys() {
+        let left = 1f32;
+        let right = f32::from_bits(left.to_bits() + 1);
+        let setup = IkSetup {
+            mix: 0.,
+            bend_positive: true,
+        };
+        let track = IkTrack {
+            constraint: 0,
+            keys: vec![
+                IkKeyframe {
+                    time: left,
+                    mix: 0.,
+                    bend_positive: true,
+                    curve: IkCurve::Linear,
+                },
+                IkKeyframe {
+                    time: right,
+                    mix: 1.,
+                    bend_positive: false,
+                    curve: IkCurve::Linear,
+                },
+            ],
+        };
+        let between = (f64::from(left) + f64::from(right)) * 0.5;
+        assert_eq!(sample_ik_at_time(&track, setup, between).unwrap().mix, 0.5);
+        assert_eq!(sample_ik(&track, setup, between as f32).unwrap().mix, 0.);
+        assert!(
+            sample_ik_at_time(&track, setup, between)
+                .unwrap()
+                .bend_positive
+        );
+    }
 }

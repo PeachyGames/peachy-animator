@@ -1,11 +1,11 @@
 use crate::{
     AuthoredPose, Command, EditTarget, EvaluatedPose, IkPoseEdit, MeshBindPose, MeshWeightEdit,
-    MeshWeightGesture, MeshWeightSelection, PoseEdits, SlotPose, SlotPoseEdit, SlotProperty,
-    apply_command, checked_pose_from_authored, ik_keyframe_at, sample_authored_pose,
+    MeshWeightGesture, MeshWeightSelection, PoseEdits, SliderPose, SliderPoseEdit, SlotPose,
+    SlotPoseEdit, SlotProperty, apply_command, checked_pose_from_authored, ik_keyframe_at,
     transform_group,
 };
 use peachy_document::{
-    AttachmentRef, Constraint, Document, IkCurve, IkKeyframe, Property, Transform,
+    AttachmentRef, Constraint, Document, IkCurve, IkKeyframe, Property, SliderProperty, Transform,
 };
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -19,17 +19,97 @@ struct WorkingState {
 struct KeyTargets {
     bones: BTreeMap<usize, Vec<Property>>,
     iks: BTreeSet<usize>,
+    sliders: BTreeMap<usize, Vec<SliderProperty>>,
     deforms: Vec<AttachmentRef>,
     slots: BTreeMap<usize, Vec<SlotProperty>>,
     draw_order: bool,
 }
 
 impl WorkingState {
-    fn authored_pose(&self, target: EditTarget) -> Result<AuthoredPose, String> {
+    fn authored_pose(&self, target: EditTarget, skin: &str) -> Result<AuthoredPose, String> {
         match target {
-            EditTarget::Setup => sample_authored_pose(&self.document, None, 0.),
+            EditTarget::Setup => {
+                crate::sample_authored_pose_with_skin(&self.document, None, 0., skin)
+            }
             EditTarget::Animate { animation, time } => {
-                self.pose.authored(&self.document, Some(animation), time)
+                self.pose
+                    .authored_with_skin(&self.document, Some(animation), time, skin)
+            }
+        }
+    }
+    fn edit_slider_pose(
+        &self,
+        constraint: usize,
+        target: EditTarget,
+        edits: &[SliderPoseEdit],
+        auto_key: bool,
+        skin: &str,
+    ) -> Result<Self, String> {
+        crate::slider_authoring::validate_edits(edits)?;
+        let slider = self
+            .document
+            .constraints
+            .get(constraint)
+            .and_then(Constraint::as_slider)
+            .ok_or("Unknown Slider constraint")?;
+        let current = *self
+            .authored_pose(target, skin)?
+            .slider_poses()
+            .get(constraint)
+            .ok_or("Unknown Slider constraint")?;
+        let changed: Vec<_> = edits
+            .iter()
+            .copied()
+            .filter(|edit| f64::from(edit.value()) != current.value(edit.property()))
+            .collect();
+        if changed.is_empty() {
+            return Ok(self.clone());
+        }
+        match target {
+            EditTarget::Setup => {
+                let mut value = slider.clone();
+                for edit in changed {
+                    match edit {
+                        SliderPoseEdit::Time { value: time } => value.setup.time = time,
+                        SliderPoseEdit::Mix { value: mix } => value.setup.mix = mix,
+                    }
+                }
+                Ok(Self {
+                    document: apply_command(
+                        &self.document,
+                        Command::SetSliderConstraint { constraint, value },
+                    )?,
+                    pose: self.pose.clone(),
+                })
+            }
+            EditTarget::Animate { animation, time } => {
+                let candidate = Self {
+                    document: self.document.clone(),
+                    pose: self.pose.edit_slider(
+                        &self.document,
+                        animation,
+                        time,
+                        constraint,
+                        &changed,
+                        skin,
+                    )?,
+                };
+                if auto_key {
+                    candidate.key_targets(
+                        animation,
+                        time,
+                        KeyTargets {
+                            sliders: BTreeMap::from([(
+                                constraint,
+                                changed.iter().map(|edit| edit.property()).collect(),
+                            )]),
+                            ..Default::default()
+                        },
+                        skin,
+                    )
+                } else {
+                    Ok(candidate)
+                }
             }
         }
     }
@@ -39,6 +119,7 @@ impl WorkingState {
         target: EditTarget,
         edits: &[IkPoseEdit],
         auto_key: bool,
+        skin: &str,
     ) -> Result<Self, String> {
         crate::authoring::validate_ik_edits(edits)?;
         let ik = self
@@ -81,6 +162,7 @@ impl WorkingState {
                             iks: BTreeSet::from([constraint]),
                             ..Default::default()
                         },
+                        skin,
                     )
                 } else {
                     Ok(candidate)
@@ -95,16 +177,18 @@ impl WorkingState {
         animation: usize,
         time: f32,
         targets: KeyTargets,
+        skin: &str,
     ) -> Result<Self, String> {
         let KeyTargets {
             bones,
             iks,
+            sliders,
             deforms,
             slots,
             draw_order,
         } = targets;
         let target = EditTarget::Animate { animation, time };
-        let authored = self.authored_pose(target)?;
+        let authored = self.authored_pose(target, skin)?;
         let mut commands = vec![];
         for (&bone, properties) in &bones {
             commands.push(Command::SetPose {
@@ -147,6 +231,16 @@ impl WorkingState {
                 },
             });
         }
+        for (&constraint, properties) in &sliders {
+            commands.extend(crate::slider_authoring::key_commands(
+                &self.document,
+                &authored,
+                animation,
+                time,
+                constraint,
+                properties,
+            )?);
+        }
         for attachment in &deforms {
             commands.push(crate::deform_authoring::key_command(
                 &self.document,
@@ -184,6 +278,11 @@ impl WorkingState {
         for &constraint in &iks {
             candidate.pose.remove_ik(animation, constraint);
         }
+        for (&constraint, properties) in &sliders {
+            candidate
+                .pose
+                .remove_slider(animation, constraint, properties);
+        }
         for attachment in &deforms {
             candidate.pose.remove_deform(animation, attachment);
         }
@@ -192,21 +291,30 @@ impl WorkingState {
         }
         if draw_order {
             candidate.pose.remove_draw_order(animation);
-            if candidate.authored_pose(target)?.draw_order() != authored.draw_order() {
+            if candidate.authored_pose(target, skin)?.draw_order() != authored.draw_order() {
                 return Err("Keying draw order would lose the current pose; keep it pending or use a representable key time".into());
             }
         }
         if !slots.is_empty() {
             crate::slot_authoring::check_key_continuity(
                 &authored,
-                &candidate.authored_pose(target)?,
+                &candidate.authored_pose(target, skin)?,
                 &slots,
+            )?;
+        }
+        if !sliders.is_empty() {
+            crate::slider_authoring::check_key_continuity(
+                &authored,
+                &candidate.authored_pose(target, skin)?,
+                &sliders,
             )?;
         }
         if !iks.is_empty() {
             let before = checked_pose_from_authored(&self.document, &authored)?;
-            let after =
-                checked_pose_from_authored(&candidate.document, &candidate.authored_pose(target)?)?;
+            let after = checked_pose_from_authored(
+                &candidate.document,
+                &candidate.authored_pose(target, skin)?,
+            )?;
             crate::ik::check_key_continuity(&self.document, &before, &after)?;
         }
         Ok(candidate)
@@ -216,12 +324,13 @@ impl WorkingState {
         target: EditTarget,
         order: Vec<usize>,
         auto_key: bool,
+        skin: &str,
     ) -> Result<Self, String> {
         let EditTarget::Animate { animation, time } = target else {
             return Err("Draw order pose editing requires Animate mode".into());
         };
         crate::draw_order_authoring::validate_order(self.document.slots.len(), &order)?;
-        if self.authored_pose(target)?.draw_order() == order {
+        if self.authored_pose(target, skin)?.draw_order() == order {
             return Ok(self.clone());
         }
         let candidate = Self {
@@ -238,6 +347,7 @@ impl WorkingState {
                     draw_order: true,
                     ..Default::default()
                 },
+                skin,
             )
         } else {
             Ok(candidate)
@@ -300,8 +410,22 @@ impl WorkingState {
         target: EditTarget,
         edits: &[SlotPoseEdit],
         auto_key: bool,
+        skin: &str,
     ) -> Result<Self, String> {
         crate::slot_authoring::validate_edits(&self.document, slot, edits)?;
+        let current = SlotPose::from_authored(&self.authored_pose(target, skin)?, slot)?;
+        let changed: Vec<_> = edits
+            .iter()
+            .filter(|edit| match edit {
+                SlotPoseEdit::Attachment { attachment } => *attachment != current.attachment,
+                SlotPoseEdit::Color { color } => *color != current.color,
+            })
+            .cloned()
+            .collect();
+        if changed.is_empty() {
+            return Ok(self.clone());
+        }
+        let edits = changed.as_slice();
         match target {
             EditTarget::Setup => {
                 let commands = edits
@@ -325,9 +449,14 @@ impl WorkingState {
             EditTarget::Animate { animation, time } => {
                 let candidate = Self {
                     document: self.document.clone(),
-                    pose: self
-                        .pose
-                        .edit_slot(&self.document, animation, time, slot, edits)?,
+                    pose: self.pose.edit_slot(
+                        &self.document,
+                        animation,
+                        time,
+                        slot,
+                        edits,
+                        skin,
+                    )?,
                 };
                 if auto_key && !edits.is_empty() {
                     candidate.key_targets(
@@ -340,6 +469,7 @@ impl WorkingState {
                             )]),
                             ..Default::default()
                         },
+                        skin,
                     )
                 } else {
                     Ok(candidate)
@@ -360,15 +490,22 @@ impl WorkingState {
         };
         let canonical =
             crate::deform_authoring::validate_offsets(&self.document, &attachment, &offsets)?;
+        let current = self.authored_pose(target, skin)?;
+        if crate::deform_authoring::offsets(&self.document, &current, &canonical)? == offsets {
+            return Ok(self.clone());
+        }
         let posed = Self {
             document: self.document.clone(),
-            pose: self
-                .pose
-                .edit_deform(&self.document, animation, time, &attachment, offsets)?,
+            pose: self.pose.edit_deform(
+                &self.document,
+                animation,
+                time,
+                &attachment,
+                offsets,
+                skin,
+            )?,
         };
-        let before = posed
-            .authored_pose(target)?
-            .with_skin(&posed.document, skin);
+        let before = posed.authored_pose(target, skin)?;
         crate::deform_authoring::geometry(&posed.document, &before, &attachment)?;
         if auto_key {
             let candidate = posed.key_targets(
@@ -378,14 +515,13 @@ impl WorkingState {
                     deforms: vec![canonical],
                     ..Default::default()
                 },
+                skin,
             )?;
             crate::deform_authoring::check_key_continuity(
                 &posed.document,
                 &before,
                 &candidate.document,
-                &candidate
-                    .authored_pose(target)?
-                    .with_skin(&candidate.document, skin),
+                &candidate.authored_pose(target, skin)?,
                 &[attachment],
             )?;
             Ok(candidate)
@@ -475,14 +611,79 @@ impl Session {
     }
     /// Read the full authored state without solving, keying or discarding it.
     pub fn authored_pose(&self, target: EditTarget) -> Result<AuthoredPose, String> {
-        Ok(self
-            .state
-            .authored_pose(target)?
-            .with_skin(self.document(), &self.skin))
+        self.state.authored_pose(target, &self.skin)
     }
     /// Full sampled/pending slot state, before attachment tint or display quantization.
     pub fn slot_pose(&self, slot: usize, target: EditTarget) -> Result<SlotPose, String> {
         SlotPose::from_authored(&self.authored_pose(target)?, slot)
+    }
+    /// Authored manual/host-keyed settings. Applied bone-driven time is separate.
+    pub fn slider_pose(&self, constraint: usize, target: EditTarget) -> Result<SliderPose, String> {
+        if self
+            .document()
+            .constraints
+            .get(constraint)
+            .and_then(Constraint::as_slider)
+            .is_none()
+        {
+            return Err("Unknown Slider constraint".into());
+        }
+        self.authored_pose(target)?
+            .slider_poses()
+            .get(constraint)
+            .copied()
+            .ok_or_else(|| "Unknown Slider constraint".into())
+    }
+    /// Edit only authored Time/Mix. Bone-derived effective values stay separate.
+    pub fn edit_slider_pose(
+        &mut self,
+        constraint: usize,
+        target: EditTarget,
+        edits: &[SliderPoseEdit],
+        auto_key: bool,
+    ) -> Result<(), String> {
+        let candidate = self
+            .state
+            .edit_slider_pose(constraint, target, edits, auto_key, &self.skin)?;
+        self.replace(candidate);
+        Ok(())
+    }
+    pub fn preview_edit_slider_pose(
+        &mut self,
+        constraint: usize,
+        target: EditTarget,
+        edits: &[SliderPoseEdit],
+        auto_key: bool,
+    ) -> Result<(), String> {
+        let base = self.transaction.as_ref().ok_or("No active transaction")?;
+        let candidate = base.edit_slider_pose(constraint, target, edits, auto_key, &self.skin)?;
+        self.state = candidate;
+        Ok(())
+    }
+    pub fn key_slider_pose(
+        &mut self,
+        animation: usize,
+        time: f32,
+        constraint: usize,
+        properties: &[SliderProperty],
+    ) -> Result<(), String> {
+        self.slider_pose(constraint, EditTarget::Animate { animation, time })?;
+        if properties.is_empty()
+            || properties.iter().collect::<BTreeSet<_>>().len() != properties.len()
+        {
+            return Err("Choose distinct Slider properties to key".into());
+        }
+        let candidate = self.state.key_targets(
+            animation,
+            time,
+            KeyTargets {
+                sliders: BTreeMap::from([(constraint, properties.to_vec())]),
+                ..Default::default()
+            },
+            &self.skin,
+        )?;
+        self.replace(candidate);
+        Ok(())
     }
     /// Complete sampled plus pending order, without sampling any other pose data.
     /// Setup always reads setup slot order, including hidden/inactive slots.
@@ -520,7 +721,9 @@ impl Session {
         order: Vec<usize>,
         auto_key: bool,
     ) -> Result<(), String> {
-        let candidate = self.state.edit_draw_order(target, order, auto_key)?;
+        let candidate = self
+            .state
+            .edit_draw_order(target, order, auto_key, &self.skin)?;
         self.replace(candidate);
         Ok(())
     }
@@ -531,7 +734,7 @@ impl Session {
         auto_key: bool,
     ) -> Result<(), String> {
         let base = self.transaction.as_ref().ok_or("No active transaction")?;
-        self.state = base.edit_draw_order(target, order, auto_key)?;
+        self.state = base.edit_draw_order(target, order, auto_key, &self.skin)?;
         Ok(())
     }
     /// Explicit keying creates a hold/reset even without a pending edit.
@@ -543,6 +746,7 @@ impl Session {
                 draw_order: true,
                 ..Default::default()
             },
+            &self.skin,
         )?;
         self.replace(candidate);
         Ok(())
@@ -554,7 +758,9 @@ impl Session {
         edits: &[SlotPoseEdit],
         auto_key: bool,
     ) -> Result<(), String> {
-        let candidate = self.state.edit_slot_pose(slot, target, edits, auto_key)?;
+        let candidate = self
+            .state
+            .edit_slot_pose(slot, target, edits, auto_key, &self.skin)?;
         self.replace(candidate);
         Ok(())
     }
@@ -567,7 +773,7 @@ impl Session {
         auto_key: bool,
     ) -> Result<(), String> {
         let base = self.transaction.as_ref().ok_or("No active transaction")?;
-        let candidate = base.edit_slot_pose(slot, target, edits, auto_key)?;
+        let candidate = base.edit_slot_pose(slot, target, edits, auto_key, &self.skin)?;
         self.state = candidate;
         Ok(())
     }
@@ -586,6 +792,7 @@ impl Session {
                 slots: BTreeMap::from([(slot, properties.to_vec())]),
                 ..Default::default()
             },
+            &self.skin,
         )?;
         self.replace(candidate);
         Ok(())
@@ -655,9 +862,7 @@ impl Session {
         auto_key: bool,
     ) -> Result<(), String> {
         let base = self.transaction.as_ref().ok_or("No active transaction")?;
-        let authored = base
-            .authored_pose(target)?
-            .with_skin(&base.document, &self.skin);
+        let authored = base.authored_pose(target, &self.skin)?;
         let offsets = crate::deform_authoring::translated_vertex(
             &base.document,
             &authored,
@@ -683,6 +888,7 @@ impl Session {
                 deforms: vec![canonical.clone()],
                 ..Default::default()
             },
+            &self.skin,
         )?;
         self.check_deform_key_candidate(
             &candidate,
@@ -702,9 +908,7 @@ impl Session {
             self.document(),
             &self.authored_pose(target)?,
             &candidate.document,
-            &candidate
-                .authored_pose(target)?
-                .with_skin(&candidate.document, &self.skin),
+            &candidate.authored_pose(target, &self.skin)?,
             deforms,
         )
     }
@@ -717,7 +921,7 @@ impl Session {
     ) -> Result<(), String> {
         let candidate = self
             .state
-            .edit_ik_pose(constraint, target, edits, auto_key)?;
+            .edit_ik_pose(constraint, target, edits, auto_key, &self.skin)?;
         self.replace(candidate);
         Ok(())
     }
@@ -730,7 +934,7 @@ impl Session {
         auto_key: bool,
     ) -> Result<(), String> {
         let base = self.transaction.as_ref().ok_or("No active transaction")?;
-        let candidate = base.edit_ik_pose(constraint, target, edits, auto_key)?;
+        let candidate = base.edit_ik_pose(constraint, target, edits, auto_key, &self.skin)?;
         self.state = candidate;
         Ok(())
     }
@@ -747,6 +951,7 @@ impl Session {
                 iks: BTreeSet::from([constraint]),
                 ..Default::default()
             },
+            &self.skin,
         )?;
         self.replace(candidate);
         Ok(())
@@ -758,7 +963,7 @@ impl Session {
         let evaluated = checked_pose_from_authored(self.document(), &authored)?;
         Ok(MeshBindPose {
             locals: evaluated.applied_locals().to_vec(),
-            inherits: Some(authored.inherits().to_vec()),
+            inherits: Some(evaluated.inherits().to_vec()),
         })
     }
     /// Bind at the explicit setup or posed animation state without keying or discarding it.
@@ -889,11 +1094,12 @@ impl Session {
                 bones: BTreeMap::from([(bone, properties.to_vec())]),
                 ..Default::default()
             },
+            &self.skin,
         )?;
         self.replace(candidate);
         Ok(())
     }
-    /// K keys every edited bone, IK constraint, mesh deform, slot property and
+    /// K keys every edited bone, IK/Slider constraint, mesh deform, slot property and
     /// global draw order atomically. History retains the pre-key pending pose;
     /// native Spine's observed Undo re-evaluation instead clears that pending pose.
     /// A Tree bone's orange key button supplies an explicit bone instead.
@@ -920,6 +1126,11 @@ impl Session {
             KeyTargets {
                 bones: targets,
                 iks,
+                sliders: if bone.is_none() {
+                    self.state.pose.slider_targets(animation)
+                } else {
+                    BTreeMap::new()
+                },
                 deforms: deforms.clone(),
                 slots: if bone.is_none() {
                     self.state.pose.slot_targets(animation)
@@ -928,6 +1139,7 @@ impl Session {
                 },
                 draw_order: bone.is_none() && self.state.pose.has_draw_order(animation),
             },
+            &self.skin,
         )?;
         self.check_deform_key_candidate(
             &candidate,

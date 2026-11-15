@@ -3,7 +3,10 @@ mod paths;
 mod schema;
 
 use paths::WorkspaceRoot;
-use peachy_engine::{Command, Session, checked_scene_from_authored, sample_authored_pose};
+use peachy_engine::{
+    Command, Session, checked_pose_from_authored, checked_scene_from_evaluated,
+    sample_authored_pose_with_skin,
+};
 use rmcp::{
     ServerHandler, handler::server::wrapper::Parameters, model::CallToolResult, tool, tool_handler,
     tool_router,
@@ -182,7 +185,7 @@ struct EvaluateInput {
 struct CopyAnimationKeysInput {
     expected_revision: u64,
     animation: usize,
-    /// Exact typed identities from one bone, IK constraint, Deform attachment, slot or global draw order.
+    /// Exact typed identities from one bone, IK/Slider constraint, Deform attachment, slot or global draw order.
     keys: Vec<AnimationKeyInput>,
 }
 
@@ -207,6 +210,19 @@ struct TransformMappingInput {
     constraint: usize,
     from: TransformPropertyInput,
     to: TransformPropertyInput,
+}
+
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct SliderPoseInput {
+    expected_revision: u64,
+    constraint: usize,
+    /// Omit or use null for Setup; otherwise an exact host animation name.
+    #[serde(default)]
+    animation: Option<String>,
+    /// Host cursor in finite nonnegative seconds, independent of referenced time.
+    #[serde(default)]
+    time: f32,
 }
 
 #[derive(Deserialize, JsonSchema)]
@@ -365,7 +381,7 @@ impl AnimatorServer {
     }
 
     #[tool(
-        description = "Return the supported native command JSON Schema. apply_commands exposes the same schema inline. Bind operations capture appliedLocals and inherits from evaluate_pose; key values are setup-relative offsets (scale multiplies).",
+        description = "Return the supported native command JSON Schema. apply_commands exposes the same schema inline. Bind operations capture appliedLocals and inherits from evaluate_pose; bone key values are setup-relative offsets (scale multiplies); Slider keys are absolute referenced seconds or Mix.",
         annotations(read_only_hint = true, idempotent_hint = true, open_world_hint = false)
     )]
     fn get_command_schema(&self) -> CallToolResult {
@@ -425,7 +441,45 @@ impl AnimatorServer {
     }
 
     #[tool(
-        description = "Copy exact bone, IK, Deform, slot attachment/color or global draw-order animation keys from one owner into a portable typed clipboard without changing history, revision or the document. Relative times share one zero origin; slot clipboards retain both key kinds and four color curves. Deform clipboards include dense offsets, curves and vertex/influence layout. Draw-order clipboards preserve raw offsets and require the identical ordered slot-name layout for pasteAnimationKeys.",
+        description = "Read a Slider's authored Time and Mix through the shared Session sampler. Time is referenced-animation seconds; the input time is the host cursor. This returns raw authored settings, including keyed values, and does not substitute a bone-derived time or solve geometry. No document, revision or history change.",
+        annotations(read_only_hint = true, idempotent_hint = true, open_world_hint = false)
+    )]
+    fn get_slider_pose(&self, Parameters(input): Parameters<SliderPoseInput>) -> CallToolResult {
+        self.access(|state| {
+            state.check_revision(input.expected_revision)?;
+            let project = state.project()?;
+            let doc = project.session.document();
+            let animation = input
+                .animation
+                .as_ref()
+                .map(|name| {
+                    doc.animations
+                        .iter()
+                        .position(|clip| &clip.name == name)
+                        .ok_or("Unknown animation")
+                })
+                .transpose()?;
+            // Validate the host cursor even when querying Setup.
+            if !input.time.is_finite() || input.time < 0. {
+                return Err("Host time must be finite and nonnegative".into());
+            }
+            let target = animation.map_or(peachy_engine::EditTarget::Setup, |animation| {
+                peachy_engine::EditTarget::Animate {
+                    animation,
+                    time: input.time,
+                }
+            });
+            let pose = project.session.slider_pose(input.constraint, target)?;
+            Ok(
+                json!({"revision":state.revision,"constraint":input.constraint,
+                "animation":input.animation,"hostTime":input.time,"kind":"authored",
+                "pose":pose}),
+            )
+        })
+    }
+
+    #[tool(
+        description = "Copy exact bone, IK, Slider Time/Mix, Deform, slot attachment/color or global draw-order animation keys from one owner into a portable typed clipboard without changing history, revision or the document. Relative times share one zero origin; slot clipboards retain both key kinds and four color curves. Deform clipboards include dense offsets, curves and vertex/influence layout. Draw-order clipboards preserve raw offsets and require the identical ordered slot-name layout for pasteAnimationKeys.",
         annotations(read_only_hint = true, idempotent_hint = true, open_world_hint = false)
     )]
     fn copy_animation_keys(
@@ -503,7 +557,7 @@ impl AnimatorServer {
     }
 
     #[tool(
-        description = "Evaluate Setup or an animation at a time using the shared checked pose/IK/mesh engine. Returns authored locals, appliedLocals, per-bone inherits modes, world transforms, slotAttachments, raw unmultiplied float slotColors, complete back-to-front drawOrder slot indices, textured geometry and bounds. Capture appliedLocals and inherits together for a binding/weight command pose. Slot arrays and drawOrder include hidden and empty slots, before tint and byte display rounding. This is geometry, not a raster preview or live desktop pose.",
+        description = "Evaluate Setup or an animation at a time using the shared checked pose/IK/mesh engine. Returns authored locals, appliedLocals, effective per-bone inherits modes, world transforms, slotAttachments, raw unmultiplied float slotColors, complete back-to-front drawOrder slot indices, textured geometry and bounds. Capture appliedLocals and inherits together for a binding/weight command pose. Slot arrays and drawOrder include hidden and empty slots, before tint and byte display rounding. All effective fields and geometry come from one solve. authoredSliderPoses/appliedSliderPoses are indexed by the full constraint list (non-Slider entries are inactive placeholders). This is geometry, not a raster preview or live desktop pose.",
         annotations(read_only_hint = true, idempotent_hint = true, open_world_hint = false)
     )]
     fn evaluate_pose(&self, Parameters(input): Parameters<EvaluateInput>) -> CallToolResult {
@@ -511,9 +565,19 @@ impl AnimatorServer {
             let document=state.project()?.session.document();
             let animation=input.animation.as_ref().map(|name|document.animations.iter().position(|clip|&clip.name==name).ok_or("Unknown animation")).transpose()?;
             if !document.skins.is_empty() && !document.skins.contains_key(&input.skin){return Err("Unknown skin".into());}
-            let authored=sample_authored_pose(document,animation,input.time)?;
-            let scene=checked_scene_from_authored(document,&input.skin,&authored)?;
-            Ok(json!({"revision":state.revision,"animation":input.animation,"time":input.time,"skin":input.skin,"locals":scene.locals,"appliedLocals":scene.applied_locals,"inherits":authored.inherits(),"world":scene.world,"slotAttachments":authored.slot_attachments(),"slotColors":authored.slot_colors(),"drawOrder":authored.draw_order(),"attachments":scene.attachments,"bounds":scene.bounds.map(|bounds|json!({"min":bounds.min,"max":bounds.max}))}))
+            let authored=sample_authored_pose_with_skin(document,animation,input.time,&input.skin)?;
+            let evaluated=checked_pose_from_authored(document,&authored)?;
+            // Read every effective domain from the same ordered constraint solve
+            // that supplies geometry and binding locals; never re-solve here.
+            let effective=json!({"inherits":evaluated.inherits(),
+                "slotAttachments":evaluated.slot_attachments(),"slotColors":evaluated.slot_colors(),
+                "drawOrder":evaluated.draw_order(),
+                "authoredSliderPoses":evaluated.authored_slider_poses(),
+                "appliedSliderPoses":evaluated.applied_slider_poses()});
+            let scene=checked_scene_from_evaluated(document,&input.skin,evaluated)?;
+            let mut result=json!({"revision":state.revision,"animation":input.animation,"time":input.time,"skin":input.skin,"locals":scene.locals,"appliedLocals":scene.applied_locals,"world":scene.world,"attachments":scene.attachments,"bounds":scene.bounds.map(|bounds|json!({"min":bounds.min,"max":bounds.max}))});
+            result.as_object_mut().expect("Pose response").extend(effective.as_object().expect("Effective pose response").clone());
+            Ok(result)
         })
     }
 

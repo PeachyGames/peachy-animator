@@ -1,5 +1,5 @@
 //! Pure typed presentation selection. Playhead movement never implies key selection.
-use peachy_document::{Document, Property};
+use peachy_document::{Document, Property, SliderProperty};
 use peachy_engine::{AnimationKey, Command, KeyOwner};
 
 pub(super) type KeyId = AnimationKey;
@@ -8,6 +8,7 @@ pub(super) type KeyId = AnimationKey;
 pub(super) enum TimelineRow {
     Bone(Property),
     Ik,
+    Slider(SliderProperty),
     Deform,
     SlotAttachment,
     SlotColor,
@@ -18,6 +19,7 @@ impl TimelineRow {
         match (self, key) {
             (Self::Bone(a), AnimationKey::Bone { property: b, .. }) => a == b,
             (Self::Ik, AnimationKey::Ik { .. }) => true,
+            (Self::Slider(a), AnimationKey::Slider { property: b, .. }) => a == b,
             (Self::Deform, AnimationKey::Deform { .. }) => true,
             (Self::SlotAttachment, AnimationKey::SlotAttachment { .. }) => true,
             (Self::SlotColor, AnimationKey::SlotColor { .. }) => true,
@@ -30,6 +32,10 @@ pub(super) fn rows(owner: Option<KeyOwner>) -> Vec<TimelineRow> {
     match owner {
         Some(KeyOwner::Bone { .. }) => Property::ALL.into_iter().map(TimelineRow::Bone).collect(),
         Some(KeyOwner::Ik { .. }) => vec![TimelineRow::Ik],
+        Some(KeyOwner::Slider { .. }) => SliderProperty::ALL
+            .into_iter()
+            .map(TimelineRow::Slider)
+            .collect(),
         Some(KeyOwner::Deform { .. }) => vec![TimelineRow::Deform],
         Some(KeyOwner::Slot { .. }) => vec![TimelineRow::SlotAttachment, TimelineRow::SlotColor],
         Some(KeyOwner::DrawOrder {}) => vec![TimelineRow::DrawOrder],
@@ -46,6 +52,21 @@ pub(super) fn row_keys(
         return vec![];
     };
     match (owner, row) {
+        (KeyOwner::Slider { constraint }, TimelineRow::Slider(property)) => clip
+            .slider_tracks
+            .iter()
+            .find(|track| track.constraint == constraint && track.property == property)
+            .map_or_else(Vec::new, |track| {
+                track
+                    .keys
+                    .iter()
+                    .map(|key| AnimationKey::Slider {
+                        constraint,
+                        property,
+                        time: key.time,
+                    })
+                    .collect()
+            }),
         (KeyOwner::DrawOrder {}, TimelineRow::DrawOrder) => clip
             .draw_order
             .iter()
@@ -314,7 +335,7 @@ mod tests {
     }
 
     fn doc() -> Document {
-        let mut doc: Document = serde_json::from_str(include_str!(
+        let mut doc: Document = peachy_io::decode_project(include_str!(
             "../../../../examples/peach-bot/mesh-bot.peachy"
         ))
         .unwrap();

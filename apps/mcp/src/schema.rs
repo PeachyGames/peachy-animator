@@ -47,6 +47,10 @@ impl JsonSchema for TransformPropertyInput {
     }
 }
 
+fn slider_property_schema() -> Value {
+    json!({"type":"string","enum":["time","mix"]})
+}
+
 fn transform_property_schema() -> Value {
     json!({"type":"string","enum":["rotate","x","y","scaleX","scaleY","shearY"]})
 }
@@ -72,6 +76,7 @@ pub fn animation_key_schema() -> Value {
         object(&[("type",tag("slotAttachment")),("slot",index()),("time",number())]),
         object(&[("type",tag("slotColor")),("slot",index()),("time",number())]),
         object(&[("type",tag("drawOrder")),("time",number())]),
+        object(&[("type",tag("slider")),("constraint",index()),("property",slider_property_schema()),("time",number())]),
     ]})
 }
 
@@ -309,6 +314,20 @@ pub fn command_schema() -> Value {
         ("additive", json!({"type":"boolean"})),
         ("clamp", json!({"type":"boolean"})),
     ]);
+    let slider_constraint = object(&[
+        ("name", text()),
+        ("animation", index()),
+        ("bone", nullable(index())),
+        ("property", nullable(transform_property_schema())),
+        ("local", json!({"type":"boolean"})),
+        ("loop", json!({"type":"boolean"})),
+        ("additive", json!({"type":"boolean"})),
+        ("from", number()),
+        ("to", number()),
+        ("scale", number()),
+        ("max", number()),
+        ("setup", object(&[("time", number()), ("mix", number())])),
+    ]);
     let mode = |values: &[&str]| json!({"type":"string","enum":values});
     let path_constraint = object(&[
         ("name", text()),
@@ -367,6 +386,7 @@ pub fn command_schema() -> Value {
     let key_owner = json!({"oneOf":[
         object(&[("type", tag("bone")), ("bone", index())]),
         object(&[("type", tag("ik")), ("constraint", index())]),
+        object(&[("type", tag("slider")), ("constraint", index())]),
         object(&[("type", tag("deform")), ("attachment", attachment.clone())]),
         object(&[("type", tag("slot")), ("slot", index())]),
         object(&[("type", tag("drawOrder"))]),
@@ -387,6 +407,9 @@ pub fn command_schema() -> Value {
     let animation_clipboard = json!({"oneOf":[
         object(&[("type", tag("bone")), ("keys", clipboard["properties"]["keys"].clone())]),
         object(&[("type", tag("ik")), ("keys", list(ik_key.clone()))]),
+        object(&[("type", tag("slider")), ("keys", list(object(&[
+            ("property", slider_property_schema()), ("key", key.clone())
+        ])))]),
         object(&[("type",tag("deform")),("layout",deform_layout),("keys",list(deform_key.clone()))]),
         object(&[("type",tag("slot")),("attachment_keys",list(attachment_key.clone())),("color_keys",list(color_key.clone()))]),
         object(&[("type",tag("drawOrder")),
@@ -394,6 +417,43 @@ pub fn command_schema() -> Value {
             ("keys",json!({"type":"array","items":draw_order_key.clone(),"minItems":1}))]),
     ]});
     let variants = vec![
+        command(
+            "addSliderConstraint",
+            &[("constraint", slider_constraint.clone())],
+        ),
+        command(
+            "setSliderConstraint",
+            &[("constraint", index()), ("value", slider_constraint)],
+        ),
+        command(
+            "setSliderKey",
+            &[
+                ("animation", index()),
+                ("constraint", index()),
+                ("property", slider_property_schema()),
+                ("key", key.clone()),
+            ],
+        ),
+        command(
+            "insertSliderKey",
+            &[
+                ("animation", index()),
+                ("constraint", index()),
+                ("property", slider_property_schema()),
+                ("time", number()),
+                ("value", number()),
+            ],
+        ),
+        command(
+            "setSliderCurve",
+            &[
+                ("animation", index()),
+                ("constraint", index()),
+                ("property", slider_property_schema()),
+                ("time", number()),
+                ("curve", curve.clone()),
+            ],
+        ),
         command(
             "setSlotAttachmentKey",
             &[
@@ -771,9 +831,71 @@ pub fn command_schema() -> Value {
 mod tests {
     use super::*;
 
+    #[test]
+    fn slider_property_accepts_only_the_advertised_string_tokens() {
+        for (token, expected) in [
+            ("time", peachy_document::SliderProperty::Time),
+            ("mix", peachy_document::SliderProperty::Mix),
+        ] {
+            assert_eq!(
+                serde_json::from_value::<peachy_document::SliderProperty>(serde_json::json!(token))
+                    .unwrap(),
+                expected
+            );
+            assert!(
+                serde_json::from_value::<peachy_document::SliderProperty>(
+                    serde_json::json!({token:null})
+                )
+                .is_err()
+            );
+        }
+        for invalid in [
+            serde_json::json!(null),
+            serde_json::json!(0),
+            serde_json::json!("frame"),
+            serde_json::json!([]),
+        ] {
+            assert!(serde_json::from_value::<peachy_document::SliderProperty>(invalid).is_err());
+        }
+    }
+
+    #[test]
+    fn slider_source_property_matches_the_nullable_string_schema() {
+        let value =
+            serde_json::to_value(peachy_document::SliderConstraint::new("slider", 0)).unwrap();
+        for property in [
+            json!({"rotate":null}),
+            json!("rotation"),
+            json!(0),
+            json!([]),
+        ] {
+            let mut bad = value.clone();
+            bad["property"] = property;
+            assert!(serde_json::from_value::<peachy_document::SliderConstraint>(bad).is_err());
+        }
+        for property in [
+            json!(null),
+            json!("rotate"),
+            json!("x"),
+            json!("y"),
+            json!("scaleX"),
+            json!("scaleY"),
+            json!("shearY"),
+        ] {
+            let mut valid = value.clone();
+            valid["property"] = property;
+            assert!(serde_json::from_value::<peachy_document::SliderConstraint>(valid).is_ok());
+        }
+    }
+
     // Exhaustive matching makes any new engine variant a schema review gate.
     fn wire_name(command: &Command) -> &'static str {
         match command {
+            Command::AddSliderConstraint { .. } => "addSliderConstraint",
+            Command::SetSliderConstraint { .. } => "setSliderConstraint",
+            Command::SetSliderKey { .. } => "setSliderKey",
+            Command::InsertSliderKey { .. } => "insertSliderKey",
+            Command::SetSliderCurve { .. } => "setSliderCurve",
             Command::AddSlot { .. } => "addSlot",
             Command::AddAttachment { .. } => "addAttachment",
             Command::AddIkConstraint { .. } => "addIkConstraint",
@@ -876,7 +998,7 @@ mod tests {
     fn every_published_shape_decodes_through_strict_engine_serde() {
         let schema = command_schema();
         let variants = schema["oneOf"].as_array().unwrap();
-        assert_eq!(variants.len(), 53);
+        assert_eq!(variants.len(), 58);
         for variant in variants {
             let payload = sample(variant);
             let command: CommandInput = serde_json::from_value(payload.clone()).unwrap();

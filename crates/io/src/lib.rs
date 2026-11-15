@@ -29,6 +29,19 @@ pub fn load(path: &Path) -> Result<Document, String> {
 pub fn decode_project(text: &str) -> Result<Document, String> {
     let mut value: serde_json::Value = serde_json::from_str(text).map_err(|e| e.to_string())?;
     let original_format = value["format"].as_u64();
+    if matches!(original_format, Some(1..=22))
+        && (value["constraints"].as_array().is_some_and(|constraints| {
+            constraints
+                .iter()
+                .any(|constraint| constraint["type"] == "slider")
+        }) || value["animations"].as_array().is_some_and(|animations| {
+            animations
+                .iter()
+                .any(|animation| animation.get("slider_tracks").is_some())
+        }))
+    {
+        return Err("Legacy project formats cannot contain Slider constraints or tracks".into());
+    }
     if matches!(original_format, Some(1..=21))
         && (value["slots"]
             .as_array()
@@ -389,6 +402,19 @@ pub fn decode_project(text: &str) -> Result<Document, String> {
                 .insert("sequence_tracks".into(), serde_json::json!([]));
         }
         value["format"] = 22.into();
+    }
+    // v22→v23 adds independent Slider Time/Mix track lists.
+    if value["format"].as_u64() == Some(22) {
+        for animation in value["animations"]
+            .as_array_mut()
+            .ok_or("Legacy animations must be an array")?
+        {
+            animation
+                .as_object_mut()
+                .ok_or("Legacy animation must be an object")?
+                .insert("slider_tracks".into(), serde_json::json!([]));
+        }
+        value["format"] = 23.into();
     }
     let mut doc: Document = serde_json::from_value(value).map_err(|e| e.to_string())?;
     // Wrapping vertices preserves their values and all surrounding fields. Decode
@@ -944,6 +970,7 @@ mod tests {
                 "draw_order",
                 "path_tracks",
                 "sequence_tracks",
+                "slider_tracks",
             ] {
                 assert_eq!(
                     animation.as_object_mut().unwrap().remove(field),

@@ -10,88 +10,79 @@ use peachy_document::{Document, IkConstraint, Inherit, Transform};
 /// within this absolute bound. There is no relative or large-coordinate exception.
 pub(crate) const IK_WORLD_COORDINATE_TOLERANCE: f64 = 0.001;
 
-/// What path constraints need beyond bone data: sampled position/spacing and
-/// the attachment each slot shows under the evaluated skin.
-pub(crate) struct PathContext<'a> {
-    pub poses: &'a [crate::PathPose],
-    pub slot_attachments: &'a [Option<String>],
-    pub skin: &'a str,
-    /// Keyed deform offsets (paths can be deformed).
-    pub deforms: &'a [(peachy_document::AttachmentRef, Vec<f32>)],
-}
-
+/// Apply each enabled constraint once to one live effective state. Constraints
+/// that read IK, inheritance, path, slot or deform settings see earlier writes.
 pub(crate) fn apply(
     doc: &Document,
-    poses: &[IkPose],
-    locals: &mut [Transform],
+    state: &mut crate::ik::AppliedState,
     world: &mut Vec<Affine>,
-    inherits: &[Inherit],
-    enabled: &[bool],
-    paths: &PathContext,
 ) -> Result<(), String> {
-    // Skin-inactive constraints neither run nor take part in domain checks.
-    let active: Vec<_> = doc
-        .constraints
-        .iter()
-        .zip(poses)
-        .zip(enabled)
-        .filter_map(|((constraint, pose), &on)| {
-            let ik = constraint.as_ik()?;
-            (on && pose.mix != 0.0).then_some((ik, *pose))
-        })
-        .collect();
-    for (index, (ik, _)) in active.iter().enumerate() {
-        validate_domain(doc, locals, ik)?;
-        // Spine: bones affected by IK cannot disable transform inheritance.
-        if let Some(&bone) = ik
-            .bones
-            .iter()
-            .find(|&&bone| inherits[bone] != Inherit::Normal)
-        {
-            return Err(format!(
-                "IK {}: constrained bone {} must inherit normally",
-                ik.name, doc.bones[bone].name
-            ));
-        }
-        for (other, _) in &active[..index] {
-            // Nested chains (a toe inside a leg) solve sequentially in constraint
-            // order: each solve writes applied locals and rebuilds world frames
-            // before the next. Shared bones and targets inside another chain's
-            // subtree remain unsupported.
-            if ik.bones.iter().any(|bone| other.bones.contains(bone))
-                || within(doc, ik.target, other.bones[0])
-                || within(doc, other.target, ik.bones[0])
-            {
-                return Err(format!(
-                    "IK {} and {}: shared constrained bones or targets inside another chain are not supported",
-                    other.name, ik.name
-                ));
-            }
-        }
-    }
-    // All constraints run in list order: IK solves and transform constraints
-    // interleave; physics is data only.
+    let mut solved_iks: Vec<&IkConstraint> = vec![];
     for (index, constraint) in doc.constraints.iter().enumerate() {
-        if !enabled[index] {
+        if !state.active.constraints[index] {
             continue;
         }
         match constraint {
-            peachy_document::Constraint::Ik(ik) if poses[index].mix != 0.0 => {
-                solve(doc, locals, world, ik, poses[index], inherits)
-                    .map_err(|error| format!("IK {}: {error}", ik.name))?;
+            peachy_document::Constraint::Slider(slider) => {
+                crate::slider_constraint::apply(doc, slider, index, state, world)
+                    .map_err(|error| format!("Slider {}: {error}", slider.name))?;
+            }
+            peachy_document::Constraint::Ik(ik) if state.ik[index].mix != 0.0 => {
+                // Validate the effective settings at this ordered turn, rather
+                // than an upfront snapshot that a preceding writer could change.
+                validate_domain(doc, &state.locals, ik)?;
+                if let Some(&bone) = ik
+                    .bones
+                    .iter()
+                    .find(|&&bone| state.inherits[bone] != Inherit::Normal)
+                {
+                    return Err(format!(
+                        "IK {}: constrained bone {} must inherit normally",
+                        ik.name, doc.bones[bone].name
+                    ));
+                }
+                for other in &solved_iks {
+                    // Nested chains still solve sequentially. Existing shared
+                    // bones/cross-target restrictions remain checked explicitly.
+                    if ik.bones.iter().any(|bone| other.bones.contains(bone))
+                        || within(doc, ik.target, other.bones[0])
+                        || within(doc, other.target, ik.bones[0])
+                    {
+                        return Err(format!(
+                            "IK {} and {}: shared constrained bones or targets inside another chain are not supported",
+                            other.name, ik.name
+                        ));
+                    }
+                }
+                solve(
+                    doc,
+                    &mut state.locals,
+                    world,
+                    ik,
+                    state.ik[index],
+                    &state.inherits,
+                )
+                .map_err(|error| format!("IK {}: {error}", ik.name))?;
+                solved_iks.push(ik);
             }
             peachy_document::Constraint::Transform(transform) => {
-                crate::transform_constraint::apply(doc, transform, locals, world, inherits)
-                    .map_err(|error| format!("Transform {}: {error}", transform.name))?;
+                crate::transform_constraint::apply(
+                    doc,
+                    transform,
+                    &mut state.locals,
+                    world,
+                    &state.inherits,
+                )
+                .map_err(|error| format!("Transform {}: {error}", transform.name))?;
             }
             peachy_document::Constraint::Path(path) => {
-                // Like the runtime, a slot not showing a path attachment leaves
-                // the bones alone.
-                let shown = paths.slot_attachments[path.slot]
+                // A slot not showing a path attachment leaves the bones alone.
+                // Resolve against the live slot/deform state at this turn.
+                let shown = state.slot_attachments[path.slot]
                     .as_deref()
-                    .and_then(|name| doc.resolve_attachment(paths.skin, path.slot, name));
+                    .and_then(|name| doc.resolve_attachment(&state.skin, path.slot, name));
                 if let Some((key, peachy_document::Attachment::Path(curve))) = shown {
-                    let offsets = paths
+                    let offsets = state
                         .deforms
                         .iter()
                         .find(|(target, _)| *target == key)
@@ -99,16 +90,17 @@ pub(crate) fn apply(
                     crate::path_constraint::apply(
                         doc,
                         path,
-                        paths.poses[index],
+                        state.paths[index],
                         curve,
                         offsets,
-                        locals,
+                        &mut state.locals,
                         world,
-                        inherits,
+                        &state.inherits,
                     )
                     .map_err(|error| format!("Path {}: {error}", path.name))?;
                 }
             }
+            // Physics remains data only, matching Physics.none.
             _ => {}
         }
     }

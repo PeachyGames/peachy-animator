@@ -44,6 +44,7 @@ pub(super) enum Icon {
     IkConstraint,
     PhysicsConstraint,
     TransformConstraint,
+    SliderConstraint,
     ChooseBone,
     Bone,
     TargetBone,
@@ -316,6 +317,7 @@ fn paint(ui: &Ui, rect: Rect, icon: Icon, response: &Response) {
         Icon::IkConstraint => draw_ik(&painter, rect, ink),
         Icon::PhysicsConstraint => draw_physics(&painter, rect, ink),
         Icon::TransformConstraint => draw_transform(&painter, rect, ink),
+        Icon::SliderConstraint => draw_slider(&painter, rect, ink),
         Icon::Bone => draw_bone(&painter, rect, ink),
         Icon::TargetBone => {
             painter.circle_stroke(p(8., 8.), 4. * rect.width() / SIZE, stroke(warm));
@@ -618,4 +620,21 @@ pub(super) fn draw_bone(painter: &egui::Painter, rect: Rect, color: Color32) {
     for point in [a, b] {
         painter.circle_filled(point, rect.width() * 0.16, color);
     }
+}
+
+/// Independent rail and handle cue for a Slider constraint.
+pub(super) fn draw_slider(painter: &egui::Painter, rect: Rect, color: Color32) {
+    let rail = Rect::from_min_max(
+        rect.min + rect.size() * vec2(0.08, 0.4),
+        rect.min + rect.size() * vec2(0.92, 0.6),
+    );
+    painter.line_segment(
+        [rail.left_center(), rail.right_center()],
+        Stroke::new(1., color),
+    );
+    let handle = Rect::from_center_size(
+        rect.min + rect.size() * vec2(0.62, 0.5),
+        rect.size() * vec2(0.22, 0.7),
+    );
+    painter.rect_stroke(handle, 1., Stroke::new(1., color), egui::StrokeKind::Inside);
 }

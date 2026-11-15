@@ -42,7 +42,8 @@ fn raw_ik() -> IkCurve {
 
 fn fixture() -> (Document, usize) {
     let mut doc: Document =
-        serde_json::from_str(include_str!("../../../examples/peach-bot/ik-bot.peachy")).unwrap();
+        crate::native_fixture::decode(include_str!("../../../examples/peach-bot/ik-bot.peachy"))
+            .unwrap();
     let slot = doc.slots.iter().position(|s| s.name == "body").unwrap();
     let source_mesh = match doc.attachment(&source()).unwrap() {
         Attachment::Mesh(mesh) => mesh.clone(),

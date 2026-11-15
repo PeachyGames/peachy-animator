@@ -1,5 +1,33 @@
 # Spine workspace and interaction parity
 
+## Manual Slider controls and Graph — November 15, 2026
+
+Manual Slider Properties follows the observed Frame/Mix arrangement: referenced
+Frames at the project FPS, unbounded signed Mix percentages, independent key
+buttons, Setup Loop/Additive and a disabled source selector. Time/Mix share typed
+Dopesheet rows, Graph selection, frame/percent numeric handles and clipboard
+operations. Source selection/ranges/clear, creation and exact styling remain gaps.
+
+Actual native input verifies Frame45 and Mix−50% pending poses outside Save,
+independent keying and K, pending-restoring Undo/Redo, Auto Key's atomic pending
+flush, Frame120 beyond the referenced end, Setup Loop/Additive and signed Mix.
+Owned draft Save discards uncommitted text; stale Enter cannot apply it. Held
+rails and Graph tangents cancel on Escape, block continued movement until release,
+and restore history. Hiding/reactivating only the task-owned app verifies focus-loss
+cancellation. Both controls remain reachable at **1120×740**.
+
+Graph checks verify Time handles in referenced Frames, host X in Frames, tangent
+commit/Undo, key-value drag cancellation, and actual typed Time Copy/Paste/Delete
+with Mix unchanged. Undo clears key selection; tests reselect the actual marker
+before continuing. Unchanged-time Q preserves pending work; an actual cursor move
+clears it. These are observed workflows, not general native interaction identity.
+Native edits return to the MCP-authored canonical lab; independent native rig
+creation is not claimed. The final rebuilt public lab reopens with one image and
+empty history, advances playback to 0.224702 seconds, then stops/resets to 0. All
+owned windows are closed. Installed-editor geometry passes with documented lossy
+Bezier conversion. See the [bounded contract](slices/slider-constraints.md) and
+[review gallery](evidence/slider-constraints.html).
+
 ## Workspace divider input — November 15, 2026
 
 The canvas now leaves the nearest right pane's native egui resize grab band to

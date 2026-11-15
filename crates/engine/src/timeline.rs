@@ -2,7 +2,7 @@
 use peachy_document::{
     Animation, Attachment, AttachmentKey, AttachmentRef, ColorKey, Constraint, Curve, DeformKey,
     DeformTrack, Document, DrawOrderKey, IkCurve, IkKeyframe, IkTrack, Keyframe, MeshVertices,
-    Property, Track,
+    Property, SliderProperty, Track,
 };
 use serde::{Deserialize, Serialize};
 use std::{cmp::Ordering, collections::BTreeSet};
@@ -20,6 +20,12 @@ pub struct ClipboardKey {
     pub property: Property,
     pub key: Keyframe,
 }
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SliderClipboardKey {
+    pub property: SliderProperty,
+    pub key: Keyframe,
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct KeyClipboard {
@@ -31,6 +37,7 @@ pub struct KeyClipboard {
 pub enum KeyOwner {
     Bone { bone: usize },
     Ik { constraint: usize },
+    Slider { constraint: usize },
     Deform { attachment: AttachmentRef },
     Slot { slot: usize },
     DrawOrder {},
@@ -40,6 +47,7 @@ impl KeyOwner {
         match self {
             Self::Bone { bone } => (0, *bone, "", "", ""),
             Self::Ik { constraint } => (1, *constraint, "", "", ""),
+            Self::Slider { constraint } => (5, *constraint, "", "", ""),
             Self::Slot { slot } => (3, *slot, "", "", ""),
             Self::DrawOrder {} => (4, 0, "", "", ""),
             Self::Deform { attachment } => (
@@ -66,6 +74,11 @@ impl PartialOrd for KeyOwner {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase", deny_unknown_fields)]
 pub enum AnimationKey {
+    Slider {
+        constraint: usize,
+        property: SliderProperty,
+        time: f32,
+    },
     Bone {
         bone: usize,
         property: Property,
@@ -122,6 +135,9 @@ impl AnimationKey {
             Self::Ik { constraint, .. } => KeyOwner::Ik {
                 constraint: *constraint,
             },
+            Self::Slider { constraint, .. } => KeyOwner::Slider {
+                constraint: *constraint,
+            },
             Self::Deform { attachment, .. } => KeyOwner::Deform {
                 attachment: attachment.clone(),
             },
@@ -134,6 +150,7 @@ impl AnimationKey {
     pub fn time(&self) -> f32 {
         match self {
             Self::Bone { time, .. }
+            | Self::Slider { time, .. }
             | Self::Ik { time, .. }
             | Self::Deform { time, .. }
             | Self::SlotAttachment { time, .. }
@@ -145,6 +162,7 @@ impl AnimationKey {
         let mut key = self.clone();
         match &mut key {
             Self::Bone { time: at, .. }
+            | Self::Slider { time: at, .. }
             | Self::Ik { time: at, .. }
             | Self::Deform { time: at, .. }
             | Self::SlotAttachment { time: at, .. }
@@ -163,6 +181,14 @@ impl AnimationKey {
                 Self::SlotAttachment { .. } => 3,
                 Self::SlotColor { .. } => 4,
                 Self::DrawOrder { .. } => 5,
+                Self::Slider {
+                    property: SliderProperty::Time,
+                    ..
+                } => 6,
+                Self::Slider {
+                    property: SliderProperty::Mix,
+                    ..
+                } => 7,
             },
             match self {
                 Self::Bone { property, .. } => Some(*property),
@@ -171,6 +197,7 @@ impl AnimationKey {
                 | Self::SlotAttachment { .. }
                 | Self::SlotColor { .. }
                 | Self::DrawOrder { .. } => None,
+                Self::Slider { .. } => None,
             },
             time_id(self.time()),
         )
@@ -248,6 +275,9 @@ impl DeformLayout {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase", deny_unknown_fields)]
 pub enum AnimationKeyClipboard {
+    Slider {
+        keys: Vec<SliderClipboardKey>,
+    },
     Bone {
         keys: Vec<ClipboardKey>,
     },
@@ -270,6 +300,11 @@ pub enum AnimationKeyClipboard {
 
 #[derive(Clone)]
 enum OwnedKey {
+    Slider {
+        constraint: usize,
+        property: SliderProperty,
+        key: Keyframe,
+    },
     Bone {
         bone: usize,
         property: Property,
@@ -298,6 +333,15 @@ enum OwnedKey {
 impl OwnedKey {
     fn identity(&self) -> AnimationKey {
         match self {
+            Self::Slider {
+                constraint,
+                property,
+                key,
+            } => AnimationKey::Slider {
+                constraint: *constraint,
+                property: *property,
+                time: key.time,
+            },
             Self::Bone {
                 bone,
                 property,
@@ -328,6 +372,15 @@ impl OwnedKey {
     }
     fn at(self, time: f32) -> Self {
         match self {
+            Self::Slider {
+                constraint,
+                property,
+                key,
+            } => Self::Slider {
+                constraint,
+                property,
+                key: Keyframe { time, ..key },
+            },
             Self::Bone {
                 bone,
                 property,
@@ -400,6 +453,14 @@ fn canonical_owner(document: &Document, owner: KeyOwner) -> Result<KeyOwner, Str
             ) =>
         {
             Err("Unknown IK constraint".into())
+        }
+        KeyOwner::Slider { constraint }
+            if !matches!(
+                document.constraints.get(*constraint),
+                Some(Constraint::Slider(_))
+            ) =>
+        {
+            Err("Unknown Slider constraint".into())
         }
         KeyOwner::Deform { attachment } => deform_key_owner(document, attachment),
         _ => Ok(owner),
@@ -487,6 +548,19 @@ pub fn curve_targets(
     let mut result = vec![];
     for key in canonical {
         let interval = match &key {
+            AnimationKey::Slider {
+                constraint,
+                property,
+                time,
+            } => exact_interval(
+                clip.slider_tracks
+                    .iter()
+                    .find(|track| track.constraint == *constraint && track.property == *property)
+                    .map(|track| track.keys.as_slice()),
+                *time,
+                |key| key.time,
+                single,
+            )?,
             AnimationKey::Bone {
                 bone,
                 property,
@@ -603,6 +677,25 @@ pub(crate) fn channels_for_target(
         }]
     };
     match &target.key {
+        AnimationKey::Slider {
+            constraint,
+            property,
+            ..
+        } => {
+            let (left, right) = exact_pair(
+                clip.slider_tracks
+                    .iter()
+                    .find(|track| track.constraint == *constraint && track.property == *property)
+                    .map(|track| track.keys.as_slice()),
+                time,
+                target.next_time,
+                |key| key.time,
+            )?;
+            Ok(channel(
+                [f64::from(left.value), f64::from(right.value)],
+                CurveData::Standard(left.curve),
+            ))
+        }
         AnimationKey::Bone { bone, property, .. } => {
             let (left, right) = exact_pair(
                 clip.tracks
@@ -694,6 +787,21 @@ fn sources(
                 return Err("Duplicate source key".into());
             }
             match canonical {
+                AnimationKey::Slider {
+                    constraint,
+                    property,
+                    time,
+                } => clip
+                    .slider_tracks
+                    .iter()
+                    .find(|track| track.constraint == constraint && track.property == property)
+                    .and_then(|track| track.keys.iter().find(|key| key.time == time))
+                    .copied()
+                    .map(|key| OwnedKey::Slider {
+                        constraint,
+                        property,
+                        key,
+                    }),
                 AnimationKey::Bone {
                     bone,
                     property,
@@ -767,6 +875,27 @@ pub fn copy_animation_keys(
         .min_by(f32::total_cmp)
         .ok_or("No keys")?;
     let clipboard = match &owner {
+        KeyOwner::Slider { .. } => {
+            let mut keys = vec![];
+            for source in sources {
+                if let OwnedKey::Slider { property, key, .. } = source {
+                    keys.push(SliderClipboardKey {
+                        property,
+                        key: Keyframe {
+                            time: key.time - first,
+                            ..key
+                        },
+                    });
+                }
+            }
+            keys.sort_by(|left, right| {
+                left.key
+                    .time
+                    .total_cmp(&right.key.time)
+                    .then(left.property.cmp(&right.property))
+            });
+            AnimationKeyClipboard::Slider { keys }
+        }
         KeyOwner::Bone { .. } => {
             let mut keys = vec![];
             for source in sources {
@@ -888,6 +1017,18 @@ fn clipboard_sources(
     owner: &KeyOwner,
 ) -> Result<Vec<OwnedKey>, String> {
     let sources: Vec<_> = match (clipboard, owner) {
+        (AnimationKeyClipboard::Slider { keys }, KeyOwner::Slider { constraint }) => {
+            let mut result = vec![];
+            for entry in keys {
+                crate::slider_authoring::validate_key(entry.key)?;
+                result.push(OwnedKey::Slider {
+                    constraint: *constraint,
+                    property: entry.property,
+                    key: entry.key,
+                });
+            }
+            result
+        }
         (AnimationKeyClipboard::Bone { keys }, KeyOwner::Bone { bone }) => {
             let mut result = vec![];
             for entry in keys {
@@ -1008,6 +1149,11 @@ fn insert_keys(document: &mut Document, animation: usize, keys: Vec<OwnedKey>) {
     let clip = &mut document.animations[animation];
     for incoming in keys {
         match incoming {
+            OwnedKey::Slider {
+                constraint,
+                property,
+                key,
+            } => crate::slider_authoring::insert_key(clip, constraint, property, key),
             OwnedKey::SlotAttachment { slot, key } => {
                 crate::slot_authoring::insert_attachment_key(clip, slot, key)
             }
@@ -1086,6 +1232,18 @@ fn insert_keys(document: &mut Document, animation: usize, keys: Vec<OwnedKey>) {
 fn remove_sources(document: &mut Document, animation: usize, sources: &[OwnedKey]) {
     let identities: BTreeSet<_> = sources.iter().map(|s| s.identity().id()).collect();
     let clip = &mut document.animations[animation];
+    for track in &mut clip.slider_tracks {
+        track.keys.retain(|key| {
+            !identities.contains(
+                &AnimationKey::Slider {
+                    constraint: track.constraint,
+                    property: track.property,
+                    time: key.time,
+                }
+                .id(),
+            )
+        });
+    }
     for track in &mut clip.tracks {
         track.keys.retain(|key| {
             !identities.contains(
@@ -1173,6 +1331,7 @@ pub(super) fn delete_animation_keys(
     let clip = &mut document.animations[animation];
     clip.tracks.retain(|t| !t.keys.is_empty());
     clip.ik_tracks.retain(|t| !t.keys.is_empty());
+    clip.slider_tracks.retain(|track| !track.keys.is_empty());
     clip.deform_tracks.retain(|t| !t.keys.is_empty());
     clip.attachment_tracks.retain(|t| !t.keys.is_empty());
     clip.color_tracks.retain(|t| !t.keys.is_empty());

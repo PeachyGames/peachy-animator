@@ -21,6 +21,7 @@ pub(super) fn clipboard_len(clipboard: &AnimationKeyClipboard) -> usize {
     match clipboard {
         AnimationKeyClipboard::Bone { keys } => keys.len(),
         AnimationKeyClipboard::Ik { keys } => keys.len(),
+        AnimationKeyClipboard::Slider { keys } => keys.len(),
         AnimationKeyClipboard::Deform { keys, .. } => keys.len(),
         AnimationKeyClipboard::DrawOrder { keys, .. } => keys.len(),
         AnimationKeyClipboard::Slot {
@@ -237,7 +238,8 @@ impl Editor {
         let focused = (self.dopesheet_has_focus(ctx)
             || self.deform_graph_has_focus(ctx)
             || self.slot_graph_has_focus(ctx)
-            || self.scalar_graph_has_focus(ctx))
+            || self.scalar_graph_has_focus(ctx)
+            || self.slider_graph_has_focus(ctx))
             && ctx.input(|input| input.focused);
         let actions = ctx.input_mut(|input| {
             take_timeline_actions(&mut input.events, focused, &mut self.timeline_input)

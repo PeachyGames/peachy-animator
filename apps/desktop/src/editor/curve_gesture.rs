@@ -7,6 +7,7 @@ pub(super) enum CurveInputOwner {
     DeformGraph,
     SlotGraph,
     ScalarGraph,
+    SliderGraph,
     Curves,
 }
 

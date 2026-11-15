@@ -2,7 +2,9 @@
 //! Activity rules were observed with the external 4.3.13 runtime: a required
 //! bone is active when the active skin lists it or one of its descendants; a
 //! constraint is active when it is not required or its skin lists it, and its
-//! referenced bones are active. See docs/slices/skin-scope.md.
+//! referenced bones are active. Slider is the observed exception: its active
+//! flag follows skin membership; its evaluator separately skips an inactive
+//! source bone. See docs/slices/skin-scope.md.
 use crate::{Constraint, Document};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
@@ -14,7 +16,8 @@ pub struct SkinScope {
     pub required_bones: BTreeSet<usize>,
     /// Constraints marked `skin: true`, by constraint index.
     pub required_constraints: BTreeSet<usize>,
-    /// Named skin -> the required bones and constraints it lists.
+    /// Named skin -> the bones and constraints it lists. A redundant Slider
+    /// membership may be retained even when that Slider is not skin-required.
     pub skins: BTreeMap<String, SkinMembers>,
 }
 
@@ -34,7 +37,9 @@ pub struct Activity {
 
 impl SkinScope {
     pub fn is_empty(&self) -> bool {
-        self.required_bones.is_empty() && self.required_constraints.is_empty()
+        self.required_bones.is_empty()
+            && self.required_constraints.is_empty()
+            && self.skins.is_empty()
     }
 }
 
@@ -109,13 +114,18 @@ impl Document {
                 ));
             }
             let mut seen = BTreeSet::new();
-            if members
-                .constraints
-                .iter()
-                .any(|c| !scope.required_constraints.contains(c) || !seen.insert(*c))
-            {
+            if members.constraints.iter().any(|c| {
+                // Original Slider skin holdouts are accepted by the
+                // public consumer even after skinRequired becomes false.
+                // Retain that redundant list without requiring membership
+                // for activity or relaxing other constraint/bone rules.
+                self.constraints.get(*c).is_none()
+                    || (!scope.required_constraints.contains(c)
+                        && !matches!(self.constraints.get(*c), Some(Constraint::Slider(_))))
+                    || !seen.insert(*c)
+            }) {
                 return Err(format!(
-                    "Skin {skin}: listed constraints must be distinct skin-required constraints"
+                    "Skin {skin}: listed constraints must be distinct existing skin-required constraints or Sliders"
                 ));
             }
         }
@@ -129,6 +139,9 @@ fn constraint_bones(doc: &Document, constraint: &Constraint) -> Vec<usize> {
         Constraint::Ik(ik) => ik.bones.iter().copied().chain([ik.target]).collect(),
         Constraint::Physics(physics) => vec![physics.bone],
         Constraint::Transform(t) => t.bones.iter().copied().chain([t.source]).collect(),
+        // Public Slider.active stays true when only its source bone is off.
+        // Source eligibility is checked at the Slider's ordered engine turn.
+        Constraint::Slider(_) => vec![],
         // The path's slot bone acts as the source.
         Constraint::Path(p) => p
             .bones

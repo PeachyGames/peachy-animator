@@ -1,5 +1,5 @@
 //! Independently written, bounded Spine 4.3 constraint interchange: IK with
-//! grouped Mix/Positive timelines, and physics data. Source-feature checks
+//! grouped Mix/Positive timelines, Slider data and physics data. Source-feature checks
 //! only: solving belongs to the engine.
 use super::{array, ik_timelines, required_string, unknown_fields};
 use peachy_document::{
@@ -30,10 +30,14 @@ pub(super) fn inspect(root: &Value, issues: &mut Vec<String>) {
         }
     };
     let names = ik_timelines::indices(&constraints);
+    let slider_names = super::slider::indices(&constraints);
     if let Some(animations) = root["animations"].as_object() {
         for (name, animation) in animations {
             if let Err(error) = ik_timelines::read(animation, &names) {
                 issues.push(format!("Animation {name}: {error}"));
+            }
+            if let Err(error) = super::slider::read_timelines(name, animation, &slider_names) {
+                issues.push(error);
             }
         }
     }
@@ -54,6 +58,7 @@ pub(super) fn read(
         .collect();
     let mut constraints = vec![];
     let mut errors = vec![];
+    let animations = super::slider::animation_indices(root);
     for entry in entries {
         if !entry.is_object() {
             errors.push("Constraint must be an object".to_owned());
@@ -66,11 +71,9 @@ pub(super) fn read(
             Some("path") => {
                 super::path::read_constraint(entry, indices, &slots).map(Constraint::Path)
             }
-            Some(kind @ "slider") => Err(format!(
-                "{} constraint {}: {kind} constraints are unsupported",
-                capitalized(kind),
-                entry["name"].as_str().unwrap_or("?")
-            )),
+            Some("slider") => {
+                super::slider::read_constraint(entry, indices, &animations).map(Constraint::Slider)
+            }
             _ => Err(format!(
                 "Constraint {}: unknown or missing type",
                 entry["name"].as_str().unwrap_or("?")
@@ -86,14 +89,6 @@ pub(super) fn read(
     } else {
         Err(errors.join("; "))
     }
-}
-
-fn capitalized(kind: &str) -> String {
-    let mut chars = kind.chars();
-    chars
-        .next()
-        .map(|first| first.to_uppercase().chain(chars).collect())
-        .unwrap_or_default()
 }
 
 fn resolve_bone(
@@ -112,7 +107,7 @@ fn resolve_bone(
 
 /// Obsolete editor metadata is recognized but never cast, stored, sorted or
 /// exported. Array order is the observed 4.3 evaluation order.
-fn check_order(entry: &Value, context: &str) -> Result<(), String> {
+pub(super) fn check_order(entry: &Value, context: &str) -> Result<(), String> {
     if entry.get("order").is_some_and(|v| {
         v.as_f64()
             .is_none_or(|n| !n.is_finite() || n < 0.0 || n.fract() != 0.0)
@@ -811,6 +806,7 @@ pub(super) fn write(doc: &Document) -> Value {
                     value
                 }
                 Constraint::Path(path) => super::path::write_constraint(path, doc),
+                Constraint::Slider(slider) => super::slider::write_constraint(slider, doc),
                 Constraint::Physics(physics) => {
                     // Every value is explicit, so consumers never depend on defaults.
                     let mut value = json!({

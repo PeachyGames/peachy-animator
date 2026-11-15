@@ -121,7 +121,8 @@ fn write_transform_mapping_fixture(root: &Path) -> Vec<u8> {
         ],
         "local_source":false,"local_target":false,"additive":false,"clamp":false
     }]);
-    let mut fixture: peachy_document::Document = serde_json::from_value(fixture).unwrap();
+    let mut fixture: peachy_document::Document =
+        peachy_io::decode_project(&fixture.to_string()).unwrap();
     fixture.animations.push(peachy_document::Animation::new(
         "calibration",
         vec![peachy_document::Track {
@@ -538,7 +539,8 @@ fn write_multi_vertex_weight_fixture(root: &Path) -> Vec<u8> {
         "vertices":{"mode":"weighted","influences":influences},
         "uvs":uvs,"triangles":[0,1,2,0,2,3,0,3,4,0,4,5],"hull":6
     }}}});
-    let fixture: peachy_document::Document = serde_json::from_value(fixture).unwrap();
+    let fixture: peachy_document::Document =
+        peachy_io::decode_project(&fixture.to_string()).unwrap();
     fixture.validate().unwrap();
     fs::create_dir(root.join("images")).unwrap();
     fs::copy(
@@ -857,7 +859,7 @@ async fn stdio_discovery_atomic_edit_history_save_and_export() {
     let original = fs::read(&source).unwrap();
     let client = start(&root.0).await;
     let tools = client.list_tools(Default::default()).await.unwrap().tools;
-    assert_eq!(tools.len(), 13);
+    assert_eq!(tools.len(), 14);
     assert!(tools.iter().all(|tool| !tool.input_schema.is_empty()));
     let apply = tools
         .iter()
@@ -2774,5 +2776,380 @@ async fn stdio_draw_order_preserves_raw_keys_full_hidden_order_and_persistence()
         .await,
     );
     assert_eq!(doc(&client).await["document"], pasted["document"]);
+    client.cancel().await.unwrap();
+}
+
+/// Stored Time/Mix authoring and the calibrated manual bone evaluation boundary.
+#[tokio::test]
+async fn stdio_slider_raw_authoring_typed_keys_atomic_history_and_persistence() {
+    async fn apply(client: &RunningService<RoleClient, ()>, commands: Vec<Value>) {
+        let revision = doc(client).await["state"]["revision"].clone();
+        success(
+            call(
+                client,
+                "apply_commands",
+                json!({"expected_revision":revision,"commands":commands}),
+            )
+            .await,
+        );
+    }
+    async fn history(client: &RunningService<RoleClient, ()>, action: &str) {
+        let revision = doc(client).await["state"]["revision"].clone();
+        success(
+            call(
+                client,
+                "history",
+                json!({"expected_revision":revision,"action":action}),
+            )
+            .await,
+        );
+    }
+    let root = Sandbox::new();
+    let client = start(&root.0).await;
+    let created = success(
+        call(
+            &client,
+            "create_project",
+            json!({
+                "expected_revision":0,"name":"Original raw Slider study","fps":60,"asset_root":"."
+            }),
+        )
+        .await,
+    );
+    assert_eq!(created["bones"], 1);
+    assert_eq!(created["constraints"], 0);
+    let slider = json!({
+        "name":"calibration","animation":0,"bone":null,"property":null,
+        "local":false,"loop":false,"additive":false,
+        "from":0.0,"to":0.0,"scale":0.0,"max":0.0,
+        "setup":{"time":0.25,"mix":1.0}
+    });
+    let time_curve = json!({"bezier":[0.2_f32,-0.25_f32,0.8_f32,1.25_f32]});
+    let mix_curve = json!({"bezierOffset":[0.25_f32,0.1_f32,0.75_f32,-0.1_f32]});
+    let second_time = 0.500005_f32;
+    apply(&client, vec![
+        json!({"command":"addAnimation","name":"calibration-source","duration":0.0}),
+        json!({"command":"addAnimation","name":"host","duration":0.0}),
+        json!({"command":"setKey","animation":0,"bone":0,"property":"rotation","key":{"time":0.0,"value":0.0,"curve":"linear"}}),
+        json!({"command":"setKey","animation":0,"bone":0,"property":"rotation","key":{"time":1.0,"value":30.0,"curve":"linear"}}),
+        json!({"command":"addSliderConstraint","constraint":slider.clone()}),
+    ]).await;
+    let definition = doc(&client).await;
+    for animation in [Value::Null, json!("host")] {
+        let query=success(call(&client,"get_slider_pose",json!({
+            "expected_revision":definition["state"]["revision"],"constraint":0,"animation":animation,"time":0.125
+        })).await);
+        assert_eq!(query["kind"], "authored");
+        assert_eq!(query["pose"], json!({"time":0.25,"mix":1.0}));
+        assert_eq!(doc(&client).await, definition);
+    }
+    apply(&client, vec![
+        json!({"command":"setSliderKey","animation":1,"constraint":0,"property":"time","key":{"time":0.125,"value":1.0,"curve":"linear"}}),
+        json!({"command":"setSliderKey","animation":1,"constraint":0,"property":"time","key":{"time":second_time,"value":0.5,"curve":"stepped"}}),
+        json!({"command":"setSliderKey","animation":1,"constraint":0,"property":"mix","key":{"time":0.125,"value":1.0,"curve":"linear"}}),
+        json!({"command":"setSliderKey","animation":1,"constraint":0,"property":"mix","key":{"time":0.75,"value":0.25,"curve":"linear"}}),
+        json!({"command":"setSliderCurve","animation":1,"constraint":0,"property":"time","time":0.125,"curve":time_curve.clone()}),
+        json!({"command":"setSliderCurve","animation":1,"constraint":0,"property":"mix","time":0.125,"curve":mix_curve.clone()}),
+    ]).await;
+    let authored = doc(&client).await;
+    assert_eq!(authored["document"]["constraints"][0]["type"], "slider");
+    assert_eq!(authored["document"]["constraints"][0]["animation"], 0);
+    let tracks = authored["document"]["animations"][1]["slider_tracks"]
+        .as_array()
+        .unwrap();
+    let time_track = tracks
+        .iter()
+        .find(|track| track["property"] == "time")
+        .unwrap();
+    let mix_track = tracks
+        .iter()
+        .find(|track| track["property"] == "mix")
+        .unwrap();
+    assert_eq!(time_track["keys"][0]["curve"], time_curve);
+    assert_eq!(mix_track["keys"][0]["curve"], mix_curve);
+    assert_eq!(
+        (time_track["keys"][1]["time"].as_f64().unwrap() as f32).to_bits(),
+        second_time.to_bits()
+    );
+    assert_eq!(time_track["keys"][0]["value"], 1.0);
+    assert_eq!(mix_track["keys"][0]["value"], 1.0);
+    let keyed=success(call(&client,"get_slider_pose",json!({
+        "expected_revision":authored["state"]["revision"],"constraint":0,"animation":"host","time":0.125
+    })).await);
+    assert_eq!(keyed["kind"], "authored");
+    assert_eq!(keyed["hostTime"], 0.125);
+    assert_eq!(keyed["pose"], json!({"time":1.0,"mix":1.0}));
+    for invalid in [
+        json!({"expected_revision":definition["state"]["revision"],"constraint":0,"animation":"host","time":0.125}),
+        json!({"expected_revision":authored["state"]["revision"],"constraint":999,"animation":"host","time":0.125}),
+        json!({"expected_revision":authored["state"]["revision"],"constraint":0,"animation":"unknown-host","time":0.125}),
+    ] {
+        error(call(&client, "get_slider_pose", invalid).await);
+        assert_eq!(doc(&client).await, authored);
+    }
+    let selected = json!([
+        {"type":"slider","constraint":0,"property":"time","time":0.125},
+        {"type":"slider","constraint":0,"property":"time","time":second_time},
+        {"type":"slider","constraint":0,"property":"mix","time":0.125},
+        {"type":"slider","constraint":0,"property":"mix","time":0.75}
+    ]);
+    let clipboard = success(
+        call(
+            &client,
+            "copy_animation_keys",
+            json!({
+                "expected_revision":authored["state"]["revision"],"animation":1,"keys":selected
+            }),
+        )
+        .await,
+    )["clipboard"]
+        .clone();
+    assert_eq!(clipboard["type"], "slider");
+    assert_eq!(clipboard["keys"].as_array().unwrap().len(), 4);
+    assert_eq!(
+        clipboard["keys"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|key| key["property"] == "time")
+            .count(),
+        2
+    );
+    assert_eq!(doc(&client).await, authored);
+    apply(
+        &client,
+        vec![json!({
+            "command":"moveAnimationKeys","animation":1,"delta":0.125,"copy":false,
+            "keys":[{"type":"slider","constraint":0,"property":"time","time":0.125}]
+        })],
+    )
+    .await;
+    apply(
+        &client,
+        vec![json!({
+            "command":"deleteAnimationKeys","animation":1,
+            "keys":[{"type":"slider","constraint":0,"property":"mix","time":0.125}]
+        })],
+    )
+    .await;
+    let before_paste = doc(&client).await;
+    apply(
+        &client,
+        vec![json!({
+            "command":"pasteAnimationKeys","animation":1,"target":{"type":"slider","constraint":0},
+            "time":1.0,"clipboard":clipboard
+        })],
+    )
+    .await;
+    let pasted = doc(&client).await;
+    let tracks = pasted["document"]["animations"][1]["slider_tracks"]
+        .as_array()
+        .unwrap();
+    for (property, curve, count) in [("time", &time_curve, 4), ("mix", &mix_curve, 3)] {
+        let track = tracks
+            .iter()
+            .find(|track| track["property"] == property)
+            .unwrap();
+        let keys = track["keys"].as_array().unwrap();
+        assert_eq!(keys.len(), count);
+        let key = keys.iter().find(|key| key["time"] == 1.0).unwrap();
+        assert_eq!(key["value"], 1.0);
+        assert_eq!(&key["curve"], curve);
+    }
+    assert_eq!(
+        pasted["document"]["animations"][0],
+        authored["document"]["animations"][0]
+    );
+    history(&client, "undo").await;
+    let undone = doc(&client).await;
+    assert_eq!(undone["document"], before_paste["document"]);
+    assert_eq!(undone["state"]["canRedo"], true);
+    let mut bad_source = slider;
+    bad_source["animation"] = json!(999);
+    for invalid in [
+        json!({"command":"setSliderConstraint","constraint":0,"value":bad_source}),
+        json!({"command":"setSliderKey","animation":1,"constraint":999,"property":"time","key":{"time":0.0,"value":1.0,"curve":"linear"}}),
+    ] {
+        error(
+            call(
+                &client,
+                "apply_commands",
+                json!({
+                    "expected_revision":undone["state"]["revision"],"commands":[
+                        {"command":"renameBone","bone":0,"name":"must-rollback"},invalid
+                    ]
+                }),
+            )
+            .await,
+        );
+        assert_eq!(doc(&client).await, undone);
+    }
+    let evaluated = success(
+        call(
+            &client,
+            "evaluate_pose",
+            json!({"animation":"host","time":0.25}),
+        )
+        .await,
+    );
+    assert_eq!(evaluated["locals"][0]["rotation"], 0.0);
+    assert_eq!(evaluated["appliedLocals"][0]["rotation"], 30.0);
+    assert_eq!(
+        evaluated["authoredSliderPoses"][0],
+        json!({"time":1.0,"mix":1.0})
+    );
+    assert_eq!(
+        evaluated["appliedSliderPoses"][0],
+        json!({"time":1.0,"mix":1.0})
+    );
+    assert_eq!(evaluated["inherits"], json!(["normal"]));
+    assert_eq!(doc(&client).await, undone);
+    history(&client, "redo").await;
+    assert_eq!(doc(&client).await["document"], pasted["document"]);
+    let revision = doc(&client).await["state"]["revision"].clone();
+    success(
+        call(
+            &client,
+            "save_project",
+            json!({"expected_revision":revision,"directory":"slider-authored"}),
+        )
+        .await,
+    );
+    let revision = doc(&client).await["state"]["revision"].clone();
+    success(
+        call(
+            &client,
+            "open_project",
+            json!({"expected_revision":revision,"path":"slider-authored/project.peachy"}),
+        )
+        .await,
+    );
+    let reopened = doc(&client).await;
+    assert_eq!(reopened["document"], pasted["document"]);
+    assert_eq!(reopened["state"]["dirty"], false);
+    success(call(&client,"export_project",json!({
+        "expected_revision":reopened["state"]["revision"],"kind":"json","path":"slider-runtime.json","target":"runtime43"
+    })).await);
+    let exported: Value =
+        serde_json::from_slice(&fs::read(root.0.join("slider-runtime.json")).unwrap()).unwrap();
+    assert_eq!(exported["constraints"][0]["type"], "slider");
+    assert_eq!(
+        exported["constraints"][0]["animation"],
+        "calibration-source"
+    );
+    let mut omitted_values = exported;
+    let native = &mut omitted_values["animations"]["host"]["slider"]["calibration"];
+    // Explicit one is valid output. Removing only each channel's value tests
+    // the native default of one through actual MCP import, not pose evaluation.
+    for property in ["time", "mix"] {
+        let at_one = native[property]
+            .as_array_mut()
+            .unwrap()
+            .iter_mut()
+            .find(|key| key["time"] == 1.0)
+            .unwrap();
+        assert_eq!(at_one["value"], 1.0);
+        at_one.as_object_mut().unwrap().remove("value");
+    }
+    assert_eq!(doc(&client).await, reopened);
+    fs::write(
+        root.0.join("slider-omitted-values.json"),
+        serde_json::to_vec(&omitted_values).unwrap(),
+    )
+    .unwrap();
+    success(call(&client,"open_project",json!({
+        "expected_revision":reopened["state"]["revision"],"path":"slider-omitted-values.json"
+    })).await);
+    let imported = doc(&client).await;
+    let host = imported["document"]["animations"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|animation| animation["name"] == "host")
+        .unwrap();
+    for property in ["time", "mix"] {
+        let track = host["slider_tracks"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|track| track["property"] == property)
+            .unwrap();
+        let key = track["keys"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|key| key["time"] == 1.0)
+            .unwrap();
+        assert_eq!(key["value"], 1.0);
+    }
+    assert!(
+        !root.0.join("source").exists(),
+        "No finished rig should be an input"
+    );
+    client.cancel().await.unwrap();
+}
+
+#[tokio::test]
+async fn stdio_slider_semantic_insert_splits_native_time_curve_and_undoes_atomically() {
+    let root = Sandbox::new();
+    let client = start(&root.0).await;
+    success(call(&client,"create_project",json!({"expected_revision":0,"name":"Original Slider insertion","fps":60,"asset_root":"."})).await);
+    success(call(&client,"apply_commands",json!({"expected_revision":1,"commands":[
+        {"command":"addAnimation","name":"reference","duration":1.0},
+        {"command":"addAnimation","name":"host","duration":0.0},
+        {"command":"addSliderConstraint","constraint":{
+            "name":"slider","animation":0,"bone":null,"property":null,
+            "local":false,"loop":false,"additive":false,"from":0.0,"to":0.0,"scale":0.0,"max":0.0,
+            "setup":{"time":0.0,"mix":1.0}}},
+        {"command":"setSliderKey","animation":1,"constraint":0,"property":"time","key":{
+            "time":0.0,"value":0.5,"curve":{"bezier":[1.0_f32/3.0,0.0,2.0_f32/3.0,1.0]}}},
+        {"command":"setSliderKey","animation":1,"constraint":0,"property":"time","key":{
+            "time":0.25,"value":0.75,"curve":"linear"}}
+    ]})).await);
+    let before = doc(&client).await;
+    let time = 7.0_f32 / 60.0;
+    success(call(&client,"apply_commands",json!({"expected_revision":2,"commands":[
+        {"command":"insertSliderKey","animation":1,"constraint":0,"property":"time","time":time,"value":0.6126666_f32}
+    ]})).await);
+    let after = doc(&client).await;
+    let keys = after["document"]["animations"][1]["slider_tracks"][0]["keys"]
+        .as_array()
+        .unwrap();
+    assert_eq!(keys.len(), 3);
+    assert_eq!(keys[1]["value"], json!(0.6126666_f32));
+    assert_eq!(keys[1]["time"], json!(time));
+    success(call(&client,"export_project",json!({"expected_revision":3,"kind":"json","path":"native-slider-insert.json","target":"runtime43"})).await);
+    let exported: Value =
+        serde_json::from_slice(&fs::read(root.0.join("native-slider-insert.json")).unwrap())
+            .unwrap();
+    let frames = &exported["animations"]["host"]["slider"]["slider"]["time"];
+    for (index, expected) in [
+        (0, [0.03888889, 0.5, 0.07777777, 0.5545925]),
+        (1, [0.1611111, 0.679037, 0.20555554, 0.75]),
+    ] {
+        let actual = frames[index]["curve"].as_array().unwrap();
+        for (actual, expected) in actual.iter().zip(expected) {
+            assert!((actual.as_f64().unwrap() - expected).abs() < 0.000002);
+        }
+    }
+    assert_eq!(doc(&client).await, after);
+    success(
+        call(
+            &client,
+            "history",
+            json!({"expected_revision":3,"action":"undo"}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await["document"], before["document"]);
+    success(
+        call(
+            &client,
+            "history",
+            json!({"expected_revision":4,"action":"redo"}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await["document"], after["document"]);
     client.cancel().await.unwrap();
 }

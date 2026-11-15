@@ -171,6 +171,14 @@ fn channel_color(channel: &CurveChannel) -> Color32 {
             Color32::from_rgb(219, 121, 231),
         ][channel.channel],
         AnimationKey::Deform { .. } => Color32::from_rgb(45, 190, 225),
+        AnimationKey::Slider {
+            property: SliderProperty::Time,
+            ..
+        } => Color32::from_rgb(90, 180, 205),
+        AnimationKey::Slider {
+            property: SliderProperty::Mix,
+            ..
+        } => Color32::from_rgb(195, 120, 205),
         _ => MINT,
     }
 }
@@ -180,21 +188,46 @@ impl Editor {
         if self.curves.selection.as_slice() != self.key_selection.keys() {
             return None;
         }
-        let (
-            AnimationKey::Bone {
-                bone,
-                property,
-                time,
-            },
-            _,
-        ) = self.curves.primary.as_ref()?
-        else {
-            return None;
-        };
-        self.key_selection.keys().iter().find(|key| matches!(key,
-            AnimationKey::Bone {bone: selected_bone, property:selected_property,time:selected_time}
-            if selected_bone==bone && selected_property==property && (selected_time==time || self.key_selection.len()==1)
-        )).cloned()
+        let (primary, _) = self.curves.primary.as_ref()?;
+        self.key_selection
+            .keys()
+            .iter()
+            .find(|key| match (primary, *key) {
+                (
+                    AnimationKey::Bone {
+                        bone,
+                        property,
+                        time,
+                    },
+                    AnimationKey::Bone {
+                        bone: selected_bone,
+                        property: selected_property,
+                        time: selected_time,
+                    },
+                ) => {
+                    selected_bone == bone
+                        && selected_property == property
+                        && (selected_time == time || self.key_selection.len() == 1)
+                }
+                (
+                    AnimationKey::Slider {
+                        constraint,
+                        property,
+                        time,
+                    },
+                    AnimationKey::Slider {
+                        constraint: selected_constraint,
+                        property: selected_property,
+                        time: selected_time,
+                    },
+                ) => {
+                    selected_constraint == constraint
+                        && selected_property == property
+                        && (selected_time == time || self.key_selection.len() == 1)
+                }
+                _ => false,
+            })
+            .cloned()
     }
 
     pub(super) fn curves_id() -> egui::Id {

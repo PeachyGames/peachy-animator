@@ -1,5 +1,19 @@
 # Peachy Animator
 
+Slider constraints now share manual Frame/Mix authoring, pending poses, Auto Key/K,
+typed timelines and Graph editing with the engine and MCP: **native v23,
+58 commands /14 tools**. An actual 84-request MCP run creates the original
+[Slider Lab](examples/peach-bot/slider-bot.peachy) from one PNG and a blank project.
+Native editing/history/cancellation, minimum layout and fresh public reopening
+pass; 104 exported poses match the external runtime at 0.001. Installed-editor
+geometry also passes, with lossy authored curve conversion. Creation/source
+switching, Physics/events through Slider and
+extreme precision cases remain bounded gaps; see the
+[Slider contract](docs/slices/slider-constraints.md) and
+[review gallery](docs/evidence/slider-constraints.html).
+
+The earlier feature checkpoints below retain their recorded version/counts.
+
 World X→Rotate transform mapping now has shared Min/Max commands and exact
 readback through MCP: **53 commands / 13 tools**, with native v22 unchanged.
 The original six-bone rig is recreated through 122 actual stdio requests, passes

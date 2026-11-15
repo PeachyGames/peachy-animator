@@ -1,5 +1,37 @@
 # First-slice validation — November 5, 2026
 
+## Slider checkpoint — November 15, 2026
+
+Native v23 exposes **58 commands /14 MCP tools**. Focused two-worker checks pass:
+4 document Slider, 4 document Sequence, 39 engine Slider, 16 skin, 40 slot,
+4 applied-state, 29 Deform, 55 IK, 6 Path, 21 Transform, 18 desktop Slider,
+55 desktop curve, 14 MCP schema, 2 actual-stdio Slider and 3 migration cases,
+plus 9 adapter Slider cases. Filters overlap; this is not a full-suite total.
+Formatting, all-target Clippy, workspace build and seven-crate architecture pass.
+
+The final affected matrices compare 170 domain, 177 Sequence/activity, 101 incoming
+holdout and 21 other-Slider cases, plus 12 driven-Time and 12 driven-Mix cases.
+Skin is applied before host sampling and pending overlays. WORLD caches on inactive
+foreign bones are uncomputed; their activity/local data and engine FK consistency
+remain checked, while inactive slot data is fully compared. Refusals and two
+extreme raw-input precision mismatches stay separate in the Slider contract.
+
+The final actual MCP recipe creates the lab in **84 requests** from a blank project
+and one original PNG; 14 read-only poses, typed insertion, stale/atomic rollback,
+Undo/Redo and Save/reopen pass. Its byte-identical public lab SHA256 is
+`f097c00c4542d46b7e2ee846d72d74606c9a6e5fad9bf41ccc1dcdc277a60dc6`.
+External runtime comparison covers **104 poses /3,744 world values /1,664 region
+coordinates**, maximum world error **0.00001838038693335875**, maximum region error
+**0.00002288818359375**, at unchanged **0.001**. No raster/UV claim follows.
+Actual native manual/Graph/history/cancellation/minimum checks pass separately;
+the final rebuilt public process loads one image/empty history and advances
+playback to 0.224702 seconds before resetting to 0. All owned processes are closed.
+Installed 4.3.26 interchange passes 104 geometry poses (world/region max 1.5258789e−5,
+1,664 UV values exact), while strict authored equality remains false from track
+order and small Bezier/value changes. This is lossy compatibility, not lossless
+conversion. See [scalar evidence](evidence/slider-constraints.json) and the
+[review gallery](evidence/slider-constraints.html).
+
 ## Workspace divider ownership and visible Deform targets — November 15, 2026
 
 Focused checks pass with two workers: **5** pane-resize, **26** Transform,

@@ -138,7 +138,7 @@ for (const animation of data.animations) {
   const nativeEnd = sourceProject.format >= 3
     ? Math.max(keyEnd(native.tracks), keyEnd(native.ik_tracks), keyEnd(native.physics), resetEnd,
       // Every other keyed kind also extends the clip (as Animation::duration).
-      ...['inherit_tracks', 'deform_tracks', 'attachment_tracks', 'color_tracks', 'path_tracks'].map(k => keyEnd(native[k] ?? [])),
+      ...['inherit_tracks', 'deform_tracks', 'attachment_tracks', 'color_tracks', 'path_tracks', 'sequence_tracks', 'slider_tracks'].map(k => keyEnd(native[k] ?? [])),
       ...[native.events ?? [], native.draw_order ?? []].map(keys => keys.reduce((end, key) => Math.max(end, Math.fround(key.time)), 0)))
     : Math.fround(native.duration);
   assert.equal(animation.duration, nativeEnd, `${animation.name}: runtime end matches native end`);

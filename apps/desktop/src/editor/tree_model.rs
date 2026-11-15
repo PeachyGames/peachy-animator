@@ -273,7 +273,7 @@ impl TreeState {
 mod tests {
     use super::*;
     fn doc() -> Document {
-        serde_json::from_str(include_str!(
+        peachy_io::decode_project(include_str!(
             "../../../../examples/peach-bot/mesh-bot.peachy"
         ))
         .unwrap()

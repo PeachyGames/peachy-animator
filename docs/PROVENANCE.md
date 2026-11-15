@@ -929,3 +929,116 @@ See [the bounded contract](slices/transform-mapping-authoring.md) and
 captures/logs and original scalar records stay private in the existing
 `transform-mapping/` task. No proprietary editor/runtime implementation, artist
 asset, vendor project, icon or interface asset was inspected or copied into source.
+
+## Slider constraints — November 15, 2026 (bounded checkpoint verified; parity open)
+
+The public [4.3 release](https://esotericsoftware.com/blog/Spine-4.3-released),
+[Sliders guide](https://esotericsoftware.com/spine-sliders),
+[4.3 API](https://esotericsoftware.com/spine-api-reference#SliderData),
+[constraint-order guide](https://esotericsoftware.com/spine-constraints#Order)
+and [changelog archive](https://esotericsoftware.com/spine-changelog/archive)
+were retrieved through agent-reach. Permitted installed Spine 4.3.26 controls and
+CLI exports of our original six-bone/two-region blue-cutout rig establish current
+Time/Mix/range fields, separate key ownership, skin membership and four-coordinate
+Bezier wire data. The earlier Auto Key-on attempt is recorded as automatic key
+creation and supplies no pending Save-exclusion proof. The failed Graph-click
+attempt is excluded from curve evidence; the valid follow-up has separate data.
+
+Arithmetic is independently derived from original black-box observations through
+the separately licensed runtime's public API. The installed package is 4.3.13;
+the input/parsed 4.3.26 version describes the skeleton, not that runtime package.
+Public API declarations/descriptions are permitted reference material. No editor
+or runtime implementation source, vendor rig, interface asset or artist artwork
+was inspected, translated or copied. New Sequence aliases share the one existing
+original texture; no new pixels are copied/generated and no appearance comparison
+is inferred from frame identity.
+
+Native format 23 adds complete Slider data and required per-animation track lists.
+The strict v22 migration occurs in memory; frozen historical public project bytes
+remain unchanged. Shared commands, typed keys, authored/effective pose separation,
+ordered application and MCP 58-command/14-tool exposure are implemented. Source
+switch/clear and creation identity/order semantics remain open, so raw complete
+replacement is not presented as those semantic authoring actions.
+
+The current validated-cache domain matrix compares 170/170 cases at unchanged
+0.001 tolerance, maximum error 4.81771965e−5 and zero reconstructed engine-applied
+FK residual. Sources remain unchanged. Twelve earlier Path applied-local metadata
+mismatches exposed a read-contract issue: after constraints edit world transforms,
+the documented public
+[validateLocalTransform](https://esotericsoftware.com/spine-api-reference#BonePose-validateLocalTransform)
+method must precede applied-local reads. Observer v6 records exact unchanged
+pre/post WORLD bits, including signed zero, without another world update/solver.
+Earlier raw-cache observers and mismatch reports remain retained; the corrected
+metadata comparison does not weaken tolerance or conceal a world mismatch.
+
+Additional original studies establish signed/additive domain mixing, live source
+properties, inactive-target skips and Sequence frame identity. Their observation
+counts are separate from completed engine/MCP/native gates. Checked advancing
+Sequence counters stop at i32::MAX after an independently observed signed-counter
+boundary; rejected phases are not runtime passes. Physics/events and remaining
+Deform/source-transition domains remain explicit gaps.
+
+The ordinary-host inactive-slot sampling defect is now fixed through skin-aware
+sampling. The separate retained Sequence/inactive-target engine matrix compares
+177/177 cases, zero mismatches at unchanged 0.001 tolerance, maximum absolute error
+6.848346799870342e−6 and zero engine-applied FK residual. Every case preserves
+Setup/pending state and repeats exactly across three evaluations, without Setup
+substitution. Inactive slot data is compared without exclusions. The inactive
+runtime world caches are uncomputed; their activity/local values and all-engine
+FK consistency are checked separately. This is observed metadata/frame/active-
+world acceptance, not artwork vertices, UV, raster or event-output acceptance.
+Source hashes remain unchanged; the private report SHA256 is
+`41fe617e1edf08fcea59f52f266f01a3dd13df3b46923e732489503a2805e4fd`.
+
+Separate original source-only cases expose redundant named-skin Slider membership
+after the constraint's skin-required flag is off. The consumer accepts those
+lists without restricting nonrequired Slider activity. The narrow native
+validation fix retains that metadata through serialization while keeping unknown,
+duplicate, unflagged non-Slider/bone and default-skin references strict. Its
+focused adapter regression and affected 101-case/21-case matrix reruns pass.
+This does not broaden the other constraint types' skin-membership policy.
+
+Further controlled studies compare 72 source cases with 3 explicit Loop precision
+refusals; source Mix/order 6/6 each, original bone 34/34, nested 3/3 and driven
+Time/Mix 12/12 each. The manual adversarial set has 11 comparisons and **2 raw
+1e30 f32 precision mismatches**, retained as failures rather than passes/refusals.
+Sequence wide/integer sets compare 11/15 and 8/16, with respectively 4 and 8
+explicit counter refusals. Tolerance remains 0.001; refusals are not runtime passes.
+
+The original public Slider Lab is recreated from a blank project and one PNG
+through 84 actual MCP requests with 14 retained poses. Canonical SHA256 is
+`f097c00c4542d46b7e2ee846d72d74606c9a6e5fad9bf41ccc1dcdc277a60dc6`.
+Native manual Frame/Mix, pending Save, independent keying/K, history, Auto Key
+flush, beyond-end 120, signed Mix, Setup Loop/Additive, draft Save, held Escape/
+focus loss and Graph numeric/clipboard operations pass, including 1120×740 input.
+Native edits restore that MCP canonical document; independent native creation is
+not established. External geometry covers 104 poses, maximum world error
+1.838038693335875e−5 and 1,664 region values with maximum error
+2.288818359375e−5 at unchanged 0.001 tolerance.
+
+Installed 4.3.26 interchange also compares 104 returned poses: 3,744 world and
+1,664 region values have maximum error 1.52587890625e−5, with 1,664 UV values
+exact and 832 color/104 order checks. The retained strict authored report fails:
+native output orders Mix before Time and recanonicalizes Beziers. One inserted
+Time value changes from 0.61266667 to 0.6126666, with normalized handle drift
+about 6.3e−7. All ten non-animation sections remain exact after reimport. This
+establishes bounded lossy Editor compatibility at unchanged tolerance, not exact
+authored interchange. The failed strict report and semantic analysis are retained;
+the adapter and tolerances are not weakened to hide those changes.
+
+Final `actual-mcp-02` repeats 84 requests and the same canonical project hash.
+Native build `47ca392adf56a9881bf54b845656fcc01af390aa7e52fff88b87d2038a12bde8`
+freshly opens the public lab with one image, empty history and Graph handles.
+Actual playback reaches 0.224702 seconds, then stops/resets to zero. Document/hash
+stay unchanged and the owned window closes. The final skin-aware build and
+170/177/101/21-case reruns pass; engine Slider checks total 39. Formatting,
+all-target Clippy, workspace build and architecture checks pass.
+
+The bounded manual editing/MCP checkpoint is verified. Full Slider parity remains
+open, including source/creation transitions, referenced Physics/events, remaining
+Deform/attachment domains, strict authored interchange loss and the two raw 1e30
+precision failures. See [the bounded contract](slices/slider-constraints.md),
+[review gallery](evidence/slider-constraints.html) and
+[scalar evidence](evidence/slider-constraints.json).
+Licensed native captures/logs and complete local hashes stay in the existing
+private Slider task; no account identifiers or private asset paths are published.

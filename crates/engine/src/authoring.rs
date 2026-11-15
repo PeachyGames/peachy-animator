@@ -1,7 +1,7 @@
 //! Transient animation poses. These values never belong to a saved/exported document.
 use crate::{
-    AuthoredPose, Command, EditTarget, SlotPoseEdit, SlotProperty, apply_command, ik_keyframe_at,
-    local_pose, sample_authored_pose,
+    AuthoredPose, Command, EditTarget, SliderPoseEdit, SlotPoseEdit, SlotProperty, apply_command,
+    ik_keyframe_at, local_pose, sample_authored_pose,
 };
 use peachy_document::*;
 use serde::{Deserialize, Serialize};
@@ -13,6 +13,7 @@ pub struct PoseEdits {
     // A sequence rather than a map keeps diagnostics valid JSON (tuple map keys are not strings).
     values: Vec<PoseValue>,
     ik_values: Vec<IkPoseValue>,
+    slider_values: Vec<SliderPoseValue>,
     deform_values: Vec<DeformPoseValue>,
     slot_attachments: Vec<SlotAttachmentPoseValue>,
     slot_colors: Vec<SlotColorPoseValue>,
@@ -57,6 +58,11 @@ impl IkPoseEdit {
 struct IkPoseValue {
     constraint: usize,
     edit: IkPoseEdit,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Serialize)]
+struct SliderPoseValue {
+    constraint: usize,
+    edit: SliderPoseEdit,
 }
 
 pub(crate) fn validate_ik_edits(edits: &[IkPoseEdit]) -> Result<(), String> {
@@ -109,9 +115,116 @@ pub fn transform_group(properties: &[Property]) -> Vec<Property> {
 }
 
 impl PoseEdits {
+    /// Independent Time/Mix key state, including an unkeyed authored override.
+    pub fn slider_key_state(
+        &self,
+        doc: &Document,
+        animation: usize,
+        time: f32,
+        constraint: usize,
+        property: SliderProperty,
+    ) -> Result<KeyState, String> {
+        let key = crate::slider_key_time(doc, animation, time, constraint, property)?;
+        Ok(if self.has_slider(animation, constraint, property) {
+            KeyState::Edited
+        } else if key.is_some() {
+            KeyState::Keyed
+        } else {
+            KeyState::Absent
+        })
+    }
+    pub fn has_slider(
+        &self,
+        animation: usize,
+        constraint: usize,
+        property: SliderProperty,
+    ) -> bool {
+        self.animation == Some(animation)
+            && self
+                .slider_values
+                .iter()
+                .any(|value| value.constraint == constraint && value.edit.property() == property)
+    }
+    pub(crate) fn edit_slider(
+        &self,
+        doc: &Document,
+        animation: usize,
+        time: f32,
+        constraint: usize,
+        edits: &[SliderPoseEdit],
+        skin: &str,
+    ) -> Result<Self, String> {
+        crate::slider_authoring::validate_edits(edits)?;
+        if doc
+            .constraints
+            .get(constraint)
+            .and_then(Constraint::as_slider)
+            .is_none()
+        {
+            return Err("Unknown Slider constraint".into());
+        }
+        let sampled = crate::sample_authored_pose_with_skin(doc, Some(animation), time, skin)?;
+        let base = sampled
+            .slider_poses()
+            .get(constraint)
+            .ok_or("Unknown Slider constraint")?;
+        if edits.is_empty() {
+            return Ok(self.clone());
+        }
+        let mut next = if self.animation == Some(animation) {
+            self.clone()
+        } else {
+            Self::default()
+        };
+        for &edit in edits {
+            next.slider_values.retain(|value| {
+                value.constraint != constraint || value.edit.property() != edit.property()
+            });
+            if f64::from(edit.value()) != base.value(edit.property()) {
+                next.slider_values
+                    .push(SliderPoseValue { constraint, edit });
+            }
+        }
+        next.slider_values
+            .sort_by_key(|value| (value.constraint, value.edit.property()));
+        next.animation = if next.is_empty() {
+            None
+        } else {
+            Some(animation)
+        };
+        Ok(next)
+    }
+    pub(crate) fn remove_slider(
+        &mut self,
+        animation: usize,
+        constraint: usize,
+        properties: &[SliderProperty],
+    ) {
+        if self.animation == Some(animation) {
+            self.slider_values.retain(|value| {
+                value.constraint != constraint || !properties.contains(&value.edit.property())
+            });
+            if self.is_empty() {
+                self.animation = None;
+            }
+        }
+    }
+    pub(crate) fn slider_targets(&self, animation: usize) -> BTreeMap<usize, Vec<SliderProperty>> {
+        let mut targets: BTreeMap<usize, Vec<SliderProperty>> = BTreeMap::new();
+        if self.animation == Some(animation) {
+            for value in &self.slider_values {
+                targets
+                    .entry(value.constraint)
+                    .or_default()
+                    .push(value.edit.property());
+            }
+        }
+        targets
+    }
     pub fn is_empty(&self) -> bool {
         self.values.is_empty()
             && self.ik_values.is_empty()
+            && self.slider_values.is_empty()
             && self.deform_values.is_empty()
             && self.slot_attachments.is_empty()
             && self.slot_colors.is_empty()
@@ -203,9 +316,10 @@ impl PoseEdits {
         time: f32,
         slot: usize,
         edits: &[SlotPoseEdit],
+        skin: &str,
     ) -> Result<Self, String> {
         crate::slot_authoring::validate_edits(doc, slot, edits)?;
-        let sampled = sample_authored_pose(doc, Some(animation), time)?;
+        let sampled = crate::sample_authored_pose_with_skin(doc, Some(animation), time, skin)?;
         let base = crate::SlotPose::from_authored(&sampled, slot)?;
         let mut next = if self.animation == Some(animation) {
             self.clone()
@@ -322,9 +436,10 @@ impl PoseEdits {
         time: f32,
         attachment: &AttachmentRef,
         offsets: Vec<f32>,
+        skin: &str,
     ) -> Result<Self, String> {
         let canonical = crate::deform_authoring::validate_offsets(doc, attachment, &offsets)?;
-        let sampled = sample_authored_pose(doc, Some(animation), time)?;
+        let sampled = crate::sample_authored_pose_with_skin(doc, Some(animation), time, skin)?;
         let base = crate::deform_authoring::offsets(doc, &sampled, &canonical)?;
         let mut next = if self.animation == Some(animation) {
             self.clone()
@@ -417,6 +532,17 @@ impl PoseEdits {
                 &[SlotPoseEdit::Color { color: value.color }],
             )?;
         }
+        for value in &next.slider_values {
+            if after
+                .constraints
+                .get(value.constraint)
+                .and_then(Constraint::as_slider)
+                .is_none()
+            {
+                return Err("Pending Slider constraint is missing or changed kind".into());
+            }
+            crate::slider_authoring::validate_edits(&[value.edit])?;
+        }
         next.sort_deforms();
         Ok(next)
     }
@@ -457,13 +583,14 @@ impl PoseEdits {
             KeyState::Absent
         })
     }
-    pub(crate) fn authored(
+    pub(crate) fn authored_with_skin(
         &self,
         doc: &Document,
         animation: Option<usize>,
         time: f32,
+        skin: &str,
     ) -> Result<AuthoredPose, String> {
-        let mut pose = sample_authored_pose(doc, animation, time)?;
+        let mut pose = crate::sample_authored_pose_with_skin(doc, animation, time, skin)?;
         if animation.is_some() && self.animation == animation {
             if let Some(order) = &self.draw_order {
                 crate::draw_order_authoring::validate_order(doc.slots.len(), order)?;
@@ -484,6 +611,16 @@ impl PoseEdits {
                 match value.edit {
                     IkPoseEdit::Mix { value } => ik.mix = f64::from(value),
                     IkPoseEdit::BendPositive { value } => ik.bend_positive = value,
+                }
+            }
+            for value in &self.slider_values {
+                let slider = pose
+                    .sliders
+                    .get_mut(value.constraint)
+                    .ok_or("Unknown pending Slider constraint")?;
+                match value.edit {
+                    SliderPoseEdit::Time { value } => slider.time = f64::from(value),
+                    SliderPoseEdit::Mix { value } => slider.mix = f64::from(value),
                 }
             }
             for value in &self.slot_attachments {

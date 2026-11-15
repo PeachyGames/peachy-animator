@@ -84,8 +84,10 @@ raw-derived SourceMax is undefined at zero scale. Never invent or normalize it
 on query/focus. Equal endpoint edits repair Max to Min+100 in the measured scope;
 reversed endpoints stay reversed. See docs/slices/transform-mapping-authoring.md.
 
-Native v12 adds `Document.skin_scope`. Evaluate through `AuthoredPose::with_skin`
-(Session holds the active skin as view state; the shell syncs it every frame).
+Native v12 adds `Document.skin_scope`. Sample with
+`sample_authored_pose_with_skin` before overlaying pending edits (Session holds
+the active skin as view state; the shell syncs it every frame). `with_skin`
+sets capsule context/activity only; it cannot undo already sampled host keys.
 Inactive constraints never run; inactive bones' slots are not drawn.
 
 Native v13 adds `Animation.deform_tracks` with dense offsets (per vertex, or per
@@ -95,6 +97,17 @@ via `deformed_mesh_world_vertices`. Keep slot renames updating deform refs.
 Native v22 adds `SequenceDef` (regions/meshes), `Animation.sequence_tracks` and
 `Slot.blend`. Draws carry the frame image and blend; `Document::image_paths`
 lists every frame.
+
+Native v23 adds strict Slider constraints and required `Animation.slider_tracks`.
+The v22 decoder inserts empty lists in memory; keep historical public fixtures'
+bytes unchanged. Slider Time/Mix authoring shares Session pending/history,
+typed timeline/curve operations and MCP (58 commands /14 tools). One ordered
+`AppliedState` holds effective bones, inheritance, constraints and slot domains;
+consume its checked `EvaluatedPose` for geometry without a second solve. Host
+tracks skip inactive slots/Sliders before pending overlays. Derived Time never
+replaces authored query values. Creation/source switching remain gated; raw
+append-only commands do not imply native prepend/remapping semantics. See
+`docs/slices/slider-constraints.md` for calibrated domains and precision refusals.
 
 Native v21 adds `IkConstraint.stretch`. IK bones may have equal-magnitude
 scale (mirrored first bone allowed); see docs/slices/ik-scale-stretch.md for the

@@ -24,6 +24,34 @@ pub enum Command {
         constraint: usize,
         value: TransformConstraint,
     },
+    AddSliderConstraint {
+        constraint: SliderConstraint,
+    },
+    SetSliderConstraint {
+        constraint: usize,
+        value: SliderConstraint,
+    },
+    SetSliderKey {
+        animation: usize,
+        constraint: usize,
+        property: SliderProperty,
+        key: Keyframe,
+    },
+    /// Semantic key insertion: preserve an existing curve or split its interval.
+    InsertSliderKey {
+        animation: usize,
+        constraint: usize,
+        property: SliderProperty,
+        time: f32,
+        value: f32,
+    },
+    SetSliderCurve {
+        animation: usize,
+        constraint: usize,
+        property: SliderProperty,
+        time: f32,
+        curve: Curve,
+    },
     EditTransformMappingRange {
         constraint: usize,
         from: TransformProperty,
@@ -552,6 +580,78 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
             )?;
         }
         Command::AddIkConstraint { constraint } => doc.constraints.push(Constraint::Ik(constraint)),
+        Command::AddSliderConstraint { constraint } => {
+            doc.constraints.push(Constraint::Slider(constraint))
+        }
+        Command::SetSliderConstraint { constraint, value } => {
+            let Some(slot @ Constraint::Slider(_)) = doc.constraints.get_mut(constraint) else {
+                return Err("Unknown Slider constraint".into());
+            };
+            *slot = Constraint::Slider(value);
+        }
+        Command::SetSliderKey {
+            animation,
+            constraint,
+            property,
+            key,
+        } => {
+            if doc
+                .constraints
+                .get(constraint)
+                .and_then(Constraint::as_slider)
+                .is_none()
+            {
+                return Err("Unknown Slider constraint".into());
+            }
+            crate::slider_authoring::validate_key(key)?;
+            let clip = doc
+                .animations
+                .get_mut(animation)
+                .ok_or("Unknown animation")?;
+            crate::slider_authoring::insert_key(clip, constraint, property, key);
+        }
+        Command::InsertSliderKey {
+            animation,
+            constraint,
+            property,
+            time,
+            value,
+        } => {
+            crate::slider_authoring::insert_pose(
+                doc, animation, constraint, property, time, value,
+            )?;
+        }
+        Command::SetSliderCurve {
+            animation,
+            constraint,
+            property,
+            time,
+            curve,
+        } => {
+            if !time.is_finite() || time < 0. || !curve.handles_valid() {
+                return Err(
+                    "Slider curve needs a nonnegative finite host time and finite handles".into(),
+                );
+            }
+            if doc
+                .constraints
+                .get(constraint)
+                .and_then(Constraint::as_slider)
+                .is_none()
+            {
+                return Err("Unknown Slider constraint".into());
+            }
+            let key = doc
+                .animations
+                .get_mut(animation)
+                .ok_or("Unknown animation")?
+                .slider_tracks
+                .iter_mut()
+                .find(|track| track.constraint == constraint && track.property == property)
+                .and_then(|track| track.keys.iter_mut().find(|key| key.time == time))
+                .ok_or("Unknown exact Slider key")?;
+            key.curve = curve;
+        }
         Command::SetIkConstraint { constraint, value } => {
             let Some(slot @ Constraint::Ik(_)) = doc.constraints.get_mut(constraint) else {
                 return Err("Unknown IK constraint".into());

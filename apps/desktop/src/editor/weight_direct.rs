@@ -429,6 +429,7 @@ impl Editor {
         self.settle_ik_edit(ctx);
         self.settle_transform_edit(ctx);
         self.settle_constraint_input(ctx);
+        self.settle_slider_input(ctx);
         if !ctx.input(|input| input.pointer.any_down())
             && self
                 .weight_edit
@@ -438,6 +439,7 @@ impl Editor {
             self.finish_weight_edit();
         }
         if self.weight_edit.is_none()
+            && !self.slider_edit_active()
             && !self.constraint_edit_active()
             && !self.graph_edit_active()
             && !self.draw_order_edit_active()

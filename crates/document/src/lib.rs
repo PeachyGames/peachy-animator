@@ -14,6 +14,7 @@ mod sequence;
 #[cfg(test)]
 mod sequence_tests;
 mod skin_scope;
+mod slider;
 mod slot_keys;
 mod transform;
 pub use clipping::Clipping;
@@ -33,12 +34,13 @@ pub use physics::{
 };
 pub use sequence::{BlendMode, SequenceDef, SequenceKey, SequenceMode, SequenceTrack};
 pub use skin_scope::{Activity, SkinMembers, SkinScope};
+pub use slider::{SliderConstraint, SliderProperty, SliderSetup, SliderTrack};
 pub use slot_keys::{AttachmentKey, AttachmentTrack, ColorKey, ColorTrack};
 pub use transform::{
     TransformConstraint, TransformMapping, TransformProperty, TransformTarget, TransformValues,
 };
 
-pub const FORMAT_VERSION: u32 = 22;
+pub const FORMAT_VERSION: u32 = 23;
 pub const KEY_TIME_EPSILON: f32 = 0.00001;
 pub fn same_key_time(a: f32, b: f32) -> bool {
     (a - b).abs() < KEY_TIME_EPSILON
@@ -479,6 +481,8 @@ pub struct Animation {
     pub path_tracks: Vec<PathTrack>,
     /// Keyed image sequence frames. Required in native v22.
     pub sequence_tracks: Vec<SequenceTrack>,
+    /// Independent referenced-time and Mix tracks. Required in native v23.
+    pub slider_tracks: Vec<SliderTrack>,
 }
 
 impl Animation {
@@ -497,6 +501,7 @@ impl Animation {
             draw_order: vec![],
             path_tracks: vec![],
             sequence_tracks: vec![],
+            slider_tracks: vec![],
         }
     }
     /// The highest authored key time across validated, ordered timelines, or zero.
@@ -545,6 +550,11 @@ impl Animation {
             )
             .chain(
                 self.sequence_tracks
+                    .iter()
+                    .filter_map(|track| track.keys.last().map(|key| key.time)),
+            )
+            .chain(
+                self.slider_tracks
                     .iter()
                     .filter_map(|track| track.keys.last().map(|key| key.time)),
             )
@@ -602,10 +612,19 @@ impl Animation {
                     .iter()
                     .flat_map(|track| track.keys.iter().map(|key| key.time)),
             )
+            .chain(
+                self.slider_tracks
+                    .iter()
+                    .flat_map(|track| track.keys.iter().map(|key| key.time)),
+            )
     }
     /// Whether any timeline other than bone transforms has keys.
     pub fn has_constraint_keys(&self) -> bool {
         self.ik_tracks.iter().any(|track| !track.keys.is_empty())
+            || self
+                .slider_tracks
+                .iter()
+                .any(|track| !track.keys.is_empty())
             || self.physics.iter().any(|track| !track.keys.is_empty())
             || self
                 .physics_resets
@@ -942,6 +961,7 @@ impl Document {
                 }
             }
         }
+        self.validate_sliders()?;
         self.validate_skin_scope()?;
         self.validate_events()?;
         self.validate_linked_meshes()?;

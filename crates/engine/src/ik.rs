@@ -5,12 +5,26 @@ use peachy_document::{
     finite_transform,
 };
 
+#[cfg(test)]
+thread_local! {
+    static CHECKED_POSE_CALLS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+#[cfg(test)]
+pub(crate) fn checked_pose_calls() -> usize {
+    CHECKED_POSE_CALLS.with(std::cell::Cell::get)
+}
+
 #[derive(Clone, Debug)]
 pub struct EvaluatedPose {
     pub(crate) authored_locals: Vec<Transform>,
     pub(crate) applied_locals: Vec<Transform>,
     pub(crate) world: Vec<Affine>,
     pub(crate) authored_ik: Vec<IkPose>,
+    pub(crate) applied_ik: Vec<IkPose>,
+    pub(crate) inherits: Vec<Inherit>,
+    pub(crate) paths: Vec<crate::PathPose>,
+    pub(crate) authored_sliders: Vec<crate::SliderPose>,
+    pub(crate) applied_sliders: Vec<crate::SliderPose>,
     /// Bones active under the evaluated skin (skin-required bones may be off).
     pub(crate) active_bones: Vec<bool>,
     pub(crate) deforms: Vec<(AttachmentRef, Vec<f32>)>,
@@ -18,6 +32,126 @@ pub struct EvaluatedPose {
     pub(crate) slot_colors: Vec<[f32; 4]>,
     pub(crate) draw_order: Vec<usize>,
     pub(crate) sequence_frames: Vec<(peachy_document::AttachmentRef, u32)>,
+    pub(crate) skin: String,
+}
+
+/// One mutable application state for the ordered constraint pass. It starts
+/// from the authored capsule once, never from a recursively evaluated clip.
+pub(crate) struct AppliedState {
+    pub locals: Vec<Transform>,
+    pub inherits: Vec<Inherit>,
+    pub ik: Vec<IkPose>,
+    pub sliders: Vec<crate::SliderPose>,
+    pub paths: Vec<crate::PathPose>,
+    pub active: Activity,
+    pub deforms: Vec<(AttachmentRef, Vec<f32>)>,
+    pub slot_attachments: Vec<Option<String>>,
+    pub slot_colors: Vec<[f32; 4]>,
+    pub draw_order: Vec<usize>,
+    pub sequence_frames: Vec<(AttachmentRef, u32)>,
+    pub skin: String,
+}
+
+impl AppliedState {
+    fn from_authored(authored: &AuthoredPose) -> Self {
+        Self {
+            locals: authored.locals.clone(),
+            inherits: authored.inherits.clone(),
+            ik: authored.ik.clone(),
+            sliders: authored.sliders.clone(),
+            paths: authored.paths.clone(),
+            active: authored.active.clone(),
+            deforms: authored.deforms.clone(),
+            slot_attachments: authored.slot_attachments.clone(),
+            slot_colors: authored.slot_colors.clone(),
+            draw_order: authored.draw_order.clone(),
+            sequence_frames: authored.sequence_frames.clone(),
+            skin: authored.skin.clone(),
+        }
+    }
+    fn validate_domains(&self, doc: &Document) -> Result<(), String> {
+        if self.locals.len() != doc.bones.len()
+            || self.inherits.len() != doc.bones.len()
+            || self.locals.iter().any(|local| !finite_transform(*local))
+            || self.ik.len() != doc.constraints.len()
+            || self.ik.iter().any(|pose| !pose.mix.is_finite())
+            || self.sliders.len() != doc.constraints.len()
+            || self
+                .sliders
+                .iter()
+                .any(|pose| !pose.time.is_finite() || !pose.mix.is_finite())
+        {
+            return Err(
+                "Applied bone and constraint state must match the document and remain finite"
+                    .into(),
+            );
+        }
+        if self.paths.len() != doc.constraints.len()
+            || self
+                .paths
+                .iter()
+                .any(|path| !path.position.is_finite() || !path.spacing.is_finite())
+        {
+            return Err("Evaluation needs finite path settings for every constraint".into());
+        }
+        validate_slot_domains(
+            doc,
+            &self.slot_attachments,
+            &self.slot_colors,
+            &self.draw_order,
+        )?;
+        validate_attachment_domains(doc, &self.deforms, &self.sequence_frames)
+    }
+}
+
+fn validate_slot_domains(
+    doc: &Document,
+    attachments: &[Option<String>],
+    colors: &[[f32; 4]],
+    order: &[usize],
+) -> Result<(), String> {
+    if attachments.len() != doc.slots.len()
+        || colors.len() != doc.slots.len()
+        || attachments
+            .iter()
+            .flatten()
+            .any(|name| name.trim().is_empty())
+        || colors.iter().flatten().any(|value| !value.is_finite())
+    {
+        return Err(
+            "Evaluation needs finite slot colors and valid attachment state for every slot".into(),
+        );
+    }
+    crate::draw_order_authoring::validate_order(doc.slots.len(), order)
+}
+
+fn validate_attachment_domains(
+    doc: &Document,
+    deforms: &[(AttachmentRef, Vec<f32>)],
+    frames: &[(AttachmentRef, u32)],
+) -> Result<(), String> {
+    for (key, offsets) in deforms {
+        let vertices = doc
+            .attachment(key)
+            .and_then(peachy_document::Attachment::vertices)
+            .ok_or("Evaluated deform target is missing or not deformable")?;
+        if offsets.len() != vertices.deform_len() || offsets.iter().any(|value| !value.is_finite())
+        {
+            return Err(
+                "Evaluated deform offsets must match their target layout and remain finite".into(),
+            );
+        }
+    }
+    for (key, frame) in frames {
+        let sequence = doc
+            .attachment(key)
+            .and_then(peachy_document::Attachment::sequence)
+            .ok_or("Evaluated sequence target is missing or not sequenced")?;
+        if *frame >= sequence.count {
+            return Err("Evaluated sequence frame is outside its attachment's frame range".into());
+        }
+    }
+    Ok(())
 }
 
 /// Complete authored state. Bone-only input cannot silently select setup IK.
@@ -25,6 +159,8 @@ pub struct EvaluatedPose {
 pub struct AuthoredPose {
     pub(crate) locals: Vec<Transform>,
     pub(crate) ik: Vec<IkPose>,
+    /// Manual/host-keyed authored settings; never overwritten with bone-derived time.
+    pub(crate) sliders: Vec<crate::SliderPose>,
     /// Setup or keyed (stepped) inheritance mode per bone.
     pub(crate) inherits: Vec<Inherit>,
     /// Bones and constraints active under the evaluated skin.
@@ -52,8 +188,9 @@ impl AuthoredPose {
     pub fn inherits(&self) -> &[Inherit] {
         &self.inherits
     }
-    /// Evaluate skin-required bones and constraints for `skin` (the default
-    /// skin, or an unknown name, activates none of them).
+    /// Set activity/context only. This never resamples host tracks or drops
+    /// explicit overrides. Use `sample_authored_pose_with_skin` when sampling
+    /// an animation for a selected skin before applying pending edits.
     pub fn with_skin(mut self, doc: &Document, skin: &str) -> Self {
         self.active = doc.activity(skin);
         self.skin = skin.to_owned();
@@ -64,6 +201,9 @@ impl AuthoredPose {
     }
     pub fn ik_poses(&self) -> &[IkPose] {
         &self.ik
+    }
+    pub fn slider_poses(&self) -> &[crate::SliderPose] {
+        &self.sliders
     }
     pub fn slot_attachments(&self) -> &[Option<String>] {
         &self.slot_attachments
@@ -91,6 +231,74 @@ impl EvaluatedPose {
     pub fn ik_poses(&self) -> &[IkPose] {
         &self.authored_ik
     }
+    pub fn applied_ik_poses(&self) -> &[IkPose] {
+        &self.applied_ik
+    }
+    /// Effective modes used by this pose's FK, captured with its applied locals.
+    pub fn inherits(&self) -> &[Inherit] {
+        &self.inherits
+    }
+    pub fn path_poses(&self) -> &[crate::PathPose] {
+        &self.paths
+    }
+    pub fn slot_attachments(&self) -> &[Option<String>] {
+        &self.slot_attachments
+    }
+    /// Effective unmultiplied float color, including hidden/empty slots.
+    pub fn slot_colors(&self) -> &[[f32; 4]] {
+        &self.slot_colors
+    }
+    pub fn deforms(&self) -> &[(AttachmentRef, Vec<f32>)] {
+        &self.deforms
+    }
+    pub fn sequence_frames(&self) -> &[(AttachmentRef, u32)] {
+        &self.sequence_frames
+    }
+    pub fn skin(&self) -> &str {
+        &self.skin
+    }
+    pub(crate) fn check_scene_context(&self, doc: &Document, skin: &str) -> Result<(), String> {
+        if self.skin != skin {
+            return Err("Scene skin must match the already evaluated pose".into());
+        }
+        if self.world.len() != doc.bones.len()
+            || self.applied_locals.len() != doc.bones.len()
+            || self.authored_locals.len() != doc.bones.len()
+            || self.inherits.len() != doc.bones.len()
+            || self.active_bones.len() != doc.bones.len()
+            || self.applied_ik.len() != doc.constraints.len()
+            || self.authored_ik.len() != doc.constraints.len()
+            || self.paths.len() != doc.constraints.len()
+            || self.authored_sliders.len() != doc.constraints.len()
+            || self.applied_sliders.len() != doc.constraints.len()
+        {
+            return Err(
+                "Scene bone/constraint layout must match the already evaluated pose".into(),
+            );
+        }
+        if self
+            .applied_locals
+            .iter()
+            .chain(&self.authored_locals)
+            .any(|local| !finite_transform(*local))
+        {
+            return Err("Scene local transforms must remain finite".into());
+        }
+        check_world(doc, &self.world)?;
+        validate_slot_domains(
+            doc,
+            &self.slot_attachments,
+            &self.slot_colors,
+            &self.draw_order,
+        )?;
+        validate_attachment_domains(doc, &self.deforms, &self.sequence_frames)
+    }
+    pub fn authored_slider_poses(&self) -> &[crate::SliderPose] {
+        &self.authored_sliders
+    }
+    pub fn applied_slider_poses(&self) -> &[crate::SliderPose] {
+        &self.applied_sliders
+    }
     pub fn active_bones(&self) -> &[bool] {
         &self.active_bones
     }
@@ -105,12 +313,32 @@ pub fn sample_authored_pose(
     animation: Option<usize>,
     time: f32,
 ) -> Result<AuthoredPose, String> {
+    sample_authored_pose_with_skin(doc, animation, time, "default")
+}
+
+/// Sample the host in its skin context before any explicit pending overrides.
+/// Inactive slots retain Setup attachment/color and receive no host Deform or
+/// sequence keys. Bone/constraint sampling keeps its established f32 behavior.
+pub fn sample_authored_pose_with_skin(
+    doc: &Document,
+    animation: Option<usize>,
+    time: f32,
+    skin: &str,
+) -> Result<AuthoredPose, String> {
     if !time.is_finite() || time < 0.0 {
         return Err("Pose time must be finite and nonnegative".into());
     }
     let clip = animation
         .map(|index| doc.animations.get(index).ok_or("Unknown animation"))
         .transpose()?;
+    let active = doc.activity(skin);
+    let slot_active = |slot: usize| active.bones[doc.slots[slot].bone];
+    let attachment_active = |key: &AttachmentRef| {
+        doc.slots
+            .iter()
+            .position(|slot| slot.name == key.slot)
+            .is_some_and(slot_active)
+    };
     let ik = doc
         .constraints
         .iter()
@@ -130,13 +358,17 @@ pub fn sample_authored_pose(
     Ok(AuthoredPose {
         locals: local_pose(doc, animation, time),
         ik,
+        sliders: crate::slider_authoring::sample_poses(doc, animation, time, &active)?,
         inherits: inherit_pose(doc, animation, time),
-        active: doc.activity("default"),
+        active: active.clone(),
         deforms: clip
             .map(|clip| {
                 clip.deform_tracks
                     .iter()
                     .filter_map(|track| {
+                        if !attachment_active(&track.attachment) {
+                            return None;
+                        }
                         Some((track.attachment.clone(), sample_deform(track, time)?))
                     })
                     .collect()
@@ -147,6 +379,9 @@ pub fn sample_authored_pose(
             .iter()
             .enumerate()
             .map(|(index, slot)| {
+                if !slot_active(index) {
+                    return slot.attachment.clone();
+                }
                 clip.and_then(|clip| clip.attachment_tracks.iter().find(|t| t.slot == index))
                     .and_then(|track| track.sample(time))
                     .map_or_else(|| slot.attachment.clone(), |keyed| keyed.map(str::to_owned))
@@ -157,6 +392,9 @@ pub fn sample_authored_pose(
             .iter()
             .enumerate()
             .map(|(index, slot)| {
+                if !slot_active(index) {
+                    return slot.color.map(|byte| f32::from(byte) / 255.);
+                }
                 clip.and_then(|clip| clip.color_tracks.iter().find(|t| t.slot == index))
                     .and_then(|track| sample_color(track, time))
                     .unwrap_or_else(|| slot.color.map(|byte| f32::from(byte) / 255.))
@@ -188,7 +426,7 @@ pub fn sample_authored_pose(
                 }
             })
             .collect(),
-        skin: "default".into(),
+        skin: skin.to_owned(),
         // Like the runtime's non-looping playback, clip time stops at the clip's
         // end: held poses past the end keep the last sequence frame.
         sequence_frames: clip
@@ -197,11 +435,28 @@ pub fn sample_authored_pose(
                 clip.sequence_tracks
                     .iter()
                     .filter_map(|track| {
+                        if !attachment_active(&track.attachment) {
+                            return None;
+                        }
                         let count = doc.attachment(&track.attachment)?.sequence()?.count;
-                        Some((track.attachment.clone(), track.sample(time, count)?))
+                        let key = track.keys.iter().rfind(|key| key.time <= time)?;
+                        Some(
+                            key.frame_at_time_checked(f64::from(time), count)
+                                .map(|frame| (track.attachment.clone(), frame))
+                                .map_err(|error| {
+                                    format!(
+                                        "Animation {}: sequence {}/{}/{}: {error}",
+                                        clip.name,
+                                        track.attachment.skin,
+                                        track.attachment.slot,
+                                        track.attachment.placeholder
+                                    )
+                                }),
+                        )
                     })
-                    .collect()
+                    .collect::<Result<Vec<_>, String>>()
             })
+            .transpose()?
             .unwrap_or_default(),
     })
 }
@@ -211,6 +466,8 @@ pub fn checked_pose_from_authored(
     doc: &Document,
     authored: &AuthoredPose,
 ) -> Result<EvaluatedPose, String> {
+    #[cfg(test)]
+    CHECKED_POSE_CALLS.with(|count| count.set(count.get() + 1));
     let authored_locals = &authored.locals;
     if authored_locals.len() != doc.bones.len() {
         return Err("Evaluation needs one local transform per bone".into());
@@ -236,6 +493,14 @@ pub fn checked_pose_from_authored(
     {
         return Err("Evaluation needs finite authored IK settings for every constraint".into());
     }
+    if authored.sliders.len() != doc.constraints.len()
+        || authored
+            .sliders
+            .iter()
+            .any(|pose| !pose.time.is_finite() || !pose.mix.is_finite())
+    {
+        return Err("Evaluation needs finite authored Slider settings for every constraint".into());
+    }
     for (bone, local) in doc.bones.iter().zip(authored_locals) {
         if !finite_transform(*local) {
             return Err(format!(
@@ -244,41 +509,38 @@ pub fn checked_pose_from_authored(
             ));
         }
     }
-    let mut applied_locals = authored_locals.clone();
+    let mut applied = AppliedState::from_authored(authored);
+    applied.validate_domains(doc)?;
     // Physics constraints are validated authored data. This slice deliberately
     // has no editor simulation: they leave the evaluated pose unchanged, matching
     // the external runtime with physics disabled. See docs/slices/physics-data.md.
     for constraint in &doc.constraints {
         constraint.validate(&doc.bones)?;
     }
-    let mut world = world_pose_with(doc, &applied_locals, &authored.inherits);
-    check_inherit_domain(doc, &world, &applied_locals, &authored.inherits)?;
+    let mut world = world_pose_with(doc, &applied.locals, &applied.inherits);
+    check_inherit_domain(doc, &world, &applied.locals, &applied.inherits)?;
     check_world(doc, &world)?;
-    crate::ik_solver::apply(
-        doc,
-        &authored.ik,
-        &mut applied_locals,
-        &mut world,
-        &authored.inherits,
-        &authored.active.constraints,
-        &crate::ik_solver::PathContext {
-            poses: &authored.paths,
-            slot_attachments: &authored.slot_attachments,
-            skin: &authored.skin,
-            deforms: &authored.deforms,
-        },
-    )?;
+    crate::ik_solver::apply(doc, &mut applied, &mut world)?;
+    applied.validate_domains(doc)?;
+    check_inherit_domain(doc, &world, &applied.locals, &applied.inherits)?;
+    check_world(doc, &world)?;
     Ok(EvaluatedPose {
         authored_locals: authored_locals.clone(),
-        applied_locals,
+        applied_locals: applied.locals,
         world,
         authored_ik: authored.ik.clone(),
-        active_bones: authored.active.bones.clone(),
-        deforms: authored.deforms.clone(),
-        slot_attachments: authored.slot_attachments.clone(),
-        slot_colors: authored.slot_colors.clone(),
-        draw_order: authored.draw_order.clone(),
-        sequence_frames: authored.sequence_frames.clone(),
+        applied_ik: applied.ik,
+        inherits: applied.inherits,
+        paths: applied.paths,
+        authored_sliders: authored.sliders.clone(),
+        applied_sliders: applied.sliders,
+        active_bones: applied.active.bones,
+        deforms: applied.deforms,
+        slot_attachments: applied.slot_attachments,
+        slot_colors: applied.slot_colors,
+        draw_order: applied.draw_order,
+        sequence_frames: applied.sequence_frames,
+        skin: applied.skin,
     })
 }
 

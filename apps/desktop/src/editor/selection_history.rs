@@ -53,7 +53,7 @@ impl SelectionHistory {
 mod tests {
     use super::*;
     fn doc() -> Document {
-        serde_json::from_str(include_str!(
+        peachy_io::decode_project(include_str!(
             "../../../../examples/peach-bot/mesh-bot.peachy"
         ))
         .unwrap()
@@ -120,7 +120,7 @@ mod rename_tests {
 
     #[test]
     fn slot_rename_prunes_old_attachment_identity_before_name_reuse() {
-        let before: Document = serde_json::from_str(include_str!(
+        let before: Document = peachy_io::decode_project(include_str!(
             "../../../../examples/peach-bot/mesh-bot.peachy"
         ))
         .unwrap();

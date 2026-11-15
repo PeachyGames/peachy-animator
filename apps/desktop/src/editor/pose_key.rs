@@ -4,6 +4,10 @@ use super::*;
 #[derive(Clone)]
 pub(super) enum PoseKeyAction {
     DrawOrder,
+    Slider {
+        constraint: usize,
+        properties: Vec<SliderProperty>,
+    },
     Transform {
         bone: usize,
         properties: Vec<Property>,
@@ -51,6 +55,7 @@ impl Editor {
             || self.deform_drag.is_some()
             || self.slot_color_edit_active()
             || self.draw_order_edit_active()
+            || self.slider_edit_active()
         {
             self.pose_key_request = Some(request);
         } else {
@@ -60,6 +65,15 @@ impl Editor {
 
     fn apply_pose_key(&mut self, request: PoseKeyRequest) {
         let result = match request.action {
+            PoseKeyAction::Slider {
+                constraint,
+                properties,
+            } => self.session.key_slider_pose(
+                request.animation,
+                request.time,
+                constraint,
+                &properties,
+            ),
             PoseKeyAction::DrawOrder => {
                 self.session.key_draw_order(request.animation, request.time)
             }
@@ -91,6 +105,7 @@ impl Editor {
                 self.seal_deform_for_key();
                 self.seal_slot_color_for_key();
                 self.seal_draw_order_for_key();
+                self.seal_slider_for_key();
                 self.session.commit_transaction();
                 self.status = "Keyed the current authored pose".into();
             }
@@ -98,6 +113,7 @@ impl Editor {
                 self.hold_transform_key_error(&error);
                 self.hold_ik_key_error(&error);
                 self.hold_slot_color_key_error(&error);
+                self.hold_slider_key_error(&error);
                 self.status = format!("Cannot key the current pose: {error}");
             }
         }
@@ -114,6 +130,7 @@ impl Editor {
             .transform_key_ready()
             .and_then(|()| self.ik_key_ready())
             .and_then(|()| self.slot_color_key_ready())
+            .and_then(|()| self.slider_key_ready())
         {
             self.status = format!("Cannot key the current pose: {error}");
             return;

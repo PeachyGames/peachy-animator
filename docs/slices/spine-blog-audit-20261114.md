@@ -5,6 +5,10 @@ Public sources were checked November 14 after the slot authoring commit
 global draw-order and November 15 multi-vertex Direct continuations below.
 The bounded November 15 world X-to-Rotate continuation also passes native/MCP/
 runtime/Editor acceptance; its remaining feature and resize limits stay explicit.
+The later Slider checkpoint adds native v23,58 commands/14 tools, manual
+authoring and ordered evaluation; actual native/MCP and sampled geometry checks
+pass within the [measured scope](slider-constraints.md). Creation/source workflow,
+precision failures and lossy authored interchange remain open.
 The November 15 update reconciles accepted local evidence without a new web
 fetch. This is a backlog and reference record, not a claim of full Spine parity.
 Installed-editor observations and native screenshots are recorded
@@ -185,7 +189,7 @@ been exhaustively observed.
 | 2: accepted bounded continuation | Global Animate draw-order editing | The Look around demo's global ordering now has shared pending/key/Reset/typed timeline and MCP authoring. Actual native input/fresh reopen, both authored runtime checks and installed 4.3.26 interchange pass; see [contract](draw-order-authoring.md) and [review](../evidence/draw-order-authoring.html). Per-folder keys, Setup reordering, compact property sizing and cross-layout mapping remain separate slices. |
 | 3: accepted weight foundation | Multiple selected vertices, one mesh/bone, Direct mode | Native selection, absolute/relative shared command, raw mixed/uniform MCP query, atomic history/pending guards and ordered sparse insertion now pass native/MCP/runtime/Editor acceptance. See [contract](weight-multivertex.md). Auto/Smooth, brushes, locks, Update, multiple bones, sparse Deform remapping, Pies/overlay and exact styling remain separate work. |
 | 4: accepted bounded continuation | One world-space cross-property transform mapping | X→Rotate evaluation, six-row Properties/Offset controls and shared semantic ranges pass native/MCP/runtime/installed-editor acceptance, including edge drag/cancel, minimum control access, zero-scale entry and fresh reopen/playback. Tree-pane resizing, other destinations, connection creation, local/additive and timelines remain separate; see [contract](transform-mapping-authoring.md). |
-| 5: larger new model | A manually driven slider constraint | Add explicit animation/frame/mix ownership, model validation, shared evaluation, adapter, creation/key controls and strict MCP commands. Detect self-reference/cycles and unsupported timeline domains. A copied pose or an ordinary slot fade is not slider evaluation. Bone-driven sliders extend this slice later. |
+| 5: bounded checkpoint verified | Slider authoring and ordered evaluation | Native v23 and shared manual Time/Mix controls, typed Graph/timelines, raw/semantic MCP commands and bounded manual/bone-driven evaluation now exist. Actual native editing,84-request blank-project MCP recreation and104 geometry samples pass; strict authored Editor equality fails from small curve changes. Creation prepend/remapping, source assignment/clear/ranges, Physics/events, remaining Deform/Sequence domains and precision failures remain. References write into one ordered state without recursive solves; cycles are not blanket-rejected. See [contract](slider-constraints.md) and [review](../evidence/slider-constraints.html). |
 
 The [4.1 release post, July 4, 2022](https://esotericsoftware.com/blog/Spine-4-1-released)
 is the primary description of the separate Curves view: relative transition
@@ -218,7 +222,7 @@ not complete this broader objective.
 | Public update area | Current gap and required native/MCP work |
 | --- | --- |
 | Dopesheet-centric synchronization and curve refinements | Shared scalar/Deform/slot selection and bounded Curves/Graph actions pass native/MCP/runtime acceptance. Stored preset library, default curve preferences, native grouping and uncalibrated/generalized handle adjustment remain. |
-| Sliders | No native model, evaluation, import/export or creation workflow; add shared commands and strict schemas with independently derived behavior. |
+| Sliders | Model/adapters, manual keying/Graph, bounded ordered evaluation and MCP recreation are verified. Native creation needs prepend/identity remapping; source assignment/clear/ranges and derived display need shared semantic APIs. Referenced Physics/events and remaining Deform/Sequence cases, extreme precision and lossless authored conversion remain open. See [contract](slider-constraints.md). |
 | Transform property mapping and local/world choices | One world X→Rotate writer now has accepted evaluation and shared native/MCP endpoint authoring. Tree/Properties resizing now passes bounded native checks; other cross-property destinations, general connection/source/target editing, Match, local/additive and Transform timelines are absent. See [bounded contract](transform-mapping-authoring.md). |
 | Multiple-mesh tracing and weight workflows | Explicit payload creation and bounded one-mesh/one-bone Direct selection/editing exist through shared native/MCP paths. Native topology generation, multiple-mesh/bone workflows, Auto/Smooth/brush/locks/Update, sparse Deform remapping and Pies/overlay remain. |
 | Draw order folder keys | Current keyed draw order is separate; folders need a model, adapter, evaluation and authoring surface. |

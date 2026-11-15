@@ -109,6 +109,7 @@ fn fixture() -> (Editor, egui::Context) {
         draw_order: vec![],
         path_tracks: vec![],
         sequence_tracks: vec![],
+        slider_tracks: vec![],
     });
     editor.session = Session::new(doc).unwrap();
     pending(&mut editor);

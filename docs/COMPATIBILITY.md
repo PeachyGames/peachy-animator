@@ -4,6 +4,72 @@ Target: Spine **4.3.x JSON**, with export metadata `4.3.26`. The initial externa
 oracle is separately installed `@esotericsoftware/spine-core` **4.3.13**.
 Compatibility applies to the subset below, not every 4.3 project or future patch.
 
+## Slider checkpoint — November 15, 2026 (bounded manual/MCP verified; parity open)
+
+The current native model is **v23**, with **58 commands / 14 MCP tools**. Strict
+v22 decoding adds empty Slider tracks in memory; historical public project files
+keep their original bytes. Slider data, independent absolute Time/Mix keys,
+curve-preserving insertion, typed clipboard operations and authored/effective
+readback share the engine with native and MCP clients.
+
+One ordered constraint pass applies manual or six-property local/world sources
+to the incoming effective state. Calibrated referenced domains include bone
+scalars, slot attachment/RGBA, inheritance, global draw order, plain/weighted mesh
+Deform, IK/Path settings, other Sliders and Sequence frames. Inactive targets skip
+writes while global draw order retains every slot. Redundant named-skin Slider
+membership is preserved without requiring that membership for nonrequired Slider
+activity; duplicate/unknown and other unsupported memberships stay strict.
+
+Separate completed metadata/active-world matrices compare **170/170** cases
+(maximum **4.81771965e−5**) and **177/177** cases (maximum
+**6.848346799870342e−6**) at unchanged **0.001** tolerance, with zero engine-applied
+FK residual. Documented applied-local cache validation leaves WORLD bits exactly
+unchanged. The second matrix verifies the skin-aware host-sampling repair,
+including inactive slot data without exclusions. These reports do not contain
+artwork vertices/UV or event output.
+
+Focused checks pass: 9 adapter Slider, 39 engine Slider, 18 desktop Slider,
+14 schema and 2 actual-stdio cases. Incoming-state 101/101 and other-Slider 21/21
+reruns pass. Source has 72 comparisons plus 3 explicit Loop precision refusals;
+source Mix/order are 6/6 each, bone/nested 34/34 and 3/3, driven Time/Mix 12/12 each.
+The manual adversarial set retains **2 raw 1e30 f32 precision mismatches** alongside
+11 comparisons; those failures are neither passes nor declared refusals. Sequence
+wide/integer sets compare 11/15 and 8/16, with 4 and 8 counter refusals.
+
+Actual MCP recreation uses 84 requests, a blank project and one PNG, with 14
+retained poses. Bounded native Frame/Mix/keying/pending Save/history/Auto Key,
+Loop/Additive, cancellation, Graph and 1120×740 controls pass and restore the MCP
+canonical rig; independent native creation is not established. Separate geometry
+checks cover 104 poses (maximum world 1.838038693335875e−5) and 1,664 region values
+(maximum 2.288818359375e−5) at 0.001.
+
+Installed-editor interchange has 104 returned geometry poses within 0.001,
+maximum world/region error 1.52587890625e−5 and 1,664 exact UV values. Its strict
+authored report remains failed: Mix/Time track ordering and Bezier recanonicalization
+change animations, including Time 0.61266667→0.6126666 and handle drift around
+6.3e−7. Ten non-animation sections remain exact. This is bounded **lossy** Editor
+compatibility, not lossless authored interchange; both strict failure and semantic
+analysis stay retained.
+
+Final actual MCP recreation repeats the same 84 requests/canonical hash. Fresh
+public reopen on native build `47ca392a…8a12bde8` has one image, empty history and
+Graph handles, with playback to 0.224702 seconds followed by stop/reset zero.
+Document/hash stay unchanged and the owned window closes. Final 170/177/101/21
+reruns and formatting/all-target Clippy/build/architecture checks pass. The
+bounded manual/MCP checkpoint is verified; full Slider parity remains open.
+Source switching/clear and creation identity/order, Physics/events, remaining
+Deform/attachment cases, counter guards, strict authored interchange loss and
+the two precision failures remain explicit limits. See
+[the bounded contract](slices/slider-constraints.md),
+[review gallery](evidence/slider-constraints.html) and
+[scalar evidence](evidence/slider-constraints.json).
+
+## Earlier accepted checkpoints
+
+The dated entries below retain their historical native-format and API inventory
+counts. The Slider extension above updates that earlier baseline within its
+stated bounds; older Slider refusal entries do not describe the new implementation.
+
 World X→Rotate addition (November 15): world source/target, nonadditive constraints
 can map the source frame's offset-point X to rotation, with offsets, signed scale,
 reversed clamp bounds and signed Mix. Each destination has one writer. The exact

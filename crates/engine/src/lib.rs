@@ -21,6 +21,10 @@ mod playback;
 mod pose;
 mod scene;
 mod session;
+mod slider_authoring;
+mod slider_constraint;
+mod slider_domains;
+mod slider_sampling;
 mod slot_authoring;
 mod timeline;
 mod tools;
@@ -42,7 +46,7 @@ pub use ghosting::{
 };
 pub use ik::{
     AuthoredPose, EvaluatedPose, checked_evaluate_pose, checked_pose_from_authored,
-    checked_setup_pose_from_locals, sample_authored_pose,
+    checked_setup_pose_from_locals, sample_authored_pose, sample_authored_pose_with_skin,
 };
 pub use ik_sampling::{IkPose, sample_ik};
 pub use mesh::{
@@ -66,14 +70,16 @@ pub use pose::{
 };
 pub use scene::{
     AttachmentDraw, AttachmentOverlay, Bounds, OverlayKind, Scene, checked_evaluate_scene,
-    checked_scene_from_authored, checked_setup_scene_from_locals, evaluate_scene,
+    checked_scene_from_authored, checked_scene_from_evaluated, checked_setup_scene_from_locals,
+    evaluate_scene,
 };
 pub use session::Session;
+pub use slider_authoring::{SliderPose, SliderPoseEdit, slider_key_time};
 pub use slot_authoring::{SlotPose, SlotPoseEdit, SlotProperty, slot_color_bytes, slot_key_time};
 pub use timeline::{
     AnimationKey, AnimationKeyClipboard, ClipboardKey, CurveChannel, CurveData, CurveTarget,
-    DeformLayout, KeyClipboard, KeyOwner, TimelineKey, copy_animation_keys, copy_keys,
-    curve_channels, curve_channels_for_targets, curve_targets, deform_key_owner,
+    DeformLayout, KeyClipboard, KeyOwner, SliderClipboardKey, TimelineKey, copy_animation_keys,
+    copy_keys, curve_channels, curve_channels_for_targets, curve_targets, deform_key_owner,
     pasted_animation_keys,
 };
 pub use tools::{
@@ -88,6 +94,8 @@ pub use transform_mapping::{
 
 #[cfg(test)]
 mod animation_tests;
+#[cfg(test)]
+mod applied_state_tests;
 #[cfg(test)]
 mod bind_pose_inherit_tests;
 #[cfg(test)]
@@ -143,7 +151,11 @@ mod scene_checks_tests;
 #[cfg(test)]
 mod shear_tests;
 #[cfg(test)]
+mod skin_sampling_tests;
+#[cfg(test)]
 mod skin_scope_tests;
+#[cfg(test)]
+mod slider_tests;
 #[cfg(test)]
 mod slot_authoring_tests;
 #[cfg(test)]
@@ -167,3 +179,10 @@ mod weighted_tests;
 
 #[cfg(test)]
 mod wide_interpolation_tests;
+
+#[cfg(test)]
+#[path = "../../document/test_support/native_fixture.rs"]
+mod native_fixture;
+
+#[cfg(test)]
+mod slider_insert_tests;

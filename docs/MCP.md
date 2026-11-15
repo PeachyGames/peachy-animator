@@ -6,6 +6,9 @@ native window. The server calls the same document, command, Session, checked pos
 evaluation and file services as the desktop. It uses the official
 [Rust MCP SDK](https://github.com/modelcontextprotocol/rust-sdk), pinned by Cargo.lock.
 
+The current native format is **v23**, with **58 commands / 14 tools**. Slider
+Time/Mix data uses the same strict model and checked engine as the native editor.
+
 Each server process owns an independent headless document and history. It does
 **not** attach to a running desktop editor, change its selection, refresh its open
 document or consume that window's unsaved changes. Saved projects can be opened in
@@ -53,17 +56,18 @@ client's working directory. Absolute paths are accepted only inside that root.
 | `create_project` | New in-memory root-only native document with an empty default skin. Uses an existing asset directory within `--root`; no finished rig is loaded and no file is written. Source is null until Save. |
 | `inspect_file` | Read-only native validation or Spine capability report. Does not replace the working document. |
 | `open_project` | Load `.peachy` (including supported legacy migrations) or supported Spine 4.3 JSON into a new Session. Failed imports leave the current session intact. |
-| `get_command_schema` | Full JSON Schema for the 53 supported flat command variants; the same schema appears inline in `apply_commands` discovery. |
+| `get_command_schema` | Full JSON Schema for the 58 supported flat command variants; the same schema appears inline in `apply_commands` discovery. |
 | `apply_commands` | Apply a nonempty flat list through one engine Batch, atomically and as one undo step. No file writes. |
-| `copy_animation_keys` | Read-only capture of exact keys from one bone, IK constraint, Deform attachment, slot or global draw order. Slot clipboards can mix attachment and color keys with one relative origin; Deform includes vertex/influence layout. Draw order requires the identical ordered slot-name layout on paste. Requires the current revision. |
+| `copy_animation_keys` | Read-only capture of exact keys from one bone, IK or Slider constraint, Deform attachment, slot or global draw order. Slider clipboards retain independent Time/Mix identities and one relative origin. Slot clipboards can mix attachment and color keys; Deform includes vertex/influence layout. Draw order requires the identical ordered slot-name layout on paste. Requires the current revision. |
 | `get_mesh_weights` | Read exact selected weights and a uniform/mixed aggregate through the engine; absent influences of an already bound bone read zero. Requires the current revision and exact attachment identity. |
 | `get_transform_mapping` | Read raw-derived Min/Max endpoints of one exact world X→Rotate constraint mapping at the current revision. Undefined SourceMax is null; querying never repairs stored coefficients or changes history. |
+| `get_slider_pose` | Read a Slider's authored Time/Mix at a host animation cursor, or Setup. Time is referenced-animation seconds; this query does not solve geometry or substitute bone-derived effective time. Requires the current revision. |
 | `history` | Undo or redo one complete edit using the shared Session history. |
-| `evaluate_pose` | Setup or a named animation at a nonnegative time in seconds, with optional skin. Returns authored locals, IK-applied locals, per-bone `inherits` modes, world matrices, raw `slotAttachments`/`slotColors`, complete back-to-front `drawOrder` including hidden/empty slots, textured vertex/UV/index buffers and bounds. |
+| `evaluate_pose` | Setup or a named animation at a nonnegative time in seconds, with optional skin. Returns authored `locals`, ordered-constraint `appliedLocals`, effective `inherits`, world matrices, raw `slotAttachments`/`slotColors`, complete `drawOrder`, `authoredSliderPoses`/`appliedSliderPoses`, textured geometry and bounds from one checked solve. |
 | `save_project` | Create a new directory containing `project.peachy` and the required loose `images/`; marks the headless Session saved. |
 | `export_project` | New Spine JSON file, or a fresh packed JSON/atlas/PNG directory inside an existing parent. Optional `target` defaults to `spineEditor43`; use `runtime43` to retain independent attachment names/placeholders for runtime consumers. Does not mark the native document saved. |
 
-These 13 tools publish parameter schemas, descriptions and behavior annotations through
+These 14 tools publish parameter schemas, descriptions and behavior annotations through
 MCP `tools/list`. Successful results include both `structuredContent` and matching
 serialized text for older clients. Operational failures return `isError: true`
 with the current revision; malformed tool arguments use the SDK's protocol error.
@@ -223,6 +227,116 @@ desktop. Save advances revision to 3. Export a packed runtime bundle with:
 The response identifies the new timestamped bundle directory. JSON-only export
 uses `kind:"json"` and a fresh `.json` output path instead.
 
+## Slider Time and Mix
+
+A Slider references an existing animation by index. Its authored `time` is a
+position in that **referenced** animation; key identities and query cursors use
+**host** animation seconds. Mix uses raw normalized units (`1` means 100%) and
+may be signed or exceed one. Native controls display referenced frames and
+percent, but MCP values remain seconds and normalized Mix.
+
+The complete command payload is explicit, including nullable `bone` and
+`property`. For example, after creating two animations, append a manual Slider
+referencing animation0 and author its separate host-animation1 channels:
+
+```json
+{
+  "expected_revision": 2,
+  "commands": [
+    {"command":"addSliderConstraint","constraint":{"name":"calibration","animation":0,"bone":null,"property":null,"local":false,"loop":false,"additive":false,"from":0,"to":0,"scale":0,"max":0,"setup":{"time":0,"mix":1}}},
+    {"command":"setSliderKey","animation":1,"constraint":0,"property":"time","key":{"time":0,"value":0.5,"curve":{"bezier":[0.33333334,0,0.6666667,1]}}},
+    {"command":"setSliderKey","animation":1,"constraint":0,"property":"time","key":{"time":0.25,"value":0.75,"curve":"linear"}},
+    {"command":"setSliderKey","animation":1,"constraint":0,"property":"mix","key":{"time":0,"value":1,"curve":"linear"}},
+    {"command":"setSliderKey","animation":1,"constraint":0,"property":"mix","key":{"time":0.75,"value":0.25,"curve":"linear"}}
+  ]
+}
+```
+
+The command's `constraint`/`value` contains Slider fields without the enclosing
+native constraint union's `type:"slider"` tag. Names, animation and constraint
+indices come from `get_document`; this example assumes constraint0 is the new
+Slider. All fields and numbers must satisfy the strict native schema.
+
+| Command | Behavior |
+| --- | --- |
+| `addSliderConstraint` | Append complete `constraint` data to the ordered constraint list; the referenced animation must exist. |
+| `setSliderConstraint` | Replace raw Slider configuration at `constraint` with complete `value`. It preserves indices and does not perform the native source-picker transition. |
+| `setSliderKey` | `animation`, `constraint`, `property:"time"\|"mix"`, `key:{time,value,curve}`. Exact insertion/replacement with the supplied curve, without splitting neighboring curves. |
+| `setSliderCurve` | `animation`, `constraint`, `property`, exact existing `time`, `curve`. Changes only that property's outgoing curve; missing exact keys fail. |
+| `insertSliderKey` | `animation`, `constraint`, `property`, `time`, `value`. Semantic new-key insertion uses the measured frame-space Bezier split. An existing exact key retains its curve; the sibling property stays unchanged. |
+
+New-key insertion is separate from the raw setter. Query the authored value
+first if the intent is to key the current sampled reading, then pass that value
+to `insertSliderKey`; do not average endpoint values or rebuild curves in the
+client. The supplied value is an authored edit, so inserting a different value
+can intentionally change the motion. Raw finite fractional key times stay
+distinct; these persistent commands do not apply the desktop's frame snapping.
+Bezier and BezierOffset metadata remain explicit.
+
+For read-only authored state, call `get_slider_pose`:
+
+```json
+{"expected_revision":3,"constraint":0,"animation":"host","time":0.125}
+```
+
+The response includes `revision`, `constraint`, the host `animation`/`hostTime`,
+`kind:"authored"`, and `pose:{time,mix}`. Omit `animation` or supply null for
+Setup; `time` still must be finite and nonnegative. Unknown references, unknown
+fields and stale revisions fail without changing the document or history.
+Reading this value does not clamp it to displayed frames or percentages.
+
+For example, key an explicit referenced time at that host cursor:
+
+```json
+{"expected_revision":3,"commands":[{"command":"insertSliderKey","animation":1,"constraint":0,"property":"time","time":0.125,"value":0.625}]}
+```
+
+`evaluate_pose` instead returns both `authoredSliderPoses` and
+`appliedSliderPoses`, indexed by the **full constraint list**, with inactive
+placeholders at non-Slider indices. The latter contains effective settings from
+the same ordered solve as `appliedLocals`, world frames, inheritance, slots and
+geometry. A bone-driven time or an earlier Slider's effect can differ from the
+raw authored Time/Mix. Do not use that effective result as a replacement for
+authored state, key it implicitly, or solve again while preparing geometry or a
+binding snapshot. Unsupported domain/order combinations and nonfinite results
+fail explicitly.
+
+Typed identities retain the property even at coincident host times. Pass this
+to read-only `copy_animation_keys`:
+
+```json
+{
+  "expected_revision":4,
+  "animation":1,
+  "keys":[
+    {"type":"slider","constraint":0,"property":"time","time":0},
+    {"type":"slider","constraint":0,"property":"mix","time":0}
+  ]
+}
+```
+
+The returned `clipboard` has `type:"slider"` and `keys:[{property,key}]` with one
+shared relative origin. Use it unchanged with `pasteAnimationKeys`, an
+`animation`, `time`, and `target:{type:"slider",constraint:0}`. The same exact
+identities work with `moveAnimationKeys` and `deleteAnimationKeys`; Time and Mix
+remain separate. Copy and authored queries preserve revision/history; Apply
+batches remain atomic and undoable.
+
+Raw configuration permits a source `bone` plus one of the strict source-property
+strings `rotate`, `x`, `y`, `scaleX`, `scaleY`, `shearY`. Configuration fields
+`from`, `to`, `scale` and `max` retain their stored meanings; they are not the
+manual Setup time. Raw setters do not delete Time keys on source assignment or
+bake a remembered effective time when clearing a source. Those native semantic
+transitions, source-picker/range UI and native creation order remain separate
+work. Native New→Slider prepends, while this raw add command appends.
+
+Both Time and Mix omit-value defaults are `1` when importing Spine JSON;
+manual Setup time defaults separately to `0`. Raw `setSliderKey` key objects
+require an explicit value and curve; semantic insertion takes the explicit value
+and handles curve splitting itself. MCP does not expose a live desktop pending-pose
+editor: the native Session's Auto Key/K/Save-exclusion lifecycle is a separate
+client workflow, not a side effect of these raw persistent commands.
+
 ## Deform timeline editing
 
 Deform keys now use the same typed timeline identities as bone and IK keys:
@@ -252,7 +366,7 @@ every installed-editor weighted binding combination has been verified.
 `applyCurvePreset` and `editCurveHandle` use the same engine actions as Curves
 and Graph. Both take an `animation` and the complete `selection`, an array of
 `{key:<typed AnimationKey>,channel:<index>}` entries. Scalar, IK and Deform use
-channel 0; slot color uses R/G/B/A indices 0–3. Discrete attachment keys count
+channel 0, as do Slider Time/Mix; slot color uses R/G/B/A indices 0–3. Discrete attachment keys count
 toward the selection but have no curve. Keep the complete selection when
 editing only its primary curve: filtering it can change final-key resolution.
 
@@ -268,7 +382,8 @@ whether adjoining explicit Bezier angles affect preset application.
 `editCurveHandle` takes `primary` (a resolved left-interval key/channel from
 the complete selection), `handle` (0 or 1), `point:[seconds,value]`,
 `match_curves`, and `separate`. Values are actual scalar/Mix values, normalized
-RGBA, or normalized Deform progress. Match copies the selected handle's relative
+RGBA, normalized Deform progress, Slider referenced seconds, or normalized
+Slider Mix. Slider handle X coordinates remain host seconds. Match copies the selected handle's relative
 position across effective curves and preserves each other handle. A flat
 primary has no relative value coordinate, so matched editing refuses it.
 All targets are planned atomically; an unsupported or invalid target leaves
@@ -322,7 +437,8 @@ selection and preset policies are separate from these exact setters.
 
 Both commands use the same atomic command/history boundary as native controls.
 The example requires both exact keys to exist; a failed second command restores
-the complete batch. Native v22 stays unchanged; the current tool inventory is above.
+the complete batch. These setters also operate within the current native v23
+model; the current tool inventory is above.
 
 ## Slot attachment and RGBA authoring
 
@@ -401,7 +517,7 @@ nonzero-origin holdout. Subdivision retains precise float controls before rebasi
 them onto stored byte endpoints. Stepped intervals inherit Stepped. Extreme or
 adjacent f32 times that cannot support the scan use stable exact inversion;
 that fallback is outside the calibrated native range. Persistent color keys
-remain bytes in native v22: explicit keying can incur at most half a byte per
+remain bytes in native v23: explicit keying can incur at most half a byte per
 channel, while unrepresentable colors fail atomically. Existing sampling
 arithmetic may differ from the installed editor by one encoded byte at
 half-byte ties; this is not a claim of lossless subbyte key storage or complete
@@ -564,7 +680,7 @@ calibration, differences and verification limits.
 
 ## World X to Rotate mapping
 
-Native v22 is unchanged. The current schema has **53 commands / 13 tools**.
+The current native format is v23, with **58 commands / 14 tools**.
 An existing world-space X→Rotate transform constraint can be edited by the same
 semantic range operation as the native Min/Max controls:
 

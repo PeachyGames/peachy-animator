@@ -233,12 +233,14 @@ impl Editor {
                         }
                         let physics = matches!(e.item, TreeItem::Constraint(index) if self.physics_constraint(index).is_some());
                         let transform = matches!(e.item, TreeItem::Constraint(index) if self.transform_constraint(index).is_some());
+                        let slider = matches!(e.item, TreeItem::Constraint(index) if self.slider_constraint(index).is_some());
                         draw_icon(
                             ui.painter(),
                             row.rect.min + vec2(4., 4.),
                             &e.item,
                             physics,
                             transform,
+                            slider,
                             if selected { ACCENT } else { MUTED },
                         );
                         if row.rect.intersects(ui.clip_rect()) {
@@ -269,7 +271,7 @@ impl Editor {
                                 actions.push(Action::Key(bone));
                             }
                         }
-                        if !self.setup_mode && let TreeItem::Constraint(index)=e.item {
+                        if !self.setup_mode && let TreeItem::Constraint(index)=e.item && self.ik_constraint(index).is_some() {
                             match self.ik_group_state(index) {
                                 Ok(state)=>{
                                     let key=super::animation::pose_key_button(ui,state);
@@ -466,6 +468,7 @@ fn draw_icon(
     item: &TreeItem,
     physics: bool,
     transform: bool,
+    slider: bool,
     color: Color32,
 ) {
     let stroke = Stroke::new(1., color);
@@ -482,6 +485,7 @@ fn draw_icon(
         }
         TreeItem::Constraint(_) if physics => icons::draw_physics(p, r, color),
         TreeItem::Constraint(_) if transform => icons::draw_transform(p, r, color),
+        TreeItem::Constraint(_) if slider => icons::draw_slider(p, r, color),
         TreeItem::Constraint(_) | TreeItem::Folder(Folder::Constraints) => {
             icons::draw_ik(p, r, color)
         }

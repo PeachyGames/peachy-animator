@@ -1,5 +1,6 @@
-//! Independent cubic subdivision for inserting color keys. Control geometry is
-//! split in f64 before rebasing onto the byte endpoints stored by native v22.
+//! Independent scalar cubic subdivision, calibrated first on native color keys
+//! and then Slider Time. Control geometry is split in f64 before rebasing onto
+//! the actual stored endpoint (bytes for color, scalar values for Sliders).
 use peachy_document::Curve;
 
 #[derive(Clone, Copy)]
@@ -131,11 +132,11 @@ fn parameter(x1: f64, x2: f64, time: f64) -> Result<f64, String> {
             high
         };
         if (x_at(x1, x2, result) - time).abs() > 1e-12 {
-            return Err("Color curve time cannot be split at finite coordinate precision".into());
+            return Err("Scalar curve time cannot be split at finite coordinate precision".into());
         }
         return Ok(result);
     }
-    Err("Color curve has no representable split time".into())
+    Err("Scalar curve has no representable split time".into())
 }
 fn finite(values: [f64; 4]) -> Option<[f32; 4]> {
     let converted = values.map(|value| value as f32);
@@ -147,7 +148,7 @@ fn finite(values: [f64; 4]) -> Option<[f32; 4]> {
 fn encode(points: [Point; 4], prefer_offset: bool) -> Result<Curve, String> {
     let duration = points[3].x - points[0].x;
     if !duration.is_finite() || duration <= 0. {
-        return Err("Color curve split needs distinct ordered key times".into());
+        return Err("Scalar curve split needs distinct ordered key times".into());
     }
     let x1 = (points[1].x - points[0].x) / duration;
     let x2 = (points[2].x - points[0].x) / duration;
@@ -162,12 +163,41 @@ fn encode(points: [Point; 4], prefer_offset: bool) -> Result<Curve, String> {
     }
     finite([x1, h1, x2, h2])
         .map(Curve::BezierOffset)
-        .ok_or_else(|| "Color curve split exceeds finite handle coordinates".into())
+        .ok_or_else(|| "Scalar curve split exceeds finite handle coordinates".into())
 }
 
 pub(crate) fn split(
     curve: Curve,
     times: [f32; 3],
+    values: [f32; 3],
+    stored_new: f32,
+) -> Result<(Curve, Curve), String> {
+    split_with_scan_times(curve, times, times, values, stored_new)
+}
+
+/// Slider insertion scans in the editor's host-frame coordinate space. Native
+/// 4.3.26 Frame7/8 and an asymmetric curve distinguish this from seconds and
+/// exact cubic inversion. Geometry and stored identities remain in seconds.
+pub(crate) fn split_slider(
+    curve: Curve,
+    times: [f32; 3],
+    values: [f32; 3],
+    value: f32,
+    fps: u32,
+) -> Result<(Curve, Curve), String> {
+    split_with_scan_times(
+        curve,
+        times,
+        times.map(|time| time * fps as f32),
+        values,
+        value,
+    )
+}
+
+fn split_with_scan_times(
+    curve: Curve,
+    times: [f32; 3],
+    scan_times: [f32; 3],
     values: [f32; 3],
     stored_new: f32,
 ) -> Result<(Curve, Curve), String> {
@@ -179,7 +209,7 @@ pub(crate) fn split(
             .all(|value| value.is_finite())
         || !curve.handles_valid()
     {
-        return Err("Color curve split needs finite values and an interior exact time".into());
+        return Err("Scalar curve split needs finite values and an interior exact time".into());
     }
     let (handles, offset) = match curve {
         Curve::Linear => return Ok((Curve::Linear, Curve::Linear)),
@@ -209,7 +239,7 @@ pub(crate) fn split(
         },
         Point { x: 1., y: right },
     ];
-    let u = match scanned_parameter(times, handles[0], handles[2]) {
+    let u = match scanned_parameter(scan_times, handles[0], handles[2]) {
         Some(u) => u,
         // Extreme/adjacent f32 times can overflow finite differences or make
         // every accumulated X identical. Stable subdivision remains available

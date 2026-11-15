@@ -178,6 +178,9 @@ impl Editor {
                 }
             }
             TreeItem::Animation(animation) => self.animation_properties(ui, animation),
+            TreeItem::Constraint(index) if self.slider_constraint(index).is_some() => {
+                self.slider_properties(ui, index)
+            }
             TreeItem::Constraint(index) if self.physics_constraint(index).is_some() => {
                 self.physics_properties(ui, index)
             }

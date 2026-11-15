@@ -34,6 +34,8 @@ mod scene_view;
 mod selection;
 mod selection_history;
 mod shortcuts;
+mod slider;
+mod slider_edit;
 mod slot_authoring;
 mod slot_color;
 mod slot_curves;
@@ -149,6 +151,7 @@ pub(crate) struct Editor {
     curves: curves::CurvesView,
     slot_color: slot_color::SlotColorView,
     transform_constraint_view: transform_constraint_edit::TransformConstraintView,
+    slider_view: slider_edit::SliderView,
     weights: weights::WeightsState,
     weight_edit: Option<weight_direct::WeightEdit>,
     weight_blocked: Option<egui::Id>,
@@ -209,7 +212,7 @@ impl Editor {
         let (doc, asset_root, initial_error) = match loaded {
             Ok(doc) => (doc, path.parent().unwrap().to_path_buf(), None),
             Err(e) => (
-                serde_json::from_str(include_str!(concat!(
+                peachy_io::decode_project(include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
                     "/../../examples/peach-bot/peach-bot.peachy"
                 )))
@@ -273,6 +276,7 @@ impl Editor {
             show_weights: false,
             weights: Default::default(),
             transform_constraint_view: Default::default(),
+            slider_view: Default::default(),
             weight_edit: None,
             weight_blocked: None,
             weight_controls: None,
@@ -326,6 +330,7 @@ impl Editor {
     }
 
     fn dispatch(&mut self, command: Command) -> bool {
+        self.cancel_slider_edit();
         self.cancel_constraint_edit();
         self.export_dialog = None;
         self.cancel_slot_color_edit();
@@ -424,6 +429,7 @@ impl Editor {
         mut local: Transform,
         properties: &[Property],
     ) {
+        self.cancel_slider_edit();
         self.cancel_constraint_edit();
         self.cancel_slot_color_edit();
         self.cancel_graph_edit();
@@ -534,6 +540,7 @@ impl Editor {
         }
     }
     fn reconcile_selection(&mut self) {
+        self.reconcile_slider_context();
         self.reconcile_constraint_context();
         self.reconcile_transform_edit();
         self.reconcile_weight_edit();
@@ -573,6 +580,10 @@ impl Editor {
         self.reconcile_dopesheet_selection();
     }
     fn undo(&mut self) {
+        if self.slider_edit_active() {
+            self.cancel_slider_edit();
+            return;
+        }
         if self.constraint_edit_active() {
             self.cancel_constraint_edit();
             return;
@@ -624,6 +635,10 @@ impl Editor {
         self.reconcile_selection();
     }
     fn redo(&mut self) {
+        if self.slider_edit_active() {
+            self.cancel_slider_edit();
+            return;
+        }
         if self.constraint_edit_active() {
             self.cancel_constraint_edit();
             return;
@@ -724,6 +739,7 @@ impl Editor {
                     self.graph.reset_document();
                     self.slot_color.reset_document();
                     self.transform_constraint_view = Default::default();
+                    self.slider_view = Default::default();
                     self.weight_blocked = None;
                     self.weight_controls = None;
                     self.ik_edit = None;
@@ -812,6 +828,7 @@ impl Editor {
         self.reconcile_draw_order_input(&ctx);
         self.reconcile_slot_color_input(&ctx);
         self.reconcile_constraint_input(&ctx);
+        self.reconcile_slider_input(&ctx);
         self.shortcuts(&ctx);
         if self.export_dialog.is_some() {
             ui.disable();
@@ -1106,6 +1123,7 @@ impl Editor {
                 report["weightsContext"] = self.weights_diagnostic();
                 report["weightsDirect"] = self.weight_direct_diagnostic();
                 report["transformConstraint"] = self.constraint_edit_diagnostic();
+                report["sliderConstraint"] = self.slider_edit_diagnostic();
                 report["ik"] = self.ik_diagnostic();
                 report["evaluatedPose"] = match self
                     .session

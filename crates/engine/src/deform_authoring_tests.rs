@@ -2,7 +2,7 @@ use crate::*;
 use peachy_document::*;
 
 fn fixture() -> Document {
-    let mut doc: Document = serde_json::from_str(include_str!(
+    let mut doc: Document = crate::native_fixture::decode(include_str!(
         "../../../examples/peach-bot/deform-bot.peachy"
     ))
     .unwrap();
@@ -261,7 +261,7 @@ fn deform_authoring_linked_meshes_key_the_canonical_source_and_keep_exact_identi
 
 #[test]
 fn deform_authoring_key_edited_groups_pending_bone_ik_and_deform_without_saving_unkeyed_data() {
-    let doc: Document = serde_json::from_str(include_str!(
+    let doc: Document = crate::native_fixture::decode(include_str!(
         "../../../examples/peach-bot/ik-animation-bot.peachy"
     ))
     .unwrap();

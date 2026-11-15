@@ -4,11 +4,57 @@ use super::*;
 const KEY_DRAW_LIMIT: usize = 256;
 const CURVE_GRID: usize = 256;
 
+#[path = "slider_graph.rs"]
+mod slider_graph;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-struct GraphContext {
-    animation: usize,
-    bone: usize,
-    property: Property,
+enum GraphContext {
+    Bone {
+        animation: usize,
+        bone: usize,
+        property: Property,
+    },
+    Slider {
+        animation: usize,
+        constraint: usize,
+        property: SliderProperty,
+    },
+}
+
+impl GraphContext {
+    fn slider_channel(self, property: SliderProperty) -> Self {
+        let Self::Slider {
+            animation,
+            constraint,
+            ..
+        } = self
+        else {
+            unreachable!()
+        };
+        Self::Slider {
+            animation,
+            constraint,
+            property,
+        }
+    }
+    fn key(self, time: f32) -> peachy_engine::AnimationKey {
+        match self {
+            Self::Bone { bone, property, .. } => peachy_engine::AnimationKey::Bone {
+                bone,
+                property,
+                time,
+            },
+            Self::Slider {
+                constraint,
+                property,
+                ..
+            } => peachy_engine::AnimationKey::Slider {
+                constraint,
+                property,
+                time,
+            },
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -30,12 +76,15 @@ impl GraphBounds {
             && self.value_max > self.value_min
     }
     fn point(self, rect: egui::Rect, time: f32, value: f32) -> Pos2 {
+        self.point_value(rect, time, f64::from(value))
+    }
+    fn point_value(self, rect: egui::Rect, time: f32, value: f64) -> Pos2 {
         pos2(
             (f64::from(rect.left())
                 + (f64::from(time) - self.time_min) / (self.time_max - self.time_min)
                     * f64::from(rect.width())) as f32,
             (f64::from(rect.bottom())
-                - (f64::from(value) - self.value_min) / (self.value_max - self.value_min)
+                - (value - self.value_min) / (self.value_max - self.value_min)
                     * f64::from(rect.height())) as f32,
         )
     }
@@ -43,7 +92,7 @@ impl GraphBounds {
 
 struct GraphEdit {
     context: GraphContext,
-    source: Track,
+    source: Vec<Keyframe>,
     key: Keyframe,
     value: f32,
     rect: egui::Rect,
@@ -64,6 +113,7 @@ pub(super) struct GraphView {
     pub(super) deform: super::deform_curves::DeformCurveView,
     pub(super) slot: super::slot_curves::SlotCurveView,
     property: Property,
+    slider_property: SliderProperty,
     context: Option<GraphContext>,
     selected: Option<f32>,
     bounds: Option<GraphBounds>,
@@ -82,6 +132,7 @@ impl Default for GraphView {
             deform: Default::default(),
             slot: Default::default(),
             property: Property::Rotation,
+            slider_property: SliderProperty::Time,
             context: None,
             selected: None,
             bounds: None,
@@ -110,31 +161,32 @@ struct GraphPlot {
 
 /// Evaluate a single existing interval through the engine. Binary search plus a
 /// two-key Track avoids rescanning a dense full track for every display point.
+#[cfg(test)]
 fn graph_sample(track: &Track, time: f32) -> f32 {
-    let next = track.keys.partition_point(|key| key.time <= time);
+    graph_sample_keys(&track.keys, time, track.property.neutral())
+}
+
+fn graph_sample_keys(keys: &[Keyframe], time: f32, neutral: f32) -> f32 {
+    let next = keys.partition_point(|key| key.time <= time);
     if next == 0 {
-        track.property.neutral()
-    } else if next == track.keys.len() {
-        track.keys[next - 1].value
+        neutral
+    } else if next == keys.len() {
+        keys[next - 1].value
     } else {
         peachy_engine::sample(
             &Track {
-                bone: track.bone,
-                property: track.property,
-                keys: vec![track.keys[next - 1], track.keys[next]],
+                bone: 0,
+                property: Property::X,
+                keys: vec![keys[next - 1], keys[next]],
             },
             time,
         )
     }
 }
 
-fn shown_key_indices(track: &Track, bounds: GraphBounds, selected: Option<f32>) -> Vec<usize> {
-    let first = track
-        .keys
-        .partition_point(|key| f64::from(key.time) < bounds.time_min);
-    let last = track
-        .keys
-        .partition_point(|key| f64::from(key.time) <= bounds.time_max);
+fn shown_key_indices(keys: &[Keyframe], bounds: GraphBounds, selected: Option<f32>) -> Vec<usize> {
+    let first = keys.partition_point(|key| f64::from(key.time) < bounds.time_min);
+    let last = keys.partition_point(|key| f64::from(key.time) <= bounds.time_max);
     let count = last.saturating_sub(first);
     let shown = count.min(KEY_DRAW_LIMIT);
     let mut indices: Vec<_> = (0..shown)
@@ -148,7 +200,7 @@ fn shown_key_indices(track: &Track, bounds: GraphBounds, selected: Option<f32>) 
         })
         .collect();
     if let Some(time) = selected
-        && let Ok(index) = track.keys.binary_search_by(|key| key.time.total_cmp(&time))
+        && let Ok(index) = keys.binary_search_by(|key| key.time.total_cmp(&time))
         && !indices.contains(&index)
         && (bounds.time_min..=bounds.time_max).contains(&f64::from(time))
     {
@@ -158,7 +210,7 @@ fn shown_key_indices(track: &Track, bounds: GraphBounds, selected: Option<f32>) 
     indices
 }
 
-fn graph_times(track: &Track, bounds: GraphBounds, selected: Option<f32>) -> Vec<f32> {
+fn graph_times(keys: &[Keyframe], bounds: GraphBounds, selected: Option<f32>) -> Vec<f32> {
     let mut times: Vec<_> = (0..=CURVE_GRID)
         .map(|index| {
             (bounds.time_min
@@ -166,9 +218,9 @@ fn graph_times(track: &Track, bounds: GraphBounds, selected: Option<f32>) -> Vec
                 as f32
         })
         .collect();
-    let indices = shown_key_indices(track, bounds, selected);
+    let indices = shown_key_indices(keys, bounds, selected);
     for &index in &indices {
-        let key = track.keys[index];
+        let key = keys[index];
         times.push(key.time);
         if key.time > 0. {
             let before = key.time.next_down();
@@ -176,8 +228,8 @@ fn graph_times(track: &Track, bounds: GraphBounds, selected: Option<f32>) -> Vec
                 times.push(before);
             }
         }
-        if index + 1 < track.keys.len() && indices.len() <= 128 {
-            let next = track.keys[index + 1].time;
+        if index + 1 < keys.len() && indices.len() <= 128 {
+            let next = keys[index + 1].time;
             let divisions = if indices.len() <= 32 { 8 } else { 2 };
             for part in 1..divisions {
                 let time = (f64::from(key.time)
@@ -200,23 +252,44 @@ fn graph_plot(
     rect: egui::Rect,
     selected: Option<f32>,
 ) -> Result<GraphPlot, String> {
+    graph_plot_values(
+        &track.keys,
+        track.property.neutral(),
+        1.,
+        bounds,
+        rect,
+        selected,
+    )
+}
+
+fn graph_plot_values(
+    keys: &[Keyframe],
+    neutral: f32,
+    factor: f64,
+    bounds: GraphBounds,
+    rect: egui::Rect,
+    selected: Option<f32>,
+) -> Result<GraphPlot, String> {
     if !bounds.valid() || !rect.is_finite() || rect.width() <= 0. || rect.height() <= 0. {
         return Err("Graph coordinates are outside the supported range. Use Fit.".into());
     }
     let mut curve = Vec::new();
-    for time in graph_times(track, bounds, selected) {
-        let value = graph_sample(track, time);
-        let point = bounds.point(rect, time, value);
+    for time in graph_times(keys, bounds, selected) {
+        let value = f64::from(graph_sample_keys(keys, time, neutral)) * factor;
+        let point = bounds.point_value(rect, time, value);
         if !value.is_finite() || !point.is_finite() {
             return Err("This interval cannot be evaluated as finite graph coordinates.".into());
         }
         curve.push(point);
     }
-    let keys = shown_key_indices(track, bounds, selected)
+    let keys = shown_key_indices(keys, bounds, selected)
         .into_iter()
         .map(|index| {
-            let key = track.keys[index];
-            (key, bounds.point(rect, key.time, key.value))
+            let key = keys[index];
+            (
+                key,
+                bounds.point_value(rect, key.time, f64::from(key.value) * factor),
+            )
         })
         .collect();
     Ok(GraphPlot { curve, keys })
@@ -240,7 +313,7 @@ impl Editor {
         (!self.setup_mode
             && bone < self.session.document().bones.len()
             && self.animation < self.session.document().animations.len())
-        .then_some(GraphContext {
+        .then_some(GraphContext::Bone {
             animation: self.animation,
             bone,
             property: self.graph.property,
@@ -248,13 +321,69 @@ impl Editor {
     }
 
     fn graph_track(&self, context: GraphContext) -> Option<&Track> {
+        let GraphContext::Bone {
+            animation,
+            bone,
+            property,
+        } = context
+        else {
+            return None;
+        };
         self.session
             .document()
             .animations
-            .get(context.animation)?
+            .get(animation)?
             .tracks
             .iter()
-            .find(|track| track.bone == context.bone && track.property == context.property)
+            .find(|track| track.bone == bone && track.property == property)
+    }
+
+    fn graph_keys(&self, context: GraphContext) -> Option<&[Keyframe]> {
+        match context {
+            GraphContext::Bone { .. } => {
+                self.graph_track(context).map(|track| track.keys.as_slice())
+            }
+            GraphContext::Slider {
+                animation,
+                constraint,
+                property,
+            } => self
+                .session
+                .document()
+                .animations
+                .get(animation)?
+                .slider_tracks
+                .iter()
+                .find(|track| track.constraint == constraint && track.property == property)
+                .map(|track| track.keys.as_slice()),
+        }
+    }
+
+    fn graph_factor(&self, context: GraphContext) -> f64 {
+        match context {
+            GraphContext::Bone { .. } => 1.,
+            GraphContext::Slider {
+                property: SliderProperty::Time,
+                ..
+            } => f64::from(self.session.document().fps),
+            GraphContext::Slider {
+                property: SliderProperty::Mix,
+                ..
+            } => 100.,
+        }
+    }
+
+    fn graph_neutral(&self, context: GraphContext) -> f32 {
+        match context {
+            GraphContext::Bone { property, .. } => property.neutral(),
+            GraphContext::Slider {
+                constraint,
+                property,
+                ..
+            } => self
+                .slider_constraint(constraint)
+                .map_or(0., |value| property.read(value.setup)),
+        }
     }
 
     fn selected_scalar_key(&self) -> Option<(usize, Property, f32)> {
@@ -279,22 +408,12 @@ impl Editor {
     }
 
     fn select_scalar_graph_key(&mut self, context: GraphContext, time: f32, toggle: bool) {
-        self.key_selection.select(
-            peachy_engine::AnimationKey::Bone {
-                bone: context.bone,
-                property: context.property,
-                time,
-            },
-            toggle,
-        );
-        self.graph.selected = self.key_selection.keys().iter().find_map(|key| match key {
-            peachy_engine::AnimationKey::Bone {
-                bone,
-                property,
-                time,
-            } if *bone == context.bone && *property == context.property => Some(*time),
-            _ => None,
-        });
+        self.key_selection.select(context.key(time), toggle);
+        self.graph.selected = self
+            .key_selection
+            .keys()
+            .iter()
+            .find_map(|key| (context.key(key.time()) == *key).then_some(key.time()));
     }
 
     pub(super) fn scalar_graph_has_focus(&self, ctx: &egui::Context) -> bool {
@@ -313,22 +432,18 @@ impl Editor {
     }
 
     fn graph_source_matches(&self, edit: &GraphEdit) -> bool {
-        self.graph_track(edit.context).is_some_and(|track| {
-            track.keys.len() == edit.source.keys.len()
-                && track
-                    .keys
-                    .iter()
-                    .zip(&edit.source.keys)
-                    .all(|(current, base)| {
-                        current.time == base.time
-                            && current.curve == base.curve
-                            && current.value.to_bits()
-                                == if base.time == edit.key.time {
-                                    edit.value.to_bits()
-                                } else {
-                                    base.value.to_bits()
-                                }
-                    })
+        self.graph_keys(edit.context).is_some_and(|keys| {
+            keys.len() == edit.source.len()
+                && keys.iter().zip(&edit.source).all(|(current, base)| {
+                    current.time == base.time
+                        && current.curve == base.curve
+                        && current.value.to_bits()
+                            == if base.time == edit.key.time {
+                                edit.value.to_bits()
+                            } else {
+                                base.value.to_bits()
+                            }
+                })
         })
     }
 
@@ -367,7 +482,7 @@ impl Editor {
                 || self.rename.is_some()
                 || self.duplicate_animation.is_some()
                 || egui::Popup::is_any_open(ctx)
-                || self.graph_context() != Some(edit.context)
+                || self.value_graph_context() != Some(edit.context)
                 || self.time.to_bits() != edit.cursor.to_bits()
                 || self.skin != edit.skin
                 || self.tool != edit.tool
@@ -425,6 +540,7 @@ impl Editor {
         if self.deform_graph_has_focus(ctx)
             || self.slot_graph_has_focus(ctx)
             || self.scalar_graph_has_focus(ctx)
+            || self.slider_graph_has_focus(ctx)
         {
             self.timeline_clipboard_shortcuts(ctx);
         }
@@ -446,10 +562,10 @@ impl Editor {
         bounds: GraphBounds,
     ) {
         self.cancel_gesture();
-        let Some(source) = self.graph_track(context).cloned() else {
+        let Some(source) = self.graph_keys(context).map(<[Keyframe]>::to_vec) else {
             return;
         };
-        if !source.keys.contains(&key) {
+        if !source.contains(&key) {
             return;
         }
         self.session.commit_transaction();
@@ -477,6 +593,11 @@ impl Editor {
     }
 
     fn update_graph_edit(&mut self, pointer: Pos2) {
+        let factor = self
+            .graph
+            .edit
+            .as_ref()
+            .map_or(1., |edit| self.graph_factor(edit.context));
         let Some(edit) = self.graph.edit.as_mut() else {
             return;
         };
@@ -490,7 +611,8 @@ impl Editor {
         } else {
             (f64::from(edit.key.value)
                 + delta / f64::from(edit.rect.height())
-                    * (edit.bounds.value_max - edit.bounds.value_min)) as f32
+                    * (edit.bounds.value_max - edit.bounds.value_min)
+                    / factor) as f32
         };
         if !value.is_finite() {
             self.cancel_graph_edit();
@@ -503,12 +625,29 @@ impl Editor {
         }
         let context = edit.context;
         let key = Keyframe { value, ..edit.key };
-        match self.session.preview_transaction(Command::SetKey {
-            animation: context.animation,
-            bone: context.bone,
-            property: context.property,
-            key,
-        }) {
+        let command = match context {
+            GraphContext::Bone {
+                animation,
+                bone,
+                property,
+            } => Command::SetKey {
+                animation,
+                bone,
+                property,
+                key,
+            },
+            GraphContext::Slider {
+                animation,
+                constraint,
+                property,
+            } => Command::SetSliderKey {
+                animation,
+                constraint,
+                property,
+                key,
+            },
+        };
+        match self.session.preview_transaction(command) {
             Ok(()) => {
                 self.graph.edit.as_mut().unwrap().value = value;
             }
@@ -520,20 +659,19 @@ impl Editor {
     }
 
     fn fit_graph(&mut self, context: GraphContext, zoom_key: bool) {
-        let Some(track) = self.graph_track(context) else {
+        let Some(keys) = self.graph_keys(context) else {
             return;
         };
         let frame = 1. / f64::from(self.session.document().fps);
         let mut time_min = 0.;
         let mut time_max = f64::from(self.animation_end()).max(frame);
         if zoom_key && let Some(time) = self.graph.selected {
-            let index = track.keys.partition_point(|key| key.time < time);
-            if track.keys.get(index).is_some_and(|key| key.time == time) {
+            let index = keys.partition_point(|key| key.time < time);
+            if keys.get(index).is_some_and(|key| key.time == time) {
                 let left = index
                     .checked_sub(1)
-                    .map(|i| f64::from(time) - f64::from(track.keys[i].time));
-                let right = track
-                    .keys
+                    .map(|i| f64::from(time) - f64::from(keys[i].time));
+                let right = keys
                     .get(index + 1)
                     .map(|key| f64::from(key.time) - f64::from(time));
                 let native_grain = if time.next_up().is_finite() {
@@ -564,15 +702,36 @@ impl Editor {
         };
         let mut min = f64::INFINITY;
         let mut max = f64::NEG_INFINITY;
-        for time in graph_times(track, bounds, self.graph.selected) {
-            let value = f64::from(graph_sample(track, time));
-            if !value.is_finite() {
-                self.graph.error =
-                    Some("This interval cannot be evaluated as finite graph values.".into());
-                return;
+        let contexts = match context {
+            GraphContext::Bone { .. } => vec![context],
+            GraphContext::Slider {
+                animation,
+                constraint,
+                ..
+            } => SliderProperty::ALL
+                .into_iter()
+                .map(|property| GraphContext::Slider {
+                    animation,
+                    constraint,
+                    property,
+                })
+                .collect(),
+        };
+        for candidate in contexts {
+            let Some(keys) = self.graph_keys(candidate) else {
+                continue;
+            };
+            for time in graph_times(keys, bounds, self.graph.selected) {
+                let value = f64::from(graph_sample_keys(keys, time, self.graph_neutral(candidate)))
+                    * self.graph_factor(candidate);
+                if !value.is_finite() {
+                    self.graph.error =
+                        Some("This interval cannot be evaluated as finite graph values.".into());
+                    return;
+                }
+                min = min.min(value);
+                max = max.max(value);
             }
-            min = min.min(value);
-            max = max.max(value);
         }
         let padding = ((max - min) * 0.1)
             .max(if min == max { min.abs() * 0.1 } else { 0. })
@@ -592,6 +751,9 @@ impl Editor {
         self.reconcile_graph_input(ui.ctx());
         self.graph.rendered_keys = 0;
         self.graph.rendered_points = 0;
+        if self.slider_graph_panel(ui) {
+            return;
+        }
         if self.timeline_owner() == Some(peachy_engine::KeyOwner::DrawOrder {}) {
             self.animation_controls(ui);
             ui.label("Draw order keys hold the slot order. Edit their timing in the Dopesheet.");
@@ -656,7 +818,10 @@ impl Editor {
         {
             self.graph.selected = None;
         }
-        let units = match context.property {
+        let GraphContext::Bone { bone, property, .. } = context else {
+            return;
+        };
+        let units = match property {
             Property::ScaleX | Property::ScaleY => "Native values · multipliers of Setup scale",
             Property::Rotation | Property::ShearX | Property::ShearY => {
                 "Native values · degrees added to Setup"
@@ -737,7 +902,7 @@ impl Editor {
         });
         ui.horizontal(|ui| self.curve_preset_controls(ui, "graphScalarCurve"));
         let curve_channel=self.selected_curve_channels().ok().and_then(|channels|channels.into_iter().find(|channel|matches!(channel.target.key,
-            peachy_engine::AnimationKey::Bone {bone,property,..} if bone==context.bone&&property==context.property)));
+            peachy_engine::AnimationKey::Bone {bone:selected_bone,property:selected_property,..} if selected_bone==bone&&selected_property==property)));
         // Keep this header in the layout before a marker is selected: a new
         // selection must not shift the frozen canvas during its press/drag.
         let handles = egui::CollapsingHeader::new("Handles")
@@ -973,7 +1138,10 @@ impl Editor {
             "visible":self.graph_visible(), "property":self.graph.property,
             "deform":self.deform_curve_diagnostic(),
             "slot":self.slot_curve_diagnostic(),
-            "context":self.graph.context.map(|context|serde_json::json!({"animation":context.animation,"bone":context.bone,"property":context.property})),
+            "context":self.graph.context.map(|context|match context {
+                GraphContext::Bone{animation,bone,property}=>serde_json::json!({"kind":"bone","animation":animation,"bone":bone,"property":property}),
+                GraphContext::Slider{animation,constraint,property}=>serde_json::json!({"kind":"slider","animation":animation,"constraint":constraint,"property":property}),
+            }),
             "selectedTime":self.graph.selected,"blocked":self.graph.blocked,"error":self.graph.error,
             "bounds":self.graph.bounds.map(|bounds|[bounds.time_min,bounds.time_max,bounds.value_min,bounds.value_max]),
             "renderedKeys":self.graph.rendered_keys,"renderedPoints":self.graph.rendered_points,

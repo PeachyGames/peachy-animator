@@ -104,6 +104,20 @@ fn surrounding<T>(
 
 fn neighbors(clip: &Animation, target: &CurveTarget) -> Result<Vec<CurveTarget>, String> {
     match &target.key {
+        AnimationKey::Slider {
+            constraint,
+            property,
+            ..
+        } => surrounding(
+            &clip
+                .slider_tracks
+                .iter()
+                .find(|track| track.constraint == *constraint && track.property == *property)
+                .ok_or("Unknown Slider track")?
+                .keys,
+            target,
+            |key| key.time,
+        ),
         AnimationKey::Bone { bone, property, .. } => surrounding(
             &clip
                 .tracks
@@ -340,6 +354,20 @@ fn commands_for_changes(
     for (channel, curve) in changes {
         let time = channel.target.key.time();
         match (channel.target.key, curve) {
+            (
+                AnimationKey::Slider {
+                    constraint,
+                    property,
+                    ..
+                },
+                CurveData::Standard(curve),
+            ) => commands.push(Command::SetSliderCurve {
+                animation,
+                constraint,
+                property,
+                time,
+                curve,
+            }),
             (AnimationKey::Bone { bone, property, .. }, CurveData::Standard(curve)) => commands
                 .push(Command::SetKeyCurve {
                     animation,

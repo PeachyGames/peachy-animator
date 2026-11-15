@@ -3,7 +3,8 @@ use peachy_document::*;
 use serde_json::json;
 
 fn document() -> Document {
-    serde_json::from_str(include_str!("../../../examples/peach-bot/peach-bot.peachy")).unwrap()
+    crate::native_fixture::decode(include_str!("../../../examples/peach-bot/peach-bot.peachy"))
+        .unwrap()
 }
 
 #[test]
@@ -123,7 +124,7 @@ fn scene_draw_tint_follows_the_slot_across_skins_meshes_and_alpha_zero_without_g
         include_str!("../../../examples/peach-bot/peach-bot.peachy"),
         include_str!("../../../examples/peach-bot/weighted-bot.peachy"),
     ] {
-        let original: Document = serde_json::from_str(input).unwrap();
+        let original: Document = crate::native_fixture::decode(input).unwrap();
         for skin in ["default", "peach", "mint"] {
             let before = checked_evaluate_scene(&original, Some(0), 0.3, skin, None).unwrap();
             for slot in 0..original.slots.len() {

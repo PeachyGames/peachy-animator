@@ -4,6 +4,56 @@ Written November 10, 2026, at the end of the import-parity push. Read this
 first, then `AGENTS.md`. The workspace rules in `../AGENTS.md` and `../CLAUDE.md`
 still apply.
 
+## November 15 Slider continuation
+
+The verified bounded Slider checkpoint uses **native v23, 58 commands / 14 MCP
+tools**. Manual Frame/Mix controls share pending poses, Auto Key/K, independent
+keys, typed Dopesheet/Graph, curve splitting, clipboard and Session history with
+MCP. Historical v22 examples remain byte-frozen and migrate in memory. One
+ordered effective state supplies constraints, slot domains and checked geometry
+without another solve; skin applies before host sampling and pending overlays.
+
+Actual native manual/Graph/history/cancellation/Save/minimum checks pass. Final
+public reopening has one image/empty history, playback advances to 0.224702 seconds
+and stops/resets to 0. Final MCP recreation uses 84 actual requests from a blank
+project and one original PNG; no finished rig is an input. Canonical
+`examples/peach-bot/slider-bot.peachy` SHA256 is
+`f097c00c4542d46b7e2ee846d72d74606c9a6e5fad9bf41ccc1dcdc277a60dc6`.
+Native tests edit/restore this rig, rather than independently creating it.
+
+Domain 170/170, Sequence/activity 177/177, incoming 101/101, other-Slider 21/21 and
+driven Time/Mix 12/12 each pass final affected matrices at unchanged 0.001. Other
+bounded studies, three Loop precision and twelve Sequence counter refusals stay
+separate. Two raw 1e30 adversarial precision mismatches remain failures. Final
+runtime geometry passes 104 poses (max world 1.83804e−5 /region 2.28882e−5).
+Installed 4.3.26 geometry also passes 104 poses at max 1.52588e−5 with exact UVs,
+but its strict authored comparison remains false: Time/Mix order and small
+Bezier/value canonicalization differ. No lossless interchange claim follows.
+
+Focused two-worker checks, formatting, all-target Clippy, workspace build and
+seven-crate architecture pass. See [contract](slices/slider-constraints.md),
+[gallery](evidence/slider-constraints.html) and
+[scalar record](evidence/slider-constraints.json). Required hosted CI remains
+unavailable; keep PR #1 in draft and do not dispatch workflows. Push verified checkpoints
+at will under Chris's standing authorization.
+
+**Next feature action: close the Slider source/creation workflow gap.** Native
+New→Slider prepends (raw Add appends), so define exact remapping/identity/history
+before creation UI. Source assignment deletes Time keys while preserving Mix;
+clear is state-dependent and must not be guessed from one derived frame. Local,
+source property/ranges and derived Frame display need shared semantic/query APIs
+and MCP alongside native controls. Physics/events and remaining Deform/Sequence
+reference domains, extreme precision and lossless authored conversion stay open.
+Continue the blog backlog after that; the canceled female-pose full check remains
+canceled and LM Studio must not be started.
+
+All task-owned reference/native/MCP processes are verified closed. Native input
+helpers, redundant captures and disposable generated outputs retire at checkpoint;
+selected private observations, final requests/recipes/reports and original
+calibration inputs retain an active PR /next Slider work dependency until integrated
+or superseded. The shared Cargo target remains required by the continuing goal.
+No new checkout/target/repository copy was created.
+
 ## November 15 workspace divider continuation
 
 The canvas now reserves the nearest right pane's actual egui resize grab band

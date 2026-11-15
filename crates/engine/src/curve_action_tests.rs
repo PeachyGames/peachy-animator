@@ -248,7 +248,8 @@ fn curve_preset_rgba_channels_keep_bytes_and_grouped_steps_while_custom_ik_keeps
         [Curve::Stepped; 4]
     );
     let mut ik: Document =
-        serde_json::from_str(include_str!("../../../examples/peach-bot/ik-bot.peachy")).unwrap();
+        crate::native_fixture::decode(include_str!("../../../examples/peach-bot/ik-bot.peachy"))
+            .unwrap();
     ik.animations[0].ik_tracks = vec![IkTrack {
         constraint: 0,
         keys: vec![

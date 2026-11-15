@@ -180,7 +180,7 @@ fn xy_mappings_offset_scale_and_clamp_like_the_runtime() {
     // Values observed black-box with the external runtime (original probe):
     // value = (p − from offset) × scale + to offset, clamped between the to
     // offset and max (either order) when the constraint clamps, then mixed.
-    let doc: Document = serde_json::from_str(include_str!(
+    let doc: Document = crate::native_fixture::decode(include_str!(
         "../../../examples/peach-bot/transform-map-bot.peachy"
     ))
     .unwrap();

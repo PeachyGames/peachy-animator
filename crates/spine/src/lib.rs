@@ -9,6 +9,7 @@ mod ik_timelines;
 mod linked_mesh;
 mod path;
 mod sequence;
+mod slider;
 mod slot_keys;
 use attachments::{inspect_attachment, read_attachment, write_attachment};
 use peachy_document::*;
@@ -167,6 +168,7 @@ pub fn inspect(value: &Value) -> Inspection {
                 "transform",
                 "path",
                 "physics",
+                "slider",
                 "color",
             ],
             "Skin",
@@ -177,7 +179,7 @@ pub fn inspect(value: &Value) -> Inspection {
         if nonempty(&skin["constraints"]) {
             unsupported.push(format!("Skin {}: constraints", skin["name"]));
         }
-        for field in ["bones", "ik", "transform", "physics", "path"] {
+        for field in ["bones", "ik", "transform", "physics", "path", "slider"] {
             if skin.get(field).is_some_and(|v| {
                 !v.as_array()
                     .is_some_and(|items| items.iter().all(Value::is_string))
@@ -218,6 +220,7 @@ pub fn inspect(value: &Value) -> Inspection {
                             | "events"
                             | "drawOrder"
                             | "path"
+                            | "slider"
                     ) && nonempty(contents)
                     {
                         unsupported.push(format!("Animation {name}: {field} timelines"));
@@ -430,6 +433,7 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
         .filter(|(_, constraint)| constraint.as_path().is_some())
         .map(|(index, constraint)| (constraint.name().to_owned(), index))
         .collect();
+    let slider_indices = slider::indices(&constraints);
     let mut animations = vec![];
     if let Some(entries) = value["animations"].as_object() {
         for (name, animation) in entries {
@@ -497,6 +501,7 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
                 draw_order: draw_order::read(name, animation, &slot_indices)?,
                 path_tracks: path::read_timelines(name, animation, &path_indices)?,
                 sequence_tracks: sequence::read_tracks(name, animation, &skins)?,
+                slider_tracks: slider::read_timelines(name, animation, &slider_indices)?,
             });
         }
     }
@@ -599,7 +604,7 @@ pub fn export_json_for(doc: &Document, target: ExportTarget) -> Result<Value, St
                             .collect::<Vec<_>>()
                     );
                 }
-                for field in ["ik", "transform", "physics", "path"] {
+                for field in ["ik", "transform", "physics", "path", "slider"] {
                     let names: Vec<_> = members
                         .constraints
                         .iter()
@@ -663,6 +668,10 @@ pub fn export_json_for(doc: &Document, target: ExportTarget) -> Result<Value, St
         let physics = constraints::write_physics_timelines(doc, animation)?;
         if !physics.as_object().is_some_and(serde_json::Map::is_empty) {
             animations[&animation.name]["physics"] = physics;
+        }
+        let sliders = slider::write_timelines(doc, animation)?;
+        if !sliders.as_object().is_some_and(serde_json::Map::is_empty) {
+            animations[&animation.name]["slider"] = sliders;
         }
         if !animation.path_tracks.is_empty() {
             animations[&animation.name]["path"] = path::write_timelines(doc, animation)?;
@@ -737,7 +746,7 @@ pub(crate) fn read_hex_color(entry: &Value, what: &str) -> Result<[u8; 4], Strin
 }
 
 /// Skin-required bones (`skin: true`), constraints (`skin: true`) and the named
-/// skins' `bones`/`ik`/`transform`/`physics` lists.
+/// skins' per-kind constraint lists, including observed 4.3 Slider membership.
 fn read_skin_scope(
     value: &Value,
     bones: &BTreeMap<String, usize>,
@@ -765,7 +774,7 @@ fn read_skin_scope(
                     .ok_or_else(|| format!("Skin {name}: unknown bone {bone}"))?,
             );
         }
-        for field in ["ik", "transform", "physics", "path"] {
+        for field in ["ik", "transform", "physics", "path", "slider"] {
             for listed in array(&skin[field]) {
                 let wanted = listed.as_str().unwrap_or_default();
                 let index = constraints
@@ -791,6 +800,7 @@ fn constraint_kind(constraint: &Constraint) -> &'static str {
         Constraint::Transform(_) => "transform",
         Constraint::Physics(_) => "physics",
         Constraint::Path(_) => "path",
+        Constraint::Slider(_) => "slider",
     }
 }
 
@@ -1282,7 +1292,8 @@ fn inspect_numbers(value: &Value, fields: &[&str], context: &str, issues: &mut V
 mod tests {
     use super::*;
     fn mesh_fixture() -> Document {
-        serde_json::from_str(include_str!("../../../examples/peach-bot/mesh-bot.peachy")).unwrap()
+        crate::native_fixture::decode(include_str!("../../../examples/peach-bot/mesh-bot.peachy"))
+            .unwrap()
     }
     #[test]
     fn unweighted_meshes_roundtrip_topology_uvs_edges_and_image_metadata() {
@@ -1527,3 +1538,7 @@ mod tests {
         assert_eq!(import_json(&output, "test").unwrap().skins, doc.skins);
     }
 }
+
+#[cfg(test)]
+#[path = "../../document/test_support/native_fixture.rs"]
+mod native_fixture;

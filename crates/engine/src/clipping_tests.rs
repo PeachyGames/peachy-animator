@@ -43,7 +43,8 @@ fn concave_polygons_cut_exactly_and_convex_uses_the_hull() {
 #[test]
 fn clips_run_from_their_slot_through_the_end_slot_or_to_the_end() {
     let doc: Document =
-        serde_json::from_str(include_str!("../../../examples/peach-bot/clip-bot.peachy")).unwrap();
+        crate::native_fixture::decode(include_str!("../../../examples/peach-bot/clip-bot.peachy"))
+            .unwrap();
     let scene = checked_evaluate_scene(&doc, Some(0), 0.5, "peach", None).unwrap();
     let clipped: Vec<&str> = scene
         .attachments

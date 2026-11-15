@@ -4,7 +4,8 @@ use crate::*;
 use peachy_document::*;
 
 fn lab() -> Document {
-    serde_json::from_str(include_str!("../../../examples/peach-bot/slot-bot.peachy")).unwrap()
+    crate::native_fixture::decode(include_str!("../../../examples/peach-bot/slot-bot.peachy"))
+        .unwrap()
 }
 fn slot(doc: &Document, name: &str) -> usize {
     doc.slots.iter().position(|slot| slot.name == name).unwrap()
@@ -927,7 +928,8 @@ fn slot_authoring_unrepresentable_fractional_keying_and_bad_payloads_preserve_pe
 #[test]
 fn slot_authoring_global_k_keys_bone_ik_deform_and_slots_in_one_undo_step() {
     let document: Document =
-        serde_json::from_str(include_str!("../../../examples/peach-bot/ik-bot.peachy")).unwrap();
+        crate::native_fixture::decode(include_str!("../../../examples/peach-bot/ik-bot.peachy"))
+            .unwrap();
     let attachment = AttachmentRef {
         skin: "peach".into(),
         slot: "body".into(),

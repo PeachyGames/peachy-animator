@@ -137,7 +137,7 @@ mod tests {
 
     fn editor() -> Editor {
         let mut editor = editor_fixture();
-        let doc: Document = serde_json::from_str(include_str!(
+        let doc: Document = peachy_io::decode_project(include_str!(
             "../../../../examples/peach-bot/path-bot.peachy"
         ))
         .unwrap();

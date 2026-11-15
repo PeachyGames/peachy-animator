@@ -6,7 +6,8 @@ use peachy_document::*;
 
 fn fixture(curves: [Curve; 4]) -> (Document, usize) {
     let mut doc: Document =
-        serde_json::from_str(include_str!("../../../examples/peach-bot/slot-bot.peachy")).unwrap();
+        crate::native_fixture::decode(include_str!("../../../examples/peach-bot/slot-bot.peachy"))
+            .unwrap();
     let slot = doc
         .slots
         .iter()

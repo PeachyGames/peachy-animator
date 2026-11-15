@@ -35,9 +35,18 @@ impl Editor {
             Some(TreeItem::Placeholder { slot, .. }) => {
                 Some(peachy_engine::KeyOwner::Slot { slot: *slot })
             }
-            Some(TreeItem::Constraint(constraint)) => Some(peachy_engine::KeyOwner::Ik {
-                constraint: *constraint,
-            }),
+            Some(TreeItem::Constraint(constraint))
+                if self.slider_constraint(*constraint).is_some() =>
+            {
+                Some(peachy_engine::KeyOwner::Slider {
+                    constraint: *constraint,
+                })
+            }
+            Some(TreeItem::Constraint(constraint)) if self.ik_constraint(*constraint).is_some() => {
+                Some(peachy_engine::KeyOwner::Ik {
+                    constraint: *constraint,
+                })
+            }
             Some(TreeItem::Attachment(attachment)) if self.attachment_editable(attachment) => {
                 peachy_engine::deform_key_owner(self.session.document(), attachment).ok()
             }
@@ -278,6 +287,23 @@ impl Editor {
                         MINT,
                     )
                 }
+                dopesheet_selection::TimelineRow::Slider(property) => (
+                    format!(
+                        "Slider {}",
+                        if property == SliderProperty::Time {
+                            "Time"
+                        } else {
+                            "Mix"
+                        }
+                    ),
+                    None,
+                    format!("timelineRow:slider:{property:?}"),
+                    if property == SliderProperty::Time {
+                        Color32::from_rgb(90, 180, 205)
+                    } else {
+                        Color32::from_rgb(195, 120, 205)
+                    },
+                ),
                 dopesheet_selection::TimelineRow::Deform => {
                     let Some(peachy_engine::KeyOwner::Deform { attachment }) = &owner else {
                         continue;
@@ -345,6 +371,9 @@ impl Editor {
                 label.on_hover_text(format!("Select {name} tool · {shortcut}"))
             } else {
                 label.on_hover_text(match row {
+                    dopesheet_selection::TimelineRow::Slider(_) => {
+                        "Slider Time/Mix keys; select a channel to edit its authored keys."
+                    }
                     dopesheet_selection::TimelineRow::Deform => &name,
                     dopesheet_selection::TimelineRow::SlotAttachment => {
                         "Slot attachment swaps are stepped; None hides the slot."
@@ -396,6 +425,11 @@ impl Editor {
                 let key_rect = egui::Rect::from_center_size(p, vec2(9., 9.));
                 key_targets.push((key_id.clone(), p));
                 let target = match &key_id {
+                    KeyId::Slider {
+                        constraint,
+                        property,
+                        ..
+                    } => format!("timelineKey:slider:{constraint}:{property:?}:{index}"),
                     KeyId::Bone { property, .. } => format!("timelineKey:{property:?}:{index}"),
                     KeyId::Ik { constraint, .. } => format!("timelineKey:ik:{constraint}:{index}"),
                     KeyId::Deform { .. } => format!("timelineKey:deform:{index}"),

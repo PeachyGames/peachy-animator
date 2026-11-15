@@ -45,7 +45,8 @@ mod tests {
     use peachy_document::Document;
 
     fn original() -> Document {
-        serde_json::from_str(include_str!("../../../examples/peach-bot/mesh-bot.peachy")).unwrap()
+        crate::native_fixture::decode(include_str!("../../../examples/peach-bot/mesh-bot.peachy"))
+            .unwrap()
     }
 
     #[test]

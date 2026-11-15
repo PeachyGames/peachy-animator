@@ -143,6 +143,15 @@ impl KeyDrag {
         self.sources
             .iter()
             .map(|key| match key {
+                AnimationKey::Slider {
+                    constraint,
+                    property,
+                    time,
+                } => AnimationKey::Slider {
+                    constraint: *constraint,
+                    property: *property,
+                    time: time + offset,
+                },
                 AnimationKey::Bone {
                     bone,
                     property,
@@ -354,7 +363,7 @@ mod tests {
     #[test]
     fn modified_click_release_selects_without_retiming_or_using_later_frame_modifiers() {
         use super::super::dopesheet_selection::KeySelection;
-        let mut document: Document = serde_json::from_str(include_str!(
+        let mut document: Document = peachy_io::decode_project(include_str!(
             "../../../../examples/peach-bot/peach-bot.peachy"
         ))
         .unwrap();
