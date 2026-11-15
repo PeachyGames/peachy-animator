@@ -31,7 +31,7 @@ Artist assets in the sibling `spine-files-2` project are private local compatibi
 
 ## Verification
 
-Run `cargo fmt --all -- --check`, `cargo test --workspace`, `cargo clippy --workspace --all-targets -- -D warnings`, and `cargo build --workspace`. Verify interpolation, command atomicity/undo, round trips and external runtime compatibility. The sibling game's Vitest prohibition applies to the game; this project uses Rust's built-in test runner.
+Run `cargo fmt --all -- --check`, focused Rust test filters with `-j2 -- --test-threads=2`, `cargo clippy --workspace --all-targets -j2 -- -D warnings`, and `cargo build --workspace -j2`. Do not run the full workspace test suite. Verify affected interpolation, command atomicity/undo, round trips and external runtime compatibility. The sibling game's Vitest prohibition applies to the game; this project uses Rust's built-in test runner.
 Run `python3 scripts/check-architecture.py` too. Its allowlist checks real Cargo dependencies; update the rules explicitly when deliberately changing the layers. It does not prove arbitrary standard-library I/O cannot be introduced, so review core functions for side effects as well.
 
 `apply_command(&Document, Command)` is the pure editing boundary. `Session` wraps it with in-memory history; pointer gestures use begin/commit/cancel transactions. Native documents and commands reject unknown fields. Export-target restrictions belong to the adapter, not native document validation. Reconcile transient editor selections after history/document changes. Introduce stable entity IDs before deletion/reparenting.
@@ -121,7 +121,7 @@ keep the final actual-MCP rejection/Undo evidence separate from historical runs.
 See
 `docs/slices/slider-constraints.md` for calibrated domains and precision refusals.
 
-The following multi-owner timing checkpoint retains v23 and 63 commands, with
+The earlier `b45d18d` multi-owner timing checkpoint retains v23 and 63 commands, with
 18 MCP tools. `get_animation_keys` requires explicit typed owners; an empty list
 means inventory only, never all keys. It returns authored exact identities and
 explicit unsupported-timeline metadata without skin/visibility filtering, solving
@@ -131,9 +131,24 @@ passes selection/move/history, cancellation, Graph ownership, minimum layout and
 exact Save/reopen. Native cancellation starts with empty pending edits; nonempty
 pending preservation has headless coverage only. Mixed-owner Copy refuses
 explicitly without changing document/selection/redo/internal clipboard.
-Keep group clipboard, Shift/Offset, Lock/Sync, general Tree multi-selection and
-unsupported families explicit. Next add shared-origin group clipboard with
-explicit owner mapping before Shift/Offset; do not infer it from mixed-key moves.
+That checkpoint left group clipboard separate from mixed-key moves.
+
+Current grouped clipboard uses v23 unchanged and 64 commands/19 MCP tools.
+`copy_animation_key_group` returns portable entries plus separate `sourceOwners`;
+every entry shares one global time origin and may start nonzero. New raw
+`PasteAnimationKeyGroup` requires a complete explicit entry-to-target map with
+unique canonical targets and strict object-only nested decoding. Existing leaf
+commands/v2 clipboard wire stay unchanged; the editor-local group envelope is v3.
+Source-owner bindings stay outside portable data. Preserve original key selection
+after paste; accepted incoming IDs are diagnostics, not automatic selection.
+Actual MCP run02 passes 57 requests and separate other-target/cross-animation
+exports pass 208 runtime poses at 0.001; these do not accept native interaction.
+Final checks05/06 pass; bounded native authoring and leaf-v2 selection/Cut checks
+pass, but full native acceptance remains partial pending minimum-window and
+Save/fresh reopen. User steering is to finish code checks and push first. All
+owned processes are closed and the native baseline is restored. General
+Tree target multi-selection, no-Tree single-leaf fallback, Shift/Offset, Lock/Sync
+and unsupported families remain. See docs/slices/grouped-clipboard.md.
 
 Native v21 adds `IkConstraint.stretch`. IK bones may have equal-magnitude
 scale (mirrored first bone allowed); see docs/slices/ik-scale-stretch.md for the

@@ -1,6 +1,21 @@
 # Peachy Animator
 
-The current engine/MCP interface provides **63 commands / 18 tools**, with
+The current engine/MCP interface provides **64 commands / 19 tools**, native v23
+unchanged. Grouped clipboard copy/paste now shares one earliest-key origin and
+explicit entry-to-target mappings through the engine and MCP. The actual blank-
+root/one-PNG run02 passes **57 requests**, nine negative atomic cases, history/
+reopen and 12 pose queries. Separate other-target/cross-animation exports pass
+**208 runtime poses** at 0.001; region error is at most 1.52587890625e−5.
+**Code-push checkpoint:** final source checks and native Copy/Paste/Cut/selection/
+history cases pass. All owned processes are closed. At the user's request, code
+checks/push come first; **native minimum layout and Save/fresh reopen remain
+pending**. See [scope](docs/slices/grouped-clipboard.md),
+[review](docs/evidence/grouped-clipboard.html) and
+[scalar evidence](docs/evidence/grouped-clipboard.json). General Tree target
+multi-selection, leaf fallback without a Tree owner, Shift/Offset and Lock/Sync
+remain open.
+
+The earlier ordinary multi-owner checkpoint used **63 commands / 18 tools**, with
 **native v23 unchanged**. `get_animation_keys` exposes exact authored owner/key
 inventory for shared mixed-owner retiming. Bounded all-owner Dopesheet rows and
 ordinary group movement pass **bounded native acceptance**. The original
@@ -321,7 +336,7 @@ Click Dopesheet keys to select them, **Cmd/Ctrl-click** to toggle several, then
 press **Delete** while the canvas has focus or click its Delete icon. Double-click
 a key to delete it. Drag selected keys to retime them together; **Shift** disables
 frame snapping and **Cmd/Ctrl+Shift-drag** duplicates them. **Cmd/Ctrl+C/X/V**
-copies/cuts/pastes focused Dopesheet keys. Paste targets the selected bone at the
+copies/cuts/pastes focused Dopesheet keys. A leaf paste targets the selected bone at the
 playhead, retaining relative timing and curves. The matching toolbar icons share
 these actions. **Cmd/Ctrl+A** expands selection to its rows, then all shown keys;
 with no selection it selects all shown keys immediately. Click a property row label
@@ -330,7 +345,8 @@ committed edit is one undo step.
 
 The bounded all-owner continuation shows represented keyed owners together when
 no editable Tree owner is selected. Ordinary typed-key moves can cross owners;
-clipboard copy/paste remains one-owner. Shift currently bypasses snapping;
+the earlier leaf clipboard remains unchanged while grouped copy/paste is now
+implemented with native acceptance pending. Shift currently bypasses snapping;
 Spine-style Shift ripple and cycle Offset remain separate unimplemented controls.
 
 The workspace follows Spine’s default arrangement: viewport left, Tree and item
@@ -568,7 +584,7 @@ cargo build -p peachy-mcp --locked
 ./target/debug/peachy-mcp --root /absolute/path/to/animation-workspace
 ```
 
-It communicates over stdio and exposes **63 commands / 18 tools** for project
+It communicates over stdio and exposes **64 commands / 19 tools** for project
 inspection, exact owner/key inventory, validated command batches, typed key copying, undo/redo, pose
 evaluation and new-output saves/exports through the same engine as the desktop.
 Each server owns an independent session; it does not

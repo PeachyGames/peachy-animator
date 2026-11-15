@@ -102,7 +102,7 @@ impl Editor {
         self.preferred_scalar_curve_selection()
             .or_else(|| self.key_selection.primary().cloned())
     }
-    fn timeline_owner_editable(&self, owner: &KeyOwner) -> bool {
+    pub(super) fn timeline_owner_editable(&self, owner: &KeyOwner) -> bool {
         let KeyOwner::Deform { attachment } = owner else {
             return true;
         };
@@ -321,7 +321,21 @@ impl Editor {
             pos2((rect.left() + label_width).min(rect.right()), rect.top()),
             rect.max,
         );
-        let response = ui.interact(grid, Self::dopesheet_id(), Sense::click_and_drag());
+        let ruler = egui::Rect::from_min_max(
+            grid.min,
+            pos2(grid.right(), (rect.top() + 26.).min(rect.bottom())),
+        );
+        let ruler_response = ui.interact(
+            ruler,
+            Self::dopesheet_id().with("ruler"),
+            Sense::click_and_drag(),
+        );
+        ruler_response.widget_info(|| {
+            egui::WidgetInfo::labeled(egui::WidgetType::Other, true, "Dopesheet ruler")
+        });
+        self.record_target("timelineRuler", ruler.intersect(ui.clip_rect()));
+        let rows_grid = egui::Rect::from_min_max(pos2(grid.left(), ruler.bottom()), grid.max);
+        let response = ui.interact(rows_grid, Self::dopesheet_id(), Sense::click_and_drag());
         response.widget_info(|| {
             egui::WidgetInfo::labeled(egui::WidgetType::Other, true, "Dopesheet keys")
         });
@@ -510,7 +524,7 @@ impl Editor {
                                 }
                             };
                             (
-                                property.label().to_owned(),
+                                row.label().to_owned(),
                                 Some(tool),
                                 format!("timelineRow:{property:?}"),
                                 color,
@@ -820,7 +834,9 @@ impl Editor {
                 .or_else(|| response.interact_pointer_pos());
             if let Some(key) = pointer.and_then(hit_key) {
                 self.playing = false;
-                self.set_time(key.time());
+                if !toggle {
+                    self.set_time(key.time());
+                }
                 if response.double_clicked() {
                     self.cancel_gesture();
                     self.dispatch(Command::DeleteAnimationKeys {
@@ -847,6 +863,15 @@ impl Editor {
             && let Some(pointer) = response.interact_pointer_pos()
         {
             response.request_focus();
+            self.scrub_dopesheet(pointer, geometry);
+        }
+        if self.slot_authoring_input_available(ui.ctx())
+            && (ruler_response.clicked()
+                || ruler_response.dragged_by(egui::PointerButton::Primary)
+                || ruler_response.drag_stopped_by(egui::PointerButton::Primary))
+            && let Some(pointer) = ruler_response.interact_pointer_pos()
+        {
+            ui.memory_mut(|memory| memory.request_focus(Self::dopesheet_id()));
             self.scrub_dopesheet(pointer, geometry);
         }
         // Keep one line reserved: selection changes must not resize the view and move key targets.

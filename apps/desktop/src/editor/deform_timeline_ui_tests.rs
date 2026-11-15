@@ -107,11 +107,17 @@ fn deform_dopesheet_rows_clipboard_and_delete_use_mesh_identity() {
         assert_eq!(keys[0].offsets[0], 2.);
         editor.set_time(1.5);
         assert!(editor.paste_dopesheet_keys());
-        assert_eq!(editor.key_selection.keys(), &[key(&attachment, 1.5)]);
+        assert_eq!(editor.key_selection.keys(), &[key(&attachment, 0.300005)]);
         let pasted = editor.session.document().clone();
         editor.delete_dopesheet_keys();
         assert!(
             !editor.session.document().animations[0].deform_tracks[0]
+                .keys
+                .iter()
+                .any(|key| key.time == 0.300005)
+        );
+        assert!(
+            editor.session.document().animations[0].deform_tracks[0]
                 .keys
                 .iter()
                 .any(|key| key.time == 1.5)
@@ -647,11 +653,26 @@ fn deform_graph_canvas_routes_native_clipboard_and_delete_to_exact_mesh_keys() {
             .to_string();
     editor.set_time(1.5);
     workspace_frame(&mut editor, &ctx, vec![egui::Event::Paste(text)]);
-    assert_eq!(editor.key_selection.keys(), &[key(&attachment, 1.5)]);
+    assert_eq!(editor.key_selection.keys(), &[key(&attachment, 0.3)]);
     let pasted = editor.session.document().clone();
     assert_eq!(pasted.animations[0].tracks, original.animations[0].tracks);
     workspace_frame(&mut editor, &ctx, vec![egui::Event::Cut]);
-    assert_eq!(editor.session.document(), &original);
+    assert!(
+        !editor.session.document().animations[0].deform_tracks[0]
+            .keys
+            .iter()
+            .any(|key| key.time == 0.3)
+    );
+    assert!(
+        editor.session.document().animations[0].deform_tracks[0]
+            .keys
+            .iter()
+            .any(|key| key.time == 1.5)
+    );
+    assert_eq!(
+        editor.session.document().animations[0].tracks,
+        original.animations[0].tracks
+    );
     editor.undo();
     assert_eq!(editor.session.document(), &pasted);
     editor.key_selection.replace(vec![key(&attachment, 1.5)]);

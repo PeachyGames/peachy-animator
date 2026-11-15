@@ -11,7 +11,9 @@ use rmcp::{
     ServerHandler, handler::server::wrapper::Parameters, model::CallToolResult, tool, tool_handler,
     tool_router,
 };
-use schema::{AnimationKeyInput, CommandInput, KeyOwnerInput, TransformPropertyInput};
+use schema::{
+    AnimationKeyInput, CommandInput, GroupAnimationKeyInput, KeyOwnerInput, TransformPropertyInput,
+};
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde_json::{Value, json};
@@ -187,6 +189,40 @@ struct CopyAnimationKeysInput {
     animation: usize,
     /// Exact typed identities from one bone, IK/Slider constraint, Deform attachment, slot or global draw order.
     keys: Vec<AnimationKeyInput>,
+}
+
+struct CopyAnimationKeyGroupInput {
+    expected_revision: u64,
+    animation: usize,
+    keys: Vec<GroupAnimationKeyInput>,
+}
+
+impl<'de> Deserialize<'de> for CopyAnimationKeyGroupInput {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        #[derive(Deserialize)]
+        #[serde(deny_unknown_fields)]
+        struct Fields {
+            expected_revision: u64,
+            animation: usize,
+            keys: Vec<GroupAnimationKeyInput>,
+        }
+        let fields: Fields = schema::deserialize_object(deserializer)?;
+        Ok(Self {
+            expected_revision: fields.expected_revision,
+            animation: fields.animation,
+            keys: fields.keys,
+        })
+    }
+}
+
+impl JsonSchema for CopyAnimationKeyGroupInput {
+    fn schema_name() -> std::borrow::Cow<'static, str> {
+        "PeachyCopyAnimationKeyGroup".into()
+    }
+    fn json_schema(_: &mut schemars::SchemaGenerator) -> schemars::Schema {
+        schemars::Schema::try_from(schema::copy_animation_key_group_schema())
+            .expect("Group copy schema is an object")
+    }
 }
 
 struct AnimationKeysInput {
@@ -660,6 +696,24 @@ impl AnimatorServer {
     }
 
     #[tool(
+        description = "Copy exact authored keys across explicit Bone, IK, Slider, Deform, Slot and DrawOrder owners into a portable group clipboard without changing document, pending state, history, preferences or revision. Returns clipboard.entries in first source-owner appearance order plus a separate sourceOwners receipt. All entries share the earliest selected key as one time origin; delayed entries do not start at zero. pasteAnimationKeyGroup requires a complete explicit entry-to-target mapping with unique canonical targets. Existing copy_animation_keys retains its one-owner format. Unsupported, duplicate, ambiguous linked aliases and stale requests reject atomically.",
+        annotations(read_only_hint = true, idempotent_hint = true, open_world_hint = false)
+    )]
+    fn copy_animation_key_group(
+        &self,
+        Parameters(input): Parameters<CopyAnimationKeyGroupInput>,
+    ) -> CallToolResult {
+        self.access(|state| {
+            state.check_revision(input.expected_revision)?;
+            let keys = input.keys.into_iter().map(|key| key.0).collect::<Vec<_>>();
+            let copied = peachy_engine::copy_animation_key_group(
+                state.project()?.session.document(), input.animation, &keys,
+            )?;
+            Ok(json!({"revision":state.revision,"clipboard":copied.clipboard,"sourceOwners":copied.source_owners}))
+        })
+    }
+
+    #[tool(
         description = "Apply a flat list of native engine commands as one atomic, undoable edit. Requires the latest revision; any failed command preserves document, revision and history. No file is written. Command indices address the current candidate at each step. Successful structural edits return effects.constraintIndices to map previous constraint references; createSliderConstraint prepends while raw addSliderConstraint appends. Read get_document after creation before using new indices.",
         annotations(
             destructive_hint = false,
@@ -814,3 +868,5 @@ impl ServerHandler for AnimatorServer {}
 
 #[cfg(test)]
 mod animation_key_query_tests;
+#[cfg(test)]
+mod group_clipboard_tests;

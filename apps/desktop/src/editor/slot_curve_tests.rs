@@ -404,7 +404,7 @@ fn slot_graph_canvas_routes_color_only_and_mixed_clipboards_without_scalar_alias
             .to_string();
     editor.set_time(1.5);
     workspace_frame(&mut editor, &ctx, vec![egui::Event::Paste(text)]);
-    assert_eq!(editor.key_selection.keys(), &[color_key(1.5)]);
+    assert_eq!(editor.key_selection.keys(), &[color_key(0.3)]);
     assert_eq!(
         editor.session.document().animations[0].tracks,
         original.animations[0].tracks
@@ -413,7 +413,22 @@ fn slot_graph_canvas_routes_color_only_and_mixed_clipboards_without_scalar_alias
         editor.session.document().animations[0].attachment_tracks,
         original.animations[0].attachment_tracks
     );
+    let pasted = editor.session.document().clone();
     workspace_frame(&mut editor, &ctx, vec![egui::Event::Cut]);
+    let color_keys = &editor.session.document().animations[0].color_tracks[0].keys;
+    assert!(!color_keys.iter().any(|key| key.time == 0.3));
+    assert!(color_keys.iter().any(|key| key.time == 1.5));
+    assert_eq!(
+        editor.session.document().animations[0].tracks,
+        original.animations[0].tracks
+    );
+    assert_eq!(
+        editor.session.document().animations[0].attachment_tracks,
+        original.animations[0].attachment_tracks
+    );
+    editor.undo();
+    assert_eq!(editor.session.document(), &pasted);
+    editor.undo();
     assert_eq!(editor.session.document(), &original);
     editor.key_selection.replace(vec![
         color_key(0.3),

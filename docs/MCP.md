@@ -6,10 +6,12 @@ native window. The server calls the same document, command, Session, checked pos
 evaluation and file services as the desktop. It uses the official
 [Rust MCP SDK](https://github.com/modelcontextprotocol/rust-sdk), pinned by Cargo.lock.
 
-The current native format is **v23**, with **63 commands / 18 tools**. The shared
-authored owner/key query supports ordinary mixed-owner timing. Actual MCP and
-separate bounded two-bone scalar native acceptance pass. Group
-clipboard, Shift/Offset, Lock/Sync and general Tree multi-selection remain open.
+The current native format is **v23**, with **64 commands / 19 tools**. Shared
+grouped clipboard copy/paste adds one global origin and explicit target mapping.
+Actual MCP, final checks05/06 and bounded native authoring pass. This code-push
+checkpoint leaves full native acceptance partial for minimum-window and Save/
+fresh reopen; all owned processes are closed. Earlier ordinary acceptance remains verified. Shift/Offset,
+Lock/Sync, general Tree target multi-selection and no-Tree leaf fallback remain open.
 
 Each server process owns an independent headless document and history. It does
 **not** attach to a running desktop editor, change its selection, refresh its open
@@ -58,10 +60,11 @@ client's working directory. Absolute paths are accepted only inside that root.
 | `create_project` | New in-memory root-only native document with an empty default skin. Uses an existing asset directory within `--root`; no finished rig is loaded and no file is written. Source is null until Save. |
 | `inspect_file` | Read-only native validation or Spine capability report. Does not replace the working document. |
 | `open_project` | Load `.peachy` (including supported legacy migrations) or supported Spine 4.3 JSON into a new Session. Failed imports leave the current session intact. |
-| `get_command_schema` | Full JSON Schema for the 63 supported flat command variants; the same schema appears inline in `apply_commands` discovery. |
+| `get_command_schema` | Full JSON Schema for the 64 supported flat command variants; the same schema appears inline in `apply_commands` discovery. |
 | `apply_commands` | Apply a nonempty flat list through one engine Batch, atomically and as one undo step. No file writes. |
 | `get_animation_keys` | Revision-checked authored inventory and exact keys for required explicit owners. Empty owners return inventory with no selected keys. Reports unsupported timeline families; no pending pose, geometry solve, visibility filtering or mutation. See the strict contract below. |
 | `copy_animation_keys` | Read-only capture of exact keys from one bone, IK or Slider constraint, Deform attachment, slot or global draw order. Slider clipboards retain independent Time/Mix identities and one relative origin. Slot clipboards can mix attachment and color keys; Deform includes vertex/influence layout. Draw order requires the identical ordered slot-name layout on paste. Requires the current revision. |
+| `copy_animation_key_group` | Revision-checked read-only mixed-owner copy of exact typed keys. Returns portable `clipboard.entries` sharing one global origin and separate `sourceOwners` in first-owner appearance order. Paste through `pasteAnimationKeyGroup` with an explicit complete entry-to-target map. |
 | `get_mesh_weights` | Read exact selected weights and a uniform/mixed aggregate through the engine; absent influences of an already bound bone read zero. Requires the current revision and exact attachment identity. |
 | `get_transform_mapping` | Read raw-derived Min/Max endpoints of one exact world X→Rotate constraint mapping at the current revision. Undefined SourceMax is null; querying never repairs stored coefficients or changes history. |
 | `get_slider_pose` | Read a Slider's authored Time/Mix at a host animation cursor, or Setup. Time is referenced-animation seconds; this query does not solve geometry or substitute bone-derived effective time. Requires the current revision. |
@@ -73,7 +76,7 @@ client's working directory. Absolute paths are accepted only inside that root.
 | `save_project` | Create a new directory containing `project.peachy` and the required loose `images/`; marks the headless Session saved. |
 | `export_project` | New Spine JSON file, or a fresh packed JSON/atlas/PNG directory inside an existing parent. Optional `target` defaults to `spineEditor43`; use `runtime43` to retain independent attachment names/placeholders for runtime consumers. Does not mark the native document saved. |
 
-These 18 tools publish parameter schemas, descriptions and behavior annotations through
+These 19 tools publish parameter schemas, descriptions and behavior annotations through
 MCP `tools/list`. Successful results include both `structuredContent` and matching
 serialized text for older clients. Operational failures return `isError: true`
 with the current revision; malformed tool arguments use the SDK's protocol error.
@@ -138,11 +141,65 @@ without opening a finished rig:
 Final actual stdio study03 passes 41 requests, including 25 authoring commands,
 five rejected read-only queries, exact mixed movement/history/reopen and 12 pose
 samples. Baseline and moved exports each pass 104 external-runtime poses at 0.001.
-Separate native ordinary-move acceptance passes; mixed Copy explicitly refuses.
-Group clipboard with explicit owner mapping/shared origin is next, before
-Shift/Offset. Lock/Sync and general Tree multi-selection also remain open. See
+Separate native ordinary-move acceptance passes. At that historical 63/18
+checkpoint mixed Copy explicitly refused; the grouped continuation below now adds
+shared copy/paste, with its native acceptance pending. Shift/Offset, Lock/Sync
+and general Tree multi-selection remain open. See
 [scope](slices/multi-owner-timeline.md), [review](evidence/multi-owner-timeline.html)
 and [scalar evidence](evidence/multi-owner-timeline.json).
+
+## Grouped clipboard and explicit paste mapping
+
+`copy_animation_key_group` requires exactly `expected_revision`, an animation
+index and a nonempty `keys` array of exact typed IDs. Leaf records and nested
+attachment references are object-only; Bone/Slider properties are string tokens.
+Unknown/missing/null/wrong primitive fields, duplicate exact canonical IDs and
+stale revisions reject without document/history/pending/preferences changes.
+Existing `copy_animation_keys` and its single-owner wire remain unchanged.
+
+```json
+{"expected_revision":2,"animation":0,"keys":[{"type":"bone","bone":4,"property":"rotation","time":0.20000000298023224},{"type":"bone","bone":2,"property":"y","time":0.0833333358168602}]}
+```
+
+The response is `{revision, clipboard:{entries:[...]}, sourceOwners:[...]}`.
+Each entry uses an existing Bone/IK/Slider/Deform/Slot/DrawOrder leaf payload.
+Entries follow first source-owner appearance; all times share one earliest-key
+origin. The first entry above is delayed and only the second contains zero.
+`sourceOwners` is a separate receipt, not embedded in portable data or an implicit
+target choice.
+
+Send the returned `clipboard` unchanged in a `pasteAnimationKeyGroup` command,
+with destination `animation`, finite nonnegative `time` in seconds and complete
+`targets`. For the same original owners, the explicit map is:
+
+```json
+[{"entry":0,"target":{"type":"bone","bone":4}},{"entry":1,"target":{"type":"bone","bone":2}}]
+```
+
+Changing the two target bone indices to 3/1 respectively reproduces the measured different-
+parent outcome. Every entry must appear exactly once, canonical targets must be
+distinct, and kind/layout validation applies before any edit. New group objects,
+leaf keys, layouts, offsets, target records and references require the published
+object forms. A later invalid entry rolls back the entire `apply_commands` batch
+and preserves redo. Existing missing-name skip rules retain the global origin;
+all-skipped groups preserve document/history, while successful `apply_commands`
+still advances its revision. Query authored keys after mutation when needed;
+the accepted incoming IDs do not imply changing the user's original selection.
+
+Actual blank-root/one-PNG run02 passes 57 requests, 25 construction commands,
+nine negative atomic cases, same-owner/different-parent/cross-animation nominal
+frames and values matching installed goldens, Undo/Redo and Save/reopen with 12
+pose queries. Separate other-target/cross-animation exports pass 104 external
+runtime poses each, 208 total at 0.001 (world maxima 1.200913195020803e−5 /
+1.1076360095785276e−5; both region maxima 1.52587890625e−5). Four new unit/two
+actual-stdio tests and final checks05/06 pass. Native authoring passes, including
+the leaf-v2 selection/Cut control; minimum-window and Save/fresh reopen remain
+pending. All owned processes are closed. The user requested code checks/push first. The public
+[Grouped Clipboard Lab](../examples/peach-bot/group-clipboard-bot.peachy),
+[scope](slices/grouped-clipboard.md), [review](evidence/grouped-clipboard.html) and
+[scalar evidence](evidence/grouped-clipboard.json) distinguish implementation
+from accepted interaction. General Tree target multi-selection, no-Tree
+single-leaf fallback, Shift/Offset and Lock/Sync remain outside this checkpoint.
 
 ## Export targets
 
@@ -753,7 +810,7 @@ calibration, differences and verification limits.
 
 ## World X to Rotate mapping
 
-The current native format is v23, with **63 commands / 18 tools**.
+The current native format is v23, with **64 commands / 19 tools**.
 An existing world-space X→Rotate transform constraint can be edited by the same
 semantic range operation as the native Min/Max controls:
 

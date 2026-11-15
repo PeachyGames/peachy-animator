@@ -1,10 +1,15 @@
-# Multi-owner timeline — November 15, 2026
+# Ordinary multi-owner timeline — November 15, 2026
 
 **Bounded ordinary multi-owner native/MCP/runtime checkpoint verified;
 group clipboard and Shift/Offset remain open.** This
-record separates reference results from implementation results. Current inventory
-is **63 commands /18 tools**, with native v23 unchanged. Sync, general Tree
+record separates reference results from implementation results. This historical
+`b45d18d` checkpoint used **63 commands /18 tools**, with native v23 unchanged. Sync, general Tree
 multi-selection and group clipboard/Shift/Offset remain outside acceptance.
+The later [grouped-clipboard continuation](grouped-clipboard.md) uses 64/19 and
+adds shared copy/paste. Its code-push checkpoint has passing source/native
+authoring checks; full native is partial for minimum-window and Save/fresh reopen.
+Its actual MCP run02 and separate 208-pose runtime comparisons are recorded there;
+they do not change this earlier ordinary-move native acceptance scope.
 
 ## Reference and tutorial scope
 
@@ -218,8 +223,9 @@ An exact foreground guard stopped a focus interruption before any other-app
 input; an interrupted attempt is not accepted operation evidence.
 
 Ordinary movement now has separate native, actual MCP and runtime evidence.
-The **next slice is group clipboard with explicit owner mapping and one shared
-origin**, through both native controls and actual MCP requests, before Shift/Offset.
+The [group clipboard slice](grouped-clipboard.md) now implements explicit owner
+mapping and one shared origin with actual MCP evidence and passing source checks;
+its full native acceptance remains partial for minimum/Save/reopen before Shift/Offset.
 Existing one-owner clipboard behavior and mixed-Copy refusal do not complete it.
 
 Mixed Shift ripple scope, Offset memory resets/nonzero loop bounds, Sync modes,

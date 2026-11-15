@@ -33,6 +33,107 @@ impl JsonSchema for CommandInput {
 #[serde(transparent)]
 pub struct AnimationKeyInput(pub peachy_engine::AnimationKey);
 
+/// New group-copy input has object-only identities and string-only property
+/// tokens without changing the established single-owner clipboard wire.
+#[derive(Debug)]
+pub struct GroupAnimationKeyInput(pub peachy_engine::AnimationKey);
+
+impl<'de> Deserialize<'de> for GroupAnimationKeyInput {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        struct AttachmentInput(peachy_document::AttachmentRef);
+        impl<'de> Deserialize<'de> for AttachmentInput {
+            fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+                Ok(Self(deserialize_object(deserializer)?))
+            }
+        }
+        #[derive(Deserialize)]
+        #[serde(tag = "type", rename_all = "camelCase", deny_unknown_fields)]
+        enum Wire {
+            Bone {
+                bone: usize,
+                property: String,
+                time: f32,
+            },
+            Ik {
+                constraint: usize,
+                time: f32,
+            },
+            Slider {
+                constraint: usize,
+                property: String,
+                time: f32,
+            },
+            Deform {
+                attachment: AttachmentInput,
+                time: f32,
+            },
+            SlotAttachment {
+                slot: usize,
+                time: f32,
+            },
+            SlotColor {
+                slot: usize,
+                time: f32,
+            },
+            DrawOrder {
+                time: f32,
+            },
+        }
+        use peachy_document::{Property, SliderProperty};
+        use peachy_engine::AnimationKey;
+        Ok(Self(match deserialize_object(deserializer)? {
+            Wire::Bone {
+                bone,
+                property,
+                time,
+            } => AnimationKey::Bone {
+                bone,
+                property: match property.as_str() {
+                    "x" => Property::X,
+                    "y" => Property::Y,
+                    "rotation" => Property::Rotation,
+                    "scaleX" => Property::ScaleX,
+                    "scaleY" => Property::ScaleY,
+                    "shearX" => Property::ShearX,
+                    "shearY" => Property::ShearY,
+                    _ => return Err(D::Error::custom("Unknown bone property")),
+                },
+                time,
+            },
+            Wire::Ik { constraint, time } => AnimationKey::Ik { constraint, time },
+            Wire::Slider {
+                constraint,
+                property,
+                time,
+            } => AnimationKey::Slider {
+                constraint,
+                property: match property.as_str() {
+                    "time" => SliderProperty::Time,
+                    "mix" => SliderProperty::Mix,
+                    _ => return Err(D::Error::custom("Unknown Slider property")),
+                },
+                time,
+            },
+            Wire::Deform { attachment, time } => AnimationKey::Deform {
+                attachment: attachment.0,
+                time,
+            },
+            Wire::SlotAttachment { slot, time } => AnimationKey::SlotAttachment { slot, time },
+            Wire::SlotColor { slot, time } => AnimationKey::SlotColor { slot, time },
+            Wire::DrawOrder { time } => AnimationKey::DrawOrder { time },
+        }))
+    }
+}
+
+impl JsonSchema for GroupAnimationKeyInput {
+    fn schema_name() -> Cow<'static, str> {
+        "PeachyGroupAnimationKey".into()
+    }
+    fn json_schema(_: &mut SchemaGenerator) -> Schema {
+        Schema::try_from(animation_key_schema()).expect("Animation key schema is an object")
+    }
+}
+
 /// Enforce JSON objects before delegating strict field decoding. Derived
 /// structs otherwise also accept positional arrays, contrary to the schema.
 pub(super) fn deserialize_object<'de, D, T>(deserializer: D) -> Result<T, D::Error>
@@ -164,6 +265,17 @@ pub(super) fn animation_keys_query_schema() -> Value {
             "owners",
             json!({"type":"array","items":key_owner_schema(),"uniqueItems":true,
             "description":"Required explicit represented owners. Empty requests full inventory with no selected keys. Duplicate canonical linked-owner aliases are also rejected."}),
+        ),
+    ])
+}
+
+pub(super) fn copy_animation_key_group_schema() -> Value {
+    object(&[
+        ("expected_revision", index()),
+        ("animation", index()),
+        (
+            "keys",
+            json!({"type":"array","items":animation_key_schema(),"minItems":1,"uniqueItems":true}),
         ),
     ])
 }
@@ -497,6 +609,11 @@ pub fn command_schema() -> Value {
             ("slots",json!({"type":"array","items":{"type":"string","minLength":1},"uniqueItems":true})),
             ("keys",json!({"type":"array","items":draw_order_key.clone(),"minItems":1}))]),
     ]});
+    let group_clipboard = object(&[(
+        "entries",
+        json!({"type":"array","items":animation_clipboard.clone(),"minItems":1}),
+    )]);
+    let group_targets = json!({"type":"array","items":object(&[("entry",index()),("target",key_owner.clone())]),"minItems":1,"uniqueItems":true});
     let variants = vec![
         command("createSliderConstraint", &[("animation", index())]),
         command(
@@ -686,6 +803,15 @@ pub fn command_schema() -> Value {
         command(
             "deleteAnimationKeys",
             &[("animation", index()), ("keys", list(animation_key))],
+        ),
+        command(
+            "pasteAnimationKeyGroup",
+            &[
+                ("animation", index()),
+                ("time", number()),
+                ("clipboard", group_clipboard),
+                ("targets", group_targets),
+            ],
         ),
         command(
             "pasteAnimationKeys",
@@ -1105,6 +1231,7 @@ mod tests {
             Command::MoveAnimationKeys { .. } => "moveAnimationKeys",
             Command::DeleteAnimationKeys { .. } => "deleteAnimationKeys",
             Command::PasteAnimationKeys { .. } => "pasteAnimationKeys",
+            Command::PasteAnimationKeyGroup { .. } => "pasteAnimationKeyGroup",
             Command::SetPose { .. } => "setPose",
             Command::SetSetup { .. } => "setSetup",
             Command::RenameBone { .. } => "renameBone",
@@ -1188,7 +1315,7 @@ mod tests {
     fn every_published_shape_decodes_through_strict_engine_serde() {
         let schema = command_schema();
         let variants = schema["oneOf"].as_array().unwrap();
-        assert_eq!(variants.len(), 63);
+        assert_eq!(variants.len(), 64);
         for variant in variants {
             let payload = sample(variant);
             let command: CommandInput = serde_json::from_value(payload.clone()).unwrap();

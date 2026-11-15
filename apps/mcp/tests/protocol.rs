@@ -859,7 +859,7 @@ async fn stdio_discovery_atomic_edit_history_save_and_export() {
     let original = fs::read(&source).unwrap();
     let client = start(&root.0).await;
     let tools = client.list_tools(Default::default()).await.unwrap().tools;
-    assert_eq!(tools.len(), 18);
+    assert_eq!(tools.len(), 19);
     assert!(tools.iter().all(|tool| !tool.input_schema.is_empty()));
     let apply = tools
         .iter()
@@ -3865,5 +3865,268 @@ async fn stdio_animation_keys_inventory_strict_queries_and_mixed_owner_timing() 
     );
     assert_eq!(doc(&client).await["document"], before["document"]);
     assert_eq!(fs::read(&original_path).unwrap(), original);
+    client.cancel().await.unwrap();
+}
+
+async fn group_apply(client: &RunningService<RoleClient, ()>, commands: Vec<Value>) {
+    let revision = doc(client).await["state"]["revision"].clone();
+    success(
+        call(
+            client,
+            "apply_commands",
+            json!({"expected_revision":revision,"commands":commands}),
+        )
+        .await,
+    );
+}
+
+async fn group_history(client: &RunningService<RoleClient, ()>, action: &str) {
+    let revision = doc(client).await["state"]["revision"].clone();
+    success(
+        call(
+            client,
+            "history",
+            json!({"expected_revision":revision,"action":action}),
+        )
+        .await,
+    );
+}
+
+async fn group_rejected(client: &RunningService<RoleClient, ()>, tool: &str, input: Value) {
+    let before = doc(client).await;
+    let result = client
+        .call_tool(
+            CallToolRequestParams::new(tool.to_owned())
+                .with_arguments(input.as_object().unwrap().clone()),
+        )
+        .await;
+    assert!(
+        result.is_err()
+            || result
+                .as_ref()
+                .is_ok_and(|result| result.is_error == Some(true)),
+        "Accepted {input}"
+    );
+    assert_eq!(doc(client).await, before);
+}
+
+#[tokio::test]
+async fn stdio_group_clipboard_shared_origin_explicit_targets_atomic_history_and_reopen() {
+    let root = Sandbox::new();
+    root.fixture();
+    let original_path = root.0.join("source/multi-owner-bot.peachy");
+    let original = fs::read(&original_path).unwrap();
+    let client = start(&root.0).await;
+    let tools = client.list_tools(Default::default()).await.unwrap().tools;
+    assert_eq!(tools.len(), 19);
+    let tool = tools
+        .iter()
+        .find(|tool| tool.name == "copy_animation_key_group")
+        .unwrap();
+    assert_eq!(
+        tool.annotations.as_ref().unwrap().read_only_hint,
+        Some(true)
+    );
+    assert_eq!(tool.input_schema["additionalProperties"], false);
+    assert_eq!(
+        tool.input_schema["required"],
+        json!(["expected_revision", "animation", "keys"])
+    );
+    success(
+        call(
+            &client,
+            "open_project",
+            json!({"expected_revision":0,"path":"source/multi-owner-bot.peachy"}),
+        )
+        .await,
+    );
+    group_apply(
+        &client,
+        vec![json!({"command":"renameBone","bone":0,"name":"temporary group redo"})],
+    )
+    .await;
+    group_history(&client, "undo").await;
+    let before = doc(&client).await;
+    assert_eq!(before["state"]["canRedo"], true);
+    let revision = before["state"]["revision"].clone();
+    let query=success(call(&client,"get_animation_keys",json!({"expected_revision":revision,"animation":0,"owners":[{"type":"bone","bone":4},{"type":"bone","bone":2}]})).await);
+    let keys = query["selection"]["keys"].clone();
+    let copied = success(
+        call(
+            &client,
+            "copy_animation_key_group",
+            json!({"expected_revision":revision,"animation":0,"keys":keys}),
+        )
+        .await,
+    );
+    assert_eq!(
+        copied["sourceOwners"],
+        json!([{"type":"bone","bone":4},{"type":"bone","bone":2}])
+    );
+    assert_eq!(copied["clipboard"]["entries"].as_array().unwrap().len(), 2);
+    assert!(
+        copied["clipboard"]["entries"][0]["keys"][0]["key"]["time"]
+            .as_f64()
+            .unwrap()
+            > 0.0
+    );
+    assert_eq!(
+        copied["clipboard"]["entries"][1]["keys"][0]["key"]["time"],
+        0.0
+    );
+    assert!(copied["clipboard"].get("sourceOwners").is_none());
+    assert_eq!(doc(&client).await, before);
+    let first = keys[0].clone();
+    for input in [
+        json!({"expected_revision":revision,"animation":0}),
+        json!({"expected_revision":revision,"animation":0,"keys":null}),
+        json!({"expected_revision":revision,"animation":0,"keys":[]}),
+        json!({"expected_revision":revision,"animation":0,"keys":[first.clone(),first.clone()]}),
+        json!({"expected_revision":revision,"animation":0,"keys":[{"type":"bone","bone":999,"property":"x","time":0.0}]}),
+        json!({"expected_revision":revision,"animation":0,"keys":[{"type":"bone","bone":2,"property":{"y":null},"time":0.0}]}),
+        json!({"expected_revision":revision,"animation":0,"keys":[{"type":"deform","attachment":["default","hand.R","hand.R"],"time":0.0}]}),
+        json!({"expected_revision":revision,"animation":0,"keys":keys,"future":true}),
+        json!({"expected_revision":0,"animation":0,"keys":keys}),
+        json!({"expected_revision":revision,"animation":99,"keys":keys}),
+    ] {
+        group_rejected(&client, "copy_animation_key_group", input).await;
+    }
+    let targets = json!([{"entry":1,"target":{"type":"bone","bone":2}},{"entry":0,"target":{"type":"bone","bone":4}}]);
+    let paste = json!({"command":"pasteAnimationKeyGroup","animation":1,"time":50.0/60.0,"clipboard":copied["clipboard"],"targets":targets});
+    for targets in [
+        json!([]),
+        json!([{"entry":0,"target":{"type":"bone","bone":4}}]),
+        json!([{"entry":0,"target":{"type":"bone","bone":4}},{"entry":0,"target":{"type":"bone","bone":2}}]),
+        json!([{"entry":0,"target":{"type":"bone","bone":4}},{"entry":1,"target":{"type":"bone","bone":4}}]),
+        json!([{"entry":0,"target":{"type":"bone","bone":4}},{"entry":2,"target":{"type":"bone","bone":2}}]),
+        json!([{"entry":0,"target":{"type":"bone","bone":4}},{"entry":1,"target":{"type":"slot","slot":0}}]),
+        json!([[0,{"type":"bone","bone":4}],{"entry":1,"target":{"type":"bone","bone":2}}]),
+    ] {
+        let mut invalid = paste.clone();
+        invalid["targets"] = targets;
+        group_rejected(&client,"apply_commands",json!({"expected_revision":revision,"commands":[{"command":"renameBone","bone":0,"name":"must roll back"},invalid]})).await;
+    }
+    group_apply(&client, vec![paste]).await;
+    let pasted = doc(&client).await;
+    assert_eq!(
+        pasted["document"]["animations"][0],
+        before["document"]["animations"][0]
+    );
+    let tracks = pasted["document"]["animations"][1]["tracks"]
+        .as_array()
+        .unwrap();
+    let mut pasted_ids = Vec::new();
+    for (bone, property, value, frame) in [
+        (2, "y", 3., 50.),
+        (2, "y", 14., 70.),
+        (4, "rotation", 11., 57.),
+        (4, "rotation", -7., 80.),
+    ] {
+        let track = tracks
+            .iter()
+            .find(|track| track["bone"] == bone && track["property"] == property)
+            .unwrap();
+        let key = track["keys"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|key| key["value"] == value)
+            .unwrap();
+        assert!((key["time"].as_f64().unwrap() * 60.0 - frame).abs() < 0.00001);
+        assert_eq!(key["curve"], "linear");
+        pasted_ids.push(json!({"type":"bone","bone":bone,"property":property,"time":key["time"]}));
+    }
+    group_apply(
+        &client,
+        vec![json!({"command":"deleteAnimationKeys","animation":1,"keys":pasted_ids})],
+    )
+    .await;
+    assert_eq!(doc(&client).await["document"], before["document"]);
+    group_history(&client, "undo").await;
+    assert_eq!(doc(&client).await["document"], pasted["document"]);
+    group_history(&client, "undo").await;
+    assert_eq!(doc(&client).await["document"], before["document"]);
+    group_history(&client, "redo").await;
+    assert_eq!(doc(&client).await["document"], pasted["document"]);
+    let revision = doc(&client).await["state"]["revision"].clone();
+    success(
+        call(
+            &client,
+            "save_project",
+            json!({"expected_revision":revision,"directory":"group-saved"}),
+        )
+        .await,
+    );
+    let revision = doc(&client).await["state"]["revision"].clone();
+    success(
+        call(
+            &client,
+            "open_project",
+            json!({"expected_revision":revision,"path":"group-saved/project.peachy"}),
+        )
+        .await,
+    );
+    let reopened = doc(&client).await;
+    assert_eq!(reopened["document"], pasted["document"]);
+    assert_eq!(reopened["state"]["canUndo"], false);
+    assert_eq!(reopened["state"]["canRedo"], false);
+    assert_eq!(fs::read(original_path).unwrap(), original);
+    client.cancel().await.unwrap();
+}
+
+#[tokio::test]
+async fn stdio_group_clipboard_canonical_linked_aliases_reject_without_history_changes() {
+    let root = Sandbox::new();
+    root.fixture();
+    let client = start(&root.0).await;
+    success(
+        call(
+            &client,
+            "open_project",
+            json!({"expected_revision":0,"path":"source/linked-mesh-bot.peachy"}),
+        )
+        .await,
+    );
+    group_apply(
+        &client,
+        vec![json!({"command":"renameBone","bone":0,"name":"temporary alias redo"})],
+    )
+    .await;
+    group_history(&client, "undo").await;
+    let revision = doc(&client).await["state"]["revision"].clone();
+    let reference = json!({"skin":"default","slot":"hand.R","placeholder":"hand.R"});
+    let alias = json!({"skin":"default","slot":"hand.R","placeholder":"glove"});
+    let key = json!({"type":"deform","attachment":reference,"time":0.0});
+    group_rejected(&client,"copy_animation_key_group",json!({"expected_revision":revision,"animation":0,"keys":[key.clone(),{"type":"deform","attachment":alias,"time":0.0}]})).await;
+    let copied = success(
+        call(
+            &client,
+            "copy_animation_key_group",
+            json!({"expected_revision":revision,"animation":0,"keys":[key]}),
+        )
+        .await,
+    );
+    let entry = copied["clipboard"]["entries"][0].clone();
+    let command = json!({"command":"pasteAnimationKeyGroup","animation":1,"time":0.25,
+        "clipboard":{"entries":[entry.clone(),entry]},
+        "targets":[{"entry":0,"target":{"type":"deform","attachment":reference}},{"entry":1,"target":{"type":"deform","attachment":alias}}]});
+    group_rejected(&client,"apply_commands",json!({"expected_revision":revision,"commands":[{"command":"renameBone","bone":0,"name":"must roll back"},command.clone()]})).await;
+    let mut wrong_ref = command.clone();
+    wrong_ref["targets"][0]["target"]["attachment"] = json!(["default", "hand.R", "hand.R"]);
+    group_rejected(
+        &client,
+        "apply_commands",
+        json!({"expected_revision":revision,"commands":[wrong_ref]}),
+    )
+    .await;
+    let mut wrong_layout = command.clone();
+    wrong_layout["clipboard"]["entries"][0]["layout"] = json!(["unweighted", 4]);
+    group_rejected(
+        &client,
+        "apply_commands",
+        json!({"expected_revision":revision,"commands":[wrong_layout]}),
+    )
+    .await;
+    assert_eq!(doc(&client).await["state"]["canRedo"], true);
     client.cancel().await.unwrap();
 }

@@ -4,9 +4,48 @@ Written November 10, 2026, at the end of the import-parity push. Read this
 first, then `AGENTS.md`. The workspace rules in `../AGENTS.md` and `../CLAUDE.md`
 still apply.
 
-## Multi-owner timeline checkpoint — November 15, 2026
+## Grouped clipboard code-push checkpoint — November 15, 2026 (native partial)
 
-Current inventory is **63 commands /18 tools**, native v23 unchanged. The shared
+Current inventory is **64 commands /19 tools**, native v23 unchanged. Shared
+group copy/paste, one global origin and explicit complete owner maps are
+implemented. Actual MCP run02 passes 57 requests from a blank root/one PNG,
+25 construction commands, nine negative atomic cases, history/reopen and 12 poses.
+Separate other-target/cross-animation exports pass 104 poses each, 208 total,
+at 0.001; maximum world errors are 1.200913195020803e−5 /1.1076360095785276e−5 and
+both region maxima are 1.52587890625e−5. Four MCP unit/two actual-stdio tests pass.
+Final checks05/06 pass Dopesheet 29/grouped 13/leaf 15, engine group 7/timeline 28
+(overlapping) and MCP four-unit/two-stdio, plus fmt/Clippy/build/architecture 7.
+Native authoring is accepted; **full native acceptance remains partial**. See [scope](slices/grouped-clipboard.md),
+[review](evidence/grouped-clipboard.html) and [scalar evidence](evidence/grouped-clipboard.json).
+
+Native authoring now passes Copy/Paste/Cut, original IDs/primary preservation,
+whole-document history, another Tree bone and cross-animation binding cases.
+The user directed: **finish code checks and push first**. All owned native/MCP/
+Spine processes are now closed and the native baseline is restored. The leaf-v2
+native control also passes Copy 2, original-selection preservation on Paste and
+Cut/two-Undo recovery. **Next native checks after the code push:** minimum-window
+and Save/fresh reopen.
+Final source checks pass; installed paste preserves original-owner
+identity even when those same bones are reselected in reverse order. Two other
+selected parents map in the measured order; MCP explicit maps reproduce it, but
+general Tree multi-selection is absent. Single-leaf paste from no Tree owner still
+lacks a source receipt. Resolve that bounded fallback and lifecycle before
+claiming a complete native flow; Shift/Offset and Lock/Sync follow separately.
+
+The group checkpoint retires **121 enumerated task-owned disposable files** in
+`group-cleanup.json`: generated runtime bundles/scratch, superseded MCP01 outputs,
+duplicate MCP02 saved assets and redundant captures/bytecode/export helper.
+Selected final states/two OS window proofs and MCP02 recipe/requests/scalars stay
+for active PR review until integration or supersession. Reference goldens remain
+for the next Tree/Offset calibration. Two owned native-control helpers and the
+evidence builder remain for minimum/Save/fresh-reopen gates and retire when those
+gates finish or are superseded; shared Cargo target serves the continuing goal.
+No reclaimed-space amount is claimed. Final workspace build07 after focused
+tests restores the accepted Desktop/MCP/CLI hashes recorded in the evidence.
+
+## Earlier multi-owner timeline checkpoint — November 15, 2026
+
+The `b45d18d` inventory was **63 commands /18 tools**, native v23 unchanged. The shared
 owner/key query and bounded all-owner Dopesheet UI pass **ordinary multi-owner
 native acceptance** on the original two-bone scalar case. Final MCP run03
 passes 41 requests/25 authored commands, exact mixed retiming/history/reopen and
@@ -21,8 +60,8 @@ retention/pruning, 1120×740 targets and exact Save/fresh-process reopen. Native
 pending state starts empty; nonempty pending preservation is headless-only.
 Mixed Copy refuses without changing document/selection/redo/internal clipboard.
 
-**Next action:** implement group clipboard with one common origin and explicit
-owner mapping, then calibrate Shift/Offset. Lock/Sync and general Tree
+Grouped clipboard is now the in-progress continuation above. Shift/Offset,
+Lock/Sync and general Tree
 multi-selection remain open; ordinary movement does not implement wrapping Offset.
 Reference Offset's three Undo operations restore all animation data exactly;
 the owned Spine window is closed with original bounds and Setup mode restored.

@@ -1,8 +1,44 @@
 # Spine workspace and interaction parity
 
-## Multi-owner Dopesheet continuation — November 15, 2026
+## Grouped clipboard code-push checkpoint — November 15, 2026 (native partial)
 
-The current interface is **63 commands /18 tools**, native v23 unchanged. Shared
+Current inventory is **64 commands /19 tools**, native v23 unchanged. Desktop
+group Copy/Cut/Paste uses portable globally relative entries and editor-session
+source-owner bindings. Its new OS envelope is version 3; version 2 leaf payloads
+remain unchanged. Shared engine/MCP paste accepts explicit complete target maps.
+Actual MCP run02 passes 57 requests and focused four-unit/two-stdio checks.
+Separate target/cross-animation exports pass 208 runtime poses at 0.001; that
+geometry evidence does not establish mouse/keyboard behavior.
+Final checks05/06 pass; **native authoring is accepted while full native acceptance
+is partial pending minimum-window and Save/fresh reopen**.
+
+Final Desktop `87ee7d48…dee59` now passes four-key/two-entry Copy, Cmd-toggle and
+ruler Frame 50 selection/primary retention. Paste creates 50/70 and 57/80 while retaining
+original IDs/primary; document generation correctly changes. One Undo/Redo is
+whole-document exact, with Undo's established transient-selection clearing.
+Independent fresh Paste→Cut removes the original four only; two Undo operations restore
+the baseline. Group Paste with Tree bone 1 still targets original bones 2/4 and preserves
+Tree selection; Cut/Delete without shown selected keys do not edit. Cross-
+animation paste retains source 0 bindings, leaves clip 0 unchanged and undoes
+exactly. A separate leaf-v2 control passes Copy2, original selection retention on
+Paste, Cut of the originals and exact recovery after two Undo operations.
+All owned processes are closed and the native baseline is restored. At the user's
+direction code checks/push precede native minimum-window and Save/fresh reopen;
+those two checks remain pending.
+
+Installed group paste keeps original selected keys. Paste at 50 followed by Cut
+removes the four original keys, leaving only driver 50/70 and follower 57/80.
+Reselecting original bones in reverse does not reverse their identities; two
+different selected parents map in the measured order. General Tree multi-selection
+is absent, so the latter is available only through explicit MCP mapping. The
+single-leaf no-Tree-owner fallback still lacks a source receipt. Accepted pasted
+IDs are diagnostics, not automatic replacement selection. See
+[scope](slices/grouped-clipboard.md), [review](evidence/grouped-clipboard.html) and
+[scalar evidence](evidence/grouped-clipboard.json).
+
+## Earlier multi-owner Dopesheet continuation — November 15, 2026
+
+At `b45d18d`, the interface was **63 commands /18 tools**, native v23 unchanged. Shared
 authored inventory drives bounded all-owner Dopesheet rows and ordinary mixed
 selection/retiming. **Bounded native acceptance passes** on the original two-bone
 scalar fixture, separately from MCP. Final blank-root/one-PNG MCP run03 passes

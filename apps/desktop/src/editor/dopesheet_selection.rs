@@ -22,6 +22,24 @@ pub(super) enum TimelineRow {
     DrawOrder,
 }
 impl TimelineRow {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Bone(Property::Rotation) => "Rotate",
+            Self::Bone(Property::X) => "Translate X",
+            Self::Bone(Property::Y) => "Translate Y",
+            Self::Bone(Property::ScaleX) => "Scale X",
+            Self::Bone(Property::ScaleY) => "Scale Y",
+            Self::Bone(Property::ShearX) => "Shear X",
+            Self::Bone(Property::ShearY) => "Shear Y",
+            Self::Ik => "IK constraint",
+            Self::Slider(SliderProperty::Time) => "Slider Time",
+            Self::Slider(SliderProperty::Mix) => "Slider Mix",
+            Self::Deform => "Deform",
+            Self::SlotAttachment => "Attach",
+            Self::SlotColor => "RGBA",
+            Self::DrawOrder => "Default",
+        }
+    }
     pub fn matches(self, key: AnimationKey) -> bool {
         match (self, key) {
             (Self::Bone(a), AnimationKey::Bone { property: b, .. }) => a == b,
@@ -502,6 +520,18 @@ mod tests {
 
     #[test]
     fn grouped_ik_selection_never_aliases_bone_or_other_constraint_identities() {
+        assert_eq!(
+            Property::ALL.map(|property| TimelineRow::Bone(property).label()),
+            [
+                "Translate X",
+                "Translate Y",
+                "Rotate",
+                "Scale X",
+                "Scale Y",
+                "Shear X",
+                "Shear Y",
+            ]
+        );
         let editor = super::super::test_support::animated_ik_editor();
         let document = editor.session.document();
         let mut selection = KeySelection::default();

@@ -5,7 +5,19 @@ Public sources were checked November 14 after the slot authoring commit
 global draw-order and November 15 multi-vertex Direct continuations below.
 The bounded November 15 world X-to-Rotate continuation also passes native/MCP/
 runtime/Editor acceptance; its remaining feature and resize limits stay explicit.
-Current inventory is native v23 and **63 commands/18 tools**. The authored
+Current inventory is native v23 and **64 commands/19 tools**. Grouped clipboard
+adds a shared global origin, separate source-owner receipt and explicit complete
+target mapping. Actual MCP run02/57 requests, focused four-unit/two-stdio checks
+and 208 separate other-target/cross-animation runtime poses pass at 0.001;
+final checks05/06 and bounded native authoring pass. The user selected a code-push
+checkpoint; **full native acceptance remains partial for minimum-window and Save/
+fresh reopen**. All owned processes are closed and the native baseline is restored.
+General Tree target selection, no-Tree leaf fallback, Shift/Offset and Lock/Sync
+remain open. See [group scope](grouped-clipboard.md),
+[review](../evidence/grouped-clipboard.html) and
+[scalar evidence](../evidence/grouped-clipboard.json).
+
+The earlier `b45d18d` ordinary multi-owner checkpoint used 63/18. Its authored
 owner/key query and bounded all-owner Dopesheet rows/ordinary mixed movement are
 verified by bounded native two-bone scalar editing, cancellation, Graph context,
 minimum layout and exact Save/reopen. Final actual MCP study03 passes
@@ -24,9 +36,10 @@ and lossy authored interchange remain open.
 The November15 primary-source refresh still lists4.3.27 Unreleased and4.3.26 as
 the installed release baseline; no newer release is evidenced. The current
 tutorial workflow is multi-owner Dopesheet timing from Wind. Bounded all-owner
-rows and ordinary movement pass bounded native acceptance. Mixed Copy explicitly
-refuses; group clipboard with explicit mapping/shared origin is next, before
-Shift/Offset. Lock/Sync and general Tree multi-selection remain.
+rows and ordinary movement pass their earlier bounded native acceptance. Group
+clipboard now has implemented shared APIs and actual MCP evidence, with original-
+selection preservation and native acceptance in progress. Shift/Offset, Lock/Sync
+and general Tree multi-selection remain.
 The [Dopesheet](https://esotericsoftware.com/spine-dopesheet) and
 [Keys](https://esotericsoftware.com/spine-keys#Offset) guides distinguish uniform
 retiming from wrapping Offset/seam insertion and selection-scoped original-key
@@ -245,7 +258,7 @@ not complete this broader objective.
 
 | Public update area | Current gap and required native/MCP work |
 | --- | --- |
-| Dopesheet-centric synchronization and curve refinements | Shared scalar/Deform/slot selection and bounded Curves/Graph actions pass their earlier acceptance. Authored owner/key query and bounded all-owner Dopesheet rows/ordinary movement pass MCP plus original two-bone native checks. Mixed Copy refuses; explicit mapping/shared-origin group clipboard is next. Shift/Offset, Lock/Sync, general Tree multi-selection, stored presets/defaults, native grouping and uncalibrated handles remain. See [timing scope](multi-owner-timeline.md). |
+| Dopesheet-centric synchronization and curve refinements | Earlier ordinary timing/Curves/Graph acceptance is retained. Grouped clipboard passes MCP run02/57,208 runtime poses, checks05/06 and bounded native authoring preserving original selection. Code-push checkpoint retains partial full-native acceptance for minimum/Save/reopen. General Tree target mapping, no-Tree leaf fallback, Shift/Offset, Lock/Sync, presets/defaults and uncalibrated handles remain. See [group scope](grouped-clipboard.md) and [ordinary timing](multi-owner-timeline.md). |
 | Sliders | Bounded manual/source checkpoints include semantic prepend/remapping, source assignment/clear/property/ranges, process-view memory and own-turn display through native/shared MCP APIs. Referenced Physics/events and remaining Deform transitions, extreme precision and lossless authored conversion remain open. Earlier failed strict interchange and two raw extreme mismatches stay failures. See [contract](slider-constraints.md). |
 | Transform property mapping and local/world choices | One world X→Rotate writer now has accepted evaluation and shared native/MCP endpoint authoring. Tree/Properties resizing now passes bounded native checks; other cross-property destinations, general connection/source/target editing, Match, local/additive and Transform timelines are absent. See [bounded contract](transform-mapping-authoring.md). |
 | Multiple-mesh tracing and weight workflows | Explicit payload creation and bounded one-mesh/one-bone Direct selection/editing exist through shared native/MCP paths. Native topology generation, multiple-mesh/bone workflows, Auto/Smooth/brush/locks/Update, sparse Deform remapping and Pies/overlay remain. |

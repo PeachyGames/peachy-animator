@@ -114,6 +114,8 @@ pub(crate) struct Editor {
     key_selection: dopesheet_selection::KeySelection,
     key_drag: Option<key_drag::KeyDrag>,
     timeline_clipboard: Option<peachy_engine::AnimationKeyClipboard>,
+    group_clipboard: Option<timeline_clipboard::GroupClipboard>,
+    paste_receipt: Option<timeline_clipboard::PasteReceipt>,
     timeline_input: timeline_clipboard::TimelineInput,
     tree: TreeState,
     draw_order: draw_order::DrawOrderView,
@@ -247,6 +249,8 @@ impl Editor {
             key_selection: Default::default(),
             key_drag: None,
             timeline_clipboard: None,
+            group_clipboard: None,
+            paste_receipt: None,
             timeline_input: Default::default(),
             tree,
             draw_order: Default::default(),
@@ -361,6 +365,9 @@ impl Editor {
             .selection
             .take()
             .and_then(|item| selection::remap_constraint(item, mapping));
+        if let Some(group) = &mut self.group_clipboard {
+            group.remap(mapping);
+        }
         self.selection_history.remap_constraints(mapping);
         self.tree.remap_constraints(mapping);
         // Like document Undo/Redo, a structural transition drops key selection.
@@ -764,7 +771,7 @@ impl Editor {
                     self.selection_history = Default::default();
                     self.key_selection = Default::default();
                     self.key_drag = None;
-                    self.timeline_clipboard = None;
+                    self.clear_timeline_clipboard();
                     self.timeline_input = Default::default();
                     self.weights = Default::default();
                     self.view_tabs.reset_document();
@@ -1136,12 +1143,13 @@ impl Editor {
                     "selectedKeys":self.key_selection.diagnostic(),"dopesheetFocused":self.dopesheet_has_focus(&ctx),
                     "windowFocused":ctx.input(|input|input.focused),
                     "keyDrag":self.key_drag.as_ref().map(key_drag::KeyDrag::diagnostic),
-                    "clipboardKeys":self.timeline_clipboard.as_ref().map_or(0, timeline_clipboard::clipboard_len),
+                    "clipboardKeys":self.timeline_clipboard_count(),
                     "selectAllHeld":self.timeline_input.select_all_held(),
                     "selectedAttachment":self.selected_attachment(),"selectedVertex":self.mesh_vertex,"hiddenSlots":self.hidden_slots,
                     "pointer":ctx.input(|i|i.pointer.hover_pos().map(|p|[p.x,p.y])),
                     "targets":self.capture_targets,"meshHandles":self.mesh_handles,"innerSize":[ctx.content_rect().width(),ctx.content_rect().height()]
                 });
+                report["clipboard"] = self.timeline_clipboard_diagnostic();
                 report["views"] = self.views_diagnostic();
                 report["showBones"] = self.show_bones.into();
                 report["treeQuery"] = self.tree.query.clone().into();

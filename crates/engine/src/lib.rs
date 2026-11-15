@@ -8,6 +8,7 @@ mod curve_editing;
 mod deform_authoring;
 mod draw_order_authoring;
 mod ghosting;
+mod group_clipboard;
 mod ik;
 mod ik_sampling;
 mod ik_solver;
@@ -53,6 +54,9 @@ pub use ghosting::{
     GhostRange, GhostSample, GhostSampling, GhostSide, GhostSource, MAX_GHOST_SAMPLES,
     ghost_samples,
 };
+pub use group_clipboard::{
+    AnimationKeyGroupClipboard, AnimationKeyGroupCopy, AnimationKeyGroupTarget,
+};
 pub use ik::{
     AuthoredPose, EvaluatedPose, checked_evaluate_pose, checked_pose_from_authored,
     checked_setup_pose_from_locals, sample_authored_pose, sample_authored_pose_with_skin,
@@ -92,8 +96,9 @@ pub use slider_source::{SliderSourcePreferences, SliderSourceRange};
 pub use slot_authoring::{SlotPose, SlotPoseEdit, SlotProperty, slot_color_bytes, slot_key_time};
 pub use timeline::{
     AnimationKey, AnimationKeyClipboard, ClipboardKey, CurveChannel, CurveData, CurveTarget,
-    DeformLayout, KeyClipboard, KeyOwner, SliderClipboardKey, TimelineKey, copy_animation_keys,
-    copy_keys, curve_channels, curve_channels_for_targets, curve_targets, deform_key_owner,
+    DeformLayout, KeyClipboard, KeyOwner, SliderClipboardKey, TimelineKey,
+    copy_animation_key_group, copy_animation_keys, copy_keys, curve_channels,
+    curve_channels_for_targets, curve_targets, deform_key_owner, pasted_animation_key_group,
     pasted_animation_keys,
 };
 pub use timeline_inventory::{
@@ -140,6 +145,8 @@ mod draw_order_authoring_tests;
 mod draw_order_tests;
 #[cfg(test)]
 mod duration_tests;
+#[cfg(test)]
+mod group_clipboard_tests;
 #[cfg(test)]
 mod ik_animation_tests;
 #[cfg(test)]

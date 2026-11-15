@@ -1,0 +1,550 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-15",
+  "scope": "Bounded grouped clipboard; complete Spine workflow and pixel parity remain open",
+  "versions": {
+    "nativeFormat": 23,
+    "commands": 64,
+    "mcpTools": 19,
+    "referenceEditor": "4.3.26",
+    "externalRuntime": "4.3.13"
+  },
+  "originalProject": {
+    "path": "examples/peach-bot/group-clipboard-bot.peachy",
+    "sha256": "d833624039bbb2596aa8d0a0434607faf4807b24291a86decb6a60575566fbb3",
+    "baselineConstruction": "examples/peach-bot/multi-owner-authoring-commands.json",
+    "constructionCommands": 25,
+    "portablePaste": "examples/peach-bot/group-clipboard-paste-commands.json",
+    "portablePasteSha256": "45e61dcaf97d7120969fdf25ec1ea394f66d597ec250bd826e4082fbb7b08702",
+    "imageSha256": "6e8f281942e95b5a77774e683622dac99ea2aef706c99f3627dad968d6c2120f"
+  },
+  "binaries": {
+    "peachy-animator": "87ee7d48cc92337937eef0e1cf44da517f986c1c3d2914f469df2d80339dee59",
+    "peachy-mcp": "0f659abb43c80d6dd4c502c35e91284848a9851947e13c682afdef290879d112",
+    "peachy-cli": "a414e845f0500c562e4ffaa579da64df8ca6a3e6379a6a2127aa7d9c6c618ab6"
+  },
+  "sourceChecks": [
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "test",
+        "-p",
+        "peachy-animator",
+        "dopesheet",
+        "-j2",
+        "--",
+        "--test-threads=2"
+      ],
+      "exitCode": 0,
+      "summary": [
+        "test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 331 filtered out; finished in 1.72s"
+      ]
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "test",
+        "-p",
+        "peachy-animator",
+        "group_clipboard",
+        "-j2",
+        "--",
+        "--test-threads=2"
+      ],
+      "exitCode": 0,
+      "summary": [
+        "test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 347 filtered out; finished in 0.81s"
+      ]
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "test",
+        "-p",
+        "peachy-animator",
+        "timeline_clipboard::tests",
+        "-j2",
+        "--",
+        "--test-threads=2"
+      ],
+      "exitCode": 0,
+      "summary": [
+        "test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 345 filtered out; finished in 0.12s"
+      ]
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exitCode": 0,
+      "summary": []
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "-j2",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exitCode": 0,
+      "summary": []
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "build",
+        "--workspace",
+        "-j2"
+      ],
+      "exitCode": 0,
+      "summary": []
+    },
+    {
+      "argv": [
+        "python3",
+        "scripts/check-architecture.py",
+        "--cargo",
+        "../.local-tools/peachy-animator/cargo"
+      ],
+      "exitCode": 0,
+      "summary": []
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "test",
+        "-p",
+        "peachy-engine",
+        "group_clipboard_tests",
+        "-j2",
+        "--",
+        "--test-threads=2"
+      ],
+      "exitCode": 0,
+      "summary": [
+        "test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 405 filtered out; finished in 0.02s"
+      ]
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "test",
+        "-p",
+        "peachy-engine",
+        "timeline_tests",
+        "-j2",
+        "--",
+        "--test-threads=2"
+      ],
+      "exitCode": 0,
+      "summary": [
+        "test result: ok. 28 passed; 0 failed; 0 ignored; 0 measured; 384 filtered out; finished in 0.02s"
+      ]
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "test",
+        "-p",
+        "peachy-mcp",
+        "group",
+        "-j2",
+        "--",
+        "--test-threads=2"
+      ],
+      "exitCode": 0,
+      "summary": [
+        "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 19 filtered out; finished in 0.02s",
+        "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 24 filtered out; finished in 0.81s"
+      ]
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "test",
+        "-p",
+        "peachy-animator",
+        "graph",
+        "-j2",
+        "--",
+        "--test-threads=2"
+      ],
+      "exitCode": 0,
+      "summary": [
+        "test result: ok. 46 passed; 0 failed; 0 ignored; 0 measured; 313 filtered out; finished in 3.72s"
+      ]
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "test",
+        "-p",
+        "peachy-animator",
+        "curves",
+        "-j2",
+        "--",
+        "--test-threads=2"
+      ],
+      "exitCode": 0,
+      "summary": [
+        "test result: ok. 52 passed; 0 failed; 0 ignored; 0 measured; 307 filtered out; finished in 4.30s"
+      ]
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "test",
+        "-p",
+        "peachy-animator",
+        "slot",
+        "-j2",
+        "--",
+        "--test-threads=2"
+      ],
+      "exitCode": 0,
+      "summary": [
+        "test result: ok. 43 passed; 0 failed; 0 ignored; 0 measured; 316 filtered out; finished in 4.12s"
+      ]
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "test",
+        "-p",
+        "peachy-animator",
+        "slider",
+        "-j2",
+        "--",
+        "--test-threads=2"
+      ],
+      "exitCode": 0,
+      "summary": [
+        "test result: ok. 34 passed; 0 failed; 0 ignored; 0 measured; 325 filtered out; finished in 1.77s"
+      ]
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "test",
+        "-p",
+        "peachy-animator",
+        "deform",
+        "-j2",
+        "--",
+        "--test-threads=2"
+      ],
+      "exitCode": 0,
+      "summary": [
+        "test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 332 filtered out; finished in 2.94s"
+      ]
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "test",
+        "-p",
+        "peachy-animator",
+        "draw_order",
+        "-j2",
+        "--",
+        "--test-threads=2"
+      ],
+      "exitCode": 0,
+      "summary": [
+        "test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 350 filtered out; finished in 0.82s"
+      ]
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "test",
+        "-p",
+        "peachy-mcp",
+        "schema::tests",
+        "-j2",
+        "--",
+        "--test-threads=2"
+      ],
+      "exitCode": 0,
+      "summary": [
+        "test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.07s",
+        "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 26 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "build",
+        "--workspace",
+        "-j2"
+      ],
+      "exitCode": 0,
+      "reason": "Restore integrated workspace feature/profile artifacts after focused MCP integration tests changed the normal bin artifact",
+      "matchesAcceptedBinaries": true
+    }
+  ],
+  "testCountsOverlap": true,
+  "cleanup": {
+    "retiredTaskOwnedFiles": 121,
+    "ownedProcessesClosed": true,
+    "retainedNativeHelpersUntil": "Minimum-window and native Save/fresh-reopen acceptance, or supersession",
+    "retainedProofUntil": "Active PR integration or supersession",
+    "sharedCargoTarget": "Required by the continuing parity goal",
+    "reclaimedCapacityClaim": false
+  },
+  "installedReference": {
+    "originalFrames": {
+      "driverY": [
+        5,
+        25
+      ],
+      "followerRotate": [
+        12,
+        35
+      ]
+    },
+    "pasteAt": 50,
+    "originalOwners": {
+      "driverY": [
+        50,
+        70
+      ],
+      "followerRotate": [
+        57,
+        80
+      ]
+    },
+    "oneOtherSelectedBone": "Preserves original driver/follower owners and Tree selection",
+    "twoOtherSelectedParents": {
+      "source_parentY": [
+        50,
+        70
+      ],
+      "follower_parentRotate": [
+        57,
+        80
+      ]
+    },
+    "originalOwnersReselectedInReverseOrder": "Preserves original owner identity; all three animation dictionaries match original-owner golden",
+    "crossAnimation": true,
+    "pasteThenCut": "Removes original selected keys; incoming four remain",
+    "originalAnimationsAndBonesRestored": true,
+    "originalBoundsAndSetupRestored": true,
+    "ownedProcessClosed": true,
+    "licensedCapturesRemainPrivate": true
+  },
+  "native": {
+    "owner": "/root",
+    "accepted": false,
+    "binarySha256": "87ee7d48cc92337937eef0e1cf44da517f986c1c3d2914f469df2d80339dee59",
+    "actualNativeInput": true,
+    "sourceOwners": [
+      2,
+      4
+    ],
+    "groupEntries": 2,
+    "groupKeys": 4,
+    "cmdTogglesPreserveTime": true,
+    "rulerPreservesSelection": true,
+    "pastePreservesOriginalKeyIdsAndPrimary": true,
+    "pastedDisplayedFrames": [
+      50,
+      70,
+      57,
+      80
+    ],
+    "oneUndoRedoDocumentExact": true,
+    "directPasteCutRemovesOriginalsOnly": true,
+    "twoUndoRestoresBaseline": true,
+    "otherTreeSelectionPreserved": true,
+    "noShownKeysCutDeleteReadOnly": true,
+    "crossAnimationOriginalOwners": true,
+    "sourceClipUnchanged": true,
+    "leafV2PasteCut": true,
+    "undoClearsTransientKeySelection": true,
+    "nativePendingBaselineEmpty": true,
+    "nonemptyPendingCoverage": "Focused real-pointer and core tests only",
+    "minimumWindowPending": true,
+    "persistencePending": true,
+    "ownedProcessesClosed": true,
+    "interruptedInputs": "Foreground guards stopped before unowned input; interrupted batches are not acceptance cases",
+    "removalCondition": "Retain selected native state/window witnesses until active PR integration or supersession; retire scratch/helpers at checkpoint",
+    "userSteering": "Finish code checks and push first",
+    "acceptedAuthoring": true
+  },
+  "actualMcp": {
+    "passed": true,
+    "actualStdioMcp": true,
+    "finishedRigImportedAsRecipeInput": false,
+    "binarySha256": "0f659abb43c80d6dd4c502c35e91284848a9851947e13c682afdef290879d112",
+    "imageSha256": "6e8f281942e95b5a77774e683622dac99ea2aef706c99f3627dad968d6c2120f",
+    "nativeUiAcceptance": false,
+    "commands": 64,
+    "tools": 19,
+    "authoredCommands": 25,
+    "requests": 57,
+    "copyReadOnly": true,
+    "nonzeroFirstEntry": true,
+    "globalOrigin": true,
+    "negativeAtomicCases": 9,
+    "sameOwnerNominalFramesMatchNative": true,
+    "explicitOtherTargetsMatchNative": true,
+    "crossAnimationMatchNative": true,
+    "undoRedoExact": true,
+    "saveReopenExact": true,
+    "emptyReopenHistory": true,
+    "poseSamples": 12,
+    "savedSha256": "d833624039bbb2596aa8d0a0434607faf4807b24291a86decb6a60575566fbb3",
+    "inputImageUnchanged": true,
+    "childClosed": true
+  },
+  "externalRuntime": {
+    "passed": true,
+    "poseSamples": 208,
+    "worldComparisons": 7488,
+    "regionComparisons": 3328,
+    "reports": {
+      "other-target": {
+        "physicsConstraints": 0,
+        "physicsValues": 0,
+        "physicsTimelines": 0,
+        "physicsFrames": 0,
+        "regionComparisons": 1664,
+        "maxRegionError": 1.52587890625e-05,
+        "meshComparisons": 0,
+        "weightedMeshComparisons": 0,
+        "maxMeshError": 0,
+        "uvComparisons": 0,
+        "maxUVError": 0,
+        "runtime": "Spine 4.3 external oracle",
+        "bones": 6,
+        "slots": 2,
+        "skins": [
+          "default"
+        ],
+        "clips": [
+          {
+            "name": "clipboard",
+            "nativeEnd": 1.3333332538604736,
+            "runtimeEnd": 1.3333332538604736,
+            "samplesPerSkin": 52,
+            "skins": [
+              "default"
+            ],
+            "maxWorldError": 1.1156002784673547e-05
+          },
+          {
+            "name": "retime",
+            "nativeEnd": 1,
+            "runtimeEnd": 1,
+            "samplesPerSkin": 52,
+            "skins": [
+              "default"
+            ],
+            "maxWorldError": 1.200913195020803e-05
+          }
+        ],
+        "tolerance": 0.001,
+        "maxWorldError": 1.200913195020803e-05,
+        "comparisons": 3744,
+        "ikPoseComparisons": 0,
+        "maxIKMixError": 0,
+        "ikMixTolerance": 1e-06,
+        "drawOrderChecks": 104,
+        "imageChecks": 208,
+        "colorComparisons": 832
+      },
+      "cross-animation": {
+        "physicsConstraints": 0,
+        "physicsValues": 0,
+        "physicsTimelines": 0,
+        "physicsFrames": 0,
+        "regionComparisons": 1664,
+        "maxRegionError": 1.52587890625e-05,
+        "meshComparisons": 0,
+        "weightedMeshComparisons": 0,
+        "maxMeshError": 0,
+        "uvComparisons": 0,
+        "maxUVError": 0,
+        "runtime": "Spine 4.3 external oracle",
+        "bones": 6,
+        "slots": 2,
+        "skins": [
+          "default"
+        ],
+        "clips": [
+          {
+            "name": "clipboard",
+            "nativeEnd": 0.5833333134651184,
+            "runtimeEnd": 0.5833333134651184,
+            "samplesPerSkin": 52,
+            "skins": [
+              "default"
+            ],
+            "maxWorldError": 7.640694136057391e-06
+          },
+          {
+            "name": "retime",
+            "nativeEnd": 1.3333332538604736,
+            "runtimeEnd": 1.3333332538604736,
+            "samplesPerSkin": 52,
+            "skins": [
+              "default"
+            ],
+            "maxWorldError": 1.1076360095785276e-05
+          }
+        ],
+        "tolerance": 0.001,
+        "maxWorldError": 1.1076360095785276e-05,
+        "comparisons": 3744,
+        "ikPoseComparisons": 0,
+        "maxIKMixError": 0,
+        "ikMixTolerance": 1e-06,
+        "drawOrderChecks": 104,
+        "imageChecks": 208,
+        "colorComparisons": 832
+      }
+    },
+    "rasterComparison": false
+  },
+  "images": [
+    {
+      "path": "grouped-clipboard-before.png",
+      "sha256": "3a0234b2efd9d02c5648b849190994679e0eb9aee2d94329af6ecae4c38175af",
+      "inspection": "Native input + exact selection"
+    },
+    {
+      "path": "grouped-clipboard-after.png",
+      "sha256": "0b03140efe3eeb43fdc10ea4e77773b24c947efb3f809148254c2d23fe8393a4",
+      "inspection": "Native input + exact document"
+    },
+    {
+      "path": "grouped-clipboard-cut.png",
+      "sha256": "c01f2b7158070b2adc380d77b339eeb544ab06be9d5b5e8ae3a67beb2d11dab7",
+      "inspection": "Native input + exact document/history"
+    },
+    {
+      "path": "grouped-clipboard-leaf.png",
+      "sha256": "0d4eef1b6caae780bc3a813dc08889139cb2c15a8e6670f205b9a74c2c4a6dd8",
+      "inspection": "Native input + exact document/history"
+    }
+  ],
+  "limits": [
+    "Native original-owner routing only; general Tree multi-selection and automatic different-target mapping remain open. MCP requires explicit complete target maps.",
+    "Single-owner paste from all-owner context without a Tree owner lacks a source-owner receipt.",
+    "External group text without the current editor-local receipt is refused; source-owner indices are not portable clipboard data.",
+    "Native pending baseline is empty; nonempty pending preservation is covered by focused event/core tests.",
+    "Undo restores document history and clears transient key selection; no native selection-history parity claim.",
+    "Shift/Offset, Lock/Sync, unsupported owner families and known Slider precision/lossy-interchange gaps remain open."
+  ]
+}

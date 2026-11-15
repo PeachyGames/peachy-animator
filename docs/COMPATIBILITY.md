@@ -4,9 +4,33 @@ Target: Spine **4.3.x JSON**, with export metadata `4.3.26`. The initial externa
 oracle is separately installed `@esotericsoftware/spine-core` **4.3.13**.
 Compatibility applies to the subset below, not every 4.3 project or future patch.
 
-## Multi-owner timing — November 15, 2026 (bounded acceptance passed)
+## Grouped clipboard — November 15, 2026 (code-push checkpoint; native partial)
 
-Current native v23 exposes **63 commands /18 tools**. A revision-checked authored
+Current native v23 has **64 commands /19 tools**. Portable grouped entries share
+one global origin, with separate source-owner receipts and complete explicit
+target maps. Canonical target aliases, incompatible layouts and malformed new
+nested shapes reject before mutation; old single-owner wire remains unchanged.
+Actual MCP run02 passes 57 requests, nine atomic-negative cases and exact
+history/Save/reopen with 12 pose queries. Focused MCP four-unit/two-stdio checks
+pass. Separate other-target and cross-animation exports each pass 104 runtime
+poses at unchanged 0.001, 208 total. World maxima are 1.200913195020803e−5 and
+1.1076360095785276e−5 respectively; both region maxima are 1.52587890625e−5.
+Final source checks05/06 and bounded native authoring pass, including a leaf-v2
+selection/Cut positive control. Full native acceptance remains partial for
+minimum-window and Save/fresh reopen. All owned processes are closed; code checks/
+push precede those remaining checks at the user's direction.
+
+Installed observations distinguish original-owner fallback, unchanged identity
+when the same bones are reselected in reverse, and ordered mapping onto two
+different parents. Native paste preserves original selection; source owners and
+accepted destination IDs must not be conflated. Tree multi-target mapping and
+single-leaf fallback without a Tree owner remain gaps. Existing slot/skin/layout
+guards and Slider lossy interchange/precision failures are unchanged. See
+[scope](slices/grouped-clipboard.md) and [scalar evidence](evidence/grouped-clipboard.json).
+
+## Earlier multi-owner timing — November 15, 2026 (bounded acceptance passed)
+
+The `b45d18d` checkpoint used v23 and **63 commands /18 tools**. A revision-checked authored
 key query returns explicit Bone/IK/Slider/Deform/Slot/DrawOrder owners and exact
 keys. Empty owners request inventory without selecting keys; unsupported Inherit,
 Sequence, Path, Physics/reset and Event timelines remain visible metadata rather

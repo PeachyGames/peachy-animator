@@ -874,7 +874,23 @@ pub fn copy_animation_keys(
         .map(|s| s.identity().time())
         .min_by(f32::total_cmp)
         .ok_or("No keys")?;
-    let clipboard = match &owner {
+    clipboard_from_sources(document, &owner, sources, first, ClipboardAnchor::OwnerZero)
+}
+
+#[derive(Clone, Copy)]
+enum ClipboardAnchor {
+    OwnerZero,
+    GroupRelative,
+}
+
+fn clipboard_from_sources(
+    document: &Document,
+    owner: &KeyOwner,
+    sources: Vec<OwnedKey>,
+    first: f32,
+    anchor: ClipboardAnchor,
+) -> Result<AnimationKeyClipboard, String> {
+    let clipboard = match owner {
         KeyOwner::Slider { .. } => {
             let mut keys = vec![];
             for source in sources {
@@ -993,8 +1009,51 @@ pub fn copy_animation_keys(
             }
         }
     };
-    clipboard_sources(&clipboard, &owner)?;
+    clipboard_sources_with_anchor(&clipboard, owner, anchor)?;
     Ok(clipboard)
+}
+
+/// Copy mixed exact keys into portable owner entries sharing one earliest
+/// origin. Entries follow first canonical source-owner appearance. The separate
+/// source_owners receipt is presentation context, never an implicit paste map.
+pub fn copy_animation_key_group(
+    document: &Document,
+    animation: usize,
+    keys: &[AnimationKey],
+) -> Result<crate::AnimationKeyGroupCopy, String> {
+    document.validate()?;
+    let sources = sources(document, animation, keys)?;
+    let first = sources
+        .iter()
+        .map(|source| source.identity().time())
+        .min_by(f32::total_cmp)
+        .ok_or("No keys")?;
+    let mut indices = std::collections::BTreeMap::new();
+    let mut groups: Vec<(KeyOwner, Vec<OwnedKey>)> = Vec::new();
+    for source in sources {
+        let owner = source.identity().owner();
+        let index = *indices.entry(owner.clone()).or_insert_with(|| {
+            groups.push((owner, Vec::new()));
+            groups.len() - 1
+        });
+        groups[index].1.push(source);
+    }
+    let mut entries = Vec::with_capacity(groups.len());
+    let mut source_owners = Vec::with_capacity(groups.len());
+    for (owner, sources) in groups {
+        entries.push(clipboard_from_sources(
+            document,
+            &owner,
+            sources,
+            first,
+            ClipboardAnchor::GroupRelative,
+        )?);
+        source_owners.push(owner);
+    }
+    Ok(crate::AnimationKeyGroupCopy {
+        clipboard: crate::AnimationKeyGroupClipboard { entries },
+        source_owners,
+    })
 }
 /// Backwards-compatible bone-only entry point, using the same resolver/arithmetic.
 pub fn copy_keys(
@@ -1015,6 +1074,13 @@ pub fn copy_keys(
 fn clipboard_sources(
     clipboard: &AnimationKeyClipboard,
     owner: &KeyOwner,
+) -> Result<Vec<OwnedKey>, String> {
+    clipboard_sources_with_anchor(clipboard, owner, ClipboardAnchor::OwnerZero)
+}
+fn clipboard_sources_with_anchor(
+    clipboard: &AnimationKeyClipboard,
+    owner: &KeyOwner,
+    anchor: ClipboardAnchor,
 ) -> Result<Vec<OwnedKey>, String> {
     let sources: Vec<_> = match (clipboard, owner) {
         (AnimationKeyClipboard::Slider { keys }, KeyOwner::Slider { constraint }) => {
@@ -1120,7 +1186,16 @@ fn clipboard_sources(
         }
         _ => return Err("Clipboard and paste target must have the same kind".into()),
     };
-    if sources.is_empty() || !sources.iter().any(|s| s.identity().time() == 0.) {
+    if sources.is_empty() {
+        return Err(match anchor {
+            ClipboardAnchor::OwnerZero => "Clipboard needs keys anchored at relative time zero",
+            ClipboardAnchor::GroupRelative => "Clipboard entry needs at least one key",
+        }
+        .into());
+    }
+    if matches!(anchor, ClipboardAnchor::OwnerZero)
+        && !sources.iter().any(|s| s.identity().time() == 0.)
+    {
         return Err("Clipboard needs keys anchored at relative time zero".into());
     }
     let mut identities = BTreeSet::new();
@@ -1360,6 +1435,17 @@ fn prepared_paste_keys(
         .animations
         .get(animation)
         .ok_or("Unknown animation")?;
+    let (sources, _) =
+        prepared_paste_sources(document, owner, clipboard, ClipboardAnchor::OwnerZero)?;
+    checked_targets(&sources, time)
+}
+
+fn prepared_paste_sources(
+    document: &Document,
+    owner: KeyOwner,
+    clipboard: &AnimationKeyClipboard,
+    anchor: ClipboardAnchor,
+) -> Result<(Vec<OwnedKey>, bool), String> {
     let owner = canonical_owner(document, owner)?;
     if let (AnimationKeyClipboard::DrawOrder { slots, .. }, KeyOwner::DrawOrder {}) =
         (clipboard, &owner)
@@ -1386,7 +1472,13 @@ fn prepared_paste_keys(
             );
         }
     }
-    let mut sources = clipboard_sources(clipboard, &owner)?;
+    let mut sources = match anchor {
+        ClipboardAnchor::OwnerZero => clipboard_sources(clipboard, &owner)?,
+        ClipboardAnchor::GroupRelative => clipboard_sources_with_anchor(clipboard, &owner, anchor)?,
+    };
+    // Anchor validation precedes target-specific skipping. Surviving keys keep
+    // the copied origin even when its earliest named attachment is unavailable.
+    let has_zero = sources.iter().any(|source| source.identity().time() == 0.);
     if let KeyOwner::Slot { slot } = owner {
         let name = &document.slots[slot].name;
         // Native 4.3 skips only unavailable named attachment keys; hiding and
@@ -1406,7 +1498,89 @@ fn prepared_paste_keys(
             _ => true,
         });
     }
+    Ok((sources, has_zero))
+}
+
+fn prepared_paste_group(
+    document: &Document,
+    animation: usize,
+    time: f32,
+    clipboard: &crate::AnimationKeyGroupClipboard,
+    targets: &[crate::AnimationKeyGroupTarget],
+) -> Result<Vec<OwnedKey>, String> {
+    checked_time(time)?;
+    document
+        .animations
+        .get(animation)
+        .ok_or("Unknown animation")?;
+    if clipboard.entries.is_empty() {
+        return Err("Grouped clipboard needs at least one entry".into());
+    }
+    if targets.len() != clipboard.entries.len() {
+        return Err("Grouped paste needs exactly one target for every entry".into());
+    }
+    let mut mapping = vec![None; clipboard.entries.len()];
+    let mut owners = BTreeSet::new();
+    for target in targets {
+        let entry = mapping
+            .get_mut(target.entry)
+            .ok_or("Grouped paste entry index is out of range")?;
+        if entry.is_some() {
+            return Err("Duplicate grouped paste entry mapping".into());
+        }
+        let owner = canonical_owner(document, target.target.clone())?;
+        if !owners.insert(owner.clone()) {
+            return Err("Grouped paste targets must have unique canonical owners".into());
+        }
+        *entry = Some(owner);
+    }
+    let mut sources = Vec::new();
+    let mut has_zero = false;
+    for (entry, owner) in clipboard.entries.iter().zip(mapping) {
+        let (incoming, zero) = prepared_paste_sources(
+            document,
+            owner.ok_or("Missing grouped paste entry mapping")?,
+            entry,
+            ClipboardAnchor::GroupRelative,
+        )?;
+        has_zero |= zero;
+        sources.extend(incoming);
+    }
+    if !has_zero {
+        return Err("Grouped clipboard needs a global relative time zero key".into());
+    }
     checked_targets(&sources, time)
+}
+
+/// Exact accepted incoming identities in entry/leaf-key order. Every mapping
+/// and payload is preflighted before any mutation; skipped names never select
+/// untouched destination keys. Empty accepted output is a valid all-skipped paste.
+pub fn pasted_animation_key_group(
+    document: &Document,
+    animation: usize,
+    time: f32,
+    clipboard: &crate::AnimationKeyGroupClipboard,
+    targets: &[crate::AnimationKeyGroupTarget],
+) -> Result<Vec<AnimationKey>, String> {
+    document.validate()?;
+    Ok(
+        prepared_paste_group(document, animation, time, clipboard, targets)?
+            .iter()
+            .map(OwnedKey::identity)
+            .collect(),
+    )
+}
+
+pub(super) fn paste_animation_key_group(
+    document: &mut Document,
+    animation: usize,
+    time: f32,
+    clipboard: &crate::AnimationKeyGroupClipboard,
+    targets: &[crate::AnimationKeyGroupTarget],
+) -> Result<(), String> {
+    let incoming = prepared_paste_group(document, animation, time, clipboard, targets)?;
+    insert_keys(document, animation, incoming);
+    Ok(())
 }
 
 /// Exact incoming identities accepted by the corresponding paste command.

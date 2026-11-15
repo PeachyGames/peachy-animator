@@ -1,6 +1,61 @@
 # First-slice validation — November 5, 2026
 
-## Multi-owner timing checkpoint — November 15, 2026 (bounded acceptance passed)
+## Grouped clipboard code-push checkpoint — November 15, 2026 (native partial)
+
+Native v23 is unchanged at **64 commands /19 tools**. Four focused MCP unit and
+two actual-stdio cases pass. Final source checks05 pass Desktop Dopesheet 29,
+grouped clipboard 13 and leaf 15, fmt/all-target Clippy/workspace build and
+seven-crate architecture. Durable check06 adds engine group 7/timeline 28
+(overlapping) and repeats MCP four-unit/two-stdio on unchanged source. Native
+authoring/history checks pass; full native acceptance remains partial pending
+minimum-window and Save/fresh reopen. All owned processes are closed.
+Actual `group-mcp-authoring-02` passes
+57 requests from a blank root/one PNG and 25 construction commands, including a
+nonzero first entry/global zero in the second, nine negative atomic cases,
+same-owner/different-parent/cross-animation native nominal timing/value matches,
+exact Undo/Redo/Save/reopen, empty reopen history and 12 evaluated poses. The input
+PNG is unchanged and the owned child is closed.
+
+Saved project SHA256 is
+`d833624039bbb2596aa8d0a0434607faf4807b24291a86decb6a60575566fbb3`;
+MCP binary SHA256 is
+`0f659abb43c80d6dd4c502c35e91284848a9851947e13c682afdef290879d112`.
+The public lab has the same saved project SHA256.
+
+Separate external runtime 4.3.13 checks pass 104 poses each for other-target and
+cross-animation outputs, 208 total at 0.001. Combined comparisons are 7,488 world
+values, 3,328 region coordinates, 1,664 color values, 208 full-order and 416 image
+checks. Respective maximum world errors are 1.200913195020803e−5 and
+1.1076360095785276e−5; both region maxima are 1.52587890625e−5. These fixtures
+contain no mesh/UV comparisons. CLI SHA256 is
+`a414e845f0500c562e4ffaa579da64df8ca6a3e6379a6a2127aa7d9c6c618ab6`.
+Installed source-selection/target mapping and paste-preserves-original-selection
+observations are separate from pending Peachy UI acceptance. The 208 runtime
+comparisons are independent of the 12 MCP pose queries and establish no raster
+result. Check04's pointer regression used stale marker geometry after two Undo
+operations changed the extent. A repaint barrier fixes the test; the exact click
+assertion is unchanged and check05 passes. Final Desktop SHA256 is
+`87ee7d48cc92337937eef0e1cf44da517f986c1c3d2914f469df2d80339dee59`;
+MCP/CLI hashes match the executed run02/runtime evidence above. Final integrated
+workspace build07 after focused package tests verifies those same hashes, with
+no source change.
+
+Native `87ee7d48…dee59` verifies four-key/two-entry Copy, Cmd-toggle, ruler Frame 50 key IDs/
+primary retention, same-owner paste 50/70+57/80 and one-step whole-document Undo/
+Redo. Paste preserves original IDs/primary while document generation changes;
+Undo retains its established selection-clearing policy. A separate fresh Paste/
+Cut leaves only the incoming four; two Undo operations restore the baseline. Other-Tree-
+bone paste keeps Tree selection and original 2/4 targets, with readonly no-shown-
+key Cut/Delete; cross-animation 1 paste retains source 0 bindings, leaves clip 0
+unchanged and undoes exactly. The independent leaf-v2 native control passes Copy 2,
+retained original selection on Paste, Cut of originals and two-Undo exact recovery.
+The native baseline is fully restored. The user directed finishing checks and
+pushing first; minimum-window and Save/fresh reopen remain pending, not process
+closure. See
+[scope](slices/grouped-clipboard.md), [review](evidence/grouped-clipboard.html) and
+[scalar evidence](evidence/grouped-clipboard.json).
+
+## Earlier multi-owner timing checkpoint — November 15, 2026 (bounded acceptance passed)
 
 Native v23 retains 63 commands and now 18 tools. Final focused checks pass: six
 engine, two generation, 16 schema, three query and one actual-stdio case. Desktop

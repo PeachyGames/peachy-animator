@@ -1,6 +1,43 @@
 # Implementation provenance
 
-## Multi-owner timeline references and authored query — November 15, 2026
+## Grouped clipboard references and shared boundary — November 15, 2026
+
+Existing official Dopesheet/Keys/changelog references and the original six-bone
+fixture below were reused. Owned installed 4.3.26 input/exports establish one
+global origin, original-owner fallback with a single different target, identity
+preservation for the same bones reselected in reverse, and ordered two-other-
+parent mapping. Accepted four-source Paste/Cut and a leaf positive control show
+paste retains original selection. Unstable earlier selection trials are excluded;
+licensed native captures stay private. No proprietary implementation was read.
+
+Independent group types/codecs reuse shared leaf arithmetic with global anchoring
+and complete explicit canonical-unique target maps. Source-owner receipts remain
+session state outside portable payloads. Strict new group decoding does not alter
+old leaf codecs/version 2 envelopes; editor grouped envelopes use version 3.
+Current native v23 has 64 commands/19 tools. Actual MCP run02 starts from blank/
+one original PNG, constructs through 25 commands and passes 57 requests, nine atomic
+negatives, original/different-parent/cross-animation golden matches, exact history/
+reopen and 12 evaluated poses. Input image bytes are unchanged; the child is closed.
+
+Canonical saved SHA256 is
+`d833624039bbb2596aa8d0a0434607faf4807b24291a86decb6a60575566fbb3`.
+The public lab retains those exact bytes. Separate public-API-only external
+runtime 4.3.13 comparisons cover 104 other-target and 104 cross-animation poses,
+208 total at unchanged 0.001. World maxima are 1.200913195020803e−5 and
+1.1076360095785276e−5 respectively; both region maxima are 1.52587890625e−5.
+The observer remains an external oracle, not an application dependency or copied
+implementation. MCP run02 uses binary `0f659abb…9d112`; CLI is `a414e845…18ab6`.
+Four new MCP unit/two actual-stdio cases and final checks05/06 pass. Owned native
+input verifies grouped authoring/history and a separate leaf-v2 Copy/Paste/Cut
+selection control; complete native acceptance remains partial for minimum-window
+and Save/fresh reopen. At the user's request, code checks/push come first. All
+owned native/Spine/MCP processes are closed and the native baseline is restored.
+General Tree multi-target UI and leaf
+fallback without a Tree owner remain gaps. Those finite geometry comparisons
+establish no broader clipboard interaction or pixel equivalence. See [scope](slices/grouped-clipboard.md) and
+[scalar evidence](evidence/grouped-clipboard.json).
+
+## Earlier multi-owner timeline references and authored query — November 15, 2026
 
 The official [Dopesheet guide](https://esotericsoftware.com/spine-dopesheet),
 [Keys guide](https://esotericsoftware.com/spine-keys),
@@ -21,7 +58,7 @@ artist artwork was read/copied; licensed interface captures remain private.
 
 The independently implemented authored inventory exposes explicit typed owners,
 exact stored keys and read-only unsupported-timeline metadata without a pose
-solve. Current v23 has 63 commands/18 tools. A fresh actual MCP run creates the
+solve. That checkpoint used v23 and 63 commands/18 tools. A fresh actual MCP run creates the
 [public lab](../examples/peach-bot/multi-owner-bot.peachy), SHA256
 `88e6b67fdc058b4acb8bbf618dd1ebeb98fdbb3c765f24d301aebdf3d0c5c2cf`,
 from a blank root/one PNG through 25 authored commands in final03's 41 requests. Mixed move,

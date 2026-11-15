@@ -267,12 +267,28 @@ press-time source keys, modifiers and chart geometry, and cancels a key preview
 before context changes or Save/Export/Open. Completed Undo/Redo clears key selection
 so a restored destination cannot inherit a moved key's time-based selection.
 
+`engine/group_clipboard.rs` defines portable group entries and strict new nested
+decoders; `timeline.rs` shares existing leaf arithmetic for one global origin and
+complete explicit target maps. Preflight covers all entries before mutation and
+canonical target aliases cannot collide. Copy's `sourceOwners` receipt stays
+separate from portable data. Existing single-owner codecs/commands are unchanged.
+
 `timeline_clipboard.rs` is the imperative clipboard shell. Its session-owned buffer
 contains key data, never assets or file paths. Explicit successful Copy/Cut mirrors a
 versioned JSON envelope through egui's native clipboard output. Dedicated clipboard
 input events take precedence over raw-key fallbacks and only run for chart focus.
 Keyboard Paste requires the current envelope; text fields keep their input. The
 system clipboard is not an engine dependency or native-project field.
+The new editor-local grouped path uses a version 3 OS envelope and separate
+original-owner bindings; leaf version 2 remains unchanged. Paste keeps existing
+selection and records accepted IDs as diagnostics, not automatic selection.
+Final checks05/06 and bounded grouped/leaf-v2 native authoring pass; full native
+acceptance is partial for minimum-window and Save/fresh reopen. Owned processes
+are closed. General Tree multi-target
+mapping and a source receipt for single-leaf no-Tree fallback remain absent.
+Actual MCP run02 and separate 208-pose runtime geometry checks validate the shared
+data path; they do not close native input acceptance. The exact pointer regression
+passes after a test repaint barrier refreshes post-Undo geometry.
 
 
 The pure `KeySelection` model keeps an explicit Rows/Shown expansion phase separate
@@ -289,9 +305,10 @@ Bounded two-bone scalar native acceptance verifies selection/retiming, one-step
 history, held cancellation, primary-owner Graph routing, minimum layout and
 Save/reopen. Cancellation preserves the exact selected set/primary and redo,
 blocking continued held movement until release. The native pending baseline is
-empty; nonempty pending preservation has headless coverage only. Group clipboard,
-Shift/Offset, Lock/Sync and general Tree multi-selection are separate capabilities;
-mixed Copy explicitly refuses instead of discarding owner identity.
+empty; nonempty pending preservation has headless coverage only. At that earlier
+checkpoint mixed Copy explicitly refused. The grouped continuation above extends
+that boundary; Shift/Offset, Lock/Sync and general Tree multi-selection remain
+separate capabilities.
 
 
 ## Key-derived duration

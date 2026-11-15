@@ -325,7 +325,7 @@ fn draw_order_dopesheet_copy_paste_delete_preserves_explicit_reset_and_source_ke
     );
     assert_eq!(
         editor.key_selection.keys(),
-        &[peachy_engine::AnimationKey::DrawOrder { time: 2. }]
+        &[peachy_engine::AnimationKey::DrawOrder { time: 1.5 }]
     );
     assert!(
         editor.session.document().animations[0]
@@ -335,13 +335,29 @@ fn draw_order_dopesheet_copy_paste_delete_preserves_explicit_reset_and_source_ke
             .offsets
             .is_empty()
     );
+    let pasted = editor.session.document().clone();
     workspace_frame(
         &mut editor,
         &ctx,
         chord(egui::Key::Delete, egui::Modifiers::NONE),
     );
-    assert_eq!(editor.session.document(), &original);
+    assert!(
+        !editor.session.document().animations[0]
+            .draw_order
+            .iter()
+            .any(|key| key.time == 1.5)
+    );
+    assert!(
+        editor.session.document().animations[0]
+            .draw_order
+            .iter()
+            .any(|key| key.time == 2.)
+    );
     assert_eq!(editor.session.document().slots, original.slots);
+    editor.undo();
+    assert_eq!(editor.session.document(), &pasted);
+    editor.undo();
+    assert_eq!(editor.session.document(), &original);
 }
 
 #[test]

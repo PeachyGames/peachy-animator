@@ -1,7 +1,8 @@
 use crate::{
-    AnimationKey, AnimationKeyClipboard, CurvePreset, CurveSelection, KeyClipboard, KeyOwner,
-    MeshBindPose, MeshWeightEdit, MeshWeightSelection, SliderMappingRangeField, SliderPoseEdit,
-    SliderSourceRange, TimelineKey, TransformMappingRangeField,
+    AnimationKey, AnimationKeyClipboard, AnimationKeyGroupClipboard, AnimationKeyGroupTarget,
+    CurvePreset, CurveSelection, KeyClipboard, KeyOwner, MeshBindPose, MeshWeightEdit,
+    MeshWeightSelection, SliderMappingRangeField, SliderPoseEdit, SliderSourceRange, TimelineKey,
+    TransformMappingRangeField,
 };
 use peachy_document::*;
 use serde::{Deserialize, Serialize};
@@ -165,6 +166,12 @@ pub enum Command {
         target: KeyOwner,
         time: f32,
         clipboard: AnimationKeyClipboard,
+    },
+    PasteAnimationKeyGroup {
+        animation: usize,
+        time: f32,
+        clipboard: AnimationKeyGroupClipboard,
+        targets: Vec<AnimationKeyGroupTarget>,
     },
     SetPose {
         bone: usize,
@@ -1193,6 +1200,14 @@ fn apply(
             time,
             clipboard,
         } => crate::timeline::paste_animation_keys(doc, animation, target, time, &clipboard)?,
+        Command::PasteAnimationKeyGroup {
+            animation,
+            time,
+            clipboard,
+            targets,
+        } => {
+            crate::timeline::paste_animation_key_group(doc, animation, time, &clipboard, &targets)?
+        }
         Command::DeleteKey {
             animation,
             bone,

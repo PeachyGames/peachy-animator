@@ -427,18 +427,15 @@ fn multi_owner_dopesheet_readonly_metadata_remains_visible_and_select_all_cannot
 }
 
 #[test]
-fn multi_owner_dopesheet_mixed_clipboard_refuses_atomically_but_delete_keeps_exact_scope() {
+fn multi_owner_dopesheet_mixed_clipboard_and_delete_keep_exact_scope() {
     let (mut editor, ctx) = fixture();
     select_group(&mut editor, &ctx);
     let before = editor.session.document().clone();
-    assert!(!editor.copy_dopesheet_keys(&ctx));
+    assert!(editor.copy_dopesheet_keys(&ctx));
     assert!(editor.timeline_clipboard.is_none());
-    assert_eq!(editor.session.document(), &before);
-    editor.error = None;
-    assert!(!editor.cut_dopesheet_keys(&ctx));
+    assert_eq!(editor.timeline_clipboard_diagnostic()["entryCount"], 2);
     assert_eq!(editor.session.document(), &before);
     assert!(!editor.session.can_undo());
-    editor.error = None;
     editor.delete_dopesheet_keys();
     assert!(editor.error.is_none(), "{:?}", editor.error);
     assert_eq!(
@@ -651,4 +648,150 @@ fn multi_owner_dopesheet_graph_property_switch_retains_the_explicit_bone_with_no
     assert!(editor.graph_owner().is_none());
     assert_eq!(editor.session.document(), &before);
     assert!(!editor.session.can_undo());
+}
+
+#[test]
+fn multi_owner_dopesheet_pointer_group_copy_ruler_paste_cut_preserves_selection_and_toggle_pose() {
+    for toggle in [egui::Modifiers::COMMAND, egui::Modifiers::CTRL] {
+        let (mut editor, ctx) = fixture();
+        let mut doc = editor.session.document().clone();
+        for track in &mut doc.animations[0].tracks {
+            let frames = if track.bone == 8 {
+                [5., 25., 60.]
+            } else {
+                [12., 35., 60.]
+            };
+            track.keys = frames
+                .into_iter()
+                .map(|frame| Keyframe {
+                    time: frame / 60.,
+                    value: frame,
+                    curve: Curve::BezierOffset([0.2, -0., 0.8, 7.25]),
+                })
+                .collect();
+        }
+        editor.session = Session::new(doc).unwrap();
+        editor.session.set_skin(&editor.skin);
+        editor.key_selection = Default::default();
+        editor.reconcile_selection();
+        settle(&mut editor, &ctx);
+        let ruler_point = |editor: &Editor, frame: f32| {
+            let [left, _, right, _] = editor.capture_targets["timelineTrack"];
+            let [_, top, _, bottom] = editor.capture_targets["timelineRuler"];
+            pos2(
+                left + (right - left) * (frame / editor.session.document().fps as f32)
+                    / editor.display_extent(),
+                (top + bottom) * 0.5,
+            )
+        };
+        let fifty = ruler_point(&editor, 50.);
+        workspace_frame(&mut editor, &ctx, vec![egui::Event::PointerMoved(fifty)]);
+        pointer(&mut editor, &ctx, fifty, true, egui::Modifiers::NONE);
+        pointer(&mut editor, &ctx, fifty, false, egui::Modifiers::NONE);
+        assert_eq!((editor.time * 60.).round(), 50.);
+        let cursor = editor.time;
+        let mut pose = editor.session.local_pose(Some(0), cursor)[8];
+        pose.x += 13.5;
+        editor
+            .session
+            .edit_pose(
+                8,
+                EditTarget::Animate {
+                    animation: 0,
+                    time: cursor,
+                },
+                pose,
+                &[Property::X],
+                false,
+            )
+            .unwrap();
+        let pending = editor.session.pose_edits().clone();
+        let before = editor.session.document().clone();
+        for (index, name) in [
+            "timelineKey:bone:8:Rotation:0",
+            "timelineKey:bone:8:Rotation:1",
+            "timelineKey:bone:7:Y:0",
+            "timelineKey:bone:7:Y:1",
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            let point = target(&editor, name);
+            workspace_frame(&mut editor, &ctx, vec![egui::Event::PointerMoved(point)]);
+            pointer(&mut editor, &ctx, point, true, toggle);
+            // Release modifiers can already be clear in the same OS input batch.
+            pointer(&mut editor, &ctx, point, false, egui::Modifiers::NONE);
+            assert_eq!(
+                editor.time.to_bits(),
+                cursor.to_bits(),
+                "toggle moved cursor for {name}"
+            );
+            assert_eq!(
+                editor.session.pose_edits(),
+                &pending,
+                "toggle discarded pending pose"
+            );
+            assert_eq!(editor.session.document(), &before);
+            assert_eq!(editor.key_selection.len(), index + 1);
+        }
+        let selected = editor.key_selection.keys().to_vec();
+        workspace_frame(&mut editor, &ctx, vec![egui::Event::Copy]);
+        assert_eq!(editor.timeline_clipboard_diagnostic()["kind"], "group");
+        assert_eq!(editor.session.pose_edits(), &pending);
+        // A real ruler drag may change time and discard pending, but not keys.
+        let forty = ruler_point(&editor, 40.);
+        pointer(&mut editor, &ctx, fifty, true, egui::Modifiers::NONE);
+        workspace_frame(&mut editor, &ctx, vec![egui::Event::PointerMoved(forty)]);
+        pointer(&mut editor, &ctx, forty, false, egui::Modifiers::NONE);
+        assert_eq!((editor.time * 60.).round(), 40.);
+        assert!(editor.session.pose_edits().is_empty());
+        assert_eq!(editor.key_selection.keys(), selected);
+        pointer(&mut editor, &ctx, fifty, true, egui::Modifiers::NONE);
+        pointer(&mut editor, &ctx, fifty, false, egui::Modifiers::NONE);
+        assert_eq!(editor.time.to_bits(), cursor.to_bits());
+        assert_eq!(editor.key_selection.keys(), selected);
+        click(&mut editor, &ctx, "timelinePaste", egui::Modifiers::NONE);
+        assert_eq!(editor.key_selection.keys(), selected);
+        assert_eq!(editor.time.to_bits(), cursor.to_bits());
+        let accepted: Vec<AnimationKey> = serde_json::from_value(
+            editor.timeline_clipboard_diagnostic()["lastPaste"]["acceptedKeys"].clone(),
+        )
+        .unwrap();
+        assert_eq!(accepted.len(), 4);
+        assert_eq!(
+            accepted
+                .iter()
+                .map(|key| (key.time() * 60.).round() as u32)
+                .collect::<Vec<_>>(),
+            vec![50, 70, 57, 80]
+        );
+        let pasted = editor.session.document().clone();
+        click(&mut editor, &ctx, "timelineCut", egui::Modifiers::NONE);
+        let after = peachy_engine::animation_keys(
+            editor.session.document(),
+            0,
+            &[KeyOwner::Bone { bone: 8 }, KeyOwner::Bone { bone: 7 }],
+        )
+        .unwrap()
+        .keys;
+        assert!(selected.iter().all(|key| !after.contains(key)));
+        assert!(accepted.iter().all(|key| after.contains(key)));
+        assert!(after.contains(&key(8, Property::Rotation, 60.)));
+        assert!(after.contains(&key(7, Property::Y, 60.)));
+        assert_eq!(after.len(), 6);
+        editor.undo();
+        assert_eq!(editor.session.document(), &pasted);
+        editor.undo();
+        assert_eq!(editor.session.document(), &before);
+        // Undo restores the shorter clip; repaint before reading marker targets
+        // recorded under the pasted clip's longer time extent.
+        settle(&mut editor, &ctx);
+        click(
+            &mut editor,
+            &ctx,
+            "timelineKey:bone:8:Rotation:0",
+            egui::Modifiers::NONE,
+        );
+        assert_eq!(editor.time.to_bits(), (5_f32 / 60.).to_bits());
+    }
 }

@@ -156,18 +156,22 @@ fn slot_authoring_typed_rows_clipboard_and_retime_preserve_coincident_row_kinds(
     let original = editor.session.document().clone();
     editor.set_time(1.5);
     assert!(editor.paste_dopesheet_keys());
-    assert_eq!(editor.key_selection.len(), 2);
+    assert_eq!(editor.key_selection.keys(), sources);
     assert!(
-        editor
-            .key_selection
-            .keys()
-            .contains(&AnimationKey::SlotAttachment { slot: 0, time: 1.5 })
+        editor.session.document().animations[0].attachment_tracks[0]
+            .keys
+            .iter()
+            .any(|key| key.time == 1.5)
     );
     assert!(
-        editor
-            .key_selection
-            .keys()
-            .contains(&AnimationKey::SlotColor { slot: 0, time: 1.5 })
+        editor.session.document().animations[0].color_tracks[0]
+            .keys
+            .iter()
+            .any(|key| key.time == 1.5)
+    );
+    assert_eq!(
+        editor.timeline_clipboard_diagnostic()["lastPaste"]["acceptedCount"],
+        2
     );
     editor.undo();
     assert_eq!(editor.session.document(), &original);

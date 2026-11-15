@@ -310,6 +310,7 @@ fn slider_graph_numeric_handles_convert_host_frames_and_referenced_frames_withou
 fn slider_graph_canvas_clipboard_delete_retains_other_property_and_has_no_bone_fallback() {
     let (mut editor, ctx) = ready();
     let original = editor.session.document().clone();
+    let original_mix = track(&editor, SliderProperty::Mix).clone();
     click(&mut editor, &ctx, "graphSliderKey:Time:0.5");
     chord(&mut editor, &ctx, egui::Key::C, egui::Modifiers::COMMAND);
     assert!(
@@ -330,11 +331,28 @@ fn slider_graph_canvas_clipboard_delete_retains_other_property_and_has_no_bone_f
         &[AnimationKey::Slider {
             constraint: 0,
             property: SliderProperty::Time,
-            time: 0.75
+            time: 0.5
         }]
     );
+    let pasted = editor.session.document().clone();
     chord(&mut editor, &ctx, egui::Key::Delete, egui::Modifiers::NONE);
     settle(&mut editor, &ctx);
+    assert!(
+        !track(&editor, SliderProperty::Time)
+            .keys
+            .iter()
+            .any(|key| key.time == 0.5)
+    );
+    assert!(
+        track(&editor, SliderProperty::Time)
+            .keys
+            .iter()
+            .any(|key| key.time == 0.75)
+    );
+    assert_eq!(track(&editor, SliderProperty::Mix), &original_mix);
+    editor.undo();
+    assert_eq!(editor.session.document(), &pasted);
+    editor.undo();
     assert_eq!(editor.session.document(), &original);
     assert_eq!(editor.selected_bone(), None);
 }
