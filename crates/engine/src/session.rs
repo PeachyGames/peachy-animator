@@ -6,6 +6,7 @@ use crate::{
 };
 use peachy_document::{
     AttachmentRef, Constraint, Document, IkCurve, IkKeyframe, Property, SliderProperty, Transform,
+    TransformProperty,
 };
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -46,12 +47,24 @@ impl WorkingState {
         skin: &str,
     ) -> Result<Self, String> {
         crate::slider_authoring::validate_edits(edits)?;
-        let slider = self
-            .document
+        self.document
             .constraints
             .get(constraint)
             .and_then(Constraint::as_slider)
             .ok_or("Unknown Slider constraint")?;
+        if matches!(target, EditTarget::Setup) {
+            return Ok(Self {
+                document: apply_command(
+                    &self.document,
+                    Command::SetSliderSetupPose {
+                        constraint,
+                        edits: edits.to_vec(),
+                        skin: skin.to_owned(),
+                    },
+                )?,
+                pose: self.pose.clone(),
+            });
+        }
         let current = *self
             .authored_pose(target, skin)?
             .slider_poses()
@@ -65,52 +78,35 @@ impl WorkingState {
         if changed.is_empty() {
             return Ok(self.clone());
         }
-        match target {
-            EditTarget::Setup => {
-                let mut value = slider.clone();
-                for edit in changed {
-                    match edit {
-                        SliderPoseEdit::Time { value: time } => value.setup.time = time,
-                        SliderPoseEdit::Mix { value: mix } => value.setup.mix = mix,
-                    }
-                }
-                Ok(Self {
-                    document: apply_command(
-                        &self.document,
-                        Command::SetSliderConstraint { constraint, value },
-                    )?,
-                    pose: self.pose.clone(),
-                })
-            }
-            EditTarget::Animate { animation, time } => {
-                let candidate = Self {
-                    document: self.document.clone(),
-                    pose: self.pose.edit_slider(
-                        &self.document,
-                        animation,
-                        time,
+        let EditTarget::Animate { animation, time } = target else {
+            return Err("Unknown Slider authoring mode".into());
+        };
+        let candidate = Self {
+            document: self.document.clone(),
+            pose: self.pose.edit_slider(
+                &self.document,
+                animation,
+                time,
+                constraint,
+                &changed,
+                skin,
+            )?,
+        };
+        if auto_key {
+            candidate.key_targets(
+                animation,
+                time,
+                KeyTargets {
+                    sliders: BTreeMap::from([(
                         constraint,
-                        &changed,
-                        skin,
-                    )?,
-                };
-                if auto_key {
-                    candidate.key_targets(
-                        animation,
-                        time,
-                        KeyTargets {
-                            sliders: BTreeMap::from([(
-                                constraint,
-                                changed.iter().map(|edit| edit.property()).collect(),
-                            )]),
-                            ..Default::default()
-                        },
-                        skin,
-                    )
-                } else {
-                    Ok(candidate)
-                }
-            }
+                        changed.iter().map(|edit| edit.property()).collect(),
+                    )]),
+                    ..Default::default()
+                },
+                skin,
+            )
+        } else {
+            Ok(candidate)
         }
     }
     fn edit_ik_pose(
@@ -531,12 +527,28 @@ impl WorkingState {
     }
 }
 
+#[derive(Clone)]
+struct HistoryEntry {
+    state: WorkingState,
+    /// Forward map from this stored before-state to its matching after-state.
+    effects: crate::EditEffects,
+}
+
+struct Transaction {
+    state: WorkingState,
+    /// Fixed original baseline to the currently published preview.
+    effects: crate::EditEffects,
+    source_view: crate::slider_source::SourceView,
+}
+
 pub struct Session {
     state: WorkingState,
-    undo: Vec<WorkingState>,
-    redo: Vec<WorkingState>,
+    undo: Vec<HistoryEntry>,
+    redo: Vec<HistoryEntry>,
     saved: Document,
-    transaction: Option<WorkingState>,
+    transaction: Option<Transaction>,
+    last_effects: crate::EditEffects,
+    source_view: crate::slider_source::SourceView,
     /// Active skin for skin-required bones/constraints. View state, outside
     /// history and the document, like the shell's skin selection.
     skin: String,
@@ -554,6 +566,8 @@ impl Session {
             undo: vec![],
             redo: vec![],
             transaction: None,
+            last_effects: crate::EditEffects::default(),
+            source_view: crate::slider_source::SourceView::default(),
             skin: "default".into(),
         })
     }
@@ -588,20 +602,34 @@ impl Session {
             || self
                 .transaction
                 .as_ref()
-                .is_some_and(|base| base != &self.state)
+                .is_some_and(|base| base.state != self.state)
     }
     pub fn can_redo(&self) -> bool {
         !self.redo.is_empty()
             && self
                 .transaction
                 .as_ref()
-                .is_none_or(|base| base == &self.state)
+                .is_none_or(|base| base.state == self.state)
     }
     /// Apply to a candidate first. Failed commands change neither data nor history.
     pub fn dispatch(&mut self, command: Command) -> Result<(), String> {
-        let document = apply_command(self.document(), command)?;
-        let pose = self.state.pose.after_document(self.document(), &document)?;
-        self.replace(WorkingState { document, pose });
+        let outcome = crate::apply_command_with_effects(self.document(), command)?;
+        let pose = self
+            .state
+            .pose
+            .after_pose_operations(&outcome.pose_operations)?
+            .after_document(self.document(), &outcome.document)?;
+        let view = self
+            .source_view
+            .apply(self.document(), &outcome.source_operations)?;
+        self.replace_with_effects(
+            WorkingState {
+                document: outcome.document,
+                pose,
+            },
+            outcome.effects,
+        )?;
+        self.source_view = view;
         Ok(())
     }
     /// Read authored setup or Animate+pending data through the checked applied-pose stage.
@@ -634,6 +662,129 @@ impl Session {
             .copied()
             .ok_or_else(|| "Unknown Slider constraint".into())
     }
+    /// Read an own-turn snapshot from one checked evaluation, never by
+    /// recomputing its source from the final world frame.
+    pub fn slider_evaluation(
+        &self,
+        constraint: usize,
+        target: EditTarget,
+    ) -> Result<crate::SliderEvaluation, String> {
+        self.document()
+            .constraints
+            .get(constraint)
+            .and_then(Constraint::as_slider)
+            .ok_or("Unknown Slider constraint")?;
+        self.evaluated_pose(target)?
+            .slider_evaluations()
+            .get(constraint)
+            .copied()
+            .flatten()
+            .ok_or_else(|| "Missing Slider own-turn evaluation".into())
+    }
+    pub fn slider_source_preferences(&self) -> &crate::SliderSourcePreferences {
+        &self.source_view.preferences
+    }
+    /// Stage leaving the current accepted context for a successful Open/New,
+    /// without changing the current project if decoding or publication fails.
+    pub fn slider_source_preferences_for_transfer(&self) -> crate::SliderSourcePreferences {
+        self.source_view.preferences_for_transfer(self.document())
+    }
+    pub fn set_slider_source_preferences(
+        &mut self,
+        preferences: crate::SliderSourcePreferences,
+    ) -> Result<(), String> {
+        if self.transaction.is_some() {
+            return Err(
+                "Finish or cancel the current gesture before replacing source preferences".into(),
+            );
+        }
+        self.source_view = crate::slider_source::SourceView {
+            preferences,
+            focus: None,
+        };
+        Ok(())
+    }
+    pub fn slider_source_focus(&self) -> Option<usize> {
+        self.source_view.focus
+    }
+    pub fn focus_slider_source(&mut self, constraint: Option<usize>) -> Result<(), String> {
+        if self.transaction.is_some() && constraint != self.source_view.focus {
+            return Err(
+                "Finish or cancel the current gesture before changing source context".into(),
+            );
+        }
+        let mut view = self.source_view.clone();
+        view.focus(self.document(), constraint)?;
+        self.source_view = view;
+        Ok(())
+    }
+    pub fn slider_source_preference(
+        &self,
+        property: TransformProperty,
+    ) -> Result<crate::SliderSourceRange, String> {
+        Ok(self.source_view.choice(self.document(), property))
+    }
+    /// Read the choice for this context without changing focus or memo. The
+    /// returned snapshot is also used by the semantic property command builder.
+    pub fn slider_source_property_range(
+        &self,
+        constraint: usize,
+        property: TransformProperty,
+    ) -> Result<crate::SliderSourceRange, String> {
+        let mut view = self.source_view.clone();
+        view.focus(self.document(), Some(constraint))?;
+        Ok(view.choice(self.document(), property))
+    }
+    pub fn slider_source_command(
+        &self,
+        constraint: usize,
+        bone: Option<usize>,
+    ) -> Result<Command, String> {
+        self.document()
+            .constraints
+            .get(constraint)
+            .and_then(Constraint::as_slider)
+            .ok_or("Unknown Slider constraint")?;
+        if bone.is_some_and(|bone| bone >= self.document().bones.len()) {
+            return Err("Unknown Slider source bone".into());
+        }
+        Ok(Command::SetSliderSource { constraint, bone })
+    }
+    pub fn slider_source_property_command(
+        &self,
+        constraint: usize,
+        property: TransformProperty,
+    ) -> Result<Command, String> {
+        let slider = self
+            .document()
+            .constraints
+            .get(constraint)
+            .and_then(Constraint::as_slider)
+            .ok_or("Unknown Slider constraint")?;
+        if slider.bone.is_none() {
+            return Err("Slider source property requires a source bone".into());
+        }
+        let source_range = self.slider_source_property_range(constraint, property)?;
+        Ok(Command::SetSliderSourceProperty {
+            constraint,
+            property,
+            source_range,
+        })
+    }
+    pub fn set_slider_source(
+        &mut self,
+        constraint: usize,
+        bone: Option<usize>,
+    ) -> Result<(), String> {
+        self.dispatch(self.slider_source_command(constraint, bone)?)
+    }
+    pub fn set_slider_source_property(
+        &mut self,
+        constraint: usize,
+        property: TransformProperty,
+    ) -> Result<(), String> {
+        self.dispatch(self.slider_source_property_command(constraint, property)?)
+    }
     /// Edit only authored Time/Mix. Bone-derived effective values stay separate.
     pub fn edit_slider_pose(
         &mut self,
@@ -655,9 +806,13 @@ impl Session {
         edits: &[SliderPoseEdit],
         auto_key: bool,
     ) -> Result<(), String> {
-        let base = self.transaction.as_ref().ok_or("No active transaction")?;
+        let base = &self
+            .transaction
+            .as_ref()
+            .ok_or("No active transaction")?
+            .state;
         let candidate = base.edit_slider_pose(constraint, target, edits, auto_key, &self.skin)?;
-        self.state = candidate;
+        self.publish_preview(candidate, crate::EditEffects::default())?;
         Ok(())
     }
     pub fn key_slider_pose(
@@ -733,8 +888,13 @@ impl Session {
         order: Vec<usize>,
         auto_key: bool,
     ) -> Result<(), String> {
-        let base = self.transaction.as_ref().ok_or("No active transaction")?;
-        self.state = base.edit_draw_order(target, order, auto_key, &self.skin)?;
+        let base = &self
+            .transaction
+            .as_ref()
+            .ok_or("No active transaction")?
+            .state;
+        let candidate = base.edit_draw_order(target, order, auto_key, &self.skin)?;
+        self.publish_preview(candidate, crate::EditEffects::default())?;
         Ok(())
     }
     /// Explicit keying creates a hold/reset even without a pending edit.
@@ -772,9 +932,13 @@ impl Session {
         edits: &[SlotPoseEdit],
         auto_key: bool,
     ) -> Result<(), String> {
-        let base = self.transaction.as_ref().ok_or("No active transaction")?;
+        let base = &self
+            .transaction
+            .as_ref()
+            .ok_or("No active transaction")?
+            .state;
         let candidate = base.edit_slot_pose(slot, target, edits, auto_key, &self.skin)?;
-        self.state = candidate;
+        self.publish_preview(candidate, crate::EditEffects::default())?;
         Ok(())
     }
     pub fn key_slot_pose(
@@ -827,9 +991,13 @@ impl Session {
         offsets: Vec<f32>,
         auto_key: bool,
     ) -> Result<(), String> {
-        let base = self.transaction.as_ref().ok_or("No active transaction")?;
+        let base = &self
+            .transaction
+            .as_ref()
+            .ok_or("No active transaction")?
+            .state;
         let candidate = base.edit_deform_pose(attachment, target, offsets, auto_key, &self.skin)?;
-        self.state = candidate;
+        self.publish_preview(candidate, crate::EditEffects::default())?;
         Ok(())
     }
     /// Move one posed vertex by a world delta through checked engine inverses.
@@ -861,7 +1029,11 @@ impl Session {
         world_delta: [f32; 2],
         auto_key: bool,
     ) -> Result<(), String> {
-        let base = self.transaction.as_ref().ok_or("No active transaction")?;
+        let base = &self
+            .transaction
+            .as_ref()
+            .ok_or("No active transaction")?
+            .state;
         let authored = base.authored_pose(target, &self.skin)?;
         let offsets = crate::deform_authoring::translated_vertex(
             &base.document,
@@ -871,7 +1043,7 @@ impl Session {
             world_delta,
         )?;
         let candidate = base.edit_deform_pose(attachment, target, offsets, auto_key, &self.skin)?;
-        self.state = candidate;
+        self.publish_preview(candidate, crate::EditEffects::default())?;
         Ok(())
     }
     pub fn key_deform_pose(
@@ -933,9 +1105,13 @@ impl Session {
         edits: &[IkPoseEdit],
         auto_key: bool,
     ) -> Result<(), String> {
-        let base = self.transaction.as_ref().ok_or("No active transaction")?;
+        let base = &self
+            .transaction
+            .as_ref()
+            .ok_or("No active transaction")?
+            .state;
         let candidate = base.edit_ik_pose(constraint, target, edits, auto_key, &self.skin)?;
-        self.state = candidate;
+        self.publish_preview(candidate, crate::EditEffects::default())?;
         Ok(())
     }
     pub fn key_ik_pose(
@@ -1038,13 +1214,20 @@ impl Session {
     }
     /// Publish a candidate gesture only against its original transaction source.
     pub fn preview_mesh_bone_weights(&mut self, gesture: &MeshWeightGesture) -> Result<(), String> {
-        let base = self.transaction.as_ref().ok_or("No active transaction")?;
+        let base = &self
+            .transaction
+            .as_ref()
+            .ok_or("No active transaction")?
+            .state;
         if !gesture.matches_baseline(&base.document) {
             return Err("Weight gesture source changed".into());
         }
         let document = crate::commands::apply_prepared(&base.document, |doc| gesture.apply(doc))?;
         let pose = base.pose.after_document(&base.document, &document)?;
-        self.state = WorkingState { document, pose };
+        self.publish_preview(
+            WorkingState { document, pose },
+            crate::EditEffects::default(),
+        )?;
         Ok(())
     }
     /// Pose with Auto Key on or off through the same validation/undo boundary.
@@ -1074,9 +1257,13 @@ impl Session {
         properties: &[Property],
         auto_key: bool,
     ) -> Result<(), String> {
-        let base = self.transaction.as_ref().ok_or("No active transaction")?;
+        let base = &self
+            .transaction
+            .as_ref()
+            .ok_or("No active transaction")?
+            .state;
         let candidate = base.edit_pose(bone, target, transform, properties, auto_key)?;
-        self.state = candidate;
+        self.publish_preview(candidate, crate::EditEffects::default())?;
         Ok(())
     }
     /// Explicit key buttons and L always key, independent of Auto Key.
@@ -1161,62 +1348,160 @@ impl Session {
         } else {
             self.state.pose = PoseEdits::default();
             for state in self.undo.iter_mut().chain(&mut self.redo) {
-                state.pose = PoseEdits::default();
+                state.state.pose = PoseEdits::default();
             }
         }
+    }
+    /// Computed receipt for the latest successful edit/history transition.
+    /// Identity/no-op transitions contain no map. Failed edits preserve it.
+    pub fn last_edit_effects(&self) -> &crate::EditEffects {
+        &self.last_effects
     }
     pub fn undo(&mut self) {
         if self.transaction.is_some() {
             self.cancel_transaction();
             return;
         }
+        self.last_effects = crate::EditEffects::default();
         if let Some(previous) = self.undo.pop() {
-            self.redo.push(std::mem::replace(&mut self.state, previous));
+            self.last_effects = previous.effects.inverse();
+            if self.source_view.remap(&self.last_effects).is_err() {
+                self.source_view.focus = None;
+            }
+            self.redo.push(HistoryEntry {
+                state: std::mem::replace(&mut self.state, previous.state),
+                effects: previous.effects,
+            });
         }
     }
     pub fn redo(&mut self) {
         self.commit_transaction();
+        self.last_effects = crate::EditEffects::default();
         if let Some(next) = self.redo.pop() {
-            self.undo.push(std::mem::replace(&mut self.state, next));
+            self.last_effects = next.effects.clone();
+            if self.source_view.remap(&self.last_effects).is_err() {
+                self.source_view.focus = None;
+            }
+            self.undo.push(HistoryEntry {
+                state: std::mem::replace(&mut self.state, next.state),
+                effects: next.effects,
+            });
         }
     }
     /// UI gestures may make many changes but create one undo entry, keyed or unkeyed.
     pub fn begin_transaction(&mut self) {
         if self.transaction.is_none() {
-            self.transaction = Some(self.state.clone());
+            self.transaction = Some(Transaction {
+                state: self.state.clone(),
+                effects: crate::EditEffects::default(),
+                source_view: self.source_view.clone(),
+            });
         }
     }
     /// Recompute a gesture preview from its fixed baseline, including overwritten keys.
     /// A failed preview leaves the last valid preview and history intact.
     pub fn preview_transaction(&mut self, command: Command) -> Result<(), String> {
-        let base = self.transaction.as_ref().ok_or("No active transaction")?;
-        let document = apply_command(&base.document, command)?;
-        let pose = base.pose.after_document(&base.document, &document)?;
-        self.state = WorkingState { document, pose };
-        Ok(())
+        let transaction = self.transaction.as_ref().ok_or("No active transaction")?;
+        let base = &transaction.state;
+        let outcome = crate::apply_command_with_effects(&base.document, command)?;
+        let pose = base
+            .pose
+            .after_pose_operations(&outcome.pose_operations)?
+            .after_document(&base.document, &outcome.document)?;
+        let view = transaction
+            .source_view
+            .apply(&base.document, &outcome.source_operations)?;
+        self.publish_preview_with_view(
+            WorkingState {
+                document: outcome.document,
+                pose,
+            },
+            outcome.effects,
+            view,
+        )
     }
     pub fn commit_transaction(&mut self) {
+        self.last_effects = crate::EditEffects::default();
         if let Some(previous) = self.transaction.take()
-            && previous != self.state
+            && previous.state != self.state
         {
-            self.record(previous);
+            self.record(previous.state, previous.effects);
         }
     }
     pub fn cancel_transaction(&mut self) {
+        self.last_effects = crate::EditEffects::default();
         if let Some(previous) = self.transaction.take() {
-            self.state = previous;
+            self.last_effects = previous.effects.inverse();
+            self.state = previous.state;
+            self.source_view = previous.source_view;
         }
     }
+    fn publish_preview(
+        &mut self,
+        candidate: WorkingState,
+        baseline_effects: crate::EditEffects,
+    ) -> Result<(), String> {
+        let mut view = self
+            .transaction
+            .as_ref()
+            .ok_or("No active transaction")?
+            .source_view
+            .clone();
+        view.remap(&baseline_effects)?;
+        self.publish_preview_with_view(candidate, baseline_effects, view)
+    }
+    fn publish_preview_with_view(
+        &mut self,
+        candidate: WorkingState,
+        baseline_effects: crate::EditEffects,
+        view: crate::slider_source::SourceView,
+    ) -> Result<(), String> {
+        let transaction = self.transaction.as_mut().ok_or("No active transaction")?;
+        if candidate == self.state && view == self.source_view {
+            self.last_effects = crate::EditEffects::default();
+            return Ok(());
+        }
+        let effects = transaction.effects.inverse().then(&baseline_effects)?;
+        self.state = candidate;
+        transaction.effects = baseline_effects;
+        self.source_view = view;
+        self.last_effects = effects;
+        Ok(())
+    }
+    fn replace_with_effects(
+        &mut self,
+        candidate: WorkingState,
+        effects: crate::EditEffects,
+    ) -> Result<(), String> {
+        if candidate == self.state {
+            self.last_effects = crate::EditEffects::default();
+            return Ok(());
+        }
+        if let Some(transaction) = self.transaction.as_mut() {
+            let combined = transaction.effects.then(&effects)?;
+            self.state = candidate;
+            transaction.effects = combined;
+        } else {
+            let previous = std::mem::replace(&mut self.state, candidate);
+            self.record(previous, effects.clone());
+        }
+        self.last_effects = effects;
+        Ok(())
+    }
     fn replace(&mut self, candidate: WorkingState) {
+        self.last_effects = crate::EditEffects::default();
         if candidate != self.state {
             let previous = std::mem::replace(&mut self.state, candidate);
             if self.transaction.is_none() {
-                self.record(previous);
+                self.record(previous, crate::EditEffects::default());
             }
         }
     }
-    fn record(&mut self, previous: WorkingState) {
-        self.undo.push(previous);
+    fn record(&mut self, previous: WorkingState, effects: crate::EditEffects) {
+        self.undo.push(HistoryEntry {
+            state: previous,
+            effects,
+        });
         if self.undo.len() > 128 {
             self.undo.remove(0);
         }

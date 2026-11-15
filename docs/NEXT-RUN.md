@@ -4,6 +4,53 @@ Written November 10, 2026, at the end of the import-parity push. Read this
 first, then `AGENTS.md`. The workspace rules in `../AGENTS.md` and `../CLAUDE.md`
 still apply.
 
+## Verified Slider source/creation checkpoint — November 15, 2026
+
+**Bounded native source/creation acceptance passed.** Native v23 remains, with
+**63 commands /17 tools**. Implementation and final source-study04 pass 141 MCP
+requests/15 retained poses from blank/one PNG; private source SHA256 is
+`60b75a59d56d4df1b41120dbb9e3d29abe187e3a0ceff7a1c287aa32f220b109`.
+Runtime geometry passes 104 poses at 0.001 (world maximum 8.897442157262958e−6,
+region maximum 1.52587890625e−5). Preserve the verified **58/14** manual checkpoint
+below. The coordinator owns native/CLI/runtime/Cargo execution and final
+evidence/count promotion for this continuation.
+
+Installed calibration now defines semantic prepend/trailing-numeric creation,
+forward/inverse identity remapping, source assignment deleting only Time keys,
+property default/source-pair memory, finite endpoint repairs/reversals, hidden
+manual-Time restoration and genuine Setup Mix capture from own sample Time.
+Own-turn Frame **27** must not be recomputed as **81** from a later final source
+transform. Preferences stay outside Document; process reset is observed, while
+controlled same-process Save/Open preserves distinctive Source Min **8**.
+Native typed source/property/range/clear/history/Save/Open checks now pass within
+the [bounded contract](slices/slider-constraints.md#source-and-creation-continuation).
+
+Run02's accepted object-form source property is fixed; run03 retains the strict
+negative and passes. A later positional source-range array acceptance bug is also
+fixed with object-only decoding; totals are63 engine Slider,33 desktop,16 schema,
+6 stdio and six overlapping Session cases. Fmt/Clippy/build/architecture pass.
+Final run04 repeats141 requests/15 samples and the same canonical hash after wire
+hardening. A separate10-request check proves array rejection preserves document/
+history/revision and valid-object Undo is exact. Final read-only native reopen
+also passes on `6b638bb1…be3f`; detailed interactions remain the `61db0591…5a867`
+evidence. Both104-pose geometry checks rerun with unchanged errors. All owned processes are closed
+and reference bounds restored; no other-app input occurred. Final fitted
+1120×740 presentation has one image/empty history/full original art.
+
+Next feature action is native-only QA for a genuinely changed held-range preview
+and cancellation, or a bounded calibrated remaining Deform/event reference-domain
+slice. The existing native held attempt stayed unchanged and is not a pass;
+ten headless event checks cover that lifecycle. Do not reopen creation/source as
+generically pending. Source interchange geometry passes104 poses, but four strict
+authored differences include loss of hidden manual Time. Preserve that failure,
+two raw `1e30` precision failures, Loop/counter refusals and Physics/events/remaining
+Deform guards. Do not repeat hosted-CI dispatch, restart the canceled female
+fullcheck or run LM Studio. Cleanup records25 retired disposable task files;
+selected recipes/transcripts/original calibration/native/runtime/interchange
+witnesses retain an active PR-review dependency until integration/supersession.
+The shared target remains needed by the continuing goal. No new task folder,
+checkout or target is needed, and this checkpoint does not complete full parity.
+
 ## November 15 Slider continuation
 
 The verified bounded Slider checkpoint uses **native v23, 58 commands / 14 MCP
@@ -37,7 +84,8 @@ seven-crate architecture pass. See [contract](slices/slider-constraints.md),
 unavailable; keep PR #1 in draft and do not dispatch workflows. Push verified checkpoints
 at will under Chris's standing authorization.
 
-**Next feature action: close the Slider source/creation workflow gap.** Native
+**Historical next action at the manual checkpoint:** close the Slider source/
+creation workflow gap. Native
 New→Slider prepends (raw Add appends), so define exact remapping/identity/history
 before creation UI. Source assignment deletes Time keys while preserving Mix;
 clear is state-dependent and must not be guessed from one derived frame. Local,

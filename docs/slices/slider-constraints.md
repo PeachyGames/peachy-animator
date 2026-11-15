@@ -1,9 +1,12 @@
 # Slider constraints — November 15, 2026
 
-**Verified bounded manual/MCP checkpoint; full Slider parity remains OPEN.**
-Native format **23** and the shared data, authoring, adapter and evaluation paths
-are implemented; MCP exposes **58 commands / 14 tools**. Actual MCP recreation,
-bounded native editing, fresh public reopen on the final skin-aware build and
+**Bounded source/creation native and MCP checkpoints verified.
+The earlier bounded manual/MCP checkpoint is verified; full Slider parity remains OPEN.**
+
+The earlier verified manual checkpoint uses native format **23** and
+**58 commands / 14 tools**. Its shared data, authoring, adapter and evaluation
+paths are implemented. Actual MCP recreation, bounded native editing,
+fresh public reopen on the final skin-aware build and
 external geometry checks pass. Installed interchange passes returned geometry
 within tolerance while its strict authored report fails. Two adversarial precision
 failures and the feature gaps below remain open.
@@ -11,6 +14,148 @@ failures and the feature gaps below remain open.
 See the [review gallery](../evidence/slider-constraints.html),
 [scalar evidence](../evidence/slider-constraints.json) and
 [original Slider Lab](../../examples/peach-bot/slider-bot.peachy).
+
+## Source and creation continuation
+
+Native format **23** is unchanged, with **63 commands / 17 tools**. The original
+source/creation MCP study now passes **141 requests** with **15 retained poses**
+from a blank project and one original PNG. Combined checks and bounded Peachy
+native acceptance pass for the cases below. Installed interchange passes
+sampled geometry and fails strict authored equality at four retained paths.
+The earlier 58-command/14-tool evidence below remains its own dated checkpoint.
+
+The continuation adds `createSliderConstraint`, `setSliderSetupPose` and
+`editSliderMappingRange`, with `get_slider_mapping` and `get_slider_evaluation`
+readback. Source integration adds `setSliderSource`, `setSliderSourceProperty`
+with an explicit strict source-range snapshot, and `get_slider_source_choices`. These
+semantic paths keep complete raw replacement separate from native editing
+actions. Preference reads must not change saved data, revision, history or redo.
+
+Installed Spine **4.3.26** New → Slider prepends a default manual constraint and
+chooses an unused name by advancing the animation name's trailing numeric suffix.
+For example, a colliding `calibration2` advances past `calibration3` to
+`calibration4`; a free lower suffix is not filled. An existing Transform named
+`calibration` does not block a Slider with that name. The semantic creation path
+remaps constraint-owned tracks, physics resets, skin membership, pending poses
+and client references through explicit forward/inverse identity effects. Raw
+`addSliderConstraint` continues to append. Creation, failed batches, preview
+replacement/cancellation and Undo/Redo must preserve the original owners; a
+matching numeric index and constraint kind alone do not establish identity.
+
+Source assignment removes that Slider's Time tracks while preserving Mix keys
+and unrelated data. A first assignment uses Rotate, Local, source **0..100** and
+target **0..reference duration**. Source-property defaults are **1..2** for
+Scale X/Y and **0..100** for the other four properties. A property switch retains
+the Slider's target endpoints and uses the remembered source pair. Native probes
+show that this pair is shared across Sliders and bones for each property, with
+the most recently left context determining the choice. Nonactive choices reset
+after process restart; controlled Save/Open in the same process preserves the
+distinctive Source Min **8**. This is nonpersistent Session/view memory, not
+document data or a native v24 migration.
+An explicit source-range snapshot keeps a pure property command deterministic;
+UI and MCP convenience paths must use the same shared preference logic.
+
+Clear restores the stored hidden manual Time. Manual Frame **45** (0.75 seconds)
+survives assignment, range edits and process reload, even when derived Frame is
+**35.5556**. A genuine Setup Mix edit captures the preceding eligible own-turn
+sample time into that baseline: the measured Mix 0/50% transitions capture
+0.5925926. A separate ordering probe captures own-turn **0.45** on Mix 50%, while
+an unchanged Mix 100% entry leaves the original zero baseline. An old Mix of zero
+retains the existing baseline. With Loop, the captured value is the actual sample
+**0.1875**, rather than prewrapped effective Time **1.6875**. Range/Local edits
+do not perform that capture; complete raw replacement stays separate.
+
+The shared mapping query returns raw `f64` source/target endpoints in source
+units and referenced seconds, with `sourceMax:null` at zero scale. Endpoint edits
+encode finite `f32` values and preserve unchanged raw data/redo. Equal source
+endpoints repair Max to Min + **100**; equal target endpoints repair Max to Min +
+**reference duration**, observed as 1.5 seconds/90 frames here. Reversed intervals
+remain reversed. Undefined zero-scale source ranges need an explicit SourceMax
+and nonzero target span; queries never invent a range. Empty-reference target
+repair remains outside this measured contract pending calibration.
+
+Derived Frame must come from the Slider's own ordered turn. An installed-editor
+probe shows Frame **27** although a later Transform leaves the source rotation at
+90 degrees, which would incorrectly suggest Frame **81** if sampled again from
+the final pose. Shared own-turn metadata distinguishes incoming/applied settings,
+sample time and eligibility without another solve. The current continuation's
+native layout, typed input, history, Save/Open and minimum size pass within the
+stated scope. A changed held-range preview remains unproven with native input;
+its cancellation coverage is headless only. No full-parity claim follows.
+
+### Current source-study results
+
+Actual final run04 saves/reopens exactly, preserves the old public Slider Lab and
+original inputs, and closes its owned MCP child through stdin EOF with exit 0.
+Its private source project's SHA256 is
+`60b75a59d56d4df1b41120dbb9e3d29abe187e3a0ceff7a1c287aa32f220b109`.
+The study verifies prepend identity/history, Time-only removal, hidden baseline
+and genuine Mix capture, explicit-null source clearing, property-command
+snapshots, read-only queries and failed-batch rollback including preferences.
+
+Run02 exposed a production strictness bug: the property object
+`{"scaleX":null}` was accepted despite the string-only schema, advancing revision.
+String-only command deserialization and focused engine/MCP regressions now reject
+it. Run03 passes the unchanged negative expectation; the failed run and exact
+recipe remain retained. No decoder failure is counted as an expected rejection.
+
+Separate external runtime geometry passes **104 poses** at unchanged **0.001**:
+**3,744 world values** have maximum error **8.897442157262958e−6** and **1,664
+region values** have maximum error **1.52587890625e−5**. This original region study
+does not add weighted/mesh, UV, physics or extreme-value coverage.
+
+Current focused coverage totals **63 engine Slider**, **33 desktop Slider**,
+**16 schema** and **6 actual-stdio Slider** cases, with six overlapping Session
+cases. Formatting, all-target Clippy, build and seven-crate architecture pass.
+After run03, a separate four-request probe exposed positional source-range arrays
+being accepted despite the object schema. Object-only decoding and the seventh
+source/sixteenth schema regressions fix that additional wire bug. Final run04
+repeats141 requests/15 retained samples with the same canonical project. A separate
+10-request final wire check rejects the array without changing document/history/
+revision and accepts an explicit object, whose Undo restores the document exactly.
+Earlier runs remain retained as historical evidence.
+
+Actual native input passes New/Undo/Redo with selection clearing, manual Frame45,
+follower assignment/Time-only deletion, Scale X switching and all four typed
+endpoints: source **8..1**, target **Frames30..90**, with hidden Time unchanged.
+Rotate10..100 → ScaleX8..1 recalls the pair while retaining target30..90. Local
+false then Clear preserves hidden Time0.59259266; a genuine Mix25% then Clear
+captures1.5. At1120×740, all four fields are visible and actual SourceMax2/Undo
+restores the document exactly. Numeric draft99/Save excludes the draft; the saved
+file decodes through the shared MCP reader to the exact accepted document.
+
+Actual owned Cocoa Open restores the canonical source project with one image,
+empty history and no evaluation error. Scale X after Open recalls Min8; Undo
+restores canonical data without dirtying or changing its SHA. A final fitted
+minimum-size presentation shows the full original art at180%, with one image,
+empty history and no dirty/evaluation error. The public editor/minimum captures
+show canonical Rotate10..100 → Frames20..90; the cleared capture is a separate
+edited native acceptance case showing baseline Frame35.56.
+
+Foreground guards stopped earlier misfocused attempts without input to another
+app. Exact owned-PID/key-window activation and native frame pacing remain required.
+The held-range attempt did not establish a changed preview (the field stayed8),
+so it is not counted as a native Escape pass; ten headless event cases cover that
+lifecycle. All owned reference/native/MCP processes are closed and reference
+bounds are restored. Cleanup retires25 task-owned helpers, duplicate inputs and
+redundant outputs; selected original cases, transcripts and witnesses remain for
+active PR review until integration/supersession. The shared target supports the
+continuing goal.
+
+Final wire-hardened desktop binary `6b638bb1…be3f` also passes a fresh read-only
+reopen of the public canonical project: normal foreground window, one image,
+empty history, no evaluation error, unchanged project and verified close. Detailed
+interactive checks above belong to binary `61db0591…5a867`; only source-range
+wire decoding changed afterward. Final MCP binary is `fa9525d4…a83ed` and CLI is
+`8a0ad781…0768d`. Run04 source exports are byte-identical to run03; both104-pose
+runtime and returned-geometry checks pass again with the same errors. This does
+not imply an additional interactive replay or native changed-held-preview pass.
+
+The source-study installed roundtrip compares104 geometry poses at0.001, maximum
+world error1.3513448465118927e−5 and region error1.52587890625e−5. Strict equality
+is **false**: hidden Time0.59259266→0, target minimum0.33333334→0.3333333, Mix
+Bezier0.2→0.19999997 and document name change. Hidden baseline loss is an editing
+difference; current geometry success does not establish future Clear equivalence.
 
 ## References and observed native controls
 
@@ -40,9 +185,9 @@ Auto Key off, pending Frame 45/Mix 25% changes stay outside Save until explicitl
 keyed. An earlier filename suggesting pending work actually captured Auto Key
 on and a saved key; that attempt is classified accordingly, not counted as Save
 exclusion evidence. Assigning a bone removes Time timelines while preserving Mix
-timelines. Clearing a bone retained the current derived time in the observed
-sequence, rather than the earlier manual time; its semantic transition remains
-open below.
+timelines. The original clear sequence retained derived Time after a genuine Mix
+edit; the discriminating continuation above separates that capture from Clear
+itself.
 
 Native Graph displays Time values as Frames: reference seconds 0.5..0.75 appear
 as Frames 30..45, while host seconds 0..0.25 span Frames 0..15. An actual Bezier
@@ -156,11 +301,11 @@ arithmetic. These refusals are not runtime passes or support for extreme phases.
 
 ## Shared authoring and MCP
 
-The current command family includes `addSliderConstraint`, the complete raw
+The verified manual checkpoint's command family includes `addSliderConstraint`, the complete raw
 `setSliderConstraint`, `setSliderKey`, semantic `insertSliderKey` and
 `setSliderCurve`. Typed Slider Time/Mix keys participate in shared deletion,
 retiming, clipboard and curve operations. Raw constraint replacement is distinct
-from the still-open state-dependent source-switch/clear actions.
+from the source-switch/clear continuation undergoing verification above.
 
 Revision-checked `get_slider_pose` returns authored Time/Mix at a host cursor;
 it does not substitute bone-derived time. `evaluate_pose` returns
@@ -172,7 +317,7 @@ The retained actual-stdio recipe, bounded native/fresh-reopen results and lossy
 installed interchange are recorded below. Broader authoring and compatibility
 obligations remain open.
 
-## Evidence at this checkpoint
+## Evidence at the verified manual checkpoint
 
 External observations use separately installed official **runtime 4.3.13** through
 its public API. Input/parsed skeleton version **4.3.26** identifies the data, not
@@ -294,15 +439,15 @@ nor tolerance is weakened to make the strict report pass.
 
 ## Open acceptance and feature obligations
 
-- Native-equivalent source switching, state-dependent clear, and creation that
-  preserves the observed prepend/order and identity relationships.
+- Native evidence of a genuinely changed held-range preview and its cancellation;
+  current coverage for that interaction is headless only.
 - Physics settings/resets and events through referenced animations; no simulation
   or event-firing claim follows from existing data-only support.
 - Linked/path/clipping Deform and attachment switches with incoming Deform;
   hidden/different shown attachment cases remain explicit evaluation guards.
 - Remaining Sequence attachment/mismatch cases, larger counter behavior and full
   source/order/cycle/skin coverage beyond the completed matrices.
-- Independent native creation and remaining full-feature/matrix gates. Strict
+- Independent complete native rig authoring and remaining full-feature/matrix gates. Strict
   authored interchange retains the documented failure; the two manual raw `1e30`
   precision mismatches remain open. The verified bounded manual/MCP checkpoint
   does not establish full runtime, lossless conversion, raster or CI parity.

@@ -100,13 +100,24 @@ lists every frame.
 
 Native v23 adds strict Slider constraints and required `Animation.slider_tracks`.
 The v22 decoder inserts empty lists in memory; keep historical public fixtures'
-bytes unchanged. Slider Time/Mix authoring shares Session pending/history,
-typed timeline/curve operations and MCP (58 commands /14 tools). One ordered
+bytes unchanged. The verified manual checkpoint has 58 commands /14 MCP tools;
+the source/creation continuation has 63/17. Actual MCP/source geometry checks
+and bounded native creation/source checks pass. A genuinely changed held-range
+preview still has headless coverage only. Slider
+Time/Mix authoring shares Session pending/history and typed timeline/curve
+operations. One ordered
 `AppliedState` holds effective bones, inheritance, constraints and slot domains;
 consume its checked `EvaluatedPose` for geometry without a second solve. Host
 tracks skip inactive slots/Sliders before pending overlays. Derived Time never
-replaces authored query values. Creation/source switching remain gated; raw
-append-only commands do not imply native prepend/remapping semantics. See
+replaces authored query values. Semantic creation prepends with explicit identity
+effects; raw Add still appends. Remembered source-range preferences stay outside Document;
+genuine Setup Mix capture uses own-turn sampled Time, not a final-source re-solve.
+Creation/source workflows use explicit identity effects and shared Session view
+preferences; never serialize the process cache or infer lossless Editor roundtrip
+from sampled geometry. Keep strict wire regressions and the stated native limits.
+Source-range payloads require objects, source-property payloads require strings;
+keep the final actual-MCP rejection/Undo evidence separate from historical runs.
+See
 `docs/slices/slider-constraints.md` for calibrated domains and precision refusals.
 
 Native v21 adds `IkConstraint.stretch`. IK bones may have equal-magnitude

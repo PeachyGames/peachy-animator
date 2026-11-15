@@ -16,16 +16,25 @@ pub(crate) fn apply(
     doc: &Document,
     state: &mut crate::ik::AppliedState,
     world: &mut Vec<Affine>,
-) -> Result<(), String> {
+) -> Result<Vec<Option<crate::SliderEvaluation>>, String> {
     let mut solved_iks: Vec<&IkConstraint> = vec![];
+    let mut sliders = vec![None; doc.constraints.len()];
     for (index, constraint) in doc.constraints.iter().enumerate() {
         if !state.active.constraints[index] {
+            if matches!(constraint, peachy_document::Constraint::Slider(_)) {
+                sliders[index] = Some(crate::SliderEvaluation::skipped(
+                    state.sliders[index],
+                    crate::SliderEligibility::InactiveConstraint,
+                ));
+            }
             continue;
         }
         match constraint {
             peachy_document::Constraint::Slider(slider) => {
-                crate::slider_constraint::apply(doc, slider, index, state, world)
-                    .map_err(|error| format!("Slider {}: {error}", slider.name))?;
+                sliders[index] = Some(
+                    crate::slider_constraint::apply(doc, slider, index, state, world)
+                        .map_err(|error| format!("Slider {}: {error}", slider.name))?,
+                );
             }
             peachy_document::Constraint::Ik(ik) if state.ik[index].mix != 0.0 => {
                 // Validate the effective settings at this ordered turn, rather
@@ -104,7 +113,7 @@ pub(crate) fn apply(
             _ => {}
         }
     }
-    Ok(())
+    Ok(sliders)
 }
 
 fn within(doc: &Document, bone: usize, ancestor: usize) -> bool {

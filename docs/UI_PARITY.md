@@ -1,12 +1,65 @@
 # Spine workspace and interaction parity
 
+## Slider source and creation continuation — November 15, 2026
+
+The installed 4.3.26 reference now establishes New → Slider prepend/automatic
+numeric naming, the source Bone/Property/Local arrangement, paired source and
+target endpoints, and derived Frame at the Slider's own constraint turn. The
+own-turn probe displays Frame **27**; resampling the later final source rotation
+would incorrectly display **81**. First source assignment uses Rotate/Local and
+source 0..100; Scale X/Y defaults are 1..2, and the other properties use 0..100.
+Property changes preserve target endpoints and recall a process-view source pair
+shared across Sliders/bones. Process restart resets nonactive remembered choices;
+controlled same-process Save/Open preserves distinctive Source Min **8**.
+
+Clear preserves the hidden manual baseline. A genuine Setup Mix edit first
+captures the preceding eligible sampled Time; unchanged entries and incoming
+zero Mix do not force a new source calculation. Range/Local changes do not
+capture. The native ordering probe's genuine Mix 50% edit captures **0.45 seconds**;
+unchanged Mix 100% leaves the zero baseline. Endpoint equality repairs source span
+to **100** and target span to the
+reference duration; reversed intervals remain reversed and zero-scale SourceMax
+stays blank until explicitly resolved. See the [precise contract](slices/slider-constraints.md#source-and-creation-continuation).
+
+Shared commands, identity receipts, mapping/own-turn queries and source choices
+are implemented at **63 commands /17 tools**. The 141-request actual MCP study and
+15 retained poses pass; external geometry covers 104 poses at 0.001. First-build
+native New/Undo/Redo with selection clearing, typed Frame45, follower assignment
+and Time-only deletion pass. Final native Scale X/Rotate cache switching, all four
+typed range endpoints, Local/Clear, genuine Mix/Clear capture and divider widening
+pass. At1120×740 the fields remain reachable; actual SourceMax2/Undo is exact.
+Draft99/Save excludes the draft and shared decoding confirms the saved document.
+Actual Cocoa Open restores canonical data/one image/empty history, recalls Min8
+after a property switch and Undo restores canonical bytes/no dirty state.
+
+The [canonical editor capture](evidence/slider-source-editor.png) shows
+Rotate10..100 → Frames20..90; the [cleared capture](evidence/slider-source-cleared.png)
+shows a separate edited Local-false clear/baseline35.56 case. The
+[fitted minimum capture](evidence/slider-source-minimum.png) shows full original
+art at180%, one image and empty history. It is separate from the endpoint-edit
+witness. A changed native held-range preview was not established; ten headless
+event cases cover cancellation. Foreground guards remain active, no other-app
+input occurred, all owned windows are closed and reference bounds are restored.
+Current checks are63 engine/33 desktop/16 schema/6 stdio, plus overlapping Session
+checks and fmt/Clippy/build/architecture. Exact styling and broader parity remain
+open. Source interchange geometry passes but strict authored equality fails.
+
+After final object-only range-wire hardening, a fresh native read-only reopen on
+binary `6b638bb1…be3f` verifies the normal foreground window, one image, empty
+history, no evaluation error, unchanged public project and exact owned closure.
+Detailed interactive checks were on `61db0591…5a867`; no new changed held-range
+preview or broad interactive replay is inferred. Final MCP run04 repeats141
+requests/15 samples and the same canonical hash; a separate10-request range-wire
+test proves strict rejection and exact valid-object Undo.
+
 ## Manual Slider controls and Graph — November 15, 2026
 
-Manual Slider Properties follows the observed Frame/Mix arrangement: referenced
+At the verified manual checkpoint, Slider Properties follows the Frame/Mix arrangement: referenced
 Frames at the project FPS, unbounded signed Mix percentages, independent key
 buttons, Setup Loop/Additive and a disabled source selector. Time/Mix share typed
 Dopesheet rows, Graph selection, frame/percent numeric handles and clipboard
-operations. Source selection/ranges/clear, creation and exact styling remain gaps.
+operations. Source selection/ranges/clear and creation are verified within the
+bounded continuation above; exact styling remains a gap.
 
 Actual native input verifies Frame45 and Mix−50% pending poses outside Save,
 independent keying and K, pending-restoring Undo/Redo, Auto Key's atomic pending

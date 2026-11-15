@@ -191,7 +191,7 @@ pub fn project_with_order(
             add(&mut entries, TreeItem::Skin(skin.clone()), Some(group), doc);
         }
     }
-    if options.filters.animations && !setup {
+    if options.filters.animations {
         let group = add(
             &mut entries,
             TreeItem::Folder(Folder::Animations),
@@ -247,6 +247,24 @@ pub fn row_visible(entries: &[Entry], index: usize, state: &TreeState) -> bool {
 }
 
 impl TreeState {
+    pub(super) fn remap_constraints(&mut self, mapping: &peachy_engine::ConstraintIndexRemap) {
+        let map_key = |key: String| {
+            if let Some(index) = key.strip_prefix("constraint:") {
+                mapping
+                    .map_index(index.parse().ok()?)
+                    .ok()?
+                    .map(|index| TreeItem::Constraint(index).key())
+            } else {
+                Some(key)
+            }
+        };
+        self.collapsed = std::mem::take(&mut self.collapsed)
+            .into_iter()
+            .filter_map(map_key)
+            .collect();
+        self.reveal = self.reveal.take().and_then(map_key);
+    }
+
     pub fn for_document(doc: &Document, skin: &str) -> Self {
         let mut state = Self::default();
         for e in project(doc, skin, false, &state) {

@@ -25,6 +25,7 @@ pub struct EvaluatedPose {
     pub(crate) paths: Vec<crate::PathPose>,
     pub(crate) authored_sliders: Vec<crate::SliderPose>,
     pub(crate) applied_sliders: Vec<crate::SliderPose>,
+    pub(crate) slider_evaluations: Vec<Option<crate::SliderEvaluation>>,
     /// Bones active under the evaluated skin (skin-required bones may be off).
     pub(crate) active_bones: Vec<bool>,
     pub(crate) deforms: Vec<(AttachmentRef, Vec<f32>)>,
@@ -271,6 +272,7 @@ impl EvaluatedPose {
             || self.paths.len() != doc.constraints.len()
             || self.authored_sliders.len() != doc.constraints.len()
             || self.applied_sliders.len() != doc.constraints.len()
+            || self.slider_evaluations.len() != doc.constraints.len()
         {
             return Err(
                 "Scene bone/constraint layout must match the already evaluated pose".into(),
@@ -298,6 +300,10 @@ impl EvaluatedPose {
     }
     pub fn applied_slider_poses(&self) -> &[crate::SliderPose] {
         &self.applied_sliders
+    }
+    /// One snapshot per Slider at its own ordered turn; other entries are None.
+    pub fn slider_evaluations(&self) -> &[Option<crate::SliderEvaluation>] {
+        &self.slider_evaluations
     }
     pub fn active_bones(&self) -> &[bool] {
         &self.active_bones
@@ -520,7 +526,7 @@ pub fn checked_pose_from_authored(
     let mut world = world_pose_with(doc, &applied.locals, &applied.inherits);
     check_inherit_domain(doc, &world, &applied.locals, &applied.inherits)?;
     check_world(doc, &world)?;
-    crate::ik_solver::apply(doc, &mut applied, &mut world)?;
+    let slider_evaluations = crate::ik_solver::apply(doc, &mut applied, &mut world)?;
     applied.validate_domains(doc)?;
     check_inherit_domain(doc, &world, &applied.locals, &applied.inherits)?;
     check_world(doc, &world)?;
@@ -534,6 +540,7 @@ pub fn checked_pose_from_authored(
         paths: applied.paths,
         authored_sliders: authored.sliders.clone(),
         applied_sliders: applied.sliders,
+        slider_evaluations,
         active_bones: applied.active.bones,
         deforms: applied.deforms,
         slot_attachments: applied.slot_attachments,

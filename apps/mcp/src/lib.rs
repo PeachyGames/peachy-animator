@@ -214,6 +214,29 @@ struct TransformMappingInput {
 
 #[derive(Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
+struct SliderMappingInput {
+    expected_revision: u64,
+    /// Exact Slider constraint index from get_document.
+    constraint: usize,
+}
+
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct SliderEvaluationInput {
+    expected_revision: u64,
+    constraint: usize,
+    /// Omit or use null for Setup; otherwise an exact host animation name.
+    #[serde(default)]
+    animation: Option<String>,
+    /// Nonnegative finite host seconds, independent of referenced time.
+    #[serde(default)]
+    time: f32,
+    #[serde(default = "default_skin")]
+    skin: String,
+}
+
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 struct SliderPoseInput {
     expected_revision: u64,
     constraint: usize,
@@ -313,8 +336,14 @@ impl AnimatorServer {
                 return Err("asset_root must be an existing directory".into());
             }
             let document = peachy_document::Document::new(input.name, input.fps)?;
+            let mut session = Session::new(document)?;
+            if let Some(previous) = &state.project {
+                session.set_slider_source_preferences(
+                    previous.session.slider_source_preferences_for_transfer(),
+                )?;
+            }
             state.project = Some(WorkingProject {
-                session: Session::new(document)?,
+                session,
                 source: None,
                 asset_root,
             });
@@ -365,11 +394,16 @@ impl AnimatorServer {
             }
             let path = state.root.existing(&input.path)?;
             let document = peachy_io::load(&path)?;
-            let session = Session::new(document)?;
+            let mut session = Session::new(document)?;
             let asset_root = path
                 .parent()
                 .ok_or("Project needs an asset directory")?
                 .to_owned();
+            if let Some(previous) = &state.project {
+                session.set_slider_source_preferences(
+                    previous.session.slider_source_preferences_for_transfer(),
+                )?;
+            }
             state.project = Some(WorkingProject {
                 session,
                 source: Some(path),
@@ -441,6 +475,80 @@ impl AnimatorServer {
     }
 
     #[tool(
+        description = "Read raw-derived sourceMin/sourceMax and targetMin/targetMax for a bone-driven Slider. Target endpoints are referenced-animation seconds, independent of project FPS. sourceMax is null when zero scale makes it undefined. This query does not solve a pose, repair ranges, change authored Time, or mutate revision/history.",
+        annotations(read_only_hint = true, idempotent_hint = true, open_world_hint = false)
+    )]
+    fn get_slider_mapping(
+        &self,
+        Parameters(input): Parameters<SliderMappingInput>,
+    ) -> CallToolResult {
+        self.access(|state| {
+            state.check_revision(input.expected_revision)?;
+            let range = peachy_engine::slider_mapping_range(
+                state.project()?.session.document(),
+                input.constraint,
+            )?;
+            Ok(json!({"revision":state.revision,"constraint":input.constraint,"range":range}))
+        })
+    }
+
+    #[tool(
+        description = "Read the six source-property range choices for a bound Slider from shared Session view preferences. Each choice includes the exact explicit setSliderSourceProperty command snapshot. Source ranges are process preferences; target endpoints remain on the constraint. Queries do not focus a control, remember a range, solve geometry, or change document/history/revision. Apply the returned command at this revision to author the choice; setSliderSource assigns or explicitly clears a bone and removes Time tracks only on a genuine assignment.",
+        annotations(read_only_hint = true, idempotent_hint = true, open_world_hint = false)
+    )]
+    fn get_slider_source_choices(
+        &self,
+        Parameters(input): Parameters<SliderMappingInput>,
+    ) -> CallToolResult {
+        self.access(|state| {
+            state.check_revision(input.expected_revision)?;
+            let session = &state.project()?.session;
+            let mut choices = Vec::new();
+            for property in [
+                peachy_document::TransformProperty::Rotate,
+                peachy_document::TransformProperty::X,
+                peachy_document::TransformProperty::Y,
+                peachy_document::TransformProperty::ScaleX,
+                peachy_document::TransformProperty::ScaleY,
+                peachy_document::TransformProperty::ShearY,
+            ] {
+                let range = session.slider_source_property_range(input.constraint, property)?;
+                let command = session.slider_source_property_command(input.constraint, property)?;
+                choices.push(json!({"property":property,"sourceRange":range,"command":command}));
+            }
+            Ok(json!({"revision":state.revision,"constraint":input.constraint,"choices":choices}))
+        })
+    }
+
+    #[tool(
+        description = "Read a Slider's own ordered evaluation turn from one checked solve. Returns incoming and applied settings, sampleTime after final Loop modulo, and eligibility. sampleTime is null when no application occurs, including zero incoming Mix. Later constraints may change the final appliedSliderPoses returned by evaluate_pose; this snapshot stays at this actor's turn. No final-world source recomputation, document mutation or history/revision change.",
+        annotations(read_only_hint = true, idempotent_hint = true, open_world_hint = false)
+    )]
+    fn get_slider_evaluation(
+        &self,
+        Parameters(input): Parameters<SliderEvaluationInput>,
+    ) -> CallToolResult {
+        self.access(|state| {
+            state.check_revision(input.expected_revision)?;
+            if !input.time.is_finite() || input.time < 0. {
+                return Err("Host time must be finite and nonnegative".into());
+            }
+            let document = state.project()?.session.document();
+            if document.constraints.get(input.constraint).and_then(peachy_document::Constraint::as_slider).is_none() {
+                return Err("Unknown Slider constraint".into());
+            }
+            if !document.skins.is_empty() && !document.skins.contains_key(&input.skin) {
+                return Err("Unknown skin".into());
+            }
+            let animation = input.animation.as_ref().map(|name| document.animations.iter().position(|clip| &clip.name == name).ok_or("Unknown animation")).transpose()?;
+            let authored = sample_authored_pose_with_skin(document, animation, input.time, &input.skin)?;
+            let pose = checked_pose_from_authored(document, &authored)?;
+            let evaluation = pose.slider_evaluations().get(input.constraint).copied().flatten().ok_or("Missing Slider own-turn evaluation")?;
+            Ok(json!({"revision":state.revision,"constraint":input.constraint,"animation":input.animation,"hostTime":input.time,"skin":input.skin,"kind":"ownTurn","evaluation":evaluation}))
+        })
+    }
+
+    #[tool(
         description = "Read a Slider's authored Time and Mix through the shared Session sampler. Time is referenced-animation seconds; the input time is the host cursor. This returns raw authored settings, including keyed values, and does not substitute a bone-derived time or solve geometry. No document, revision or history change.",
         annotations(read_only_hint = true, idempotent_hint = true, open_world_hint = false)
     )]
@@ -500,7 +608,7 @@ impl AnimatorServer {
     }
 
     #[tool(
-        description = "Apply a flat list of native engine commands as one atomic, undoable edit. Requires the latest revision; any failed command preserves document, revision and history. No file is written.",
+        description = "Apply a flat list of native engine commands as one atomic, undoable edit. Requires the latest revision; any failed command preserves document, revision and history. No file is written. Command indices address the current candidate at each step. Successful structural edits return effects.constraintIndices to map previous constraint references; createSliderConstraint prepends while raw addSliderConstraint appends. Read get_document after creation before using new indices.",
         annotations(
             destructive_hint = false,
             idempotent_hint = false,
@@ -521,12 +629,14 @@ impl AnimatorServer {
                     .collect(),
             })?;
             state.revision += 1;
-            Ok(state.summary())
+            let mut result = state.summary();
+            result["effects"] = json!(state.project()?.session.last_edit_effects());
+            Ok(result)
         })
     }
 
     #[tool(
-        description = "Undo or redo one complete headless edit through the shared engine history. Requires latest revision. Source files remain unchanged.",
+        description = "Undo or redo one complete headless edit through the shared engine history. Requires latest revision. Source files remain unchanged. Successful results include index-remapping effects for the transition; an undone creation maps the removed constraint to null.",
         annotations(
             destructive_hint = false,
             idempotent_hint = false,
@@ -552,7 +662,9 @@ impl AnimatorServer {
                 }
             }
             state.revision += 1;
-            Ok(state.summary())
+            let mut result = state.summary();
+            result["effects"] = json!(state.project()?.session.last_edit_effects());
+            Ok(result)
         })
     }
 
@@ -573,7 +685,8 @@ impl AnimatorServer {
                 "slotAttachments":evaluated.slot_attachments(),"slotColors":evaluated.slot_colors(),
                 "drawOrder":evaluated.draw_order(),
                 "authoredSliderPoses":evaluated.authored_slider_poses(),
-                "appliedSliderPoses":evaluated.applied_slider_poses()});
+                "appliedSliderPoses":evaluated.applied_slider_poses(),
+                "sliderEvaluations":evaluated.slider_evaluations()});
             let scene=checked_scene_from_evaluated(document,&input.skin,evaluated)?;
             let mut result=json!({"revision":state.revision,"animation":input.animation,"time":input.time,"skin":input.skin,"locals":scene.locals,"appliedLocals":scene.applied_locals,"world":scene.world,"attachments":scene.attachments,"bounds":scene.bounds.map(|bounds|json!({"min":bounds.min,"max":bounds.max}))});
             result.as_object_mut().expect("Pose response").extend(effective.as_object().expect("Effective pose response").clone());

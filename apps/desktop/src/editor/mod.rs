@@ -36,6 +36,7 @@ mod selection_history;
 mod shortcuts;
 mod slider;
 mod slider_edit;
+mod slider_source;
 mod slot_authoring;
 mod slot_color;
 mod slot_curves;
@@ -342,6 +343,7 @@ impl Editor {
         self.cancel_transform_edit();
         match self.session.dispatch(command) {
             Ok(()) => {
+                self.apply_session_edit_effects();
                 self.reconcile_selection();
                 true
             }
@@ -350,6 +352,28 @@ impl Editor {
                 false
             }
         }
+    }
+    fn apply_session_edit_effects(&mut self) {
+        let Some(mapping) = self.session.last_edit_effects().constraint_indices.as_ref() else {
+            return;
+        };
+        self.selection = self
+            .selection
+            .take()
+            .and_then(|item| selection::remap_constraint(item, mapping));
+        self.selection_history.remap_constraints(mapping);
+        self.tree.remap_constraints(mapping);
+        // Like document Undo/Redo, a structural transition drops key selection.
+        // Clipboard payloads have no constraint owner and remain unchanged.
+        self.key_selection.clear();
+        self.graph.reset_document();
+        let match_handles = self.curves.match_handles;
+        let separate = self.curves.separate;
+        self.curves = Default::default();
+        self.curves.match_handles = match_handles;
+        self.curves.separate = separate;
+        self.pose_view_generation = self.pose_view_generation.wrapping_add(1);
+        self.capture_targets.clear();
     }
     fn active_animation(&self) -> Option<usize> {
         if self.setup_mode {
@@ -483,6 +507,9 @@ impl Editor {
     }
 
     fn select(&mut self, item: TreeItem) {
+        if self.slider_source_selection(&item) {
+            return;
+        }
         if self.ik_target_selection(&item) {
             return;
         }
@@ -501,6 +528,7 @@ impl Editor {
         self.cancel_gesture();
         self.weights.bind = None;
         self.selection = item.clone();
+        self.reconcile_slider_source_focus();
         let Some(item) = item else { return };
         if let Some(key) = item.attachment() {
             self.capture_weights_mesh(key);
@@ -553,6 +581,7 @@ impl Editor {
             self.cancel_dopesheet_drag();
         }
         selection::reconcile(&mut self.selection, self.session.document());
+        self.reconcile_slider_source_focus();
         self.ghosting.reconcile(self.session.document().bones.len());
         self.reconcile_ik();
         self.selection_history.reconcile(self.session.document());
@@ -628,6 +657,7 @@ impl Editor {
             return;
         }
         self.session.undo();
+        self.apply_session_edit_effects();
         self.key_selection.clear();
         self.drag = None;
         self.mesh_drag = None;
@@ -683,6 +713,7 @@ impl Editor {
             return;
         }
         self.session.redo();
+        self.apply_session_edit_effects();
         self.key_selection.clear();
         self.drag = None;
         self.mesh_drag = None;
@@ -714,7 +745,11 @@ impl Editor {
             .pick_file()
         {
             match files::load(&path).and_then(Session::new) {
-                Ok(session) => {
+                Ok(mut session) => {
+                    if let Err(error) = self.carry_slider_source_preferences(&mut session) {
+                        self.error = Some(error);
+                        return;
+                    }
                     self.return_from_mesh_tool();
                     self.session = session;
                     self.pose_view_generation = self.pose_view_generation.wrapping_add(1);
@@ -904,6 +939,10 @@ impl Editor {
                 .frame(egui::Frame::new().fill(PANEL).inner_margin(6))
                 .show(ui, |ui| {
                     if self.show_tree {
+                        egui::Panel::bottom("tree-creation-footer")
+                            .resizable(false)
+                            .frame(egui::Frame::new().fill(PANEL).inner_margin(3))
+                            .show(ui, |ui| self.tree_creation_footer(ui));
                         let auxiliary = self.has_dock_views();
                         let properties_max = if auxiliary {
                             (ui.available_height() - self.auxiliary_min_height() - 90. - 12.)
@@ -1130,7 +1169,7 @@ impl Editor {
                     .evaluated_pose(self.weights_edit_target())
                 {
                     Ok(pose) => {
-                        serde_json::json!({"authoredLocals":pose.authored_locals(),"appliedLocals":pose.applied_locals(),"ikPoses":pose.ik_poses(),"world":pose.world()})
+                        serde_json::json!({"authoredLocals":pose.authored_locals(),"appliedLocals":pose.applied_locals(),"ikPoses":pose.ik_poses(),"authoredSliderPoses":pose.authored_slider_poses(),"appliedSliderPoses":pose.applied_slider_poses(),"sliderEvaluations":pose.slider_evaluations(),"world":pose.world()})
                     }
                     Err(error) => serde_json::json!({"error":error}),
                 };

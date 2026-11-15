@@ -859,7 +859,7 @@ async fn stdio_discovery_atomic_edit_history_save_and_export() {
     let original = fs::read(&source).unwrap();
     let client = start(&root.0).await;
     let tools = client.list_tools(Default::default()).await.unwrap().tools;
-    assert_eq!(tools.len(), 14);
+    assert_eq!(tools.len(), 17);
     assert!(tools.iter().all(|tool| !tool.input_schema.is_empty()));
     let apply = tools
         .iter()
@@ -3151,5 +3151,477 @@ async fn stdio_slider_semantic_insert_splits_native_time_curve_and_undoes_atomic
         .await,
     );
     assert_eq!(doc(&client).await["document"], after["document"]);
+    client.cancel().await.unwrap();
+}
+
+#[tokio::test]
+async fn stdio_slider_creation_reports_composed_indices_and_reversible_history() {
+    let root = Sandbox::new();
+    let client = start(&root.0).await;
+    success(call(&client,"create_project",json!({"expected_revision":0,"name":"Original Slider creation","fps":60,"asset_root":"."})).await);
+    success(call(&client,"apply_commands",json!({"expected_revision":1,"commands":[
+        {"command":"addAnimation","name":"calibration","duration":0.0},
+        {"command":"addAnimation","name":"host","duration":0.0},
+        {"command":"addSliderConstraint","constraint":{
+            "name":"calibration","animation":0,"bone":null,"property":null,
+            "local":false,"loop":false,"additive":false,"from":0.0,"to":0.0,"scale":0.0,"max":0.0,
+            "setup":{"time":0.0,"mix":1.0}}},
+        {"command":"setSliderKey","animation":1,"constraint":0,"property":"time","key":{
+            "time":0.25,"value":0.75,"curve":"stepped"}}
+    ]})).await);
+    let before = doc(&client).await;
+    assert!(
+        before.get("effects").is_none(),
+        "Read-only documents must not replay an old receipt"
+    );
+    let created = success(
+        call(
+            &client,
+            "apply_commands",
+            json!({"expected_revision":2,"commands":[
+                {"command":"createSliderConstraint","animation":0}
+            ]}),
+        )
+        .await,
+    );
+    assert_eq!(
+        created["effects"]["constraintIndices"]["oldToNew"],
+        json!([1])
+    );
+    assert_eq!(created["effects"]["constraintIndices"]["newLen"], 2);
+    let after = doc(&client).await;
+    assert_eq!(after["document"]["constraints"][0]["name"], "calibration2");
+    assert_eq!(
+        after["document"]["constraints"][1],
+        before["document"]["constraints"][0]
+    );
+    assert_eq!(
+        after["document"]["animations"][1]["slider_tracks"][0]["constraint"],
+        1
+    );
+    assert_eq!(
+        after["document"]["animations"][1]["slider_tracks"][0]["keys"],
+        before["document"]["animations"][1]["slider_tracks"][0]["keys"]
+    );
+    let undone = success(
+        call(
+            &client,
+            "history",
+            json!({"expected_revision":3,"action":"undo"}),
+        )
+        .await,
+    );
+    assert_eq!(
+        undone["effects"]["constraintIndices"]["oldToNew"],
+        json!([null, 0])
+    );
+    assert_eq!(undone["effects"]["constraintIndices"]["newLen"], 1);
+    assert_eq!(doc(&client).await["document"], before["document"]);
+    let redone = success(
+        call(
+            &client,
+            "history",
+            json!({"expected_revision":4,"action":"redo"}),
+        )
+        .await,
+    );
+    assert_eq!(
+        redone["effects"]["constraintIndices"]["oldToNew"],
+        json!([1])
+    );
+    assert_eq!(doc(&client).await["document"], after["document"]);
+    let composed = success(
+        call(
+            &client,
+            "apply_commands",
+            json!({"expected_revision":5,"commands":[
+                {"command":"createSliderConstraint","animation":0},
+                {"command":"createSliderConstraint","animation":0}
+            ]}),
+        )
+        .await,
+    );
+    assert_eq!(
+        composed["effects"]["constraintIndices"]["oldToNew"],
+        json!([2, 3])
+    );
+    assert_eq!(composed["effects"]["constraintIndices"]["newLen"], 4);
+    let stable = doc(&client).await;
+    assert_eq!(stable["document"]["constraints"][0]["name"], "calibration4");
+    let rejected = error(
+        call(
+            &client,
+            "apply_commands",
+            json!({"expected_revision":6,"commands":[
+                {"command":"createSliderConstraint","animation":0},
+                {"command":"setSliderKey","animation":1,"constraint":999,"property":"mix","key":{
+                    "time":0.0,"value":0.5,"curve":"linear"}}
+            ]}),
+        )
+        .await,
+    );
+    assert!(rejected.get("effects").is_none());
+    assert_eq!(doc(&client).await, stable);
+    client.cancel().await.unwrap();
+}
+
+#[tokio::test]
+async fn stdio_slider_mapping_is_revision_checked_readonly_and_retains_zero_scale() {
+    let root = Sandbox::new();
+    let client = start(&root.0).await;
+    success(call(&client,"create_project",json!({"expected_revision":0,"name":"Original Slider ranges","fps":60,"asset_root":"."})).await);
+    let mut value = json!({"name":"bound","animation":0,"bone":0,"property":"rotate",
+        "local":true,"loop":false,"additive":false,"from":10.0,"to":1.0_f32/3.0,
+        "scale":0.012962963_f32,"max":1.5,"setup":{"time":0.75,"mix":1.0}});
+    success(
+        call(
+            &client,
+            "apply_commands",
+            json!({"expected_revision":1,"commands":[
+                {"command":"addAnimation","name":"reference","duration":0.0},
+                {"command":"addSliderConstraint","constraint":value}
+            ]}),
+        )
+        .await,
+    );
+    let before = doc(&client).await;
+    let query = success(
+        call(
+            &client,
+            "get_slider_mapping",
+            json!({"expected_revision":2,"constraint":0}),
+        )
+        .await,
+    );
+    assert_eq!(query["range"]["sourceMin"], 10.0);
+    assert!((query["range"]["sourceMax"].as_f64().unwrap() - 100.0).abs() < 0.00001);
+    assert_eq!(query["range"]["targetMin"], json!(1.0_f32 / 3.0));
+    assert_eq!(query["range"]["targetMax"], 1.5);
+    assert_eq!(doc(&client).await, before);
+    value["scale"] = json!(0.0);
+    success(
+        call(
+            &client,
+            "apply_commands",
+            json!({"expected_revision":2,"commands":[
+                {"command":"setSliderConstraint","constraint":0,"value":value}
+            ]}),
+        )
+        .await,
+    );
+    let undefined = doc(&client).await;
+    let query = success(
+        call(
+            &client,
+            "get_slider_mapping",
+            json!({"expected_revision":3,"constraint":0}),
+        )
+        .await,
+    );
+    assert!(query["range"]["sourceMax"].is_null());
+    assert_eq!(doc(&client).await, undefined);
+    let stale = error(
+        call(
+            &client,
+            "get_slider_mapping",
+            json!({"expected_revision":2,"constraint":0}),
+        )
+        .await,
+    );
+    assert!(stale["error"].as_str().unwrap().contains("Stale revision"));
+    assert_eq!(doc(&client).await, undefined);
+    success(call(&client,"apply_commands",json!({"expected_revision":3,"commands":[
+        {"command":"editSliderMappingRange","constraint":0,"field":"sourceMax","value":110.0}
+    ]})).await);
+    let query = success(
+        call(
+            &client,
+            "get_slider_mapping",
+            json!({"expected_revision":4,"constraint":0}),
+        )
+        .await,
+    );
+    assert!((query["range"]["sourceMax"].as_f64().unwrap() - 110.0).abs() < 0.00001);
+    assert_eq!(
+        doc(&client).await["document"]["constraints"][0]["setup"]["time"],
+        0.75
+    );
+    client.cancel().await.unwrap();
+}
+
+#[tokio::test]
+async fn stdio_slider_own_turn_and_setup_mix_capture_keep_authored_and_final_values_separate() {
+    let root = Sandbox::new();
+    let client = start(&root.0).await;
+    success(
+        call(
+            &client,
+            "create_project",
+            json!({"expected_revision":0,"name":"Original Slider turn","fps":60,"asset_root":"."}),
+        )
+        .await,
+    );
+    success(call(&client,"apply_commands",json!({"expected_revision":1,"commands":[
+        {"command":"addBone","bone":{"name":"follower","parent":0,"length":100.0,"inherit":"normal",
+            "setup":{"x":0.0,"y":0.0,"rotation":30.0,"scale_x":1.0,"scale_y":1.0,"shear_x":0.0,"shear_y":0.0}}},
+        {"command":"addAnimation","name":"reference","duration":0.0},
+        {"command":"setKey","animation":0,"bone":0,"property":"x","key":{"time":0.0,"value":0.0,"curve":"linear"}},
+        {"command":"setKey","animation":0,"bone":0,"property":"x","key":{"time":1.5,"value":100.0,"curve":"linear"}},
+        {"command":"addSliderConstraint","constraint":{"name":"bound","animation":0,"bone":1,"property":"rotate",
+            "local":true,"loop":true,"additive":false,"from":20.0,"to":0.0,"scale":0.01875,"max":1.5,
+            "setup":{"time":0.75,"mix":1.0}}}
+    ]})).await);
+    let before = doc(&client).await;
+    let turn = success(
+        call(
+            &client,
+            "get_slider_evaluation",
+            json!({"expected_revision":2,"constraint":0}),
+        )
+        .await,
+    );
+    assert_eq!(turn["kind"], "ownTurn");
+    assert_eq!(turn["evaluation"]["incoming"]["time"], 0.0);
+    assert!((turn["evaluation"]["applied"]["time"].as_f64().unwrap() - 1.6875).abs() < 0.0000001);
+    assert!((turn["evaluation"]["sampleTime"].as_f64().unwrap() - 0.1875).abs() < 0.0000001);
+    assert_eq!(doc(&client).await, before);
+    success(call(&client,"apply_commands",json!({"expected_revision":2,"commands":[
+        {"command":"setSliderSetupPose","constraint":0,"edits":[{"type":"mix","value":0.0}],"skin":"default"}
+    ]})).await);
+    assert_eq!(
+        doc(&client).await["document"]["constraints"][0]["setup"],
+        json!({"time":0.1875,"mix":0.0})
+    );
+    success(call(&client,"apply_commands",json!({"expected_revision":3,"commands":[
+        {"command":"editSliderMappingRange","constraint":0,"field":"sourceMin","value":40.0},
+        {"command":"setSliderSetupPose","constraint":0,"edits":[{"type":"mix","value":0.5}],"skin":"default"}
+    ]})).await);
+    let stable = doc(&client).await;
+    assert_eq!(
+        stable["document"]["constraints"][0]["setup"],
+        json!({"time":0.1875,"mix":0.5})
+    );
+    let turn = success(
+        call(
+            &client,
+            "get_slider_evaluation",
+            json!({"expected_revision":4,"constraint":0}),
+        )
+        .await,
+    );
+    assert!((turn["evaluation"]["sampleTime"].as_f64().unwrap() - 1.25).abs() < 0.0000001);
+    assert_eq!(doc(&client).await, stable);
+    let stale = error(
+        call(
+            &client,
+            "get_slider_evaluation",
+            json!({"expected_revision":3,"constraint":0}),
+        )
+        .await,
+    );
+    assert!(stale["error"].as_str().unwrap().contains("Stale revision"));
+    let negative = error(
+        call(
+            &client,
+            "get_slider_evaluation",
+            json!({"expected_revision":4,"constraint":0,"time":-1.0}),
+        )
+        .await,
+    );
+    assert!(negative["error"].as_str().unwrap().contains("nonnegative"));
+    assert_eq!(doc(&client).await, stable);
+    success(call(&client,"apply_commands",json!({"expected_revision":4,"commands":[
+        {"command":"setSliderKey","animation":0,"constraint":0,"property":"time","key":{"time":0.0,"value":0.4,"curve":"linear"}}
+    ]})).await);
+    let before_queries = doc(&client).await;
+    let turn = success(
+        call(
+            &client,
+            "get_slider_evaluation",
+            json!({"expected_revision":5,"constraint":0}),
+        )
+        .await,
+    );
+    let pose = success(call(&client, "evaluate_pose", json!({})).await);
+    assert_eq!(turn["evaluation"], pose["sliderEvaluations"][0]);
+    assert!(
+        (pose["appliedSliderPoses"][0]["time"].as_f64().unwrap()
+            - turn["evaluation"]["applied"]["time"].as_f64().unwrap())
+        .abs()
+            > 0.1
+    );
+    assert_eq!(doc(&client).await, before_queries);
+    client.cancel().await.unwrap();
+}
+
+#[tokio::test]
+async fn stdio_slider_source_choices_assignment_rollback_and_project_preferences() {
+    let root = Sandbox::new();
+    let client = start(&root.0).await;
+    success(call(&client,"create_project",json!({"expected_revision":0,"name":"Original source workflow","fps":60,"asset_root":"."})).await);
+    success(call(&client,"apply_commands",json!({"expected_revision":1,"commands":[
+        {"command":"addAnimation","name":"reference","duration":0.0},
+        {"command":"setKey","animation":0,"bone":0,"property":"x","key":{"time":1.5,"value":0.0,"curve":"linear"}},
+        {"command":"addAnimation","name":"host","duration":0.0},
+        {"command":"createSliderConstraint","animation":0},
+        {"command":"setSliderSetupPose","constraint":0,"edits":[{"type":"time","value":0.75}],"skin":"default"},
+        {"command":"setSliderKey","animation":1,"constraint":0,"property":"time","key":{"time":0.0,"value":0.25,"curve":"linear"}},
+        {"command":"setSliderKey","animation":1,"constraint":0,"property":"mix","key":{"time":0.0,"value":0.5,"curve":"linear"}},
+        {"command":"setSliderSource","constraint":0,"bone":0}
+    ]})).await);
+    let bound = doc(&client).await;
+    let slider = &bound["document"]["constraints"][0];
+    assert_eq!(slider["property"], "rotate");
+    assert_eq!(slider["local"], true);
+    assert_eq!(slider["setup"]["time"], 0.75);
+    assert_eq!(slider["max"], 1.5);
+    let tracks = bound["document"]["animations"][1]["slider_tracks"]
+        .as_array()
+        .unwrap();
+    assert_eq!(tracks.len(), 1);
+    assert_eq!(tracks[0]["property"], "mix");
+    let query = success(
+        call(
+            &client,
+            "get_slider_source_choices",
+            json!({"expected_revision":2,"constraint":0}),
+        )
+        .await,
+    );
+    assert_eq!(query["choices"].as_array().unwrap().len(), 6);
+    assert_eq!(
+        query["choices"][3]["sourceRange"],
+        json!({"min":1.0,"max":2.0})
+    );
+    assert_eq!(
+        query["choices"][4]["sourceRange"],
+        json!({"min":1.0,"max":2.0})
+    );
+    assert_eq!(doc(&client).await, bound);
+    success(
+        call(
+            &client,
+            "apply_commands",
+            json!({"expected_revision":2,"commands":[query["choices"][3]["command"]]}),
+        )
+        .await,
+    );
+    success(call(&client,"apply_commands",json!({"expected_revision":3,"commands":[
+        {"command":"editSliderMappingRange","constraint":0,"field":"sourceMin","value":4.0},
+        {"command":"setSliderSourceProperty","constraint":0,"property":"rotate","source_range":{"min":0.0,"max":100.0}}
+    ]})).await);
+    let before = doc(&client).await;
+    let choices = success(
+        call(
+            &client,
+            "get_slider_source_choices",
+            json!({"expected_revision":4,"constraint":0}),
+        )
+        .await,
+    );
+    assert_eq!(
+        choices["choices"][3]["sourceRange"],
+        json!({"min":4.0,"max":2.0})
+    );
+    let rejected = error(call(&client,"apply_commands",json!({"expected_revision":4,"commands":[
+        {"command":"setSliderSourceProperty","constraint":0,"property":"scaleX","source_range":{"min":8.0,"max":2.0}},
+        {"command":"setSliderSource","constraint":999,"bone":0}
+    ]})).await);
+    assert!(rejected.get("effects").is_none());
+    assert_eq!(doc(&client).await, before);
+    assert_eq!(
+        success(
+            call(
+                &client,
+                "get_slider_source_choices",
+                json!({"expected_revision":4,"constraint":0})
+            )
+            .await
+        ),
+        choices
+    );
+    let stale = error(
+        call(
+            &client,
+            "get_slider_source_choices",
+            json!({"expected_revision":3,"constraint":0}),
+        )
+        .await,
+    );
+    assert!(stale["error"].as_str().unwrap().contains("Stale revision"));
+    success(
+        call(
+            &client,
+            "apply_commands",
+            json!({"expected_revision":4,"commands":[choices["choices"][3]["command"]]}),
+        )
+        .await,
+    );
+    success(call(&client,"apply_commands",json!({"expected_revision":5,"commands":[{"command":"setSliderSource","constraint":0,"bone":null}]})).await);
+    let cleared = doc(&client).await;
+    assert_eq!(cleared["document"]["constraints"][0]["bone"], Value::Null);
+    assert_eq!(cleared["document"]["constraints"][0]["setup"]["time"], 0.75);
+    success(
+        call(
+            &client,
+            "history",
+            json!({"expected_revision":6,"action":"undo"}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await["document"]["constraints"][0]["bone"], 0);
+    success(
+        call(
+            &client,
+            "save_project",
+            json!({"expected_revision":7,"directory":"saved"}),
+        )
+        .await,
+    );
+    let saved = doc(&client).await;
+    let revision = saved["state"]["revision"].as_u64().unwrap();
+    error(
+        call(
+            &client,
+            "open_project",
+            json!({"expected_revision":revision,"path":"missing.peachy"}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await, saved);
+    success(
+        call(
+            &client,
+            "open_project",
+            json!({"expected_revision":revision,"path":"saved/project.peachy"}),
+        )
+        .await,
+    );
+    let revision = doc(&client).await["state"]["revision"].as_u64().unwrap();
+    success(call(&client,"create_project",json!({"expected_revision":revision,"name":"Fresh with process preferences","fps":60,"asset_root":"."})).await);
+    let revision = doc(&client).await["state"]["revision"].as_u64().unwrap();
+    success(call(&client,"apply_commands",json!({"expected_revision":revision,"commands":[
+        {"command":"addAnimation","name":"reference","duration":0.0},
+        {"command":"setKey","animation":0,"bone":0,"property":"x","key":{"time":1.5,"value":0.0,"curve":"linear"}},
+        {"command":"createSliderConstraint","animation":0},
+        {"command":"setSliderSource","constraint":0,"bone":0}
+    ]})).await);
+    let revision = doc(&client).await["state"]["revision"].as_u64().unwrap();
+    let query = success(
+        call(
+            &client,
+            "get_slider_source_choices",
+            json!({"expected_revision":revision,"constraint":0}),
+        )
+        .await,
+    );
+    assert_eq!(
+        query["choices"][3]["sourceRange"],
+        json!({"min":4.0,"max":2.0})
+    );
+    assert_eq!(
+        doc(&client).await["document"]["constraints"][0]["property"],
+        "rotate"
+    );
     client.cancel().await.unwrap();
 }

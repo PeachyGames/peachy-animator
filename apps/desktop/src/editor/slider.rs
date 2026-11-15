@@ -5,7 +5,6 @@ use super::*;
 #[path = "slider_ui_tests.rs"]
 mod tests;
 
-const SOURCE_PENDING: &str = "Bone source and range authoring are not available yet.";
 const EMPTY_FRAME: &str = "Frame editing requires a referenced animation with a positive duration.";
 
 impl Editor {
@@ -50,44 +49,25 @@ impl Editor {
             ui.end_row();
             ui.label("Options");
             ui.horizontal(|ui| {
-                for (label,mut checked) in [("Loop",value.looped),("Additive",value.additive)] {
-                    let response=ui.add_enabled(self.setup_mode && self.weights_input_available(ui.ctx()),egui::Checkbox::new(&mut checked,label)).on_disabled_hover_text("Slider configuration is edited in Setup.");
-                    self.slider_target(ui,&format!("slider{label}"),response.rect);
-                    if response.changed() {
-                        self.cancel_gesture();
-                        let Some(mut candidate)=self.slider_constraint(index).cloned() else {return;};
-                        if label=="Loop" {candidate.looped=checked;} else {candidate.additive=checked;}
-                        self.dispatch(Command::SetSliderConstraint{constraint:index,value:candidate});
-                    }
-                }
+                self.slider_option(ui,index,"Loop",value.looped);
+                self.slider_option(ui,index,"Additive",value.additive);
                 if value.bone.is_some() {
-                    let mut local=value.local;
-                    let response=ui.add_enabled(false,egui::Checkbox::new(&mut local,"Local")).on_disabled_hover_text(SOURCE_PENDING);
-                    self.slider_target(ui,"sliderLocal",response.rect);
+                    self.slider_option(ui,index,"Local",value.local);
                 }
             });
             ui.end_row();
-            ui.label("Bone");
-            let bone=value.bone.map_or("<none>",|bone|self.session.document().bones[bone].name.as_str());
-            let response=ui.add_enabled(false,egui::Button::new(bone)).on_disabled_hover_text(SOURCE_PENDING);
-            self.slider_target(ui,"sliderBone",response.rect);
-            ui.end_row();
+            self.slider_source_bone_row(ui,index,&value);
             if let Some(property)=value.property.filter(|_|value.bone.is_some()) {
-                ui.label("Property");
-                ui.add_enabled(false,egui::Button::new(property.label())).on_disabled_hover_text(SOURCE_PENDING);
-                ui.end_row();
+                self.slider_source_range_row(ui,index,property);
             }
             for property in SliderProperty::ALL {
+                if property==SliderProperty::Time && value.bone.is_some() { continue; }
                 ui.label(if property==SliderProperty::Time {"Frame"}else{"Mix"});
                 ui.horizontal(|ui| {
                     let available=self.slider_property_available(index,property);
-                    if property==SliderProperty::Time && value.bone.is_some() {
-                        ui.add_enabled(false,egui::Label::new("Derived Frame unavailable")).on_disabled_hover_text(SOURCE_PENDING);
-                    } else {
-                        self.slider_number(ui,index,property,pose.value(property),available);
-                        let end=if property==SliderProperty::Time {end_frame}else{100.};
-                        self.slider_rail(ui,index,property,pose.value(property),end,available);
-                    }
+                    self.slider_number(ui,index,property,pose.value(property),available);
+                    let end=if property==SliderProperty::Time {end_frame}else{100.};
+                    self.slider_rail(ui,index,property,pose.value(property),end,available);
                     if !self.setup_mode {
                         match self.session.pose_edits().slider_key_state(self.session.document(),self.animation,self.time,index,property) {
                             Ok(state)=>{
@@ -107,9 +87,6 @@ impl Editor {
                 ui.end_row();
             }
         });
-        if value.bone.is_some() {
-            ui.label(RichText::new(SOURCE_PENDING).small().color(MUTED));
-        }
         if duration <= 0. {
             let status = ui.label(RichText::new(EMPTY_FRAME).small().color(MUTED));
             self.slider_target(ui, "sliderCapability", status.rect);
@@ -118,7 +95,7 @@ impl Editor {
             ui.label(RichText::new(error).small().color(ACCENT));
         } else if self.slider_text_invalid() {
             ui.label(
-                RichText::new("Enter a finite Frame at least zero, or a finite Mix percentage.")
+                RichText::new("Enter a finite Slider value. Manual Frame must be at least zero.")
                     .small()
                     .color(ACCENT),
             );

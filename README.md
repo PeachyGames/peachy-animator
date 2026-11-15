@@ -1,14 +1,41 @@
 # Peachy Animator
 
-Slider constraints now share manual Frame/Mix authoring, pending poses, Auto Key/K,
-typed timelines and Graph editing with the engine and MCP: **native v23,
-58 commands /14 tools**. An actual 84-request MCP run creates the original
+The current engine/MCP interface provides **63 commands / 17 tools**, with
+**native v23 unchanged**. The Slider continuation adds semantic creation,
+bone-source assignment/clear, explicit property-range snapshots and own-turn
+evaluation queries. In Setup, select an animation in the Tree and use
+**New → Slider**; creation prepends and returns shared constraint-index effects.
+
+Native creation/Undo/Redo, manual Frame 45 → source-bone assignment with Time-only
+key removal, ScaleX → Rotate → ScaleX, and all four range fields pass. Tested
+edits include reversed source 8..1 and target Frames 30..90. Local/clear preserves
+the manual baseline; changing Mix to 25% captures the observed 1.5-second
+fallback. Open retains the remembered ScaleX range, and Save cancels an owned
+draft while preserving accepted data. At 1120×740, the four endpoints remain
+reachable and an endpoint edit/Undo passes. Final Fit/reopen has one image and
+empty history; the public project stays unchanged. Held range-preview behavior
+has headless event coverage only; a changed native held preview was not established.
+
+The actual **141-request / 15-pose-query** MCP workflow produces the original
+[Slider Source Lab](examples/peach-bot/slider-source-bot.peachy).
+External runtime and installed-editor returned geometry each pass **104 poses**
+at the unchanged **0.001** tolerance. Strict installed authored equality is
+**false**: hidden manual Time is lost, and curve/range representations and the
+project name change. This is not lossless interchange or full Slider parity.
+Focused checks pass: **63 engine, 33 desktop, 16 schema and 6 stdio** cases, plus
+formatting, all-target Clippy, workspace build and the seven-crate architecture
+check. See the [source controls](docs/evidence/slider-source-editor.png) and
+[minimum layout](docs/evidence/slider-source-minimum.png).
+
+The earlier manual Slider checkpoint used **58 commands / 14 tools**: Frame/Mix,
+pending poses, Auto Key/K, typed timelines and Graph shared the engine and MCP.
+Its actual 84-request MCP run creates the original
 [Slider Lab](examples/peach-bot/slider-bot.peachy) from one PNG and a blank project.
 Native editing/history/cancellation, minimum layout and fresh public reopening
 pass; 104 exported poses match the external runtime at 0.001. Installed-editor
-geometry also passes, with lossy authored curve conversion. Creation/source
-switching, Physics/events through Slider and
-extreme precision cases remain bounded gaps; see the
+geometry also passes, with lossy authored curve conversion. That retained lab and
+its evidence describe the 58/14 checkpoint. Physics/events through Slider,
+extreme precision and broader authoring acceptance remain open; see the
 [Slider contract](docs/slices/slider-constraints.md) and
 [review gallery](docs/evidence/slider-constraints.html).
 
@@ -516,11 +543,63 @@ cargo build -p peachy-mcp --locked
 ./target/debug/peachy-mcp --root /absolute/path/to/animation-workspace
 ```
 
-It communicates over stdio and exposes project inspection, validated command
-batches, typed key copying, undo/redo, pose evaluation and new-output saves/exports through the same
-engine as the desktop. Each server owns an independent session; it does not
+It communicates over stdio and exposes **63 commands / 17 tools** for project
+inspection, validated command batches, typed key copying, undo/redo, pose
+evaluation and new-output saves/exports through the same engine as the desktop.
+Each server owns an independent session; it does not
 control an existing editor window. See [MCP setup, tools and limits](docs/MCP.md)
 for client configuration and a complete workflow.
+
+Slider creation and source editing use distinct shared operations:
+
+- `createSliderConstraint` takes an animation index, chooses the native automatic
+  name/defaults and **prepends**. Raw `addSliderConstraint` still appends a complete
+  payload. Successful edits and history responses return
+  `effects.constraintIndices.oldToNew` and `newLen`; an undone creation maps its
+  removed index to `null`. Remap retained constraint/key references and read
+  `get_document` again. Within a command batch, indices address each successive
+  candidate.
+- `setSliderSource` requires `bone`, even when clearing it with `null`. A genuine
+  assignment removes that Slider's Time tracks and pending Time while preserving
+  Mix. `setSliderSourceProperty` requires the six-choice property and an explicit
+  `source_range` snapshot. Complete raw `setSliderConstraint` remains separate
+  from these transitions.
+- `setSliderSetupPose` edits Setup Time/Mix semantically. A genuine bound Mix
+  change captures the prior own-turn sampled Time when available; an exact no-op
+  or unavailable sample preserves the hidden baseline.
+
+Example flat command payloads, sent inside revision-checked `apply_commands`:
+
+```json
+{"command":"setSliderSource","constraint":0,"bone":null}
+```
+
+```json
+{"command":"setSliderSourceProperty","constraint":0,"property":"scaleX","source_range":{"min":1,"max":2}}
+```
+
+Use `get_slider_source_choices` to obtain the contextual range and complete
+command snapshot rather than assuming those example endpoints. The source
+properties are `rotate`, `x`, `y`, `scaleX`, `scaleY` and `shearY`.
+
+| Read-only Slider tool | Contract |
+| --- | --- |
+| `get_slider_mapping` | Raw-derived source and target endpoints. Target values are referenced seconds, not Frames; undefined SourceMax is `null`. No solving, repair or authored-Time change. |
+| `get_slider_evaluation` | One Slider's own ordered turn: incoming/applied settings, `sampleTime` and eligibility. A missing sample is `null`, including zero incoming Mix. Later constraints can change final effective settings without changing this snapshot. |
+| `get_slider_source_choices` | Six contextual source-range choices and explicit property commands, without focusing, remembering a range, solving or changing document/history/revision. |
+
+These queries require the current revision and exact constraint index. Evaluation
+also accepts a host animation name, nonnegative host seconds and skin. The
+existing `get_slider_pose` remains an **authored** Time/Mix query;
+`evaluate_pose` exposes authored/final applied arrays and own-turn evaluations
+from the same checked solve. Use `editSliderMappingRange` for endpoint edits;
+its target values also use referenced seconds.
+
+Source-range preferences belong to the server/editor process, outside the native
+document and undo history. They survive successful Open and new headless projects
+within that process; canceled/failed Open leaves them unchanged. A fresh process
+starts with defaults. Reading choices or saving a project does not store those
+preferences in `.peachy` data.
 
 The design follows PhotoCraft's engine-first, command-driven architecture:
 serializable documents, an independent animation engine, format adapters, and thin

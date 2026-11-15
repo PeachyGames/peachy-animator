@@ -115,6 +115,49 @@ pub fn transform_group(properties: &[Property]) -> Vec<Property> {
 }
 
 impl PoseEdits {
+    pub(crate) fn after_pose_operations(
+        &self,
+        operations: &[crate::constraint_effects::PoseOperation],
+    ) -> Result<Self, String> {
+        let mut next = self.clone();
+        for operation in operations {
+            match operation {
+                crate::constraint_effects::PoseOperation::Remap(effects) => {
+                    next = next.remapped_constraints(effects)?
+                }
+                crate::constraint_effects::PoseOperation::ClearSliderTime { constraint } => {
+                    next.slider_values.retain(|value| {
+                        value.constraint != *constraint
+                            || value.edit.property() != SliderProperty::Time
+                    });
+                    if next.is_empty() {
+                        next.animation = None;
+                    }
+                }
+            }
+        }
+        Ok(next)
+    }
+    pub(crate) fn remapped_constraints(
+        &self,
+        effects: &crate::EditEffects,
+    ) -> Result<Self, String> {
+        let Some(map) = &effects.constraint_indices else {
+            return Ok(self.clone());
+        };
+        let mut next = self.clone();
+        for value in &mut next.ik_values {
+            value.constraint = map
+                .map_index(value.constraint)?
+                .ok_or("Pending IK constraint was removed")?;
+        }
+        for value in &mut next.slider_values {
+            value.constraint = map
+                .map_index(value.constraint)?
+                .ok_or("Pending Slider constraint was removed")?;
+        }
+        Ok(next)
+    }
     /// Independent Time/Mix key state, including an unkeyed authored override.
     pub fn slider_key_state(
         &self,

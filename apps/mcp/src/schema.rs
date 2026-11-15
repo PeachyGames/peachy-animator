@@ -417,6 +417,47 @@ pub fn command_schema() -> Value {
             ("keys",json!({"type":"array","items":draw_order_key.clone(),"minItems":1}))]),
     ]});
     let variants = vec![
+        command("createSliderConstraint", &[("animation", index())]),
+        command(
+            "setSliderSource",
+            &[("constraint", index()), ("bone", nullable(index()))],
+        ),
+        command(
+            "setSliderSourceProperty",
+            &[
+                ("constraint", index()),
+                ("property", transform_property_schema()),
+                (
+                    "source_range",
+                    object(&[("min", number()), ("max", number())]),
+                ),
+            ],
+        ),
+        command(
+            "setSliderSetupPose",
+            &[
+                ("constraint", index()),
+                (
+                    "edits",
+                    list(json!({"oneOf":[
+                        object(&[("type",tag("time")),("value",number())]),
+                        object(&[("type",tag("mix")),("value",number())])
+                    ]})),
+                ),
+                ("skin", text()),
+            ],
+        ),
+        command(
+            "editSliderMappingRange",
+            &[
+                ("constraint", index()),
+                (
+                    "field",
+                    json!({"type":"string","enum":["sourceMin","sourceMax","targetMin","targetMax"]}),
+                ),
+                ("value", number()),
+            ],
+        ),
         command(
             "addSliderConstraint",
             &[("constraint", slider_constraint.clone())],
@@ -888,9 +929,77 @@ mod tests {
         }
     }
 
+    #[test]
+    fn slider_source_commands_require_explicit_bone_and_strict_property_snapshots() {
+        let source = json!({"command":"setSliderSource","constraint":0,"bone":null});
+        assert!(serde_json::from_value::<CommandInput>(source.clone()).is_ok());
+        let mut missing = source;
+        missing.as_object_mut().unwrap().remove("bone");
+        assert!(serde_json::from_value::<CommandInput>(missing).is_err());
+        let command = json!({"command":"setSliderSourceProperty","constraint":0,"property":"scaleX",
+            "source_range":{"min":1.0,"max":2.0}});
+        for property in ["rotate", "x", "y", "scaleX", "scaleY", "shearY"] {
+            let mut valid = command.clone();
+            valid["property"] = json!(property);
+            assert!(serde_json::from_value::<CommandInput>(valid).is_ok());
+        }
+        for property in [
+            json!({"scaleX":null}),
+            json!(null),
+            json!([]),
+            json!("rotation"),
+            json!(1),
+        ] {
+            let mut bad = command.clone();
+            bad["property"] = property;
+            assert!(serde_json::from_value::<CommandInput>(bad).is_err());
+        }
+        for range in [
+            json!([1.0, 2.0]),
+            json!({"min":1.0}),
+            json!({"max":2.0}),
+            json!({"min":1.0,"max":2.0,"extra":0}),
+            json!(null),
+        ] {
+            let mut bad = command.clone();
+            bad["source_range"] = range;
+            assert!(serde_json::from_value::<CommandInput>(bad).is_err());
+        }
+    }
+
+    #[test]
+    fn slider_source_ranges_require_the_published_object_shape() {
+        let schema = command_schema();
+        let shape = schema["oneOf"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|shape| shape["properties"]["command"]["const"] == "setSliderSourceProperty")
+            .unwrap();
+        let range = &shape["properties"]["source_range"];
+        assert_eq!(range["type"], "object");
+        assert_eq!(range["required"], json!(["min", "max"]));
+        assert_eq!(range["additionalProperties"], false);
+        for range in [
+            json!([1.0, 2.0]),
+            json!([]),
+            json!(true),
+            json!(1.0),
+            json!("1..2"),
+        ] {
+            let command = json!({"command":"setSliderSourceProperty","constraint":0,"property":"scaleX","source_range":range});
+            assert!(serde_json::from_value::<CommandInput>(command).is_err());
+        }
+    }
+
     // Exhaustive matching makes any new engine variant a schema review gate.
     fn wire_name(command: &Command) -> &'static str {
         match command {
+            Command::CreateSliderConstraint { .. } => "createSliderConstraint",
+            Command::SetSliderSetupPose { .. } => "setSliderSetupPose",
+            Command::SetSliderSource { .. } => "setSliderSource",
+            Command::SetSliderSourceProperty { .. } => "setSliderSourceProperty",
+            Command::EditSliderMappingRange { .. } => "editSliderMappingRange",
             Command::AddSliderConstraint { .. } => "addSliderConstraint",
             Command::SetSliderConstraint { .. } => "setSliderConstraint",
             Command::SetSliderKey { .. } => "setSliderKey",
@@ -998,7 +1107,7 @@ mod tests {
     fn every_published_shape_decodes_through_strict_engine_serde() {
         let schema = command_schema();
         let variants = schema["oneOf"].as_array().unwrap();
-        assert_eq!(variants.len(), 58);
+        assert_eq!(variants.len(), 63);
         for variant in variants {
             let payload = sample(variant);
             let command: CommandInput = serde_json::from_value(payload.clone()).unwrap();

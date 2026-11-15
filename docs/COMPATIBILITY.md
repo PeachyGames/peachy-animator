@@ -4,9 +4,69 @@ Target: Spine **4.3.x JSON**, with export metadata `4.3.26`. The initial externa
 oracle is separately installed `@esotericsoftware/spine-core` **4.3.13**.
 Compatibility applies to the subset below, not every 4.3 project or future patch.
 
+## Slider source/creation continuation — November 15, 2026 (bounded acceptance passed)
+
+The native format remains **v23**, with **63 commands /17 tools**. Actual source
+study04 passes 141 MCP requests and 15 retained poses from a blank project/one PNG;
+its source project SHA256 is
+`60b75a59d56d4df1b41120dbb9e3d29abe187e3a0ceff7a1c287aa32f220b109`.
+Separate 104-pose runtime geometry has world maximum 8.897442157262958e−6 across
+3,744 values and region maximum 1.52587890625e−5 across 1,664 values at 0.001.
+Bounded native source/creation acceptance passes. Installed returned geometry
+passes while strict authored equality remains false; the earlier manual
+checkpoint below remains its own dated result.
+
+The continuation separates semantic prepend/numeric-name creation and identity
+receipts from raw append, and source assignment/property/clear from complete raw
+replacement. Assignment removes Time keys and preserves Mix. Genuine Setup Mix
+edits capture eligible own-turn sample Time into the hidden manual baseline;
+range/Local edits, unchanged entries and incoming zero Mix do not force capture.
+Raw endpoint query stays `f64`, zero scale leaves SourceMax undefined, and finite
+endpoint edits use the measured source+100/target+reference-duration equal-span
+repair while preserving reversals. Property source pairs are nonpersistent
+process-view memory shared across Sliders/bones; each Slider retains its target
+endpoints. No document cache or format migration is added. Process-restart reset
+and distinctive Source Min **8** surviving same-process Save/Open are measured;
+bounded native cache/Open/history acceptance passes. See the
+[contract](slices/slider-constraints.md#source-and-creation-continuation).
+
+Run02's accepted object-form source property exposed a schema/deserializer
+mismatch; string-only command decoding now rejects it. A later four-request probe
+also found positional source-range arrays accepted by derived struct decoding;
+object-only decoding fixes that independent wire bug. Current coverage is63
+engine Slider cases (seven source regressions),33 desktop,16 schema,6 stdio and
+six overlapping Session cases. Fmt/Clippy/build/seven-crate architecture pass.
+Final run04 repeats141 requests/15 samples and the same canonical project after
+range-wire hardening. A separate10-request strict test confirms array rejection
+leaves document/history/revision unchanged; valid-object authoring/Undo is exact.
+
+Actual native creation/history/selection, Frame45/source assignment, all four
+typed endpoints, property-cache restoration, Local/Clear and genuine Mix/Clear
+capture pass. Minimum1120×740 SourceMax edit/Undo, draft99/Save/shared decode,
+canonical Cocoa Open/one image/empty history and exact canonical Undo also pass.
+The final minimum presentation fits the full original art. All owned processes
+are closed and reference bounds are restored. A changed held-range preview is
+not established natively; ten headless event cases provide that coverage.
+
+The final wire-hardened desktop performs a fresh read-only canonical reopen with
+one image/empty history/no error and closes without changing the source. This is
+separate from the detailed earlier interactive replay. Final104-pose runtime and
+returned checks pass with the same errors; run04 Editor/Runtime JSON is byte-
+identical to run03, preserving the installed-editor oracle input.
+
+The source installed roundtrip compares104 poses at0.001, world maximum
+1.3513448465118927e−5 and region maximum1.52587890625e−5. Strict equality fails at
+four paths: hidden Time0.59259266→0, target minimum0.33333334→0.3333333, Mix Bezier
+0.2→0.19999997 and name. Hidden-baseline loss is an editing difference, so current
+geometry success does not imply future Clear equivalence or lossless conversion.
+
+The existing strict authored-interchange failure, two raw `1e30` precision failures,
+Loop/counter refusals and referenced Physics/events/remaining Deform guards below
+are preserved. These authoring controls do not expand evaluation capability.
+
 ## Slider checkpoint — November 15, 2026 (bounded manual/MCP verified; parity open)
 
-The current native model is **v23**, with **58 commands / 14 MCP tools**. Strict
+The verified manual checkpoint uses **v23**, with **58 commands / 14 MCP tools**. Strict
 v22 decoding adds empty Slider tracks in memory; historical public project files
 keep their original bytes. Slider data, independent absolute Time/Mix keys,
 curve-preserving insertion, typed clipboard operations and authored/effective

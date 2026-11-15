@@ -148,9 +148,16 @@ pub(crate) fn apply(
     index: usize,
     state: &mut AppliedState,
     world: &mut Vec<Affine>,
-) -> Result<(), String> {
+) -> Result<crate::SliderEvaluation, String> {
+    let incoming = *state
+        .sliders
+        .get(index)
+        .ok_or("missing effective Slider pose")?;
     if slider.bone.is_some_and(|bone| !state.active.bones[bone]) {
-        return Ok(());
+        return Ok(crate::SliderEvaluation::skipped(
+            incoming,
+            crate::SliderEligibility::InactiveSource,
+        ));
     }
     let reference = doc
         .animations
@@ -159,15 +166,15 @@ pub(crate) fn apply(
     crate::slider_domains::validate_reference(doc, reference)?;
     // Capture the current effective settings once at this ordered turn. A
     // referenced animation is never recursively evaluated as another skeleton.
-    let mut pose = *state
-        .sliders
-        .get(index)
-        .ok_or("missing effective Slider pose")?;
+    let mut pose = incoming;
     if !pose.time.is_finite() || !pose.mix.is_finite() {
         return Err("effective settings must be finite".into());
     }
     if pose.mix == 0. {
-        return Ok(());
+        return Ok(crate::SliderEvaluation::skipped(
+            incoming,
+            crate::SliderEligibility::Eligible,
+        ));
     }
     let duration = f64::from(reference.duration());
     if let Some(bone) = slider.bone {
@@ -182,6 +189,12 @@ pub(crate) fn apply(
         pose.time % duration
     } else {
         pose.time
+    };
+    let evaluation = crate::SliderEvaluation {
+        incoming,
+        applied: pose,
+        sample_time: Some(time),
+        eligibility: crate::SliderEligibility::Eligible,
     };
     let mut updates = vec![];
     for track in &reference.tracks {
@@ -218,7 +231,7 @@ pub(crate) fn apply(
     let changed_inherits =
         crate::slider_domains::apply(doc, reference, time, pose.mix, slider.additive, state)?;
     if updates.is_empty() && changed_inherits.is_empty() {
-        return Ok(());
+        return Ok(evaluation);
     }
     for (bone, property, value) in updates {
         property.write(&mut state.locals[bone], value);
@@ -227,7 +240,7 @@ pub(crate) fn apply(
     crate::ik::check_inherit_domain(doc, &updated, &state.locals, &state.inherits)?;
     crate::ik::check_world(doc, &updated)?;
     *world = updated;
-    Ok(())
+    Ok(evaluation)
 }
 
 #[cfg(test)]

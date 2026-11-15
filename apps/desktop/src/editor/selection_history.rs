@@ -47,6 +47,23 @@ impl SelectionHistory {
             }
         }
     }
+
+    pub fn remap_constraints(&mut self, mapping: &peachy_engine::ConstraintIndexRemap) {
+        for entries in [&mut self.back, &mut self.forward] {
+            entries.retain_mut(|entry| {
+                let Some(item) = entry.take() else {
+                    return true;
+                };
+                *entry = super::selection::remap_constraint(item, mapping);
+                entry.is_some()
+            });
+        }
+        for group in &mut self.groups {
+            *group = group
+                .take()
+                .and_then(|item| super::selection::remap_constraint(item, mapping));
+        }
+    }
 }
 
 #[cfg(test)]

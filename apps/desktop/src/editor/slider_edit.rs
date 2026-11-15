@@ -1,10 +1,32 @@
 //! Manual Slider inputs freeze their context; Session owns pending poses and history.
 use super::*;
-use peachy_engine::{SliderPose, SliderPoseEdit};
+use peachy_engine::{
+    SliderMappingRangeField, SliderPose, SliderPoseEdit, edited_slider_mapping_range,
+    slider_mapping_range,
+};
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(super) enum SliderField {
+    Pose(SliderProperty),
+    Range(SliderMappingRangeField),
+}
+
+impl SliderField {
+    fn factor(self, fps: u32) -> f64 {
+        match self {
+            Self::Pose(SliderProperty::Time)
+            | Self::Range(
+                SliderMappingRangeField::TargetMin | SliderMappingRangeField::TargetMax,
+            ) => f64::from(fps),
+            Self::Pose(SliderProperty::Mix) => 100.,
+            Self::Range(_) => 1.,
+        }
+    }
+}
 
 struct SliderEdit {
     constraint: usize,
-    property: SliderProperty,
+    field: SliderField,
     accepted: SliderConstraint,
     pose: SliderPose,
     setup: bool,
@@ -19,7 +41,17 @@ struct SliderEdit {
     touched: bool,
     valid_text: bool,
     shown: f64,
+    undefined: bool,
+    duration: f32,
     finish: bool,
+}
+
+struct SliderNumber {
+    field: SliderField,
+    value: Option<f64>,
+    target: String,
+    width: f32,
+    enabled: bool,
 }
 
 #[derive(Default)]
@@ -27,15 +59,16 @@ pub(super) struct SliderView {
     edit: Option<SliderEdit>,
     blocked: Option<egui::Id>,
     pub error: Option<String>,
+    pub(super) picker: Option<super::slider_source::SliderSourcePicker>,
 }
 
 impl Editor {
     pub(super) fn slider_edit_active(&self) -> bool {
-        self.slider_view.edit.is_some()
+        self.slider_view.edit.is_some() || self.slider_view.picker.is_some()
     }
 
     fn slider_input_available(&self, ctx: &egui::Context) -> bool {
-        self.show_tree && self.weights_input_available(ctx)
+        self.show_tree && self.weights_input_available(ctx) && self.slider_view.picker.is_none()
     }
 
     pub(super) fn slider_property_available(&self, index: usize, property: SliderProperty) -> bool {
@@ -47,6 +80,7 @@ impl Editor {
     }
 
     pub(super) fn cancel_slider_edit(&mut self) {
+        self.slider_view.picker = None;
         if let Some(edit) = self.slider_view.edit.take() {
             self.session.cancel_transaction();
             self.slider_view.blocked = Some(edit.control);
@@ -69,6 +103,7 @@ impl Editor {
     }
 
     pub(super) fn reconcile_slider_context(&mut self) {
+        self.reconcile_slider_source_picker();
         if self.slider_view.edit.as_ref().is_some_and(|edit| {
             !self.show_tree
                 || self.selection != Some(TreeItem::Constraint(edit.constraint))
@@ -79,7 +114,11 @@ impl Editor {
                 || self.skin != edit.skin
                 || self.pose_view_generation != edit.generation
                 || self.slider_constraint(edit.constraint) != Some(&edit.accepted)
-                || !self.slider_property_available(edit.constraint, edit.property)
+                || !self.slider_field_available(edit.constraint, edit.field)
+                || self.session.document().animations[edit.accepted.animation]
+                    .duration()
+                    .to_bits()
+                    != edit.duration.to_bits()
                 || self
                     .session
                     .slider_pose(edit.constraint, self.weights_edit_target())
@@ -94,7 +133,7 @@ impl Editor {
             self.slider_view.blocked = None;
         }
         self.reconcile_slider_context();
-        if !self.slider_input_available(ctx) {
+        if !self.show_tree || !self.weights_input_available(ctx) {
             self.cancel_slider_edit();
         }
         if let Some(control) = self.slider_view.blocked {
@@ -105,7 +144,7 @@ impl Editor {
     pub(super) fn settle_slider_input(&mut self, ctx: &egui::Context) {
         // Do not clear a cancellation made by this frame's primary press.
         self.reconcile_slider_context();
-        if !self.slider_input_available(ctx) {
+        if !self.show_tree || !self.weights_input_available(ctx) {
             self.cancel_slider_edit();
         }
         if !ctx.input(|input| input.pointer.primary_down())
@@ -128,7 +167,7 @@ impl Editor {
     fn begin_slider_number(
         &mut self,
         index: usize,
-        property: SliderProperty,
+        field: SliderField,
         response: &egui::Response,
         numeric: bool,
     ) -> Result<(), String> {
@@ -136,7 +175,7 @@ impl Editor {
         self.cancel_gesture();
         if !self.slider_input_available(&response.ctx)
             || self.selection != Some(TreeItem::Constraint(index))
-            || !self.slider_property_available(index, property)
+            || !self.slider_field_available(index, field)
         {
             return Err("Select an editable Slider property".into());
         }
@@ -147,12 +186,19 @@ impl Editor {
         let pose = self
             .session
             .slider_pose(index, self.weights_edit_target())?;
+        let initial = match field {
+            SliderField::Pose(property) => Some(pose.value(property)),
+            SliderField::Range(field) => {
+                slider_mapping_range(self.session.document(), index)?.value(field)
+            }
+        };
+        let duration = self.session.document().animations[accepted.animation].duration();
         self.session.commit_transaction();
         self.session.begin_transaction();
         self.playing = false;
         self.slider_view.edit = Some(SliderEdit {
             constraint: index,
-            property,
+            field,
             accepted,
             pose,
             setup: self.setup_mode,
@@ -166,17 +212,25 @@ impl Editor {
             numeric,
             touched: false,
             valid_text: true,
-            shown: pose.value(property) * self.slider_factor(property),
+            shown: initial.unwrap_or(0.) * field.factor(self.session.document().fps),
+            undefined: initial.is_none(),
+            duration,
             finish: false,
         });
         Ok(())
     }
 
-    fn slider_factor(&self, property: SliderProperty) -> f64 {
-        if property == SliderProperty::Time {
-            f64::from(self.session.document().fps)
-        } else {
-            100.
+    fn slider_field_available(&self, index: usize, field: SliderField) -> bool {
+        match field {
+            SliderField::Pose(property) => self.slider_property_available(index, property),
+            SliderField::Range(field) => {
+                self.setup_mode
+                    && slider_mapping_range(self.session.document(), index).is_ok_and(|range| {
+                        range.source_max.is_some()
+                            || (field == SliderMappingRangeField::SourceMax
+                                && range.target_min != range.target_max)
+                    })
+            }
         }
     }
 
@@ -186,11 +240,11 @@ impl Editor {
             .edit
             .as_ref()
             .ok_or("No active Slider edit")?;
-        let raw = shown / self.slider_factor(edit.property);
+        let raw = shown / edit.field.factor(self.session.document().fps);
         let value = raw as f32;
         if !raw.is_finite()
             || !value.is_finite()
-            || (edit.property == SliderProperty::Time && raw < 0.)
+            || (edit.field == SliderField::Pose(SliderProperty::Time) && raw < 0.)
         {
             return Err("Enter a finite Frame at least zero, or a finite Mix percentage".into());
         }
@@ -202,13 +256,26 @@ impl Editor {
                 time: edit.time,
             }
         };
-        let change = match edit.property {
-            SliderProperty::Time => SliderPoseEdit::Time { value },
-            SliderProperty::Mix => SliderPoseEdit::Mix { value },
-        };
         let index = edit.constraint;
-        self.session
-            .preview_edit_slider_pose(index, target, &[change], edit.auto_key)?;
+        match edit.field {
+            SliderField::Pose(property) => {
+                let change = match property {
+                    SliderProperty::Time => SliderPoseEdit::Time { value },
+                    SliderProperty::Mix => SliderPoseEdit::Mix { value },
+                };
+                self.session
+                    .preview_edit_slider_pose(index, target, &[change], edit.auto_key)?;
+            }
+            SliderField::Range(field) => {
+                let candidate =
+                    edited_slider_mapping_range(&edit.accepted, edit.duration, field, raw)?;
+                self.session
+                    .preview_transaction(Command::SetSliderConstraint {
+                        constraint: index,
+                        value: candidate,
+                    })?;
+            }
+        }
         let accepted = self
             .slider_constraint(index)
             .cloned()
@@ -218,10 +285,14 @@ impl Editor {
         edit.accepted = accepted;
         edit.pose = pose;
         edit.shown = shown;
+        edit.undefined = false;
         Ok(())
     }
 
     pub(super) fn slider_edit_shortcuts(&mut self, ctx: &egui::Context) -> bool {
+        if self.slider_source_shortcuts(ctx) {
+            return true;
+        }
         let Some(edit) = self.slider_view.edit.as_ref() else {
             return false;
         };
@@ -272,7 +343,7 @@ impl Editor {
     fn slider_number_response(
         &mut self,
         index: usize,
-        property: SliderProperty,
+        field: SliderField,
         response: &egui::Response,
         shown: f64,
         numeric: bool,
@@ -293,7 +364,7 @@ impl Editor {
                 .is_none_or(|edit| edit.control != response.id)
             && let Err(error) = self.begin_slider_number(
                 index,
-                property,
+                field,
                 response,
                 numeric && response.has_focus() && !response.dragged(),
             )
@@ -322,10 +393,13 @@ impl Editor {
         if let Some(valid) = parsed {
             edit.valid_text = valid;
         }
-        if response.changed()
+        let entered_undefined =
+            edit.undefined && edit.numeric && edit.touched && parsed == Some(true);
+        if (response.changed() || entered_undefined)
             && edit.valid_text
             && (!edit.numeric || edit.touched)
-            && edit.shown.to_bits() != shown.to_bits()
+            && (entered_undefined || edit.shown.to_bits() != shown.to_bits())
+            && (!edit.undefined || entered_undefined)
         {
             self.slider_view.error = self.preview_slider_number(shown).err();
         }
@@ -345,23 +419,71 @@ impl Editor {
         value: f64,
         enabled: bool,
     ) {
+        self.slider_field_number(
+            ui,
+            index,
+            SliderNumber {
+                field: SliderField::Pose(property),
+                value: Some(value),
+                target: format!("slider{property:?}Value"),
+                width: 64.,
+                enabled,
+            },
+        );
+    }
+
+    pub(super) fn slider_range_number(
+        &mut self,
+        ui: &mut egui::Ui,
+        index: usize,
+        field: SliderMappingRangeField,
+        value: Option<f64>,
+    ) {
+        self.slider_field_number(
+            ui,
+            index,
+            SliderNumber {
+                field: SliderField::Range(field),
+                value,
+                target: format!("sliderRange{field:?}"),
+                width: 58.,
+                enabled: self.slider_field_available(index, SliderField::Range(field)),
+            },
+        );
+    }
+
+    fn slider_field_number(&mut self, ui: &mut egui::Ui, index: usize, number: SliderNumber) {
+        let SliderNumber {
+            field,
+            value,
+            target,
+            width,
+            enabled,
+        } = number;
+        let factor = field.factor(self.session.document().fps);
+        let edit = self
+            .slider_view
+            .edit
+            .as_ref()
+            .filter(|edit| edit.constraint == index && edit.field == field);
+        let undefined = edit.map_or(value.is_none(), |edit| edit.undefined);
         let mut shown = self
             .slider_view
             .edit
             .as_ref()
-            .filter(|edit| edit.constraint == index && edit.property == property)
-            .map_or(value * self.slider_factor(property), |edit| edit.shown);
+            .filter(|edit| edit.constraint == index && edit.field == field)
+            .map_or(value.unwrap_or(0.) * factor, |edit| edit.shown);
         let id = egui::Id::new((
             "slider-number",
             index,
-            property,
+            format!("{field:?}"),
             self.setup_mode,
             self.animation,
             self.time.to_bits(),
             &self.skin,
             self.pose_view_generation,
         ));
-        let (rect, _) = ui.allocate_exact_size(vec2(64., 22.), Sense::hover());
+        let (rect, _) = ui.allocate_exact_size(vec2(width, 22.), Sense::hover());
         let mut child = ui.new_child(
             egui::UiBuilder::new()
                 .id(id)
@@ -369,16 +491,15 @@ impl Editor {
                 .layout(egui::Layout::left_to_right(egui::Align::Center)),
         );
         child.set_clip_rect(rect.intersect(ui.clip_rect()));
-        child.spacing_mut().interact_size = vec2(64., 22.);
+        child.spacing_mut().interact_size = vec2(width, 22.);
         let focused = child.memory(|memory| memory.has_focus(child.next_auto_id()));
         let parsed = std::cell::Cell::new(None);
-        let factor = self.slider_factor(property);
         let response = child.add_enabled(
             enabled && self.slider_input_available(ui.ctx()),
             egui::DragValue::new(&mut shown)
                 .speed(0.2)
                 .range(
-                    if property == SliderProperty::Time {
+                    if field == SliderField::Pose(SliderProperty::Time) {
                         0.
                     } else {
                         f64::MIN
@@ -387,7 +508,9 @@ impl Editor {
                 .clamp_existing_to_range(false)
                 .update_while_editing(false)
                 .custom_formatter(move |value, _| {
-                    if focused {
+                    if undefined {
+                        String::new()
+                    } else if focused {
                         value.to_string()
                     } else {
                         format!("{value:.2}")
@@ -406,19 +529,20 @@ impl Editor {
                         .filter(|value| {
                             value.is_finite()
                                 && ((*value / factor) as f32).is_finite()
-                                && (property != SliderProperty::Time || *value >= 0.)
+                                && (field != SliderField::Pose(SliderProperty::Time)
+                                    || *value >= 0.)
                         });
                     parsed.set(Some(value.is_some()));
                     value
                 })
-                .suffix(if property == SliderProperty::Mix {
+                .suffix(if field == SliderField::Pose(SliderProperty::Mix) {
                     "%"
                 } else {
                     ""
                 }),
         );
-        self.slider_target(ui, &format!("slider{property:?}Value"), response.rect);
-        self.slider_number_response(index, property, &response, shown, true, parsed.get());
+        self.slider_target(ui, &target, response.rect.intersect(rect));
+        self.slider_number_response(index, field, &response, shown, true, parsed.get());
     }
 
     pub(super) fn slider_rail(
@@ -430,12 +554,15 @@ impl Editor {
         end: f64,
         enabled: bool,
     ) {
+        let field = SliderField::Pose(property);
         let mut shown = self
             .slider_view
             .edit
             .as_ref()
-            .filter(|edit| edit.constraint == index && edit.property == property)
-            .map_or(value * self.slider_factor(property), |edit| edit.shown);
+            .filter(|edit| edit.constraint == index && edit.field == field)
+            .map_or(value * field.factor(self.session.document().fps), |edit| {
+                edit.shown
+            });
         let id = egui::Id::new(("slider-rail", index, property, self.pose_view_generation));
         let response = ui
             .scope_builder(egui::UiBuilder::new().id(id), |ui| {
@@ -449,7 +576,7 @@ impl Editor {
             })
             .inner;
         self.slider_target(ui, &format!("slider{property:?}Slider"), response.rect);
-        self.slider_number_response(index, property, &response, shown, false, None);
+        self.slider_number_response(index, field, &response, shown, false, None);
     }
 
     pub(super) fn slider_key_ready(&mut self) -> Result<(), String> {
@@ -486,9 +613,11 @@ impl Editor {
         serde_json::json!({"selected":selected,"value":selected.and_then(|index|self.slider_constraint(index)),
             "authored":selected.and_then(|index|self.session.slider_pose(index,self.weights_edit_target()).ok()),
             "active":self.slider_view.edit.as_ref().map(|edit|serde_json::json!({
-                "constraint":edit.constraint,"property":edit.property,"setup":edit.setup,
+                "constraint":edit.constraint,"property":match edit.field {SliderField::Pose(property)=>Some(property),_=>None},"field":format!("{:?}",edit.field),"setup":edit.setup,
                 "animation":edit.animation,"time":edit.time,"autoKey":edit.auto_key,
                 "numeric":edit.numeric,"touched":edit.touched,"validText":edit.valid_text,"shown":edit.shown})),
+            "sourcePicker":self.slider_view.picker.as_ref().map(|picker|picker.constraint),
+            "sourceFocus":self.session.slider_source_focus(),"sourcePreferences":self.session.slider_source_preferences(),
             "blocked":self.slider_view.blocked.is_some(),"error":self.slider_view.error})
     }
 

@@ -273,7 +273,10 @@ impl Editor {
                     ACCENT,
                 );
             }
-            if (self.tree.filters.bones || self.weights.bind.is_some() || self.ik_target.is_some())
+            if (self.tree.filters.bones
+                || self.weights.bind.is_some()
+                || self.ik_target.is_some()
+                || self.slider_source_picker_active())
                 && let Some(mouse) = response.interact_pointer_pos()
             {
                 let distance = distance_to_segment(mouse, start, end);
@@ -586,7 +589,10 @@ impl Editor {
         painter.text(
             rect.left_bottom() + vec2(12., -14.),
             egui::Align2::LEFT_BOTTOM,
-            if self.weights.bind.is_some() || self.ik_target.is_some() {
+            if self.weights.bind.is_some()
+                || self.ik_target.is_some()
+                || self.slider_source_picker_active()
+            {
                 &self.status
             } else if self.tool == Tool::Weights {
                 "Weights · select a vertex to inspect bindings · G"
@@ -618,14 +624,17 @@ impl Editor {
             self.toggle_transform_tool();
             return;
         }
-        if self.ik_target.is_some() {
+        if self.slider_source_picker_active() || self.ik_target.is_some() {
             if response.clicked() {
                 if let Some(item) = picked {
                     self.select(item);
                 } else {
-                    self.status =
+                    self.status = if self.slider_source_picker_active() {
+                        "Choose an existing source bone; Escape cancels".into()
+                    } else {
                         "Choose an existing target bone; new-target creation is not supported yet"
-                            .into();
+                            .into()
+                    };
                 }
             }
             return;

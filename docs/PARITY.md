@@ -5,7 +5,24 @@ runtime JSON. A feature is accepted through independent implementation, command/
 history checks, native interaction where applicable, and a controlled editor/runtime
 comparison. The native `.peachy` format is our own editable model.
 
-Current November 15 checkpoint: native format **23**, **58 commands / 14 MCP
+Current source/creation continuation: native **v23** unchanged, **63 commands /
+17 tools**. Implementation, 141 actual MCP requests/15 retained poses and 104 external
+runtime poses pass. Bounded native creation/source input, Open/Save/history and
+minimum checks pass; changed held-range preview has headless coverage only.
+Installed observations now
+define prepend/numeric naming, identity effects, source/property ranges, hidden
+manual-Time capture on genuine Setup Mix edits, and own-turn derived Frame.
+Process-view source-pair memory stays outside saved data. See the
+[continuation contract](slices/slider-constraints.md#source-and-creation-continuation).
+Source interchange geometry passes; four strict authored differences include
+hidden-baseline loss. Property-object and positional-range wire bugs are fixed;
+current checks total63 engine/33 desktop/16 schema/6 stdio. Final run04 passes
+141 requests/15 samples and the same canonical hash; a separate10-request strict
+range test and final read-only native reopen pass. Detailed native interactions
+remain their own earlier-binary evidence. All owned processes are closed;
+25 disposable task files are retired.
+
+Verified manual November 15 checkpoint: native format **23**, **58 commands / 14 MCP
 tools**. The bounded Slider manual/MCP checkpoint is **verified**, with full
 Slider parity **open**: separate 170-case and 177-case
 metadata/active-world matrices pass at unchanged 0.001 tolerance. An 84-request
@@ -79,7 +96,7 @@ not a new native claim. All final affected local checks pass. See
 | Physics constraints (data) | Import/edit/save/export every setting, Scale Y mode and Global flag; setting and reset timelines incl. global; Tree icon, typed Properties, rename, Timeline/W-S keys, Metrics | Installed 4.3.26 round trip and external 4.3.13 data/timeline checks pass; a game rig round-trips with identical simulated motion. **No editor simulation**, keying UI, creation UI, skin-required physics or reference scale yet. See [physics data](slices/physics-data.md) |
 | Physics simulation preview | Pending | Needs an independently derived model calibrated against the external runtime, Simulate/Deterministic/Reset controls and wind/gravity reference scale |
 | Transform constraints | Full 4.3 data; world identity Rotate, mapped X/Y and one X→Rotate writer; shared Min/Max commands/query, Setup Mix/Offset and bounded native Properties editing | Existing labs plus 101 new runtime cases and the 122-request original MCP lab pass; exact installed roundtrip passes. Actual native typing, held cancellation/history, minimum controls and fresh reopen/playback pass; native/MCP saves are byte-identical. Native Tree/Properties resizing exposes all controls and preserves held Mix/Escape. Precision-conflict/overflow poses refuse explicitly. Local/additive modes, other cross/scale/shear mappings, reconnection/creation and timelines remain. See [data slice](slices/transform-constraints.md) and [authoring scope](slices/transform-mapping-authoring.md) |
-| Slider constraints (bounded checkpoint verified; parity open) | Native v23 data/strict JSON, manual and six-property local/world sources, independent Time/Mix keys/curves and typed clipboard, shared pending authoring and one ordered authored/effective solve; calibrated slot, Deform, inheritance, IK/Path setting, other-Slider and Sequence application with MCP readback | Separate 170/170, 177/177, 101/101 and 21/21 matrices pass at 0.001; source has 72 comparisons plus 3 Loop precision refusals. Actual 84-request MCP recreation, native editing/Graph/minimum controls, fresh one-image/no-history reopen/playback and 104 geometry poses pass. Native edits restore the MCP rig; native creation remains unverified. Installed returned geometry passes but strict authored interchange fails from track/Bezier recanonicalization. Two raw 1e30 adversarial mismatches and remaining source/Deform/Physics/events/counter gates stay open. See [contract](slices/slider-constraints.md), [gallery](evidence/slider-constraints.html) and [scalar evidence](evidence/slider-constraints.json) |
+| Slider constraints (bounded manual/source checkpoints verified; full parity open) | Native v23 data, manual/six-property sources, independent Time/Mix curves, typed clipboard, pending poses and ordered evaluation; semantic prepend/identity effects, source/clear/property/range controls and MCP queries | Native typing/history/cache/Open/Save/minimum checks and141-request/15-pose MCP study pass. Current source runtime and installed returned geometry each cover104 poses at0.001. Strict interchange loses hidden baseline/rounds values; two raw1e30 failures and Loop/counter/domain guards remain. Changed held-range preview is headless-only. See [contract](slices/slider-constraints.md), [gallery](evidence/slider-constraints.html) and [scalar evidence](evidence/slider-constraints.json) |
 | Slot animation | Attachment swaps/hide and RGBA authoring through shared native/MCP commands, typed Attach/RGBA rows, mixed clipboards and curve-preserving color insertion | Native input/history/persistence and both final authored exports pass; 104 split parameters match installed 4.3.26. Separate rgb/alpha/dark tint, sequences and name-override editor interchange remain. See [slot authoring](slices/slot-authoring.md) |
 | Events | Definitions and timed keys (with per-key overrides) import, export and migrate; reference scale stored | The doggy-scene female opens and matches the runtime; no Events view or event authoring yet. See [events](slices/events.md) |
 | Linked meshes | Import, export, drawing, deform-key following and source-edit propagation | Linked Mesh Lab matches the runtime in every skin; no create/unlink commands yet. See [linked meshes](slices/linked-mesh.md) |

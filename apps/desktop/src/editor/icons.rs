@@ -7,6 +7,7 @@ const SIZE: f32 = 16.0;
 
 #[derive(Clone, Copy)]
 pub(super) enum Icon {
+    New,
     Open,
     Save,
     Undo,
@@ -293,6 +294,10 @@ fn paint(ui: &Ui, rect: Rect, icon: Icon, response: &Response) {
             box_at([5., 1.], [11., 5.], ink);
             line(&[[5., 8.], [11., 8.]], ink);
             line(&[[5., 11.], [11., 11.]], ink);
+        }
+        Icon::New => {
+            line(&[[8., 2.], [8., 14.]], ink);
+            line(&[[2., 8.], [14., 8.]], ink);
         }
         Icon::Delete => {
             painter.circle_stroke(p(8., 8.), 6. * rect.width() / SIZE, stroke(ink));

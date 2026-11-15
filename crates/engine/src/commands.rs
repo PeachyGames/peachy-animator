@@ -1,9 +1,28 @@
 use crate::{
     AnimationKey, AnimationKeyClipboard, CurvePreset, CurveSelection, KeyClipboard, KeyOwner,
-    MeshBindPose, MeshWeightEdit, MeshWeightSelection, TimelineKey, TransformMappingRangeField,
+    MeshBindPose, MeshWeightEdit, MeshWeightSelection, SliderMappingRangeField, SliderPoseEdit,
+    SliderSourceRange, TimelineKey, TransformMappingRangeField,
 };
 use peachy_document::*;
 use serde::{Deserialize, Serialize};
+
+fn required_source_bone<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> Result<Option<usize>, D::Error> {
+    Option::<usize>::deserialize(deserializer)
+}
+
+fn source_property<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> Result<TransformProperty, D::Error> {
+    let value = String::deserialize(deserializer)?;
+    TransformProperty::from_spine_name(&value).ok_or_else(|| {
+        serde::de::Error::unknown_variant(
+            &value,
+            &["rotate", "x", "y", "scaleX", "scaleY", "shearY"],
+        )
+    })
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(tag = "command", rename_all = "camelCase", deny_unknown_fields)]
@@ -27,9 +46,29 @@ pub enum Command {
     AddSliderConstraint {
         constraint: SliderConstraint,
     },
+    /// Native animation-menu creation: default manual Slider, prepended.
+    CreateSliderConstraint {
+        animation: usize,
+    },
     SetSliderConstraint {
         constraint: usize,
         value: SliderConstraint,
+    },
+    SetSliderSetupPose {
+        constraint: usize,
+        edits: Vec<SliderPoseEdit>,
+        skin: String,
+    },
+    SetSliderSource {
+        constraint: usize,
+        #[serde(deserialize_with = "required_source_bone")]
+        bone: Option<usize>,
+    },
+    SetSliderSourceProperty {
+        constraint: usize,
+        #[serde(deserialize_with = "source_property")]
+        property: TransformProperty,
+        source_range: SliderSourceRange,
     },
     SetSliderKey {
         animation: usize,
@@ -57,6 +96,11 @@ pub enum Command {
         from: TransformProperty,
         to: TransformProperty,
         field: TransformMappingRangeField,
+        value: f64,
+    },
+    EditSliderMappingRange {
+        constraint: usize,
+        field: SliderMappingRangeField,
         value: f64,
     },
     SetPathConstraint {
@@ -338,7 +382,82 @@ impl<'de> Deserialize<'de> for EditTarget {
 
 /// Pure document transition. Neither the input nor history changes on failure.
 pub fn apply_command(document: &Document, command: Command) -> Result<Document, String> {
-    apply_prepared(document, |candidate| apply(candidate, command))
+    Ok(apply_command_with_effects(document, command)?.document)
+}
+
+#[derive(Clone, Debug)]
+pub struct CommandOutcome {
+    pub document: Document,
+    pub effects: crate::EditEffects,
+    pub(crate) pose_operations: Vec<crate::constraint_effects::PoseOperation>,
+    pub(crate) source_operations: Vec<crate::slider_source::SourceViewOperation>,
+}
+
+#[derive(Default)]
+struct CommandTrace {
+    pose: Vec<crate::constraint_effects::PoseOperation>,
+    source: Vec<crate::slider_source::SourceViewOperation>,
+}
+fn inserted(
+    effects: &mut crate::EditEffects,
+    trace: &mut CommandTrace,
+    before: usize,
+    at: usize,
+) -> Result<(), String> {
+    let insertion = crate::EditEffects::insertion(before, at)?;
+    *effects = effects.then(&insertion)?;
+    trace
+        .pose
+        .push(crate::constraint_effects::PoseOperation::Remap(
+            insertion.clone(),
+        ));
+    trace
+        .source
+        .push(crate::slider_source::SourceViewOperation::Remap(insertion));
+    Ok(())
+}
+fn source_changed(
+    trace: &mut CommandTrace,
+    constraint: usize,
+    change: crate::slider_source::SourceChange,
+) {
+    use crate::slider_source::SourceViewOperation;
+    trace.source.push(SourceViewOperation::Focus {
+        constraint,
+        memo: change.before,
+    });
+    if let Some(before) = change.before {
+        trace.source.push(SourceViewOperation::Remember(before));
+    }
+    if let Some(after) = change.after {
+        trace.source.push(SourceViewOperation::Remember(after));
+    }
+    trace.source.push(SourceViewOperation::Observe {
+        constraint,
+        memo: change.after,
+    });
+    if change.assigned {
+        trace
+            .pose
+            .push(crate::constraint_effects::PoseOperation::ClearSliderTime { constraint });
+    }
+}
+
+pub fn apply_command_with_effects(
+    document: &Document,
+    command: Command,
+) -> Result<CommandOutcome, String> {
+    let mut effects = crate::EditEffects::default();
+    let mut trace = CommandTrace::default();
+    let document = apply_prepared(document, |candidate| {
+        apply(candidate, command, &mut effects, &mut trace)
+    })?;
+    Ok(CommandOutcome {
+        document,
+        effects,
+        pose_operations: trace.pose,
+        source_operations: trace.source,
+    })
 }
 
 /// Prepared previews share command validation and transition guards.
@@ -365,7 +484,12 @@ pub(crate) fn apply_prepared(
     Ok(candidate)
 }
 
-fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
+fn apply(
+    doc: &mut Document,
+    command: Command,
+    effects: &mut crate::EditEffects,
+    trace: &mut CommandTrace,
+) -> Result<(), String> {
     match command {
         Command::SetPose {
             bone,
@@ -417,7 +541,7 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
                         })
                         .collect();
                     for command in commands? {
-                        apply(doc, command)?;
+                        apply(doc, command, effects, trace)?;
                     }
                 }
             }
@@ -579,15 +703,57 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
                 pose,
             )?;
         }
-        Command::AddIkConstraint { constraint } => doc.constraints.push(Constraint::Ik(constraint)),
+        Command::AddIkConstraint { constraint } => {
+            let before = doc.constraints.len();
+            doc.constraints.push(Constraint::Ik(constraint));
+            inserted(effects, trace, before, before)?;
+        }
         Command::AddSliderConstraint { constraint } => {
-            doc.constraints.push(Constraint::Slider(constraint))
+            let before = doc.constraints.len();
+            doc.constraints.push(Constraint::Slider(constraint));
+            inserted(effects, trace, before, before)?;
+        }
+        Command::CreateSliderConstraint { animation } => {
+            let before = doc.constraints.len();
+            crate::slider_creation::create(doc, animation)?;
+            inserted(effects, trace, before, 0)?;
         }
         Command::SetSliderConstraint { constraint, value } => {
             let Some(slot @ Constraint::Slider(_)) = doc.constraints.get_mut(constraint) else {
                 return Err("Unknown Slider constraint".into());
             };
             *slot = Constraint::Slider(value);
+            trace
+                .source
+                .push(crate::slider_source::SourceViewOperation::Observe {
+                    constraint,
+                    memo: doc.constraints[constraint]
+                        .as_slider()
+                        .and_then(crate::slider_source::memo),
+                });
+        }
+        Command::SetSliderSetupPose {
+            constraint,
+            edits,
+            skin,
+        } => {
+            crate::slider_setup::set_pose(doc, constraint, &edits, &skin)?;
+        }
+        Command::SetSliderSource { constraint, bone } => {
+            if let Some(change) = crate::slider_source::set_source(doc, constraint, bone)? {
+                source_changed(trace, constraint, change);
+            }
+        }
+        Command::SetSliderSourceProperty {
+            constraint,
+            property,
+            source_range,
+        } => {
+            if let Some(change) =
+                crate::slider_source::set_property(doc, constraint, property, source_range)?
+            {
+                source_changed(trace, constraint, change);
+            }
         }
         Command::SetSliderKey {
             animation,
@@ -659,7 +825,9 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
             *slot = Constraint::Ik(value);
         }
         Command::AddTransformConstraint { constraint } => {
-            doc.constraints.push(Constraint::Transform(constraint))
+            let before = doc.constraints.len();
+            doc.constraints.push(Constraint::Transform(constraint));
+            inserted(effects, trace, before, before)?;
         }
         Command::SetTransformConstraint { constraint, value } => {
             let Some(slot @ Constraint::Transform(_)) = doc.constraints.get_mut(constraint) else {
@@ -682,6 +850,32 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
             let next = crate::edited_transform_mapping_range(current, from, to, field, value)?;
             doc.constraints[constraint] = Constraint::Transform(next);
         }
+        Command::EditSliderMappingRange {
+            constraint,
+            field,
+            value,
+        } => {
+            let current = doc
+                .constraints
+                .get(constraint)
+                .and_then(Constraint::as_slider)
+                .ok_or("Unknown Slider constraint")?;
+            let duration = doc
+                .animations
+                .get(current.animation)
+                .ok_or("Unknown Slider reference animation")?
+                .duration();
+            let next = crate::edited_slider_mapping_range(current, duration, field, value)?;
+            doc.constraints[constraint] = Constraint::Slider(next);
+            trace
+                .source
+                .push(crate::slider_source::SourceViewOperation::Observe {
+                    constraint,
+                    memo: doc.constraints[constraint]
+                        .as_slider()
+                        .and_then(crate::slider_source::memo),
+                });
+        }
         Command::SetPathConstraint { constraint, value } => {
             let Some(slot @ Constraint::Path(_)) = doc.constraints.get_mut(constraint) else {
                 return Err("Unknown path constraint".into());
@@ -689,7 +883,9 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
             *slot = Constraint::Path(value);
         }
         Command::AddPhysicsConstraint { constraint } => {
-            doc.constraints.push(Constraint::Physics(constraint))
+            let before = doc.constraints.len();
+            doc.constraints.push(Constraint::Physics(constraint));
+            inserted(effects, trace, before, before)?;
         }
         Command::SetPhysicsConstraint { constraint, value } => {
             let Some(slot @ Constraint::Physics(_)) = doc.constraints.get_mut(constraint) else {
@@ -781,7 +977,7 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
                 doc, animation, &selection, preset, separate,
             )?;
             for command in commands {
-                apply(doc, command)?;
+                apply(doc, command, effects, trace)?;
             }
         }
         Command::EditCurveHandle {
@@ -806,7 +1002,7 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
                 },
             )?;
             for command in commands {
-                apply(doc, command)?;
+                apply(doc, command, effects, trace)?;
             }
         }
         Command::SetKeyCurve {
@@ -1043,7 +1239,7 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
         }
         Command::Batch { commands } => {
             for command in commands {
-                apply(doc, command)?;
+                apply(doc, command, effects, trace)?;
             }
         }
     }

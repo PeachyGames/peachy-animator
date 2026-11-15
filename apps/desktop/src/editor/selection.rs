@@ -133,6 +133,21 @@ pub fn reconcile(selection: &mut Option<TreeItem>, doc: &Document) {
     }
 }
 
+/// Structural edits supply the identity mapping; an absent target never falls back.
+pub(super) fn remap_constraint(
+    item: TreeItem,
+    mapping: &peachy_engine::ConstraintIndexRemap,
+) -> Option<TreeItem> {
+    match item {
+        TreeItem::Constraint(index) => mapping
+            .map_index(index)
+            .ok()
+            .flatten()
+            .map(TreeItem::Constraint),
+        other => Some(other),
+    }
+}
+
 /// "default" also represents no named skin when no default attachments exist.
 pub fn active_skin_exists(doc: &Document, skin: &str) -> bool {
     skin == "default" || doc.skins.contains_key(skin)

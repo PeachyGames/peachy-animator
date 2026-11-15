@@ -3,6 +3,7 @@ mod authoring;
 mod clipping;
 mod color_curve_split;
 mod commands;
+mod constraint_effects;
 mod curve_editing;
 mod deform_authoring;
 mod draw_order_authoring;
@@ -23,8 +24,13 @@ mod scene;
 mod session;
 mod slider_authoring;
 mod slider_constraint;
+mod slider_creation;
 mod slider_domains;
+mod slider_evaluation;
+mod slider_mapping;
 mod slider_sampling;
+mod slider_setup;
+mod slider_source;
 mod slot_authoring;
 mod timeline;
 mod tools;
@@ -34,8 +40,10 @@ mod transform_mapping;
 pub use authoring::{IkPoseEdit, KeyState, PoseEdits, transform_group};
 pub use clipping::ClippedGeometry;
 pub use commands::{
-    Command, EditTarget, apply_command, deform_keyframe_at, ik_keyframe_at, keyframe_at,
+    Command, CommandOutcome, EditTarget, apply_command, apply_command_with_effects,
+    deform_keyframe_at, ik_keyframe_at, keyframe_at,
 };
+pub use constraint_effects::{ConstraintIndexRemap, EditEffects};
 pub use curve_editing::{CurvePreset, CurveSelection, curve_edit_targets};
 pub use draw_order_authoring::{
     DrawOrderPlacement, draw_order_key_time, move_draw_order_slot, place_draw_order_slot,
@@ -75,6 +83,11 @@ pub use scene::{
 };
 pub use session::Session;
 pub use slider_authoring::{SliderPose, SliderPoseEdit, slider_key_time};
+pub use slider_evaluation::{SliderEligibility, SliderEvaluation};
+pub use slider_mapping::{
+    SliderMappingRange, SliderMappingRangeField, edited_slider_mapping_range, slider_mapping_range,
+};
+pub use slider_source::{SliderSourcePreferences, SliderSourceRange};
 pub use slot_authoring::{SlotPose, SlotPoseEdit, SlotProperty, slot_color_bytes, slot_key_time};
 pub use timeline::{
     AnimationKey, AnimationKeyClipboard, ClipboardKey, CurveChannel, CurveData, CurveTarget,
@@ -154,6 +167,12 @@ mod shear_tests;
 mod skin_sampling_tests;
 #[cfg(test)]
 mod skin_scope_tests;
+#[cfg(test)]
+mod slider_creation_tests;
+#[cfg(test)]
+mod slider_setup_tests;
+#[cfg(test)]
+mod slider_source_authoring_tests;
 #[cfg(test)]
 mod slider_tests;
 #[cfg(test)]

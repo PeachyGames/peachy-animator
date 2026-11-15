@@ -1042,3 +1042,100 @@ precision failures. See [the bounded contract](slices/slider-constraints.md),
 [scalar evidence](evidence/slider-constraints.json).
 Licensed native captures/logs and complete local hashes stay in the existing
 private Slider task; no account identifiers or private asset paths are published.
+
+## Slider source/creation continuation — November 15, 2026 (bounded native acceptance passed)
+
+Original installed Spine 4.3.26 controls/exports in the retained Slider task
+establish automatic trailing-numeric naming and prepend order, including a Slider
+sharing an existing Transform's name. Source assignment deletes only Time tracks,
+preserving Mix and unrelated sections. Manual Frame 45 (0.75 seconds) survives
+assignment/range edits/process reload before Clear. A
+genuine Setup Mix edit captures preceding eligible sample Time (0.5925926 in the
+range study); unchanged Mix and incoming zero Mix preserve the hidden baseline.
+A separate order probe distinguishes unchanged Mix 100%/zero baseline from a
+genuine Mix 50% edit capturing own-turn **0.45**. A Loop probe distinguishes sampled
+**0.1875** from prewrapped **1.6875**. Range and Local edits do not capture.
+These discriminators replace the earlier overly broad
+inference that Clear itself always retains the current derived Time.
+
+Equal source endpoints repair Max=Min+100; equal target endpoints repair by the
+reference duration, measured **1.5 seconds/90 frames**. Reversed endpoints stay reversed.
+Raw f64 readback and finite f32 endpoint edits remain distinct; zero-scale
+SourceMax is explicitly undefined. Fresh property defaults are Scale X/Y **1..2**
+and the other four properties **0..100**. Cross-Slider/bone A→B→A probes establish a
+shared per-property source pair, with each Slider retaining its target range.
+Process restart resets nonactive choices, while controlled same-process Save/Open
+preserves distinctive Source Min **8**. This is Session/view memory rather than
+native document metadata.
+
+An order discriminator shows actual derived Frame **27** at the Slider turn; a
+later Transform leaves source rotation **90**, whose resampled result would
+falsely imply Frame **81**. The implementation records incoming/applied settings, sample
+time and eligibility during the original ordered pass. No second solve supplies
+the readout or Setup Mix capture.
+
+Creation uses explicit forward/inverse constraint identity effects for persistent
+references, pending state, previews and history. Raw Add still appends. The native
+format remains **23**, with **63 commands /17 tools**. Final source study04
+passes 141 requests and 15 retained poses from a blank project/one original PNG,
+with exact save/reopen and canonical private SHA256
+`60b75a59d56d4df1b41120dbb9e3d29abe187e3a0ceff7a1c287aa32f220b109`.
+The old public Slider Lab and original sources stay unchanged; owned MCP exits 0.
+Separate runtime geometry compares 104 poses, 3,744 world values (maximum
+8.897442157262958e−6) and 1,664 region values (maximum 1.52587890625e−5), at unchanged
+0.001. No new lossless interchange, extreme-value or physics/event capability
+is inferred. The prior strict authored failure and two raw `1e30`
+precision mismatches remain retained. No new internet retrieval or vendor
+implementation inspection was used for this continuation; licensed screenshots,
+logs and original case records remain private.
+
+Run01 retains a helper-decoding failure on a correct plain-text MCP rejection.
+Run02 instead exposed an actual production bug: object-form `{"scaleX":null}`
+was accepted for a string-only property, changing revision. The failed run/source
+are retained; a narrow command deserializer and engine/MCP regressions reject it.
+Run03 passes the unchanged negative expectation. Six source engine regressions
+are joined by a seventh source regression for a later positional-range-array
+strictness bug. Object-only range decoding preserves required/unknown/duplicate
+field errors; current totals are63 engine Slider,33 desktop,16 schema and6 stdio,
+plus six overlapping Session cases. Fmt/Clippy/build/seven-crate architecture pass.
+Final run04 repeats141 requests/15 samples after wire hardening, preserving the
+canonical project. The separate10-request range-wire report proves array
+rejection without document/history/revision changes, valid object acceptance and
+exact Undo. Earlier run03 and failed strictness reports keep their identities.
+
+Actual native New/history/selection, Frame45/source assignment, typed source8..1/
+targetFrames30..90, property-cache restoration and unchanged hidden Time pass.
+Localfalse/Clear preserves0.59259266; genuine Mix25%/Clear captures1.5. Minimum
+1120×740 actual SourceMax2/Undo and draft99/Save pass; shared MCP decoding confirms
+the saved document exactly. Canonical Cocoa Open loads one image/empty history,
+recalls source Min8 and Undo restores canonical bytes/no dirty state. Final
+presentation fits all original art at180% with four fields visible. Edited cleared
+and canonical editor/minimum images are labeled as different acceptance states.
+A changed held-range preview was not established (the native field stayed8);
+only ten headless event cases claim that cancellation coverage. Foreground guards
+remained active without other-app input. All owned processes are closed and
+reference bounds restored.
+
+Installed source interchange geometry compares104 poses at0.001, world maximum
+1.3513448465118927e−5 and region maximum1.52587890625e−5. Strict equality fails at
+hidden Time0.59259266→0, target minimum0.33333334→0.3333333, Mix Bezier0.2→0.19999997
+and name. This loss of editing state is not erased by geometry success. Cleanup
+retires25 owned duplicate inputs/helpers/redundant outputs; selected final
+transcripts, original cases and native/runtime/interchange witnesses remain only
+for active PR review until integration/supersession. The shared target serves the
+continuing goal. This is bounded acceptance, not full Slider/Spine parity.
+
+Detailed interactive evidence uses native binary `61db0591…5a867`. Final wire-
+hardened `6b638bb1…be3f` independently reopens the canonical public project in a
+normal foreground window, with one image/empty history/no error, unchanged source
+and verified close; its report SHA256 is
+`03db6462eaf67516a55b5338821dade4e5d0799bd60964f037d25cef0ea303ea`.
+No additional interactive replay is claimed. Final MCP binary SHA256 is
+`fa9525d4abfb2ce9edb565fc03a004d3ffe253e8e0bf2d0a61756520c2ea83ed`;
+run04 report SHA256 is
+`b4049a31cd03b2a1e8a19d32234586b6fdc9997d29221017f76d1be04f8f6e94`.
+The10-request final wire report SHA256 is
+`3f0f56f0322384d1905c2ef1760aa2e58db1ce34c73bf72288252bc8955c3593`.
+Final CLI `8a0ad781…0768d` repeats both104-pose geometry checks with unchanged
+errors. Run04 exports are byte-identical to run03, so the installed oracle input
+is unchanged; this does not erase strict authored loss or native QA limits.
