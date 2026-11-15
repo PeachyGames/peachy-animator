@@ -11,6 +11,7 @@ pub(super) enum TimelineRow {
     Deform,
     SlotAttachment,
     SlotColor,
+    DrawOrder,
 }
 impl TimelineRow {
     pub fn matches(self, key: AnimationKey) -> bool {
@@ -20,6 +21,7 @@ impl TimelineRow {
             (Self::Deform, AnimationKey::Deform { .. }) => true,
             (Self::SlotAttachment, AnimationKey::SlotAttachment { .. }) => true,
             (Self::SlotColor, AnimationKey::SlotColor { .. }) => true,
+            (Self::DrawOrder, AnimationKey::DrawOrder { .. }) => true,
             _ => false,
         }
     }
@@ -30,6 +32,7 @@ pub(super) fn rows(owner: Option<KeyOwner>) -> Vec<TimelineRow> {
         Some(KeyOwner::Ik { .. }) => vec![TimelineRow::Ik],
         Some(KeyOwner::Deform { .. }) => vec![TimelineRow::Deform],
         Some(KeyOwner::Slot { .. }) => vec![TimelineRow::SlotAttachment, TimelineRow::SlotColor],
+        Some(KeyOwner::DrawOrder {}) => vec![TimelineRow::DrawOrder],
         None => vec![],
     }
 }
@@ -43,6 +46,11 @@ pub(super) fn row_keys(
         return vec![];
     };
     match (owner, row) {
+        (KeyOwner::DrawOrder {}, TimelineRow::DrawOrder) => clip
+            .draw_order
+            .iter()
+            .map(|key| AnimationKey::DrawOrder { time: key.time })
+            .collect(),
         (KeyOwner::Bone { bone }, TimelineRow::Bone(property)) => clip
             .tracks
             .iter()

@@ -304,10 +304,16 @@ fn curves_match_drag_changes_only_the_dragged_handle_and_commits_one_undo() {
     );
     settle(&mut editor, &ctx);
     let original = editor.session.document().clone();
+    let plot_width = rect(&editor, "curvesPlot").width();
     let from = rect(&editor, "curvesHandle:0").center();
     pointer(&mut editor, &ctx, from, true);
     let to = from + vec2(16., -31.);
     workspace_frame(&mut editor, &ctx, vec![egui::Event::PointerMoved(to)]);
+    assert_eq!(
+        rect(&editor, "curvesPlot").width(),
+        plot_width,
+        "Curves footer must not grow its dock during a handle drag"
+    );
     assert!(editor.shared_curve_edit_active());
     pointer(&mut editor, &ctx, to + vec2(4., -3.), false);
     settle(&mut editor, &ctx);

@@ -53,6 +53,7 @@ pub fn animation_key_schema() -> Value {
         object(&[("type",tag("deform")),("attachment",reference),("time",number())]),
         object(&[("type",tag("slotAttachment")),("slot",index()),("time",number())]),
         object(&[("type",tag("slotColor")),("slot",index()),("time",number())]),
+        object(&[("type",tag("drawOrder")),("time",number())]),
     ]})
 }
 
@@ -212,6 +213,19 @@ pub fn command_schema() -> Value {
         ("color", rgba),
         ("curves", color_curves.clone()),
     ]);
+    let draw_order_key = object(&[
+        ("time", number()),
+        (
+            "offsets",
+            list(object(&[
+                ("slot", index()),
+                (
+                    "offset",
+                    json!({"type":"integer","minimum":i32::MIN,"maximum":i32::MAX}),
+                ),
+            ])),
+        ),
+    ]);
     let timeline_key = object(&[
         ("bone", index()),
         ("property", property.clone()),
@@ -335,6 +349,7 @@ pub fn command_schema() -> Value {
         object(&[("type", tag("ik")), ("constraint", index())]),
         object(&[("type", tag("deform")), ("attachment", attachment.clone())]),
         object(&[("type", tag("slot")), ("slot", index())]),
+        object(&[("type", tag("drawOrder"))]),
     ]});
     let animation_key = animation_key_schema();
     let curve_selection = object(&[
@@ -354,6 +369,9 @@ pub fn command_schema() -> Value {
         object(&[("type", tag("ik")), ("keys", list(ik_key.clone()))]),
         object(&[("type",tag("deform")),("layout",deform_layout),("keys",list(deform_key.clone()))]),
         object(&[("type",tag("slot")),("attachment_keys",list(attachment_key.clone())),("color_keys",list(color_key.clone()))]),
+        object(&[("type",tag("drawOrder")),
+            ("slots",json!({"type":"array","items":{"type":"string","minLength":1},"uniqueItems":true})),
+            ("keys",json!({"type":"array","items":draw_order_key.clone(),"minItems":1}))]),
     ]});
     let variants = vec![
         command(
@@ -542,6 +560,22 @@ pub fn command_schema() -> Value {
             ],
         ),
         command(
+            "setDrawOrderKey",
+            &[("animation", index()), ("key", draw_order_key)],
+        ),
+        command(
+            "setDrawOrder",
+            &[
+                ("animation", index()),
+                ("time", number()),
+                (
+                    "order",
+                    json!({"type":"array","items":index(),"uniqueItems":true,
+                        "description":"Complete back-to-front permutation of every current slot index, including hidden and empty slots."}),
+                ),
+            ],
+        ),
+        command(
             "setKeyCurve",
             &[
                 ("animation", index()),
@@ -713,6 +747,8 @@ mod tests {
             Command::SetSlotColor { .. } => "setSlotColor",
             Command::SetSlotAttachmentKey { .. } => "setSlotAttachmentKey",
             Command::SetSlotColorKey { .. } => "setSlotColorKey",
+            Command::SetDrawOrderKey { .. } => "setDrawOrderKey",
+            Command::SetDrawOrder { .. } => "setDrawOrder",
             Command::SetSlotColorCurves { .. } => "setSlotColorCurves",
             Command::InsertSlotColorKey { .. } => "insertSlotColorKey",
             Command::SetKey { .. } => "setKey",
@@ -783,7 +819,7 @@ mod tests {
     fn every_published_shape_decodes_through_strict_engine_serde() {
         let schema = command_schema();
         let variants = schema["oneOf"].as_array().unwrap();
-        assert_eq!(variants.len(), 49);
+        assert_eq!(variants.len(), 51);
         for variant in variants {
             let payload = sample(variant);
             let command: CommandInput = serde_json::from_value(payload.clone()).unwrap();
@@ -793,6 +829,57 @@ mod tests {
             unknown_field["futureField"] = json!(true);
             assert!(serde_json::from_value::<CommandInput>(unknown_field).is_err());
         }
+    }
+
+    #[test]
+    fn draw_order_commands_publish_strict_raw_and_complete_permutation_payloads() {
+        let raw = json!({"command":"setDrawOrderKey","animation":0,"key":{
+            "time":0.5,"offsets":[{"slot":0,"offset":1},{"slot":1,"offset":-1},{"slot":2,"offset":0}]}});
+        let semantic = json!({"command":"setDrawOrder","animation":0,"time":0.5,"order":[1,0,2]});
+        for payload in [&raw, &semantic] {
+            let decoded: CommandInput = serde_json::from_value(payload.clone()).unwrap();
+            assert_eq!(serde_json::to_value(decoded.0).unwrap(), *payload);
+            let mut unknown = payload.clone();
+            unknown["bone"] = json!(0);
+            assert!(serde_json::from_value::<CommandInput>(unknown).is_err());
+        }
+        for offset in [json!(2147483648i64), json!(-2147483649i64), json!(0.5)] {
+            let mut bad = raw.clone();
+            bad["key"]["offsets"][0]["offset"] = offset;
+            assert!(serde_json::from_value::<CommandInput>(bad).is_err());
+        }
+        let mut missing = raw.clone();
+        missing["key"].as_object_mut().unwrap().remove("offsets");
+        assert!(serde_json::from_value::<CommandInput>(missing).is_err());
+        let schema = command_schema();
+        let variants = schema["oneOf"].as_array().unwrap();
+        let semantic_schema = variants
+            .iter()
+            .find(|v| v["properties"]["command"]["const"] == "setDrawOrder")
+            .unwrap();
+        assert_eq!(semantic_schema["properties"]["order"]["uniqueItems"], true);
+        let raw_schema = variants
+            .iter()
+            .find(|v| v["properties"]["command"]["const"] == "setDrawOrderKey")
+            .unwrap();
+        assert_eq!(
+            raw_schema["properties"]["key"]["additionalProperties"],
+            false
+        );
+        assert_eq!(
+            raw_schema["properties"]["key"]["properties"]["offsets"]["items"]["additionalProperties"],
+            false
+        );
+        let key = json!({"type":"drawOrder","time":0.5});
+        let decoded: AnimationKeyInput = serde_json::from_value(key.clone()).unwrap();
+        assert_eq!(serde_json::to_value(decoded.0).unwrap(), key);
+        let paste = json!({"command":"pasteAnimationKeys","animation":0,"target":{"type":"drawOrder"},"time":0.5,
+            "clipboard":{"type":"drawOrder","slots":["a","b"],"keys":[{"time":0.0,"offsets":[{"slot":0,"offset":1}]}]}});
+        let decoded: CommandInput = serde_json::from_value(paste.clone()).unwrap();
+        assert_eq!(serde_json::to_value(decoded.0).unwrap(), paste);
+        let mut unknown_owner = paste;
+        unknown_owner["target"]["slot"] = json!(0);
+        assert!(serde_json::from_value::<CommandInput>(unknown_owner).is_err());
     }
 
     #[test]

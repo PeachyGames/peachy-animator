@@ -20,6 +20,7 @@ struct KeyTargets {
     iks: BTreeSet<usize>,
     deforms: Vec<AttachmentRef>,
     slots: BTreeMap<usize, Vec<SlotProperty>>,
+    draw_order: bool,
 }
 
 impl WorkingState {
@@ -99,6 +100,7 @@ impl WorkingState {
             iks,
             deforms,
             slots,
+            draw_order,
         } = targets;
         let target = EditTarget::Animate { animation, time };
         let authored = self.authored_pose(target)?;
@@ -163,6 +165,14 @@ impl WorkingState {
                 properties,
             )?);
         }
+        if draw_order {
+            commands.push(crate::draw_order_authoring::key_command(
+                &self.document,
+                animation,
+                time,
+                authored.draw_order(),
+            )?);
+        }
         let mut candidate = Self {
             document: apply_command(&self.document, Command::Batch { commands })?,
             pose: self.pose.clone(),
@@ -179,6 +189,12 @@ impl WorkingState {
         for (&slot, properties) in &slots {
             candidate.pose.remove_slot(animation, slot, properties);
         }
+        if draw_order {
+            candidate.pose.remove_draw_order(animation);
+            if candidate.authored_pose(target)?.draw_order() != authored.draw_order() {
+                return Err("Keying draw order would lose the current pose; keep it pending or use a representable key time".into());
+            }
+        }
         if !slots.is_empty() {
             crate::slot_authoring::check_key_continuity(
                 &authored,
@@ -193,6 +209,38 @@ impl WorkingState {
             crate::ik::check_key_continuity(&self.document, &before, &after)?;
         }
         Ok(candidate)
+    }
+    fn edit_draw_order(
+        &self,
+        target: EditTarget,
+        order: Vec<usize>,
+        auto_key: bool,
+    ) -> Result<Self, String> {
+        let EditTarget::Animate { animation, time } = target else {
+            return Err("Draw order pose editing requires Animate mode".into());
+        };
+        crate::draw_order_authoring::validate_order(self.document.slots.len(), &order)?;
+        if self.authored_pose(target)?.draw_order() == order {
+            return Ok(self.clone());
+        }
+        let candidate = Self {
+            document: self.document.clone(),
+            pose: self
+                .pose
+                .edit_draw_order(&self.document, animation, time, order)?,
+        };
+        if auto_key {
+            candidate.key_targets(
+                animation,
+                time,
+                KeyTargets {
+                    draw_order: true,
+                    ..Default::default()
+                },
+            )
+        } else {
+            Ok(candidate)
+        }
     }
     /// Pure pose transition shared by ordinary edits and fixed-base previews.
     fn edit_pose(
@@ -434,6 +482,69 @@ impl Session {
     /// Full sampled/pending slot state, before attachment tint or display quantization.
     pub fn slot_pose(&self, slot: usize, target: EditTarget) -> Result<SlotPose, String> {
         SlotPose::from_authored(&self.authored_pose(target)?, slot)
+    }
+    /// Complete sampled plus pending order, without sampling any other pose data.
+    /// Setup always reads setup slot order, including hidden/inactive slots.
+    pub fn draw_order(&self, target: EditTarget) -> Result<Vec<usize>, String> {
+        match target {
+            EditTarget::Setup => Ok((0..self.document().slots.len()).collect()),
+            EditTarget::Animate { animation, time } => {
+                if !time.is_finite() || time < 0. {
+                    return Err("Pose time must be finite and nonnegative".into());
+                }
+                let clip = self
+                    .document()
+                    .animations
+                    .get(animation)
+                    .ok_or("Unknown animation")?;
+                if let Some(order) = self.pose_edits().pending_draw_order(animation) {
+                    crate::draw_order_authoring::validate_order(
+                        self.document().slots.len(),
+                        order,
+                    )?;
+                    Ok(order.to_vec())
+                } else {
+                    Ok(peachy_document::sample_draw_order(
+                        &clip.draw_order,
+                        self.document().slots.len(),
+                        time,
+                    ))
+                }
+            }
+        }
+    }
+    pub fn edit_draw_order(
+        &mut self,
+        target: EditTarget,
+        order: Vec<usize>,
+        auto_key: bool,
+    ) -> Result<(), String> {
+        let candidate = self.state.edit_draw_order(target, order, auto_key)?;
+        self.replace(candidate);
+        Ok(())
+    }
+    pub fn preview_edit_draw_order(
+        &mut self,
+        target: EditTarget,
+        order: Vec<usize>,
+        auto_key: bool,
+    ) -> Result<(), String> {
+        let base = self.transaction.as_ref().ok_or("No active transaction")?;
+        self.state = base.edit_draw_order(target, order, auto_key)?;
+        Ok(())
+    }
+    /// Explicit keying creates a hold/reset even without a pending edit.
+    pub fn key_draw_order(&mut self, animation: usize, time: f32) -> Result<(), String> {
+        let candidate = self.state.key_targets(
+            animation,
+            time,
+            KeyTargets {
+                draw_order: true,
+                ..Default::default()
+            },
+        )?;
+        self.replace(candidate);
+        Ok(())
     }
     pub fn edit_slot_pose(
         &mut self,
@@ -752,7 +863,9 @@ impl Session {
         self.replace(candidate);
         Ok(())
     }
-    /// K keys every edited bone, IK constraint, mesh deform and slot property atomically.
+    /// K keys every edited bone, IK constraint, mesh deform, slot property and
+    /// global draw order atomically. History retains the pre-key pending pose;
+    /// native Spine's observed Undo re-evaluation instead clears that pending pose.
     /// A Tree bone's orange key button supplies an explicit bone instead.
     pub fn key_edited(
         &mut self,
@@ -783,6 +896,7 @@ impl Session {
                 } else {
                     BTreeMap::new()
                 },
+                draw_order: bone.is_none() && self.state.pose.has_draw_order(animation),
             },
         )?;
         self.check_deform_key_candidate(

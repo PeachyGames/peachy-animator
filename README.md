@@ -1,9 +1,18 @@
 # Peachy Animator
 
+Global Animate draw order now supports Tree movement/dragging, Reset, pending
+poses, Auto Key/K and typed Dopesheet clipboard/retiming. MCP uses the same engine
+for raw/semantic order keys and typed timeline operations. There are 51 strict
+commands / 11 tools; native v22 is unchanged.
+See the [measured scope](docs/slices/draw-order-authoring.md) and open
+[the original Draw Order Authoring Lab](examples/peach-bot/draw-order-authoring-bot.peachy).
+Native input, fresh-process reopen, both authored runtime checks and installed
+4.3.26 interchange pass. See the [review gallery](docs/evidence/draw-order-authoring.html).
+
 Curves now has a separate relative-transition view, fitted handles, Match/Separate
 controls and shared Dopesheet selection. Scalar Graph adds tangent and numeric
 editing. Exact scalar/IK curve setters and shared preset/handle actions are also
-available through MCP: 49 strict commands / 11 tools, with native v22 unchanged.
+available through MCP: 51 strict commands / 11 tools, with native v22 unchanged.
 Native input, persistence and both authored runtime comparisons pass. Preset
 library/default preferences and uncalibrated coupling cases remain explicit gaps.
 See the [review gallery](docs/evidence/curves-authoring.html) and
@@ -16,7 +25,7 @@ Auto Key and K through the same engine and MCP. Native Properties opens a Color
 dialog; typed Attach/RGBA rows and a four-channel Graph provide key, clipboard
 and curve editing. New color keys subdivide existing curves using independently
 calibrated Spine behavior. See the [review gallery](docs/evidence/slot-authoring.html)
-and [slot contract](docs/slices/slot-authoring.md). MCP exposes 49 strict commands
+and [slot contract](docs/slices/slot-authoring.md). MCP exposes 51 strict commands
 and raw slot poses, including hidden slots; native format remains v22.
 
 Export now offers explicit Spine Editor 4.3 and Runtime 4.3 targets in the native
@@ -394,6 +403,8 @@ supported controls can edit it. Inactive skin attachments remain inspectable.
 
 - Hierarchical bones with position, rotation and nonuniform scale.
 - Layered region attachments, draw order, skins and default-skin fallback.
+- Global Animate draw-order movement, drag placement, pending poses and Auto Key/K,
+  with exact global keys and typed Dopesheet copy/paste/retime/delete.
 - A typed Tree for bones, slots, skin placeholders, attachments, skins and animations,
   with search, type filters, branch controls, temporary visibility and contextual properties.
 - Shared commands for bone length, region setup transforms and a slot’s setup attachment.

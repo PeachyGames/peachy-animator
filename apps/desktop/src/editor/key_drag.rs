@@ -168,6 +168,9 @@ impl KeyDrag {
                     slot: *slot,
                     time: time + offset,
                 },
+                AnimationKey::DrawOrder { time } => AnimationKey::DrawOrder {
+                    time: time + offset,
+                },
             })
             .collect()
     }

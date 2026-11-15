@@ -592,6 +592,11 @@ impl Editor {
         self.reconcile_graph_input(ui.ctx());
         self.graph.rendered_keys = 0;
         self.graph.rendered_points = 0;
+        if self.timeline_owner() == Some(peachy_engine::KeyOwner::DrawOrder {}) {
+            self.animation_controls(ui);
+            ui.label("Draw order keys hold the slot order. Edit their timing in the Dopesheet.");
+            return;
+        }
         if self.deform_graph_panel(ui) {
             return;
         }

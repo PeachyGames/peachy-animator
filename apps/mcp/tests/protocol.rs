@@ -1606,3 +1606,215 @@ async fn stdio_curve_live_separate_off_updates_neighbor_atomically() {
     assert_eq!(doc(&client).await["document"], after["document"]);
     client.cancel().await.unwrap();
 }
+
+#[tokio::test]
+async fn stdio_draw_order_preserves_raw_keys_full_hidden_order_and_persistence() {
+    let root = Sandbox::new();
+    let client = start(&root.0).await;
+    success(
+        call(
+            &client,
+            "create_project",
+            json!({
+                "expected_revision":0,"name":"Original order study","fps":60,"asset_root":"."
+            }),
+        )
+        .await,
+    );
+    let mut commands = vec![json!({"command":"addAnimation","name":"orders","duration":0})];
+    for slot in 0..4 {
+        commands.push(json!({"command":"addSlot","slot":{
+            "name":format!("s{slot}"),"bone":0,"attachment":null,"color":[255,255,255,255],"blend":"normal"}}));
+    }
+    commands.extend([
+        json!({"command":"setDrawOrderKey","animation":0,"key":{"time":0.5,"offsets":[
+            {"slot":0,"offset":1},{"slot":1,"offset":-1},{"slot":2,"offset":0},{"slot":3,"offset":0}]}}),
+        json!({"command":"setDrawOrderKey","animation":0,"key":{"time":1.5,"offsets":[]}}),
+    ]);
+    success(
+        call(
+            &client,
+            "apply_commands",
+            json!({"expected_revision":1,"commands":commands}),
+        )
+        .await,
+    );
+    let raw = doc(&client).await;
+    for (time, order) in [
+        (0.49, json!([0, 1, 2, 3])),
+        (0.5, json!([1, 0, 2, 3])),
+        (1.5, json!([0, 1, 2, 3])),
+    ] {
+        let pose = success(
+            call(
+                &client,
+                "evaluate_pose",
+                json!({"animation":"orders","time":time}),
+            )
+            .await,
+        );
+        assert_eq!(pose["drawOrder"], order);
+        assert_eq!(pose["slotAttachments"], json!([null, null, null, null]));
+        assert_eq!(pose["attachments"], json!([]));
+        assert_eq!(doc(&client).await, raw);
+    }
+    success(
+        call(
+            &client,
+            "apply_commands",
+            json!({"expected_revision":2,"commands":[{
+                "command":"setDrawOrder","animation":0,"time":0.5,"order":[1,2,3,0]
+            }]}),
+        )
+        .await,
+    );
+    let changed = doc(&client).await;
+    assert_eq!(
+        changed["document"]["animations"][0]["draw_order"][0]["offsets"],
+        json!([{"slot":0,"offset":3}])
+    );
+    success(
+        call(
+            &client,
+            "history",
+            json!({"expected_revision":3,"action":"undo"}),
+        )
+        .await,
+    );
+    success(
+        call(
+            &client,
+            "apply_commands",
+            json!({"expected_revision":4,"commands":[{
+                "command":"setDrawOrder","animation":0,"time":0.5,"order":[1,0,2,3]
+            }]}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await["document"], raw["document"]);
+    success(
+        call(
+            &client,
+            "history",
+            json!({"expected_revision":5,"action":"redo"}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await["document"], changed["document"]);
+    let before_bad = doc(&client).await;
+    error(
+        call(
+            &client,
+            "apply_commands",
+            json!({"expected_revision":6,"commands":[
+                {"command":"renameBone","bone":0,"name":"must-rollback"},
+                {"command":"setDrawOrder","animation":0,"time":1,"order":[0,1,1,3]}
+            ]}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await, before_bad);
+    success(
+        call(
+            &client,
+            "apply_commands",
+            json!({"expected_revision":6,"commands":[{
+                "command":"setDrawOrder","animation":0,"time":2,"order":[0,1,2,3]
+            }]}),
+        )
+        .await,
+    );
+    let final_document = doc(&client).await["document"].clone();
+    assert_eq!(
+        final_document["animations"][0]["draw_order"][2],
+        json!({"time":2.0,"offsets":[]})
+    );
+    success(
+        call(
+            &client,
+            "save_project",
+            json!({"expected_revision":7,"directory":"authored"}),
+        )
+        .await,
+    );
+    success(
+        call(
+            &client,
+            "open_project",
+            json!({"expected_revision":8,"path":"authored/project.peachy"}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await["document"], final_document);
+    success(
+        call(
+            &client,
+            "export_project",
+            json!({"expected_revision":9,"kind":"json","path":"orders.json","target":"runtime43"}),
+        )
+        .await,
+    );
+    let exported: Value =
+        serde_json::from_slice(&fs::read(root.0.join("orders.json")).unwrap()).unwrap();
+    let keys = exported["animations"]["orders"]["drawOrder"]
+        .as_array()
+        .unwrap();
+    assert_eq!(keys.len(), 3);
+    assert_eq!(keys[2]["time"], 2.0);
+    assert!(keys[2].get("offsets").is_none());
+    let clipboard = success(
+        call(
+            &client,
+            "copy_animation_keys",
+            json!({
+                "expected_revision":9,"animation":0,"keys":[
+                    {"type":"drawOrder","time":0.5},{"type":"drawOrder","time":2.0}]
+            }),
+        )
+        .await,
+    )["clipboard"]
+        .clone();
+    assert_eq!(clipboard["slots"], json!(["s0", "s1", "s2", "s3"]));
+    assert_eq!(clipboard["keys"][0]["time"], 0.0);
+    assert_eq!(clipboard["keys"][1]["time"], 1.5);
+    success(call(&client,"apply_commands",json!({"expected_revision":9,"commands":[{
+        "command":"deleteAnimationKeys","animation":0,"keys":[{"type":"drawOrder","time":0.5}]
+    }]})).await);
+    success(call(&client,"apply_commands",json!({"expected_revision":10,"commands":[{
+        "command":"pasteAnimationKeys","animation":0,"time":0.25,"target":{"type":"drawOrder"},"clipboard":clipboard.clone()
+    }]})).await);
+    let pasted = doc(&client).await;
+    assert_eq!(
+        pasted["document"]["animations"][0]["draw_order"][0]["time"],
+        0.25
+    );
+    let mut wrong_layout = clipboard;
+    wrong_layout["slots"] = json!(["s3", "s2", "s1", "s0"]);
+    error(call(&client,"apply_commands",json!({"expected_revision":11,"commands":[
+        {"command":"renameBone","bone":0,"name":"must-rollback"},
+        {"command":"pasteAnimationKeys","animation":0,"time":0.25,"target":{"type":"drawOrder"},"clipboard":wrong_layout}
+    ]})).await);
+    assert_eq!(doc(&client).await, pasted);
+    success(
+        call(
+            &client,
+            "history",
+            json!({"expected_revision":11,"action":"undo"}),
+        )
+        .await,
+    );
+    success(call(&client,"apply_commands",json!({"expected_revision":12,"commands":[{
+        "command":"applyCurvePreset","animation":0,"selection":[{"key":{"type":"drawOrder","time":1.5},"channel":0}],
+        "preset":"bezier","separate":false
+    }]})).await);
+    success(
+        call(
+            &client,
+            "history",
+            json!({"expected_revision":13,"action":"redo"}),
+        )
+        .await,
+    );
+    assert_eq!(doc(&client).await["document"], pasted["document"]);
+    client.cancel().await.unwrap();
+}

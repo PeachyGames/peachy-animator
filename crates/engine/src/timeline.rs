@@ -1,7 +1,8 @@
 //! Exact typed key identities and shared timing transitions for bone/IK/deform/slot tracks.
 use peachy_document::{
     Animation, Attachment, AttachmentKey, AttachmentRef, ColorKey, Constraint, Curve, DeformKey,
-    DeformTrack, Document, IkCurve, IkKeyframe, IkTrack, Keyframe, MeshVertices, Property, Track,
+    DeformTrack, Document, DrawOrderKey, IkCurve, IkKeyframe, IkTrack, Keyframe, MeshVertices,
+    Property, Track,
 };
 use serde::{Deserialize, Serialize};
 use std::{cmp::Ordering, collections::BTreeSet};
@@ -32,6 +33,7 @@ pub enum KeyOwner {
     Ik { constraint: usize },
     Deform { attachment: AttachmentRef },
     Slot { slot: usize },
+    DrawOrder {},
 }
 impl KeyOwner {
     fn ordering_key(&self) -> (u8, usize, &str, &str, &str) {
@@ -39,6 +41,7 @@ impl KeyOwner {
             Self::Bone { bone } => (0, *bone, "", "", ""),
             Self::Ik { constraint } => (1, *constraint, "", "", ""),
             Self::Slot { slot } => (3, *slot, "", "", ""),
+            Self::DrawOrder {} => (4, 0, "", "", ""),
             Self::Deform { attachment } => (
                 2,
                 0,
@@ -84,6 +87,9 @@ pub enum AnimationKey {
         slot: usize,
         time: f32,
     },
+    DrawOrder {
+        time: f32,
+    },
 }
 
 /// A presentation curve interval, separate from the selected source key.
@@ -122,6 +128,7 @@ impl AnimationKey {
             Self::SlotAttachment { slot, .. } | Self::SlotColor { slot, .. } => {
                 KeyOwner::Slot { slot: *slot }
             }
+            Self::DrawOrder { .. } => KeyOwner::DrawOrder {},
         }
     }
     pub fn time(&self) -> f32 {
@@ -130,7 +137,8 @@ impl AnimationKey {
             | Self::Ik { time, .. }
             | Self::Deform { time, .. }
             | Self::SlotAttachment { time, .. }
-            | Self::SlotColor { time, .. } => *time,
+            | Self::SlotColor { time, .. }
+            | Self::DrawOrder { time } => *time,
         }
     }
     pub(crate) fn at(&self, time: f32) -> Self {
@@ -140,7 +148,8 @@ impl AnimationKey {
             | Self::Ik { time: at, .. }
             | Self::Deform { time: at, .. }
             | Self::SlotAttachment { time: at, .. }
-            | Self::SlotColor { time: at, .. } => *at = time,
+            | Self::SlotColor { time: at, .. }
+            | Self::DrawOrder { time: at } => *at = time,
         }
         key
     }
@@ -153,13 +162,15 @@ impl AnimationKey {
                 Self::Deform { .. } => 2,
                 Self::SlotAttachment { .. } => 3,
                 Self::SlotColor { .. } => 4,
+                Self::DrawOrder { .. } => 5,
             },
             match self {
                 Self::Bone { property, .. } => Some(*property),
                 Self::Ik { .. }
                 | Self::Deform { .. }
                 | Self::SlotAttachment { .. }
-                | Self::SlotColor { .. } => None,
+                | Self::SlotColor { .. }
+                | Self::DrawOrder { .. } => None,
             },
             time_id(self.time()),
         )
@@ -251,6 +262,10 @@ pub enum AnimationKeyClipboard {
         attachment_keys: Vec<AttachmentKey>,
         color_keys: Vec<ColorKey>,
     },
+    DrawOrder {
+        slots: Vec<String>,
+        keys: Vec<DrawOrderKey>,
+    },
 }
 
 #[derive(Clone)]
@@ -275,6 +290,9 @@ enum OwnedKey {
     SlotColor {
         slot: usize,
         key: ColorKey,
+    },
+    DrawOrder {
+        key: DrawOrderKey,
     },
 }
 impl OwnedKey {
@@ -305,6 +323,7 @@ impl OwnedKey {
                 slot: *slot,
                 time: key.time,
             },
+            Self::DrawOrder { key } => AnimationKey::DrawOrder { time: key.time },
         }
     }
     fn at(self, time: f32) -> Self {
@@ -333,6 +352,9 @@ impl OwnedKey {
             Self::SlotColor { slot, key } => Self::SlotColor {
                 slot,
                 key: ColorKey { time, ..key },
+            },
+            Self::DrawOrder { key } => Self::DrawOrder {
+                key: DrawOrderKey { time, ..key },
             },
         }
     }
@@ -517,6 +539,10 @@ pub fn curve_targets(
                 )?;
                 None
             }
+            AnimationKey::DrawOrder { time } => {
+                exact_interval(Some(&clip.draw_order), *time, |key| key.time, false)?;
+                None
+            }
         };
         if let Some((time, next_time)) = interval {
             result.push(CurveTarget {
@@ -644,6 +670,7 @@ pub(crate) fn channels_for_target(
         AnimationKey::SlotAttachment { .. } => {
             Err("Attachment keys have no interpolated curve".into())
         }
+        AnimationKey::DrawOrder { .. } => Err("Draw order keys have no interpolated curve".into()),
     }
 }
 
@@ -710,6 +737,12 @@ fn sources(
                     .and_then(|track| track.keys.iter().find(|key| key.time == time))
                     .cloned()
                     .map(|key| OwnedKey::SlotColor { slot, key }),
+                AnimationKey::DrawOrder { time } => clip
+                    .draw_order
+                    .iter()
+                    .find(|key| key.time == time)
+                    .cloned()
+                    .map(|key| OwnedKey::DrawOrder { key }),
             }
             .ok_or_else(|| "Unknown exact source key".into())
         })
@@ -810,6 +843,26 @@ pub fn copy_animation_keys(
             keys.sort_by(|a, b| a.time.total_cmp(&b.time));
             AnimationKeyClipboard::Deform { layout, keys }
         }
+        KeyOwner::DrawOrder {} => {
+            let mut keys = vec![];
+            for source in sources {
+                if let OwnedKey::DrawOrder { key } = source {
+                    keys.push(DrawOrderKey {
+                        time: key.time - first,
+                        ..key
+                    });
+                }
+            }
+            keys.sort_by(|a, b| a.time.total_cmp(&b.time));
+            AnimationKeyClipboard::DrawOrder {
+                slots: document
+                    .slots
+                    .iter()
+                    .map(|slot| slot.name.clone())
+                    .collect(),
+                keys,
+            }
+        }
     };
     clipboard_sources(&clipboard, &owner)?;
     Ok(clipboard)
@@ -908,6 +961,22 @@ fn clipboard_sources(
             }
             result
         }
+        (AnimationKeyClipboard::DrawOrder { slots, keys }, KeyOwner::DrawOrder {}) => {
+            let mut names = BTreeSet::new();
+            if slots
+                .iter()
+                .any(|name| name.trim().is_empty() || !names.insert(name))
+            {
+                return Err("Draw order clipboard slot names must be nonempty and unique".into());
+            }
+            let mut result = vec![];
+            for key in keys {
+                checked_time(key.time)?;
+                key.order(slots.len())?;
+                result.push(OwnedKey::DrawOrder { key: key.clone() });
+            }
+            result
+        }
         _ => return Err("Clipboard and paste target must have the same kind".into()),
     };
     if sources.is_empty() || !sources.iter().any(|s| s.identity().time() == 0.) {
@@ -945,6 +1014,7 @@ fn insert_keys(document: &mut Document, animation: usize, keys: Vec<OwnedKey>) {
             OwnedKey::SlotColor { slot, key } => {
                 crate::slot_authoring::insert_color_key(clip, slot, key)
             }
+            OwnedKey::DrawOrder { key } => crate::draw_order_authoring::insert_key(clip, key),
             OwnedKey::Bone {
                 bone,
                 property,
@@ -1072,6 +1142,8 @@ fn remove_sources(document: &mut Document, animation: usize, sources: &[OwnedKey
             )
         });
     }
+    clip.draw_order
+        .retain(|key| !identities.contains(&AnimationKey::DrawOrder { time: key.time }.id()));
 }
 pub(super) fn move_animation_keys(
     document: &mut Document,
@@ -1119,6 +1191,16 @@ fn prepared_paste_keys(
         .get(animation)
         .ok_or("Unknown animation")?;
     let owner = canonical_owner(document, owner)?;
+    if let (AnimationKeyClipboard::DrawOrder { slots, .. }, KeyOwner::DrawOrder {}) =
+        (clipboard, &owner)
+        && !document
+            .slots
+            .iter()
+            .map(|slot| &slot.name)
+            .eq(slots.iter())
+    {
+        return Err("Draw order clipboard needs the identical ordered slot-name layout".into());
+    }
     if let (AnimationKeyClipboard::Deform { layout, .. }, KeyOwner::Deform { attachment }) =
         (clipboard, &owner)
     {

@@ -4,6 +4,7 @@ impl Editor {
     pub(super) fn inspector(&mut self, ui: &mut egui::Ui) {
         self.record_target("properties", ui.clip_rect());
         let title = match self.selection {
+            Some(TreeItem::DrawOrder | TreeItem::DrawOrderSlot { .. }) => "Draw order".into(),
             Some(TreeItem::Constraint(index)) => self
                 .session
                 .document()
@@ -64,6 +65,7 @@ impl Editor {
             ui.label(RichText::new(item.label(self.session.document())).color(ACCENT));
         }
         match item {
+            TreeItem::DrawOrder | TreeItem::DrawOrderSlot { .. } => self.draw_order_properties(ui),
             TreeItem::Skeleton => {
                 let doc = self.session.document();
                 ui.label(format!(

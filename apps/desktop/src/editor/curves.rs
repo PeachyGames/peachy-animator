@@ -394,6 +394,8 @@ impl Editor {
             )),
             |ui| {
                 ui.spacing_mut().item_spacing.x = 3.;
+                // Fit three 24px icons without growing the dock each frame.
+                ui.spacing_mut().button_padding.x = 4.;
                 ui.horizontal(|ui| {
                     for (index, (icon, name)) in [
                         (icons::Icon::Duplicate, "Add curve preset"),

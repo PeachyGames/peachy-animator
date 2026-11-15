@@ -1,5 +1,37 @@
 # Implementation provenance
 
+## Global Animate draw-order authoring — November 14, 2026
+
+The public [Slots guide](https://esotericsoftware.com/spine-slots),
+[Keys guide](https://esotericsoftware.com/spine-keys) and
+[4.3 release post](https://esotericsoftware.com/blog/Spine-4.3-released) informed
+the global Tree/Dopesheet workflow and distinction from independently keyed
+folders. Owned installed 4.3.26 windows used our original four-slot geometric
+cutouts. Only visible controls/tooltips and generated JSON outputs were examined
+to establish movement direction, Shift clamping, pending edits, Auto Key flush,
+mixed persistent Undo, no-op redo and drag placement. No proprietary implementation,
+vendor artwork or UI asset files were inspected or copied. Icons and controls
+are independently implemented.
+
+Offset preservation reuses the independently verified decoder. New semantic
+encoding uses standard longest-increasing-subsequence/patience-sorting
+mathematics, checked against all 24 four-slot permutations using a separate brute
+subset oracle. The deterministic choice among equally minimal encodings is ours;
+untouched imported keys are not normalized. Movement, pending order, frozen
+previews and exact typed keys are shared engine operations. The observed native
+Undo clears pending visuals by re-evaluating keys; our existing history restores
+the pre-key pending snapshot, an explicit scope difference.
+
+Actual MCP authoring uses only four original PNGs from a root-only project; the
+finished reference is excluded from recipe inputs. Complete order, hidden slots,
+geometry and color are compared through the separately licensed runtime's public
+API. Detailed reference captures, requests and original probes remain private.
+See [the contract](slices/draw-order-authoring.md) and
+[current validation](VALIDATION.md#global-animate-draw-order-authoring--november-14-2026)
+for passed native/MCP runtime checks, actual native input/fresh reopen and
+installed 4.3.26 CLI interchange. The editor's equivalent time-zero minimal
+offset differs from ours; effective order matches at all 23 checked times.
+
 ## Curves and scalar interpolation authoring — November 14, 2026
 
 The public [Graph guide](https://esotericsoftware.com/spine-graph),

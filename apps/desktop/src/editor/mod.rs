@@ -9,6 +9,7 @@ mod curves;
 mod deform_curves;
 mod dopesheet;
 mod dopesheet_selection;
+mod draw_order;
 mod export_dialog;
 mod ghosting;
 mod graph;
@@ -110,6 +111,7 @@ pub(crate) struct Editor {
     timeline_clipboard: Option<peachy_engine::AnimationKeyClipboard>,
     timeline_input: timeline_clipboard::TimelineInput,
     tree: TreeState,
+    draw_order: draw_order::DrawOrderView,
     hidden_bones: BTreeSet<usize>,
     hidden_slots: BTreeSet<usize>,
     animation: usize,
@@ -240,6 +242,7 @@ impl Editor {
             timeline_clipboard: None,
             timeline_input: Default::default(),
             tree,
+            draw_order: Default::default(),
             hidden_bones: BTreeSet::new(),
             hidden_slots: BTreeSet::new(),
             animation: 0,
@@ -322,6 +325,7 @@ impl Editor {
         self.export_dialog = None;
         self.cancel_slot_color_edit();
         self.cancel_graph_edit();
+        self.cancel_draw_order_edit();
         self.cancel_ik_edit();
         self.ik_target = None;
         self.cancel_weight_edit();
@@ -563,6 +567,10 @@ impl Editor {
     }
     fn undo(&mut self) {
         self.cancel_timeline_interaction();
+        if self.draw_order_edit_active() {
+            self.cancel_draw_order_edit();
+            return;
+        }
         if self.slot_color_edit_active() {
             self.cancel_slot_color_edit();
             return;
@@ -602,6 +610,10 @@ impl Editor {
     }
     fn redo(&mut self) {
         self.cancel_timeline_interaction();
+        if self.draw_order_edit_active() {
+            self.cancel_draw_order_edit();
+            return;
+        }
         if self.slot_color_edit_active() {
             self.cancel_slot_color_edit();
             return;
@@ -772,6 +784,7 @@ impl Editor {
         self.reconcile_selection();
         self.reconcile_timeline_input(&ctx);
         self.reconcile_graph_input(&ctx);
+        self.reconcile_draw_order_input(&ctx);
         self.reconcile_slot_color_input(&ctx);
         self.shortcuts(&ctx);
         if self.export_dialog.is_some() {
@@ -1012,6 +1025,7 @@ impl Editor {
                 report["audio"] = self.audio_diagnostic();
                 report["graph"] = self.graph_diagnostic();
                 report["curves"] = self.curves_diagnostic();
+                report["drawOrder"] = self.draw_order_diagnostic();
                 report["slotColor"] = self.slot_color_diagnostic();
                 report["exportDialog"] = self.export_dialog_diagnostic();
                 report["playbackSpeed"] = self.playback_speed.into();

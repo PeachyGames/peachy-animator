@@ -3,6 +3,7 @@ use super::*;
 
 #[derive(Clone)]
 pub(super) enum PoseKeyAction {
+    DrawOrder,
     Transform {
         bone: usize,
         properties: Vec<Property>,
@@ -49,6 +50,7 @@ impl Editor {
             || self.ik_edit.is_some()
             || self.deform_drag.is_some()
             || self.slot_color_edit_active()
+            || self.draw_order_edit_active()
         {
             self.pose_key_request = Some(request);
         } else {
@@ -58,6 +60,9 @@ impl Editor {
 
     fn apply_pose_key(&mut self, request: PoseKeyRequest) {
         let result = match request.action {
+            PoseKeyAction::DrawOrder => {
+                self.session.key_draw_order(request.animation, request.time)
+            }
             PoseKeyAction::Transform { bone, properties } => {
                 self.session
                     .key_pose(request.animation, request.time, bone, &properties)
@@ -85,6 +90,7 @@ impl Editor {
                 self.seal_ik_for_key();
                 self.seal_deform_for_key();
                 self.seal_slot_color_for_key();
+                self.seal_draw_order_for_key();
                 self.session.commit_transaction();
                 self.status = "Keyed the current authored pose".into();
             }

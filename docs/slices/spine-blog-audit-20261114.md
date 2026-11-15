@@ -1,7 +1,7 @@
 # Official Spine update audit — November 14, 2026
 
 Rechecked November 14 after the slot authoring commit, against Peachy Animator
-`f345fdd` plus verified export-target and Curves continuations below. This is a current
+`f345fdd` plus verified export-target, Curves and global draw-order continuations below. This is a current
 backlog and reference record, not a claim of full Spine parity.
 Installed-editor observations and native screenshots are recorded
 in [UI parity](../UI_PARITY.md) and the linked slice acceptance records.
@@ -64,8 +64,13 @@ The former immediate gaps are now closed within their documented bounds:
   setters, shared typed Graph selection/tangents, fitted relative curves,
   repeated reset/final-key semantics and calibrated Match/Separate actions.
   Native input/persistence and both authored runtime comparisons pass.
+- [Global draw-order authoring](draw-order-authoring.md): Tree/key/Reset,
+  pending poses, typed discrete timeline and shared MCP raw/semantic commands.
+  Native input/fresh reopen, both authored runtime checks and installed 4.3.26
+  interchange pass. Independent folder keys remain a separate model slice.
 
-MCP now exposes 49 strict commands / 11 tools, including value-preserving
+MCP now exposes 51 strict commands / 11 tools, including raw/semantic global
+draw-order authoring and complete hidden-slot order readback, value-preserving
 `setDeformCurve`, `setSlotColorCurves`, float `insertSlotColorKey` and read-only
 typed copying, plus exact `setKeyCurve`/`setIkCurve` and shared
 `applyCurvePreset`/`editCurveHandle`. Source at the earlier `f345fdd` lacked
@@ -132,7 +137,7 @@ been exhaustively observed.
 | --- | --- | --- |
 | 0: verified interchange prerequisite | Explicit Editor versus Runtime export targets | The shared adapter now rejects confirmed lossy default-name overrides for Editor output and preserves metadata for Runtime output. Native/CLI/MCP and bounded editor/runtime acceptance pass; see [the contract](export-targets.md). Arbitrary conversion and hosted CI remain separate gates. |
 | 1: accepted bounded continuation | Selected-owner Curves and scalar interpolation editing | Native/MCP/runtime acceptance covers shared exact setters/actions, typed selection, fitted relative handles, repeated reset, final-key rules and calibrated normal coupling. Stored presets/defaults, grouped properties and uncalibrated coupling remain; see [contract](curves-authoring.md). |
-| 2: next blog-linked authoring slice | Global Animate draw-order editing | The Look around demo uses draw-order changes alongside slot swaps/fades. Existing raw data/evaluation lacks pending/key/Delete, typed clipboard and MCP authoring. Probe Tree drag/+/-/Shift and Auto Key against original four-slot data, then add shared commands and full hidden-slot order queries. Per-folder keys require a later identity/model slice. |
+| 2: accepted bounded continuation | Global Animate draw-order editing | The Look around demo's global ordering now has shared pending/key/Reset/typed timeline and MCP authoring. Actual native input/fresh reopen, both authored runtime checks and installed 4.3.26 interchange pass; see [contract](draw-order-authoring.md) and [review](../evidence/draw-order-authoring.html). Per-folder keys, Setup reordering, compact property sizing and cross-layout mapping remain separate slices. |
 | 2: weight workflow foundation | Multiple selected vertices, one mesh/bone, Direct mode | Replace the retained single vertex with explicit selection and native box/additive/select-all controls. Apply one frozen, atomic Batch through existing per-vertex weight commands; MCP already accepts explicit batches. Preserve untouched influences/positions and pending poses. Auto/brush algorithms, locks and multi-mesh painting require later shared operations. |
 | 3: major 4.3 rigging gap | One world-space cross-property transform mapping | Existing data and MCP add/set constraint payloads are present, but evaluation refuses translation-to-rotation/scale mappings used by the announcement. Calibrate one mapping, implement it in the engine, expose real mapping controls and evaluate an MCP-authored rig against the external oracle. Local/additive modes remain separate. |
 | 4: larger new model | A manually driven slider constraint | Add explicit animation/frame/mix ownership, model validation, shared evaluation, adapter, creation/key controls and strict MCP commands. Detect self-reference/cycles and unsupported timeline domains. A copied pose or an ordinary slot fade is not slider evaluation. Bone-driven sliders extend this slice later. |

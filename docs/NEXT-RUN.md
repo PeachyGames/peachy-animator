@@ -4,6 +4,38 @@ Written November 10, 2026, at the end of the import-parity push. Read this
 first, then `AGENTS.md`. The workspace rules in `../AGENTS.md` and `../CLAUDE.md`
 still apply.
 
+## November 14 global draw-order continuation
+
+Global Animate draw order now has Tree movement/dragging, Reset, pending poses,
+Auto Key/K and typed Dopesheet retime/clipboard/Delete. Shared raw and semantic
+commands plus complete hidden-slot readback bring MCP to **51 commands / 11
+tools**; native v22 stays. Actual native input, cancellation/history, fresh
+canonical reopen/playback, both authored runtime checks and installed 4.3.26
+interchange pass. Focused two-worker checks, formatting, all-target Clippy,
+workspace build and architecture pass. See [review](evidence/draw-order-authoring.html),
+[scope](slices/draw-order-authoring.md) and [evidence](evidence/draw-order-authoring.json).
+
+The exact native eight-key lab is
+`examples/peach-bot/draw-order-authoring-bot.peachy`. Its four original PNGs
+also drive the separate root-only actual MCP study: 343 requests, two clips,
+265 poses, 32 hidden-slot samples. No finished rig is a recipe input. Raw
+imported encodings survive; newly encoded minimal ties are ours. Peachy Undo
+preserves pending poses, an explicit measured history difference from Spine.
+
+Folders, Setup reordering, cross-layout clipboard mapping and compact native
+property sizing remain. Continue the blog backlog with stored curve presets
+and default choices, multi-vertex weights, transform mappings and sliders.
+Observe native behavior before adding each shared engine/MCP boundary. Problems,
+broader Color and arbitrary docking remain open. Hosted CI still gates main;
+keep the PR draft. The canceled female-pose full check remains canceled.
+
+All owned native/reference processes are closed. Private original inputs,
+MCP recipes/requests, authored exports and selected review witnesses remain in
+the existing `draw-order-authoring/` record until review/CI evidence is superseded.
+Temporary input helpers, raw step captures and superseded Save backups retire
+at the verified checkpoint. The shared Cargo target remains required by ongoing
+parity work; no extra target, worktree or repository copy was created.
+
 ## November 14 Curves continuation
 
 Curves now has a separate fitted relative-transition pane and shares exact
@@ -21,12 +53,9 @@ unsupported operations fail explicitly. The current Views count is 16 of the
 installed editor's 17; Problems and broader Color remain. Full parity is not
 claimed. Required hosted CI still gates main; keep the feature PR draft.
 
-Next bounded blog-linked authoring slice: global Animate draw-order editing,
-pending/key/Delete/clipboard through engine/MCP. The 4.3 Look around demo uses
-it alongside completed slot swaps/fades. The original four-slot fixture and
-implementation questions are prepared privately in
-`.local/training-spine-20261114/draw-order-authoring/`; native +/-/Shift/Auto Key
-probes are next. Per-folder keys need a later identity/model slice. Continue
+Global Animate draw-order editing is covered by the continuation above. The
+4.3 Look around demo uses it alongside completed slot swaps/fades. Per-folder
+keys need a later identity/model slice. Continue
 Curves library/defaults, multi-vertex weights, cross-property mappings and sliders
 as documented in [the official audit](slices/spine-blog-audit-20261114.md).
 

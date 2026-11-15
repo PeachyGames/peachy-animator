@@ -155,13 +155,14 @@ impl Editor {
                     self.set_tool(Tool::Weights);
                 }
                 if !self.setup_mode {
-                    let auto_key = ui.checkbox(&mut self.auto_key, "Auto Key");
+                    let mut enabled=self.auto_key;
+                    let auto_key = ui.add_enabled(self.slot_authoring_input_available(ui.ctx()),egui::Checkbox::new(&mut enabled,"Auto Key"));
                     self.record_target("autoKey", auto_key.rect);
                     if auto_key.changed() {
-                        self.cancel_gesture();
+                        self.set_auto_key_enabled(enabled);
                     }
                     auto_key.on_hover_text(
-                        "Set keys automatically when supported bone or IK pose values change.",
+                        "Set keys automatically for supported pose edits. Enabling keys all pending edits together.",
                     );
                     let key = ui.add_enabled(
                         !self.session.pose_edits().is_empty(),

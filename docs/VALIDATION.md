@@ -1,5 +1,57 @@
 # First-slice validation — November 5, 2026
 
+## Global Animate draw-order authoring — November 14, 2026
+
+Focused checks pass with two Cargo workers/test threads: engine draw order **20**,
+legacy timeline **26**, desktop draw order **9**, curves **48**, clipboard **19**,
+Tree **4**, MCP schema **9** and actual stdio **10**. Filters overlap; these are
+not additive full-suite totals. Formatting, all-target workspace Clippy, build
+and the seven-crate architecture check pass. Hosted CI still gates main and the
+feature PR remains draft; no hosted pass or full Spine/pixel parity is claimed.
+
+Engine checks cover every four-slot permutation against an independent brute
+listed-slot subset oracle, raw redundant/zero offset retention, exact neighboring
+f32 identities, invalid atomic batches, complete hidden-slot order, pending
+Save exclusion, mixed keying/history, fixed-baseline previews, slot-layout guards
+and discrete Curves selection counting. The direct sampled/pending order query
+does not construct a full pose or clone dense Deform data.
+
+Actual native input passes unkeyed/existing-key pending Save exclusion, typed
+Rotate **15** plus mixed Auto Key flush in one Undo/Redo, Shift-five clamping,
+boundary/Reset no-op redo, nonsetup Reset, selected and unselected-source drags,
+stable slot rows, Escape/held-pointer/release-outside cancellation, full-row drag
+reentry, typed global clipboard/retime/delete history and playback. The final
+saved f32 document matches. A fresh final-workspace-build process opens the
+byte-identical public eight-key example with four images, no history, no pending
+pose and working playback. All owned native processes exit successfully.
+Peachy's Undo deliberately restores its pending pose
+snapshot; the observed native Undo re-evaluates keys and clears that pose.
+
+The final native-authored `calibration` clip/default skin passes the external
+runtime at **52** pose/visible-order samples: **312** world values (maximum error
+**1.25668286887759e-8**), **1,664** region values (maximum **7.62939453125e-6**) and
+**832** color comparisons. Geometry tolerance remains **0.001**. The saved source
+SHA-256 remains `7dd9e844eb4b4fbb743be210472d930603ae07115d73d9feb12367a8d1f20149`.
+Installed Spine 4.3.26 imports and re-exports all eight global key times/orders;
+23 independent held/boundary samples and the Rotate 15 key at 1 s match.
+The time-zero minimal list changes from slot 1:-1 to slot 0:+1 with the same
+effective order. Raw offsets remain exact in both initial Peachy export targets.
+
+Actual MCP authoring starts from `create_project` and four original PNGs, without
+reading the finished rig: **343** requests, two clips, **265** full pose samples
+(**32** hidden-slot samples), eight atomic rejections and Save/reopen/export pass.
+All five original input hashes remain unchanged. Independent public runtime APIs
+match all **265** complete permutations (**1,060** slot indices) exactly;
+1,590 world values have maximum error **2.832769475542897e-16**, while 8,224 region
+and 4,240 color values have zero error. The standard runtime harness separately
+passes both clips/default skin at 104 samples, with 624 world, 3,200 region and
+1,600 color values. These samples overlap and do not establish native raster parity.
+
+See [the measured contract](slices/draw-order-authoring.md). Private acceptance,
+request and runtime reports remain under the existing draw-order task record.
+Folders, Setup slot reordering, cross-layout clipboard mapping and exact native
+history behavior remain deferred; minimal-encoder tie choice is independently ours.
+
 ## Curves, scalar Graph and shared MCP actions — November 14, 2026
 
 Focused checks pass with two Cargo workers/test threads: engine curve filter 33

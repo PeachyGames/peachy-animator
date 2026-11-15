@@ -6,6 +6,7 @@ impl Editor {
         self.export_dialog = None;
         self.cancel_timeline_interaction();
         self.cancel_graph_edit();
+        self.cancel_draw_order_edit();
         self.cancel_slot_color_edit();
         self.pose_key_request = None;
         self.ik_bend_request = None;
@@ -135,7 +136,7 @@ impl Editor {
         }
     }
 
-    fn file_history_shortcuts(&mut self, ctx: &egui::Context) {
+    pub(super) fn file_history_shortcuts(&mut self, ctx: &egui::Context) {
         if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::O)) {
             self.open_project(ctx);
         }
@@ -218,6 +219,9 @@ impl Editor {
             ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
         }
         if self.export_dialog_shortcuts(ctx) {
+            return;
+        }
+        if self.draw_order_shortcuts(ctx) {
             return;
         }
         if self.shared_curve_edit_active()

@@ -59,6 +59,7 @@ pub(super) fn editor_fixture() -> Editor {
         timeline_clipboard: None,
         timeline_input: Default::default(),
         tree,
+        draw_order: Default::default(),
         hidden_bones: BTreeSet::new(),
         hidden_slots: BTreeSet::new(),
         animation: 0,

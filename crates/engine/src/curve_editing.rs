@@ -144,7 +144,7 @@ fn neighbors(clip: &Animation, target: &CurveTarget) -> Result<Vec<CurveTarget>,
             target,
             |k| k.time,
         ),
-        AnimationKey::SlotAttachment { .. } => Ok(vec![]),
+        AnimationKey::SlotAttachment { .. } | AnimationKey::DrawOrder { .. } => Ok(vec![]),
     }
 }
 

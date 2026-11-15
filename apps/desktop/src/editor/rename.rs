@@ -104,7 +104,7 @@ impl Editor {
     pub(super) fn begin_rename(&mut self, item: TreeItem) {
         let kind = match item {
             TreeItem::Bone(_) => "bone",
-            TreeItem::Slot(_) => "slot",
+            TreeItem::Slot(_) | TreeItem::DrawOrderSlot { .. } => "slot",
             TreeItem::Animation(_) => "animation",
             TreeItem::Constraint(index) if self.physics_constraint(index).is_some() => {
                 "physics constraint"
@@ -145,7 +145,9 @@ impl Editor {
                 let name = state.dialog.name.clone();
                 let command = match state.item {
                     TreeItem::Bone(bone) => Command::RenameBone { bone, name },
-                    TreeItem::Slot(slot) => Command::RenameSlot { slot, name },
+                    TreeItem::Slot(slot) | TreeItem::DrawOrderSlot { slot } => {
+                        Command::RenameSlot { slot, name }
+                    }
                     TreeItem::Animation(animation) => Command::RenameAnimation { animation, name },
                     TreeItem::Constraint(constraint) => {
                         match self.session.document().constraints.get(constraint).cloned() {

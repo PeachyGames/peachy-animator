@@ -27,6 +27,9 @@ impl Editor {
     }
     pub(super) fn timeline_owner(&self) -> Option<peachy_engine::KeyOwner> {
         match self.selection.as_ref() {
+            Some(TreeItem::DrawOrder | TreeItem::DrawOrderSlot { .. }) => {
+                Some(peachy_engine::KeyOwner::DrawOrder {})
+            }
             Some(TreeItem::Bone(bone)) => Some(peachy_engine::KeyOwner::Bone { bone: *bone }),
             Some(TreeItem::Slot(slot)) => Some(peachy_engine::KeyOwner::Slot { slot: *slot }),
             Some(TreeItem::Placeholder { slot, .. }) => {
@@ -228,6 +231,17 @@ impl Editor {
             );
         }
         let owner = self.timeline_owner();
+        if owner == Some(peachy_engine::KeyOwner::DrawOrder {}) {
+            let group = egui::Rect::from_min_size(rect.min, vec2(label_width, 24.));
+            painter.text(
+                pos2(group.left() + 12., group.center().y),
+                egui::Align2::LEFT_CENTER,
+                "Draw order",
+                FontId::proportional(12.),
+                Color32::from_rgb(80, 157, 224),
+            );
+            self.record_target("timelineGroup:drawOrder", group);
+        }
         let rows = dopesheet_selection::rows(owner.clone());
         let mut key_targets = Vec::new();
         for (i, row) in rows.into_iter().enumerate() {
@@ -301,6 +315,12 @@ impl Editor {
                     "timelineRow:color".to_owned(),
                     Color32::from_rgb(224, 106, 184),
                 ),
+                dopesheet_selection::TimelineRow::DrawOrder => (
+                    "Default".to_owned(),
+                    None,
+                    "timelineRow:drawOrder".to_owned(),
+                    Color32::from_rgb(80, 157, 224),
+                ),
             };
             let label_rect = egui::Rect::from_min_max(
                 pos2(rect.left() + 6.0, y - 10.0),
@@ -332,6 +352,9 @@ impl Editor {
                     dopesheet_selection::TimelineRow::SlotColor => {
                         "Slot RGBA color keys preserve their four channel curves."
                     }
+                    dopesheet_selection::TimelineRow::DrawOrder => {
+                        "Global slot order keys hold until the next key."
+                    }
                     _ => "IK constraint keys group Mix and Positive",
                 })
             };
@@ -347,7 +370,15 @@ impl Editor {
                     .memory_mut(|memory| memory.request_focus(Self::dopesheet_id()));
             }
             ui.painter_at(label_rect).text(
-                pos2(rect.left() + 12.0, y),
+                pos2(
+                    rect.left()
+                        + if row == dopesheet_selection::TimelineRow::DrawOrder {
+                            26.
+                        } else {
+                            12.
+                        },
+                    y,
+                ),
                 egui::Align2::LEFT_CENTER,
                 name,
                 FontId::proportional(12.0),
@@ -370,6 +401,7 @@ impl Editor {
                     KeyId::Deform { .. } => format!("timelineKey:deform:{index}"),
                     KeyId::SlotAttachment { .. } => format!("timelineKey:attachment:{index}"),
                     KeyId::SlotColor { .. } => format!("timelineKey:color:{index}"),
+                    KeyId::DrawOrder { .. } => format!("timelineKey:drawOrder:{index}"),
                 };
                 self.record_target(&target, key_rect);
                 painter.rect_filled(

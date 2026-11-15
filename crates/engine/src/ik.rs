@@ -72,6 +72,10 @@ impl AuthoredPose {
     pub fn slot_colors(&self) -> &[[f32; 4]] {
         &self.slot_colors
     }
+    /// Complete back-to-front slot indices, including hidden and inactive slots.
+    pub fn draw_order(&self) -> &[usize] {
+        &self.draw_order
+    }
 }
 
 impl EvaluatedPose {
@@ -89,6 +93,10 @@ impl EvaluatedPose {
     }
     pub fn active_bones(&self) -> &[bool] {
         &self.active_bones
+    }
+    /// Complete back-to-front slot indices, including hidden and inactive slots.
+    pub fn draw_order(&self) -> &[usize] {
+        &self.draw_order
     }
 }
 

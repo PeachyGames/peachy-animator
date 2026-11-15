@@ -117,6 +117,16 @@ fn slot_entries(
 }
 
 pub fn project(doc: &Document, skin: &str, setup: bool, options: &TreeState) -> Vec<Entry> {
+    project_with_order(doc, skin, setup, options, None)
+}
+
+pub fn project_with_order(
+    doc: &Document,
+    skin: &str,
+    setup: bool,
+    options: &TreeState,
+    order: Option<&[usize]>,
+) -> Vec<Entry> {
     let mut entries = vec![];
     let root = add(&mut entries, TreeItem::Skeleton, None, doc);
     if options.filters.bones {
@@ -143,7 +153,9 @@ pub fn project(doc: &Document, skin: &str, setup: bool, options: &TreeState) -> 
                 pending.push((child, node));
             }
         }
-    } else if options.filters.slots || options.filters.attachments {
+    } else if (setup || !options.filters.slots)
+        && (options.filters.slots || options.filters.attachments)
+    {
         let group = add(
             &mut entries,
             TreeItem::Folder(Folder::Slots),
@@ -152,6 +164,20 @@ pub fn project(doc: &Document, skin: &str, setup: bool, options: &TreeState) -> 
         );
         for slot in 0..doc.slots.len() {
             slot_entries(&mut entries, doc, slot, group, skin, options);
+        }
+    }
+    if !setup && options.filters.slots {
+        let group = add(&mut entries, TreeItem::DrawOrder, Some(root), doc);
+        let fallback: Vec<_> = (0..doc.slots.len()).collect();
+        for &slot in order.unwrap_or(&fallback).iter().rev() {
+            if slot < doc.slots.len() {
+                add(
+                    &mut entries,
+                    TreeItem::DrawOrderSlot { slot },
+                    Some(group),
+                    doc,
+                );
+            }
         }
     }
     if options.filters.skins {

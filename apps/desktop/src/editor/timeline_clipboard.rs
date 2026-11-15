@@ -22,6 +22,7 @@ pub(super) fn clipboard_len(clipboard: &AnimationKeyClipboard) -> usize {
         AnimationKeyClipboard::Bone { keys } => keys.len(),
         AnimationKeyClipboard::Ik { keys } => keys.len(),
         AnimationKeyClipboard::Deform { keys, .. } => keys.len(),
+        AnimationKeyClipboard::DrawOrder { keys, .. } => keys.len(),
         AnimationKeyClipboard::Slot {
             attachment_keys,
             color_keys,

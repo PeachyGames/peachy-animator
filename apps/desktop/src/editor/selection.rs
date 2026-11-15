@@ -16,6 +16,8 @@ pub enum TreeItem {
     Folder(Folder),
     Bone(usize),
     Slot(usize),
+    DrawOrder,
+    DrawOrderSlot { slot: usize },
     Placeholder { slot: usize, name: String },
     Attachment(AttachmentRef),
     Skin(String),
@@ -30,6 +32,8 @@ impl TreeItem {
             Self::Folder(f) => format!("folder:{f:?}"),
             Self::Bone(i) => format!("bone:{i}"),
             Self::Slot(i) => format!("slot:{i}"),
+            Self::DrawOrder => "drawOrder".into(),
+            Self::DrawOrderSlot { slot } => format!("drawOrderSlot:{slot}"),
             Self::Placeholder { slot, name } => format!("placeholder:{}", json!([slot, name])),
             Self::Attachment(k) => format!("attachment:{}", json!([k.skin, k.slot, k.placeholder])),
             Self::Skin(s) => format!("skin:{s}"),
@@ -39,9 +43,9 @@ impl TreeItem {
     }
     pub fn exists(&self, doc: &Document) -> bool {
         match self {
-            Self::Skeleton | Self::Folder(_) => true,
+            Self::Skeleton | Self::Folder(_) | Self::DrawOrder => true,
             Self::Bone(i) => *i < doc.bones.len(),
-            Self::Slot(i) => *i < doc.slots.len(),
+            Self::Slot(i) | Self::DrawOrderSlot { slot: i } => *i < doc.slots.len(),
             Self::Placeholder { slot, name } => doc.slots.get(*slot).is_some_and(|s| {
                 doc.skins
                     .values()
@@ -58,7 +62,10 @@ impl TreeItem {
             Self::Skeleton => doc.name.clone(),
             Self::Folder(f) => format!("{f:?}"),
             Self::Bone(i) => doc.bones.get(*i).map_or("?", |b| b.name.as_str()).into(),
-            Self::Slot(i) => doc.slots.get(*i).map_or("?", |s| s.name.as_str()).into(),
+            Self::Slot(i) | Self::DrawOrderSlot { slot: i } => {
+                doc.slots.get(*i).map_or("?", |s| s.name.as_str()).into()
+            }
+            Self::DrawOrder => "Draw order".into(),
             Self::Placeholder { name, .. } => name.clone(),
             Self::Attachment(k) => doc
                 .attachment(k)
@@ -94,7 +101,9 @@ impl TreeItem {
     }
     pub fn slot(&self, doc: &Document) -> Option<usize> {
         match self {
-            Self::Slot(i) | Self::Placeholder { slot: i, .. } => Some(*i),
+            Self::Slot(i) | Self::DrawOrderSlot { slot: i } | Self::Placeholder { slot: i, .. } => {
+                Some(*i)
+            }
             Self::Attachment(k) => doc.slots.iter().position(|s| s.name == k.slot),
             _ => None,
         }
@@ -105,6 +114,8 @@ impl TreeItem {
             Self::Folder(f) => json!({"type":"folder","name":format!("{f:?}")}),
             Self::Bone(i) => json!({"type":"bone","index":i}),
             Self::Slot(i) => json!({"type":"slot","index":i}),
+            Self::DrawOrder => json!({"type":"drawOrder"}),
+            Self::DrawOrderSlot { slot } => json!({"type":"drawOrderSlot","slot":slot}),
             Self::Placeholder { slot, name } => {
                 json!({"type":"placeholder","slot":slot,"name":name})
             }

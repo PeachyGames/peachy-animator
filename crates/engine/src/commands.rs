@@ -136,6 +136,17 @@ pub enum Command {
         slot: usize,
         key: ColorKey,
     },
+    /// Exact raw offset payload; imported encodings remain first-class data.
+    SetDrawOrderKey {
+        animation: usize,
+        key: DrawOrderKey,
+    },
+    /// Complete back-to-front permutation, encoded with a minimal offset list.
+    SetDrawOrder {
+        animation: usize,
+        time: f32,
+        order: Vec<usize>,
+    },
     SetSlotColorCurves {
         animation: usize,
         slot: usize,
@@ -409,6 +420,16 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
             key,
         } => {
             crate::slot_authoring::set_color_key(doc, animation, slot, key)?;
+        }
+        Command::SetDrawOrderKey { animation, key } => {
+            crate::draw_order_authoring::set_key(doc, animation, key)?;
+        }
+        Command::SetDrawOrder {
+            animation,
+            time,
+            order,
+        } => {
+            crate::draw_order_authoring::set_order(doc, animation, time, &order)?;
         }
         Command::SetSlotColorCurves {
             animation,

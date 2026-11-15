@@ -1,10 +1,13 @@
 use super::*;
-use tree_model::{Entry, Filters, project, row_visible};
+use tree_model::{Entry, Filters, project_with_order, row_visible};
 
 enum Action {
     Key(usize),
     KeyIk(usize),
     KeySlot(usize, peachy_engine::SlotProperty),
+    KeyDrawOrder,
+    DeleteDrawOrder,
+    BeginDrawOrderDrag(usize),
     Select(TreeItem),
     Rename(TreeItem),
     Dot(TreeItem, bool),
@@ -16,6 +19,10 @@ impl Editor {
     pub(super) fn hierarchy(&mut self, ui: &mut egui::Ui) {
         self.record_target("tree", ui.max_rect());
         let mut actions = vec![];
+        let mut order_rows = vec![];
+        let mut order_drop_rect = None;
+        #[cfg(test)]
+        self.reset_draw_order_row_ids();
         ui.horizontal(|ui| {
             super::icons::heading(ui, super::icons::Icon::Tree, "Tree");
             ui.menu_button(
@@ -107,11 +114,13 @@ impl Editor {
         );
         self.record_target("treeSearch", search.rect);
         ui.separator();
-        let entries = project(
+        let order = self.current_draw_order().ok();
+        let entries = project_with_order(
             self.session.document(),
             &self.skin,
             self.setup_mode,
             &self.tree,
+            order.as_deref(),
         );
         let mut children = vec![false; entries.len()];
         for e in &entries {
@@ -122,6 +131,8 @@ impl Editor {
         egui::ScrollArea::vertical()
             .id_salt("tree-scroll")
             .show(ui, |ui| {
+                order_drop_rect=Some(ui.clip_rect());
+                if !self.setup_mode {self.record_target("drawOrderDropArea",ui.clip_rect());}
                 for (index, e) in entries.iter().enumerate() {
                     if !row_visible(&entries, index, &self.tree) {
                         continue;
@@ -129,7 +140,7 @@ impl Editor {
                     let key = e.item.key();
                     let dot = self.tree_dot(&e.item);
                     let selected = self.selection.as_ref() == Some(&e.item);
-                    ui.horizontal(|ui| {
+                    ui.scope_builder(egui::UiBuilder::new().id(egui::Id::new(("tree-row",&key))),|ui| { ui.horizontal(|ui| {
                         let (r, response) = ui.allocate_exact_size(vec2(15., 19.), Sense::click());
                         if let Some(active) = dot {
                             ui.painter().circle(
@@ -149,7 +160,19 @@ impl Editor {
                             }
                         }
                         if !self.setup_mode {
-                            if let TreeItem::Slot(slot) = e.item {
+                            if e.item==TreeItem::DrawOrder {
+                                match self.draw_order_state() {
+                                    Ok(state)=> {
+                                        let enabled=self.draw_order_input_available(ui.ctx());
+                                        let key=ui.add_enabled_ui(enabled,|ui|super::animation::pose_key_button(ui,state)).inner;
+                                        self.record_target("drawOrderKey",key.rect);
+                                        if key.clicked() {actions.push(Action::KeyDrawOrder);}
+                                        if key.secondary_clicked() {actions.push(Action::DeleteDrawOrder);}
+                                        key.on_hover_text("Key global draw order. Right-click removes its key.");
+                                    }
+                                    Err(error)=> {ui.colored_label(ACCENT,"Key timing error").on_hover_text(error);}
+                                }
+                            } else if let TreeItem::Slot(slot) = e.item {
                                 let property = peachy_engine::SlotProperty::Attachment;
                                 match self.slot_property_state(slot, property) {
                                     Ok(state) => {
@@ -192,16 +215,22 @@ impl Editor {
                             .attachment()
                             .is_some_and(|k| !self.attachment_editable(k))
                             || matches!(e.item, TreeItem::Constraint(index) if self.current_ik_pose(index).is_ok_and(|ik|ik.mix == 0.) || self.physics_constraint(index).is_some_and(|physics|physics.setup.mix == 0.));
-                        let row = ui.selectable_label(
-                            selected,
-                            RichText::new(format!("    {}", e.label)).color(if selected {
+                        let text=RichText::new(format!("    {}", e.label)).color(if selected {
                                 ACCENT
                             } else if inactive {
                                 MUTED
                             } else {
                                 Color32::LIGHT_GRAY
-                            }),
-                        );
+                            });
+                        let row=if matches!(e.item,TreeItem::DrawOrderSlot{..}) {
+                            ui.add(egui::Button::selectable(selected,text).sense(Sense::click_and_drag()).truncate())
+                        } else {ui.selectable_label(selected,text)};
+                        if let TreeItem::DrawOrderSlot{slot}=e.item {
+                            #[cfg(test)]
+                            self.record_draw_order_row_id(slot,row.id);
+                            order_rows.push((slot,row.rect));
+                            if row.drag_started_by(egui::PointerButton::Primary) {actions.push(Action::BeginDrawOrderDrag(slot));}
+                        }
                         let physics = matches!(e.item, TreeItem::Constraint(index) if self.physics_constraint(index).is_some());
                         let transform = matches!(e.item, TreeItem::Constraint(index) if self.transform_constraint(index).is_some());
                         draw_icon(
@@ -272,7 +301,7 @@ impl Editor {
                                 });
                             }
                         }
-                    });
+                    }); });
                 }
             });
         for action in actions {
@@ -280,6 +309,13 @@ impl Editor {
                 Action::Key(bone) => self.key_edited(Some(bone)),
                 Action::KeyIk(index) => self.key_ik(index),
                 Action::KeySlot(slot, property) => self.key_slot_property(slot, property),
+                Action::KeyDrawOrder => self.key_draw_order(),
+                Action::DeleteDrawOrder => self.delete_draw_order_key(),
+                Action::BeginDrawOrderDrag(slot) => {
+                    if let Some(drop_rect) = order_drop_rect {
+                        self.begin_draw_order_drag(slot, &order_rows, drop_rect, ui.ctx());
+                    }
+                }
                 Action::Select(item) => {
                     self.select(item);
                     // A clicked row is already visible. Scrolling it here can move
@@ -315,13 +351,16 @@ impl Editor {
                 }
             }
         }
+        self.update_draw_order_pointer(ui.ctx(), &order_rows, order_drop_rect);
     }
 
     fn tree_dot(&self, item: &TreeItem) -> Option<bool> {
         let doc = self.session.document();
         match item {
             TreeItem::Bone(i) => Some(!self.hidden_bones.contains(i)),
-            TreeItem::Slot(i) => Some(!self.hidden_slots.contains(i)),
+            TreeItem::Slot(i) | TreeItem::DrawOrderSlot { slot: i } => {
+                Some(!self.hidden_slots.contains(i))
+            }
             TreeItem::Skin(s) => Some(&self.skin == s),
             TreeItem::Folder(Folder::Skins) => Some(self.skin == "default"),
             TreeItem::Animation(i) => Some(self.animation == *i),
@@ -354,7 +393,7 @@ impl Editor {
                     }
                 }
             }
-            TreeItem::Slot(slot) => {
+            TreeItem::Slot(slot) | TreeItem::DrawOrderSlot { slot } => {
                 let hide = !self.hidden_slots.contains(slot);
                 set_hidden(&mut self.hidden_slots, *slot, hide);
             }
@@ -432,6 +471,15 @@ fn draw_icon(
     let stroke = Stroke::new(1., color);
     let r = egui::Rect::from_min_size(origin, vec2(10., 10.));
     match item {
+        TreeItem::DrawOrder => {
+            for index in 0..3 {
+                let y = r.top() + 2. + index as f32 * 3.;
+                p.line_segment(
+                    [pos2(r.left() + index as f32, y), pos2(r.right(), y)],
+                    stroke,
+                );
+            }
+        }
         TreeItem::Constraint(_) if physics => icons::draw_physics(p, r, color),
         TreeItem::Constraint(_) if transform => icons::draw_transform(p, r, color),
         TreeItem::Constraint(_) | TreeItem::Folder(Folder::Constraints) => {

@@ -117,6 +117,15 @@ Data sliders must use `SliderClamping::Edits` so viewing never rewrites data.
 
 Native v16 adds `Animation.draw_order` (Spine offsets as written; scenes draw
 in `EvaluatedPose.draw_order`, never slot-list order, in Animate).
+Global Animate authoring uses `Session::edit_draw_order` / fixed-baseline
+previews and explicit `key_draw_order`; pending order stays outside saved data.
+`SetDrawOrderKey` preserves raw entries, while `SetDrawOrder` encodes a complete
+permutation with our independent LIS algorithm. Same-order replacement preserves
+the old raw key. Never reorder `Document.slots` for Animate edits. The strict
+global owner is `KeyOwner::DrawOrder {}` (empty struct, not a serde unit variant);
+its clipboard requires the identical ordered slot-name layout. Tree slots show
+front first, with explicit stable widget IDs; engine arrays run back to front.
+See docs/slices/draw-order-authoring.md for the calibrated pending/history limits.
 
 Native v15 adds `Document.events`, `Document.reference_scale` and
 `Animation.events` (data only; key overrides stay `Option`). Constraint names

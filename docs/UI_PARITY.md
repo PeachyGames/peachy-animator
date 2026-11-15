@@ -1,5 +1,32 @@
 # Spine workspace and interaction parity
 
+## Global Animate draw order — November 14, 2026
+
+Installed 4.3.26 shows a Draw order Tree category with frontmost slots first,
+a key button beside that category, Reset below the Tree, and discrete blue
+Draw order → Default Dopesheet keys. Peachy follows that control hierarchy;
+engine order remains back to front and setup slot identities stay fixed.
+`=` / `-` moves the selected slot one place; Shift moves five, clamped at the
+bounds. Auto Key off keeps both absent-time and existing-key edits pending.
+Enabling Auto Key keys mixed pending edits together through the shared Session.
+
+Actual native input verifies typed Rotate 15, pending Save exclusion, mixed
+flush Undo/Redo, Shift clamping, boundary and Reset no-op redo, row drag with
+one-step history, unselected source identity, Escape, held-pointer blocking,
+outside release cancellation and full-width row re-entry. Exact global keys
+support native keyboard copy/paste, reset-key retime to 1.75 seconds and Delete
+with Undo/Redo. The exact final eight-key public example reopens in a fresh
+process with four images and working playback. Both authored runtime checks and
+installed 4.3.26 interchange pass. See [the review gallery](evidence/draw-order-authoring.html)
+and [the measured contract](slices/draw-order-authoring.md).
+
+Peachy restores pending work on mixed-flush Undo; the measured native reference
+instead re-evaluates its keyed pose. Cross-layout clipboard mapping, draw-order
+folders, Setup slot reordering, exact styling and the reference's compact
+Tree/property sizing remain open. This is bounded control and interaction
+parity, not pixel equivalence. Curves footer buttons now fit their column so
+the plot keeps a stable width during a drag.
+
 ## Curves and scalar Graph — November 14, 2026
 
 Installed 4.3.26 places Curves between viewport and Tree, above the full-width

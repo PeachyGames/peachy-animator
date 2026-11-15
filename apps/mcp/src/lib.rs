@@ -182,7 +182,7 @@ struct EvaluateInput {
 struct CopyAnimationKeysInput {
     expected_revision: u64,
     animation: usize,
-    /// Exact typed identities from one bone, IK constraint, Deform attachment or slot.
+    /// Exact typed identities from one bone, IK constraint, Deform attachment, slot or global draw order.
     keys: Vec<AnimationKeyInput>,
 }
 
@@ -352,7 +352,7 @@ impl AnimatorServer {
     }
 
     #[tool(
-        description = "Copy exact bone, IK, Deform or slot attachment/color animation keys from one owner into a portable typed clipboard without changing history, revision or the document. Relative times share one zero origin; slot clipboards retain both key kinds and four color curves. Deform clipboards include dense offsets, curves and vertex/influence layout for compatible cross-attachment pasteAnimationKeys commands.",
+        description = "Copy exact bone, IK, Deform, slot attachment/color or global draw-order animation keys from one owner into a portable typed clipboard without changing history, revision or the document. Relative times share one zero origin; slot clipboards retain both key kinds and four color curves. Deform clipboards include dense offsets, curves and vertex/influence layout. Draw-order clipboards preserve raw offsets and require the identical ordered slot-name layout for pasteAnimationKeys.",
         annotations(read_only_hint = true, idempotent_hint = true, open_world_hint = false)
     )]
     fn copy_animation_keys(
@@ -430,7 +430,7 @@ impl AnimatorServer {
     }
 
     #[tool(
-        description = "Evaluate Setup or an animation at a time using the shared checked pose/IK/mesh engine. Returns authored locals, appliedLocals, world transforms, slotAttachments, raw unmultiplied float slotColors, textured geometry and bounds. Slot arrays include hidden slots, before attachment tint and byte display rounding. This is geometry, not a raster preview or live desktop pose.",
+        description = "Evaluate Setup or an animation at a time using the shared checked pose/IK/mesh engine. Returns authored locals, appliedLocals, world transforms, slotAttachments, raw unmultiplied float slotColors, complete back-to-front drawOrder slot indices, textured geometry and bounds. Slot arrays and drawOrder include hidden and empty slots, before tint and byte display rounding. This is geometry, not a raster preview or live desktop pose.",
         annotations(read_only_hint = true, idempotent_hint = true, open_world_hint = false)
     )]
     fn evaluate_pose(&self, Parameters(input): Parameters<EvaluateInput>) -> CallToolResult {
@@ -440,7 +440,7 @@ impl AnimatorServer {
             if !document.skins.is_empty() && !document.skins.contains_key(&input.skin){return Err("Unknown skin".into());}
             let authored=sample_authored_pose(document,animation,input.time)?;
             let scene=checked_scene_from_authored(document,&input.skin,&authored)?;
-            Ok(json!({"revision":state.revision,"animation":input.animation,"time":input.time,"skin":input.skin,"locals":scene.locals,"appliedLocals":scene.applied_locals,"world":scene.world,"slotAttachments":authored.slot_attachments(),"slotColors":authored.slot_colors(),"attachments":scene.attachments,"bounds":scene.bounds.map(|bounds|json!({"min":bounds.min,"max":bounds.max}))}))
+            Ok(json!({"revision":state.revision,"animation":input.animation,"time":input.time,"skin":input.skin,"locals":scene.locals,"appliedLocals":scene.applied_locals,"world":scene.world,"slotAttachments":authored.slot_attachments(),"slotColors":authored.slot_colors(),"drawOrder":authored.draw_order(),"attachments":scene.attachments,"bounds":scene.bounds.map(|bounds|json!({"min":bounds.min,"max":bounds.max}))}))
         })
     }
 

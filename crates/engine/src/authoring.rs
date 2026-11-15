@@ -16,6 +16,8 @@ pub struct PoseEdits {
     deform_values: Vec<DeformPoseValue>,
     slot_attachments: Vec<SlotAttachmentPoseValue>,
     slot_colors: Vec<SlotColorPoseValue>,
+    /// Complete global order for the current animation, never serialized in Document.
+    draw_order: Option<Vec<usize>>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize)]
 struct SlotAttachmentPoseValue {
@@ -113,6 +115,60 @@ impl PoseEdits {
             && self.deform_values.is_empty()
             && self.slot_attachments.is_empty()
             && self.slot_colors.is_empty()
+            && self.draw_order.is_none()
+    }
+    pub fn pending_draw_order(&self, animation: usize) -> Option<&[usize]> {
+        (self.animation == Some(animation))
+            .then_some(self.draw_order.as_deref())
+            .flatten()
+    }
+    pub fn has_draw_order(&self, animation: usize) -> bool {
+        self.pending_draw_order(animation).is_some()
+    }
+    pub fn draw_order_key_state(
+        &self,
+        doc: &Document,
+        animation: usize,
+        time: f32,
+    ) -> Result<KeyState, String> {
+        let key = crate::draw_order_key_time(doc, animation, time)?;
+        Ok(if self.has_draw_order(animation) {
+            KeyState::Edited
+        } else if key.is_some() {
+            KeyState::Keyed
+        } else {
+            KeyState::Absent
+        })
+    }
+    pub(crate) fn edit_draw_order(
+        &self,
+        doc: &Document,
+        animation: usize,
+        time: f32,
+        order: Vec<usize>,
+    ) -> Result<Self, String> {
+        crate::draw_order_authoring::validate_order(doc.slots.len(), &order)?;
+        let sampled = sample_authored_pose(doc, Some(animation), time)?;
+        let mut next = if self.animation == Some(animation) {
+            self.clone()
+        } else {
+            Self::default()
+        };
+        next.draw_order = (order != sampled.draw_order()).then_some(order);
+        next.animation = if next.is_empty() {
+            None
+        } else {
+            Some(animation)
+        };
+        Ok(next)
+    }
+    pub(crate) fn remove_draw_order(&mut self, animation: usize) {
+        if self.animation == Some(animation) {
+            self.draw_order = None;
+            if self.is_empty() {
+                self.animation = None;
+            }
+        }
     }
     pub fn has_slot(&self, animation: usize, slot: usize, property: SlotProperty) -> bool {
         self.animation == Some(animation)
@@ -330,6 +386,12 @@ impl PoseEdits {
         after: &Document,
     ) -> Result<Self, String> {
         let mut next = self.clone();
+        if let Some(order) = &next.draw_order {
+            if before.slots.len() != after.slots.len() {
+                return Err("Slot count cannot change while a draw order pose is pending".into());
+            }
+            crate::draw_order_authoring::validate_order(after.slots.len(), order)?;
+        }
         for value in &mut next.deform_values {
             value.attachment =
                 crate::deform_authoring::check_layout_transition(before, after, &value.attachment)?;
@@ -403,6 +465,10 @@ impl PoseEdits {
     ) -> Result<AuthoredPose, String> {
         let mut pose = sample_authored_pose(doc, animation, time)?;
         if animation.is_some() && self.animation == animation {
+            if let Some(order) = &self.draw_order {
+                crate::draw_order_authoring::validate_order(doc.slots.len(), order)?;
+                pose.draw_order = order.clone();
+            }
             for value in &self.values {
                 let local = pose
                     .locals

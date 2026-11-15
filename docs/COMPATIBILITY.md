@@ -4,9 +4,25 @@ Target: Spine **4.3.x JSON**, with export metadata `4.3.26`. The initial externa
 oracle is separately installed `@esotericsoftware/spine-core` **4.3.13**.
 Compatibility applies to the subset below, not every 4.3 project or future patch.
 
+Global draw-order authoring addition (November 14): native Animate controls add
+pending order and Auto Key/K. Exact raw-key/complete-permutation commands and
+typed retime/copy/paste/delete share the engine with MCP. MCP has **51 commands /
+11 tools**; native v22 is unchanged. Full order readback includes hidden and
+empty slots. Untouched imported offsets stay as written; semantic same-order
+overwrites preserve their raw representation. New semantic keys use an independent
+minimal LIS encoder whose tie choice does not claim native identity.
+
+Clipboard paste requires the identical ordered slot-name layout. Setup order is
+readable, while Setup reordering, draw-order folders, constraint-modified order
+and broader clipboard mapping remain deferred. Peachy's mixed-flush Undo restores
+the pre-key pending pose; the measured native Undo instead re-evaluates keys.
+Native input, fresh-process reopen, both authored runtime checks and installed
+4.3.26 reimport/re-export pass. The editor may choose a different equivalent
+minimal offset list. See [the bounded contract](slices/draw-order-authoring.md).
+
 Curves authoring addition (November 14): exact scalar/IK curve-only setters and
 shared interval presets/handle actions are available natively and through MCP
-(49 commands / 11 tools; native v22). Scalar import retains flat Bezier controls.
+(native v22). Scalar import retains flat Bezier controls.
 Curves fits relative handles and keeps flat plots blank; absolute Graph retains
 their excursions. Native interaction, fresh-process persistence and both authored
 runtime comparisons pass. Separate-off adjacent selected intervals, Custom with

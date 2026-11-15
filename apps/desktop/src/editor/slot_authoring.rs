@@ -5,7 +5,9 @@ use peachy_engine::{SlotPose, SlotPoseEdit, SlotProperty};
 impl Editor {
     pub(super) fn selected_slot(&self) -> Option<usize> {
         match self.selection.as_ref()? {
-            TreeItem::Slot(slot) | TreeItem::Placeholder { slot, .. }
+            TreeItem::Slot(slot)
+            | TreeItem::DrawOrderSlot { slot }
+            | TreeItem::Placeholder { slot, .. }
                 if *slot < self.session.document().slots.len() =>
             {
                 Some(*slot)

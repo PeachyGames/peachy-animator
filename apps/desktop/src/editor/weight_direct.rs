@@ -322,6 +322,7 @@ impl Editor {
     pub(super) fn finish_idle_transactions(&mut self, ctx: &egui::Context) {
         self.settle_slot_color_input(ctx);
         self.settle_graph_input(ctx);
+        self.settle_draw_order_input(ctx);
         // A menu/modal can open during this frame, after keyboard routing queued an action.
         if !ctx.input(|input| input.focused)
             || self.error.is_some()
@@ -345,6 +346,7 @@ impl Editor {
         }
         if self.weight_edit.is_none()
             && !self.graph_edit_active()
+            && !self.draw_order_edit_active()
             && !self.slot_color_edit_active()
             && self.ik_edit.is_none()
             && self.drag.is_none()

@@ -53,11 +53,11 @@ client's working directory. Absolute paths are accepted only inside that root.
 | `create_project` | New in-memory root-only native document with an empty default skin. Uses an existing asset directory within `--root`; no finished rig is loaded and no file is written. Source is null until Save. |
 | `inspect_file` | Read-only native validation or Spine capability report. Does not replace the working document. |
 | `open_project` | Load `.peachy` (including supported legacy migrations) or supported Spine 4.3 JSON into a new Session. Failed imports leave the current session intact. |
-| `get_command_schema` | Full JSON Schema for the 49 supported flat command variants; the same schema appears inline in `apply_commands` discovery. |
+| `get_command_schema` | Full JSON Schema for the 51 supported flat command variants; the same schema appears inline in `apply_commands` discovery. |
 | `apply_commands` | Apply a nonempty flat list through one engine Batch, atomically and as one undo step. No file writes. |
-| `copy_animation_keys` | Read-only capture of exact keys from one bone, IK constraint, Deform attachment or slot. Slot clipboards can mix attachment and color keys with one relative origin; Deform includes vertex/influence layout. Requires the current revision. |
+| `copy_animation_keys` | Read-only capture of exact keys from one bone, IK constraint, Deform attachment, slot or global draw order. Slot clipboards can mix attachment and color keys with one relative origin; Deform includes vertex/influence layout. Draw order requires the identical ordered slot-name layout on paste. Requires the current revision. |
 | `history` | Undo or redo one complete edit using the shared Session history. |
-| `evaluate_pose` | Setup or a named animation at a nonnegative time in seconds, with optional skin. Returns authored locals, IK-applied locals, world matrices, raw `slotAttachments`/`slotColors`, textured vertex/UV/index buffers and bounds. |
+| `evaluate_pose` | Setup or a named animation at a nonnegative time in seconds, with optional skin. Returns authored locals, IK-applied locals, world matrices, raw `slotAttachments`/`slotColors`, complete back-to-front `drawOrder` including hidden/empty slots, textured vertex/UV/index buffers and bounds. |
 | `save_project` | Create a new directory containing `project.peachy` and the required loose `images/`; marks the headless Session saved. |
 | `export_project` | New Spine JSON file, or a fresh packed JSON/atlas/PNG directory inside an existing parent. Optional `target` defaults to `spineEditor43`; use `runtime43` to retain independent attachment names/placeholders for runtime consumers. Does not mark the native document saved. |
 
@@ -398,6 +398,45 @@ channel, while unrepresentable colors fail atomically. Existing sampling
 arithmetic may differ from the installed editor by one encoded byte at
 half-byte ties; this is not a claim of lossless subbyte key storage or complete
 native UI acceptance.
+
+## Global draw-order authoring
+
+`setDrawOrder` accepts every slot index exactly once, **back to front**, including
+hidden slots and slots without attachments. For a four-slot document, this moves
+slot 0 to the front at half a second and restores setup order at 1.5 seconds:
+
+```json
+{
+  "expected_revision": 1,
+  "commands": [
+    {"command":"setDrawOrder","animation":0,"time":0.5,"order":[1,2,3,0]},
+    {"command":"setDrawOrder","animation":0,"time":1.5,"order":[0,1,2,3]}
+  ]
+}
+```
+
+These are persistent stepped keys; the Tree displays the reverse order, with
+frontmost slots first. A new identity-order key is an explicit reset/hold,
+distinct from no key. `setDrawOrderKey` accepts an exact native key such as
+`{"time":0.5,"offsets":[{"slot":0,"offset":3}]}`. Offsets are signed integers;
+entries must be in setup-slot order and have distinct in-range destinations.
+Valid redundant zero entries survive raw authoring, history, clipboard and
+persistence. Semantic replacement of a key with the same order preserves that
+key's raw encoding. Newly encoded keys minimize moved entries independently;
+exact native tie choices are not claimed.
+
+Copy, move and delete use exact identities `{"type":"drawOrder","time":0.5}`.
+Paste targets the singleton `{"type":"drawOrder"}`. Its clipboard carries
+relative-time raw keys plus ordered slot names; paste requires the identical
+ordered slot-name layout and rejects mismatches atomically. No slot or bone
+index belongs on the global owner. Global keys have no interpolated Graph or
+Curves channels. Read the complete sampled order from `evaluate_pose.drawOrder`;
+visible attachment geometry omits hidden/empty slots.
+
+MCP commands persist keys directly in the independent headless session. Native
+pending order and Auto Key use the shared Session boundary but are not a live
+desktop connection. Setup slot reordering, draw-order folders and cross-layout
+clipboard mapping remain outside this slice.
 
 ## History and file boundaries
 

@@ -5,6 +5,7 @@ mod color_curve_split;
 mod commands;
 mod curve_editing;
 mod deform_authoring;
+mod draw_order_authoring;
 mod ghosting;
 mod ik;
 mod ik_sampling;
@@ -30,6 +31,9 @@ pub use commands::{
     Command, EditTarget, apply_command, deform_keyframe_at, ik_keyframe_at, keyframe_at,
 };
 pub use curve_editing::{CurvePreset, CurveSelection, curve_edit_targets};
+pub use draw_order_authoring::{
+    DrawOrderPlacement, draw_order_key_time, move_draw_order_slot, place_draw_order_slot,
+};
 pub use ghosting::{
     GhostRange, GhostSample, GhostSampling, GhostSide, GhostSource, MAX_GHOST_SAMPLES,
     ghost_samples,
@@ -92,6 +96,8 @@ mod deform_tests;
 mod deform_timeline_tests;
 #[cfg(test)]
 mod direct_weight_tests;
+#[cfg(test)]
+mod draw_order_authoring_tests;
 #[cfg(test)]
 mod draw_order_tests;
 #[cfg(test)]
