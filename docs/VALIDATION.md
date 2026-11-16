@@ -1,5 +1,19 @@
 # First-slice validation — November 5, 2026
 
+## Cycle Offset engine/MCP foundation — November 16, 2026
+
+Final combined checks pass ten engine Offset tests, four MCP unit/two stdio
+Offset tests, existing discovery/Bone-pose/translation regressions, formatting,
+all-target Clippy, workspace build and seven-crate architecture checks. Source
+hashes stay fixed; workers are capped at two. Actual 25-tool MCP run04 passes
+276 requests, 97 blank-root construction commands and 11 atomic negatives,
+including native seven-step scalar comparison, exact history and Save/reopen.
+The saved seven-clip result passes 364 external Spine 4.3.13 runtime poses at
+0.001: maximum world error 0.000014148056052931679 and Region error
+0.0000152587890625. Runtime checks do not accept native Offset UI, native Step/
+negative/full-period/nonzero-loop interaction or the live desktop MCP bridge.
+See [scalar evidence](evidence/cycle-offset.json) and [scope](slices/cycle-offset.md).
+
 ## Verified bounded leaf routing — November 15, 2026
 
 `leaf-focused-checks-04` passes Leaf 10, Slot 46, Draw-order 9 and legacy

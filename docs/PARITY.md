@@ -5,6 +5,21 @@ runtime JSON. A feature is accepted through independent implementation, command/
 history checks, native interaction where applicable, and a controlled editor/runtime
 comparison. The native `.peachy` format is our own editable model.
 
+The current **cycle Offset foundation** exposes **v23 /64 commands /25 tools**,
+including `offset_animation_keys` and `reset_cycle_offset_memory`. Exact Bone
+key seeds identify whole closed property tracks. Native observations distinguish
+same-set memory, shrinking with surviving originals and expansion that recaptures
+all selected current tracks. Final source04 and actual MCP04 pass 276 requests,
+97 construction commands and 11 atomic negatives, matching the seven-step
+installed-reference goldens with exact Undo/Redo/Save/reopen. The unchanged public
+authored result passes 364 external-runtime poses at 0.001; full native Offset
+UI/seed-selection mapping is open.
+See the [slice](slices/cycle-offset.md), [MCP contract](MCP.md#closed-bone-track-cycle-offset),
+[scalar evidence](evidence/cycle-offset.json),
+[original baseline](../examples/peach-bot/cycle-offset-bot.peachy),
+[authored result](../examples/peach-bot/cycle-offset-authored-bot.peachy) and
+[97-command recipe](../examples/peach-bot/cycle-offset-authoring-commands.json).
+
 Latest **UI-only workspace checkpoint**, November 16: adaptive panel budgets pass
 native acceptance on Desktop `d1fc05d9…14e8`. At 1120×740, the measured
 Dopesheet/Timeline and Playback variants retain at least 206 canvas pixels and
@@ -19,7 +34,7 @@ Offset foundation tests; the UI checkpoint excludes that engine work. The earlie
 checkpoint below stays separate. See [review](evidence/minimum-workspace.html),
 [scalars](evidence/minimum-workspace.json) and [UI limits](UI_PARITY.md).
 
-Current **bounded native/MCP checkpoint**: native **v23 /64 commands /23 tools**. Ordered
+Earlier **bounded native/MCP checkpoint**: native **v23 /64 commands /23 tools**. Ordered
 multi-Bone selection and shared atomic authored-pose edits/keying now support
 pending poses and Auto Key; shared translation filters selected descendants and
 uses one evaluated input frame. Actual blank-root MCP run03 passes 104 requests,
@@ -164,6 +179,7 @@ not a new native claim. All final affected local checks pass. See
 | Mesh Tools view | Size/Feather/Hull soft selection for unweighted Setup vertex drags and nudges; frozen atomic gestures, influence colors and radius rings | Single selected vertex; Rotate/Scale, weighted/Animate soft transforms and other vertex attachment types remain pending. See [scope](VIEWS.md) |
 | Compact Timeline view | Shared cursor/transport, exact global key markers, decimal entry, snapped/Shift scrubbing, Loop wrapping, pan/zoom and Zoom Keys below the viewport | Independent of Dopesheet visibility; input/history/pose and minimum-window checks. Shared pan/zoom, free docking and exact installed interaction parity remain pending. See [scope](VIEWS.md) |
 | Timeline authoring | Exact typed owner/key inventory, bounded all-owner rows/selection and ordinary mixed retiming/removal; grouped clipboard with global origin, separate source receipts and explicit engine/MCP target maps; animation rename/duplicate | Grouped MCP run02/57, source checks,208 runtime poses and bounded native authoring/minimum/Save/fresh-reopen pass. Paste preserves original selection; typed-document recovery is exact without raw JSON byte equality. Later leaf routing passes five native owner cases, native Undo and same-case Save/fresh typed reopen against MCP71. Compound direct Bone/Slot presentation and explicit Slot leaf targets pass MCP44 and bounded Native14b: mixed12-key retime/history/cancel, minimum timeline targets and Save/fresh reopen; separate MCP10 reads the edited native Save exactly. See [compound review](evidence/compound-dopesheet.html). Full Region controls/row styling, compound Graph/Deform hierarchy, general Tree mapping, Shift/Offset, marquee, Lock/Sync, unsupported timeline editing and clip mixing remain. See [leaf scope](slices/leaf-clipboard.md). See [group scope](slices/grouped-clipboard.md) and [ordinary timing](slices/multi-owner-timeline.md) |
+| Cycle Offset foundation | Shared Session/pure planner and two MCP tools offset whole closed Bone/property tracks from exact key seeds; original-curve memory follows same/shrinking/expanding affected sets | Source04 and actual MCP04 pass 276 requests/97 commands/11 atomic negatives, seven-step reference goldens and history/reopen. The public authored result passes 364 runtime poses at 0.001. Full native Offset UI/seed-selection mapping, non-Bone families, open/outside-loop tracks and remaining reference gates stay open. See [scope](slices/cycle-offset.md) and [evidence](evidence/cycle-offset.json) |
 | Rig/artwork authoring | Add child bones, rename bones/slots; fresh MCP root-only projects and append-only slot/region/weighted mesh creation through shared commands | Desktop image import/attachment creation and freeform topology remain; stable IDs required before delete/reparent. See [tutorial reconstruction](slices/training-recreation.md) |
 | IK constraints | Bounded one-/two-bone normal IK, animated targets, authored/applied separation, Setup Mix/Positive/target/Rename; keyed Mix/Positive in grouped Dopesheet rows with typed retiming/clipboard and shared pending poses (native9) | [Phase A](slices/ik-design.md), [animated IK review](IK_ANIMATION_REVIEW.md); raw curve precision, creation, transformed chains, interactive review and exact installed UI remain gates |
 | Nested IK chains and child offsets | Leg-then-toe style chains solve sequentially in list order (either order); two-bone children may sit off the parent axis | Original Chain Lab and offset variants match the external runtime in forward and reversed order; a 62-bone game rig with 6 IK and 16 physics constraints round-trips with matching poses |

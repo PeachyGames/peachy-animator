@@ -6,7 +6,18 @@ native window. The server calls the same document, command, Session, checked pos
 evaluation and file services as the desktop. It uses the official
 [Rust MCP SDK](https://github.com/modelcontextprotocol/rust-sdk), pinned by Cargo.lock.
 
-The multi-Bone **bounded native/MCP checkpoint** keeps native **v23** and **64 commands**,
+The current implementation publishes **native v23 /64 commands /25 tools**.
+The two new tools, `offset_animation_keys` and `reset_cycle_offset_memory`, expose
+the shared closed Bone-track Offset foundation. Final source04 passes ten engine
+cases, four MCP unit/two actual stdio cases, discovery and prior pose/Translate
+regressions, formatting, Clippy/build and architecture7. Actual MCP04 passes
+276 requests, 97 construction commands and 11 atomic negatives, seven-step
+installed-reference goldens and exact Undo/Redo/Save/reopen; its owned child is
+closed. The unchanged public authored result passes 364 external-runtime poses
+at 0.001. This does not accept full Offset UI or a live desktop bridge.
+See [scalar evidence](evidence/cycle-offset.json).
+
+The earlier November 16 multi-Bone **bounded native/MCP checkpoint** keeps native **v23** and **64 commands**,
 with **23 tools** including shared semantic Translate. Actual run03 on the final
 workspace binary passes
 **104 stdio requests**, **57 construction commands**, **21 pose queries** and
@@ -31,8 +42,9 @@ key scrolling, exact pending/redo/selection preservation and default-height
 recovery at 1500×960. It reuses the byte-exact native `14f2` project and adds no
 MCP tool, command, protocol replay or runtime comparison. See the
 [workspace review](evidence/minimum-workspace.html) and
-[scalar evidence](evidence/minimum-workspace.json). The uncommitted engine cycle
-Offset foundation is separate and has no integrated UI/MCP acceptance.
+[scalar evidence](evidence/minimum-workspace.json). The subsequently pushed engine
+Offset foundation (`263ebca`) and current 25-tool continuation are separate from
+that UI-only proof; their temporary contract is described below.
 
 The preceding 22-tool explicit-pose
 checkpoint passed 138 actual MCP requests from a blank project/one original PNG,
@@ -96,7 +108,7 @@ client's working directory. Absolute paths are accepted only inside that root.
 
 | Tool | Behavior |
 | --- | --- |
-| `get_document` | Complete native document, current revision, committed-data dirty flag, undo/redo availability, source and animation/skin inventory. `hasPendingEdits` and `pendingPose` describe transient values separately. Before Open it returns revision 0 and no document. |
+| `get_document` | Complete native document, current revision, committed-data dirty flag, undo/redo availability, source and animation/skin inventory. `hasPendingEdits`/`pendingPose` describe transient poses; `hasCycleOffsetMemory` reports whether remembered Offset origins exist. Before Open it returns revision 0, no document and no memory. |
 | `create_project` | New in-memory root-only native document with an empty default skin. Uses an existing asset directory within `--root`; no finished rig is loaded and no file is written. Source is null until Save. |
 | `inspect_file` | Read-only native validation or Spine capability report. Does not replace the working document. |
 | `open_project` | Load `.peachy` (including supported legacy migrations) or supported Spine 4.3 JSON into a new Session. Failed imports leave the current session intact. |
@@ -106,6 +118,8 @@ client's working directory. Absolute paths are accepted only inside that root.
 | `transform_bones` | Revision-checked semantic Translate for an explicit ordered Bone selection, selected primary and required skin. Uses one evaluated input frame and shared Local/Parent/World conversion, filters selected descendants, then applies all candidate poses atomically through Session. |
 | `key_bone_poses` | Revision-checked keying of explicit per-Bone property lists from one shared authored/pending snapshot. One atomic undo step; no implicit X/Y grouping. |
 | `key_edited_pose` | Revision-checked global K equivalent: key every edited Bone/IK/Slider/Deform/Slot/DrawOrder target for one animation/time in one shared Session operation. |
+| `offset_animation_keys` | Revision-checked periodic Offset of whole closed Bone scalar tracks identified by exact key seeds. Uses Session origins/phases with canonical track-set shrink/expansion rules. Returns every affected key, boundary keys and phase receipts; see the temporary scope below. |
+| `reset_cycle_offset_memory` | Revision-checked explicit clearing of all current remembered Offset tracks. Changes no Document, pending pose, dirty baseline or authoring history; successful reset advances revision. |
 | `get_animation_keys` | Revision-checked authored inventory and exact keys for required explicit owners. Empty owners return inventory with no selected keys. Reports unsupported timeline families; no pending pose, geometry solve, visibility filtering or mutation. See the strict contract below. |
 | `copy_animation_keys` | Read-only capture of exact keys from one bone, IK or Slider constraint, Deform attachment, slot or global draw order. Slider clipboards retain independent Time/Mix identities and one relative origin. Slot clipboards can mix attachment and color keys; Deform includes vertex/influence layout. Draw order requires the identical ordered slot-name layout on paste. Requires the current revision. |
 | `copy_animation_key_group` | Revision-checked read-only mixed-owner copy of exact typed keys. Returns portable `clipboard.entries` sharing one global origin and separate `sourceOwners` in first-owner appearance order. Paste through `pasteAnimationKeyGroup` with an explicit complete entry-to-target map. |
@@ -120,7 +134,7 @@ client's working directory. Absolute paths are accepted only inside that root.
 | `save_project` | Create a new directory containing `project.peachy` and the required loose `images/`; marks the headless Session saved. |
 | `export_project` | New Spine JSON file, or a fresh packed JSON/atlas/PNG directory inside an existing parent. Optional `target` defaults to `spineEditor43`; use `runtime43` to retain independent attachment names/placeholders for runtime consumers. Does not mark the native document saved. |
 
-These 23 tools publish parameter schemas, descriptions and behavior annotations through
+These 25 tools publish parameter schemas, descriptions and behavior annotations through
 MCP `tools/list`. Successful results include both `structuredContent` and matching
 serialized text for older clients. Operational failures return `isError: true`
 with the current revision; malformed tool arguments use the SDK's protocol error.
@@ -170,7 +184,7 @@ describe committed document changes, separately from pending values.
 `evaluate_pose` and Slider own-turn evaluation use requested-skin authored sampling
 plus matching pending overlays through a read-only Session query. All effective
 domains and geometry derive from one checked solve. This is neither a transient
-skin switch nor a live GUI bridge. Current focused MCP checks pass six unit and
+skin switch nor a live GUI bridge. At the 23-tool checkpoint, focused MCP checks passed six unit and
 four actual stdio cases; the 104-request study also exercises the semantic tool.
 The later bounded native replay separately accepts selection, Translate, Parent
 numeric assignment, pending/keying/history and held cancellation. Minimum
@@ -219,6 +233,75 @@ Decoder/state/stdio, actual 104-request checks and final combined source gates
 pass, alongside bounded native Translate interaction acceptance. Group
 Rotate/Scale/Shear, non-Parent numeric operations, group numeric dragging,
 semantic cycle Offset and a live GUI bridge remain open.
+
+## Closed Bone-track cycle Offset
+
+`offset_animation_keys` requires exactly `expected_revision`, `animation`, `keys`,
+`range` and `delta`. Animation is an index; delta is signed finite f32 seconds.
+Range is an object with finite `start`/`end`, nonnegative start and end greater
+than start. Use exact current key IDs from `get_animation_keys`, for example:
+
+```json
+{"expected_revision":7,"animation":0,"keys":[{"type":"bone","bone":2,"property":"y","time":0}],"range":{"start":0,"end":1},"delta":0.1}
+```
+
+Every supplied key must exist. A nonempty valid subset acts as **track seeds**:
+one key shifts its whole Bone/property track, including unselected keys. Multiple
+distinct seeds on the same track still apply one offset; duplicate exact IDs
+reject. Each affected track must fill the explicit range, with first/end keys
+exactly at the bounds and matching endpoint values. Outside-range/open tracks
+and non-Bone families are unsupported. This tool does not retime an arbitrary
+partial key selection or infer a loop from the current selection.
+
+Session memory identifies tracks by animation, Bone, property and loop bounds;
+seed count/order do not define the cohort. The same affected track set continues
+its remembered originals and phases. Shrinking the set preserves surviving
+origins/phases and drops departed tracks. Adding any new track recaptures **all
+selected current tracks** at phase zero before applying the delta. A returning
+departed track counts as new; its old memory is not revived. Prior seam keys may
+therefore become ordinary source keys when an expanded set is recaptured.
+Changing selection without calling Offset does not itself mutate memory.
+
+Every remembered old track/context is checked before a shrink or expansion,
+including tracks about to depart. Raw edits, rename/FPS changes or other stale
+affected context refuse atomically. Reset explicitly before intentional recapture;
+a failing offset never silently clears the old cache. Missing/null/unknown fields,
+positional objects encoded as arrays, non-string property tokens, invalid IDs,
+duplicate seeds, nonfinite/unrepresentable results and stale revisions also
+preserve Document, pending values, redo, memory and revision.
+
+The response is `{revision,state,keys,boundaryKeys,phases}`. `keys` includes all
+current keys of the affected tracks, not just seeds; `boundaryKeys` identifies the
+two loop bounds per track. Each phase record contains `source`, `range:{start,end}`
+and `phase`, relative to that cohort's captured originals. These receipts do not
+automatically select new/generated keys or change an open desktop window.
+
+`reset_cycle_offset_memory` requires only `{"expected_revision":7}`. It clears
+all current remembered tracks without changing Document, pending values, dirty
+state or authoring history; it refuses an active transaction. Successful reset
+advances server revision, even if memory was already empty. Reset is separate
+from Offset so a later failure cannot erase memory as a side effect.
+
+An Offset that changes authoring data creates at most one Session history step
+and preserves unrelated pending poses. No-op/context-only cache capture creates
+no authoring history and does not clear redo. Successful tool calls still advance
+server revision. Undo/Redo restore authoring state and their remembered-memory snapshots;
+the explicit reset itself creates no authoring Undo entry. Save/export exclude
+memory and pending values. Save retains the live Session cache; Open/New start
+with empty memory. `state.hasCycleOffsetMemory` exposes presence only, outside
+saved native data. Neither tool adds a Command variant or format migration.
+
+The earlier 213-request actual run passed its then-current any-change-rebase
+policy; it is historical after the native shrink correction. Final corrected
+source04 and actual MCP04 now pass: 276 requests/97 construction commands/11
+atomic negatives, seven-step reference goldens, exact Undo/Redo/Save/reopen and
+unchanged inputs/binaries. The saved authored SHA `0316f848…3d73` is unchanged.
+The current CLI checks all seven authored clips at 52 samples each: **364 poses**
+at unchanged **0.001**, maximum world error **1.4148056052931679e−5** and Region
+error **1.52587890625e−5**. See [scalar evidence](evidence/cycle-offset.json).
+Desktop Offset controls,
+broader timeline families, open/outside ranges and full Spine Offset parity are
+not accepted by this foundation.
 
 ## Exact authored key inventory and mixed timing
 
@@ -972,7 +1055,7 @@ calibration, differences and verification limits.
 
 ## World X to Rotate mapping
 
-The implementation inventory is v23, with **64 commands /23 tools**; bounded semantic Translate native/MCP acceptance passes.
+The implementation inventory is v23, with **64 commands /25 tools**; bounded semantic Translate native/MCP acceptance and the closed Bone-track Offset engine/MCP foundation pass their separate checks. Native Offset UI remains open.
 An existing world-space X→Rotate transform constraint can be edited by the same
 semantic range operation as the native Min/Max controls:
 

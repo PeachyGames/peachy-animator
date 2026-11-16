@@ -1,0 +1,792 @@
+{
+  "title": "Cycle Offset shared engine and MCP foundation",
+  "date": "2026-11-16",
+  "nativeFormat": 23,
+  "commands": 64,
+  "mcpTools": 25,
+  "acceptedScope": "Shared closed Bone scalar track offsets and headless MCP authoring; full native Offset UI remains open",
+  "examples": [
+    {
+      "path": "examples/peach-bot/cycle-offset-bot.peachy",
+      "sha256": "a374cb1e5e7307e32f27c829fbcd51f76a467ed22b8856005a77a9d0a8934f0c"
+    },
+    {
+      "path": "examples/peach-bot/cycle-offset-authored-bot.peachy",
+      "sha256": "0316f8487a35701171c2f18b27c483d9a5b5beb47854534aaf03dca4c4cf3d73"
+    },
+    {
+      "path": "examples/peach-bot/cycle-offset-authoring-commands.json",
+      "sha256": "ac44e60168815faeffe6fad03dc3cdab0a0834be1d98dbccbfe0a5e0c66a2c33"
+    }
+  ],
+  "checks": {
+    "workers": 2,
+    "engineCycleOffset": 10,
+    "mcpCycleOffsetUnit": 4,
+    "mcpCycleOffsetStdio": 2,
+    "existingMcpDiscoveryAndBonePoseAndTranslation": "pass",
+    "formatting": "pass",
+    "allTargetClippy": "pass",
+    "workspaceBuild": "pass",
+    "architectureCrates": 7,
+    "sourceHashesStable": true,
+    "hostedCiPassed": false
+  },
+  "actualMcp": {
+    "requests": 276,
+    "constructionCommands": 97,
+    "atomicNegativeCases": 11,
+    "finishedRigImported": false,
+    "originalImages": 1,
+    "binarySha256": "6e09bc3686e70483226dc504557b9591371c0b899030373b544e328fa7694383",
+    "binaryUnchanged": true,
+    "inputsUnchanged": true,
+    "ownedChildClosed": true,
+    "savedProjectSha256": "0316f8487a35701171c2f18b27c483d9a5b5beb47854534aaf03dca4c4cf3d73",
+    "pendingExcludedFromSave": true,
+    "memoryExcludedFromSave": true,
+    "exactHistoryAndFreshReopen": true
+  },
+  "nativeReference": {
+    "editorVersion": "4.3.26",
+    "originalFixturesOnly": true,
+    "implementationInspected": false,
+    "scalarTolerance": 0.0001,
+    "policy": {
+      "sameTrackSet": "retain original curves and phase regardless seed order/count",
+      "subset": "retain remaining originals/phases and drop departed tracks",
+      "newTrackOrReturningTrack": "capture all selected current tracks at phase zero"
+    },
+    "linearSevenStepOwners": [
+      [
+        "driver"
+      ],
+      [
+        "driver",
+        "follower"
+      ],
+      [
+        "driver",
+        "follower"
+      ],
+      [
+        "driver",
+        "follower"
+      ],
+      [
+        "driver",
+        "follower"
+      ],
+      [
+        "driver"
+      ],
+      [
+        "driver",
+        "follower"
+      ]
+    ],
+    "linearSevenStepDeltaSeconds": 0.1,
+    "linearSevenStepScalars": [
+      {
+        "bones": {
+          "driver": {
+            "translatey": [
+              {
+                "value": 1.999998
+              },
+              {
+                "time": 0.1,
+                "value": 8
+              },
+              {
+                "time": 0.3,
+                "value": 32
+              },
+              {
+                "time": 0.7,
+                "value": -16
+              },
+              {
+                "time": 1,
+                "value": 1.999998
+              }
+            ]
+          },
+          "follower": {
+            "rotate": [
+              {
+                "value": 15
+              },
+              {
+                "time": 0.35,
+                "value": -25
+              },
+              {
+                "time": 0.8,
+                "value": 45
+              },
+              {
+                "time": 1,
+                "value": 15
+              }
+            ]
+          }
+        }
+      },
+      {
+        "bones": {
+          "driver": {
+            "translatey": [
+              {
+                "value": -4.000004
+              },
+              {
+                "time": 0.1,
+                "value": 1.999998
+              },
+              {
+                "time": 0.2,
+                "value": 8
+              },
+              {
+                "time": 0.4,
+                "value": 32
+              },
+              {
+                "time": 0.8,
+                "value": -16
+              },
+              {
+                "time": 1,
+                "value": -4.000004
+              }
+            ]
+          },
+          "follower": {
+            "rotate": [
+              {
+                "value": 30.000004
+              },
+              {
+                "time": 0.1,
+                "value": 15
+              },
+              {
+                "time": 0.45,
+                "value": -25
+              },
+              {
+                "time": 0.9,
+                "value": 45
+              },
+              {
+                "time": 1,
+                "value": 30.000004
+              }
+            ]
+          }
+        }
+      },
+      {
+        "bones": {
+          "driver": {
+            "translatey": [
+              {
+                "value": -10.000004
+              },
+              {
+                "time": 0.2,
+                "value": 1.999998
+              },
+              {
+                "time": 0.3,
+                "value": 8
+              },
+              {
+                "time": 0.5,
+                "value": 32
+              },
+              {
+                "time": 0.9,
+                "value": -16
+              },
+              {
+                "time": 1,
+                "value": -10.000004
+              }
+            ]
+          },
+          "follower": {
+            "rotate": [
+              {
+                "value": 45
+              },
+              {
+                "time": 0.2,
+                "value": 15
+              },
+              {
+                "time": 0.55,
+                "value": -25
+              },
+              {
+                "time": 1,
+                "value": 45
+              }
+            ]
+          }
+        }
+      },
+      {
+        "bones": {
+          "driver": {
+            "translatey": [
+              {
+                "value": -16
+              },
+              {
+                "time": 0.3,
+                "value": 1.999998
+              },
+              {
+                "time": 0.4,
+                "value": 8
+              },
+              {
+                "time": 0.6,
+                "value": 32
+              },
+              {
+                "time": 1,
+                "value": -16
+              }
+            ]
+          },
+          "follower": {
+            "rotate": [
+              {
+                "value": 29.44444
+              },
+              {
+                "time": 0.1,
+                "value": 45
+              },
+              {
+                "time": 0.3,
+                "value": 15
+              },
+              {
+                "time": 0.65,
+                "value": -25
+              },
+              {
+                "time": 1,
+                "value": 29.44444
+              }
+            ]
+          }
+        }
+      },
+      {
+        "bones": {
+          "driver": {
+            "translatey": [
+              {
+                "value": -3.999996
+              },
+              {
+                "time": 0.1,
+                "value": -16
+              },
+              {
+                "time": 0.4,
+                "value": 1.999998
+              },
+              {
+                "time": 0.5,
+                "value": 8
+              },
+              {
+                "time": 0.7,
+                "value": 32
+              },
+              {
+                "time": 1,
+                "value": -3.999996
+              }
+            ]
+          },
+          "follower": {
+            "rotate": [
+              {
+                "value": 13.888882
+              },
+              {
+                "time": 0.2,
+                "value": 45
+              },
+              {
+                "time": 0.4,
+                "value": 15
+              },
+              {
+                "time": 0.75,
+                "value": -25
+              },
+              {
+                "time": 1,
+                "value": 13.888882
+              }
+            ]
+          }
+        }
+      },
+      {
+        "bones": {
+          "driver": {
+            "translatey": [
+              {
+                "value": 8.000008
+              },
+              {
+                "time": 0.2,
+                "value": -16
+              },
+              {
+                "time": 0.5,
+                "value": 1.999998
+              },
+              {
+                "time": 0.6,
+                "value": 8
+              },
+              {
+                "time": 0.8,
+                "value": 32
+              },
+              {
+                "time": 1,
+                "value": 8.000008
+              }
+            ]
+          },
+          "follower": {
+            "rotate": [
+              {
+                "value": 13.888882
+              },
+              {
+                "time": 0.2,
+                "value": 45
+              },
+              {
+                "time": 0.4,
+                "value": 15
+              },
+              {
+                "time": 0.75,
+                "value": -25
+              },
+              {
+                "time": 1,
+                "value": 13.888882
+              }
+            ]
+          }
+        }
+      },
+      {
+        "bones": {
+          "driver": {
+            "translatey": [
+              {
+                "value": 20.00001
+              },
+              {
+                "time": 0.1,
+                "value": 8.000008
+              },
+              {
+                "time": 0.3,
+                "value": -16
+              },
+              {
+                "time": 0.6,
+                "value": 1.999998
+              },
+              {
+                "time": 0.7,
+                "value": 8
+              },
+              {
+                "time": 0.9,
+                "value": 32
+              },
+              {
+                "time": 1,
+                "value": 20.00001
+              }
+            ]
+          },
+          "follower": {
+            "rotate": [
+              {
+                "value": -1.6666756
+              },
+              {
+                "time": 0.1,
+                "value": 13.888882
+              },
+              {
+                "time": 0.3,
+                "value": 45
+              },
+              {
+                "time": 0.5,
+                "value": 15
+              },
+              {
+                "time": 0.85,
+                "value": -25
+              },
+              {
+                "time": 1,
+                "value": -1.6666756
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "linearScopeQualification": "Steps 3 and 5 retain both affected tracks despite their historical subset labels. Step 6 uses an explicit single-Bone Tree scope and leaves the follower unchanged. Native seed-selection mapping is a separate UI gate.",
+    "closingBezierTotalFrames": [
+      12,
+      18,
+      24
+    ],
+    "closingBezierScalars": [
+      {
+        "bones": {
+          "driver": {
+            "translatey": [
+              {
+                "value": 11.195514,
+                "curve": [
+                  0.07645162,
+                  22.091953,
+                  0.15466665,
+                  27.946667
+                ]
+              },
+              {
+                "time": 0.2,
+                "value": 8
+              },
+              {
+                "time": 0.4,
+                "value": 32
+              },
+              {
+                "time": 0.8,
+                "value": -16,
+                "curve": [
+                  0.8218667,
+                  -22.56,
+                  0.9094792,
+                  -1.944312
+                ]
+              },
+              {
+                "time": 1,
+                "value": 11.195514
+              }
+            ]
+          },
+          "follower": {
+            "rotate": [
+              {
+                "value": -16.49734,
+                "curve": [
+                  0.0890808,
+                  -1.1645336,
+                  0.1824,
+                  26.733334
+                ]
+              },
+              {
+                "time": 0.2,
+                "value": 15
+              },
+              {
+                "time": 0.45,
+                "value": 44
+              },
+              {
+                "time": 0.85,
+                "value": -12,
+                "curve": [
+                  0.8789333,
+                  -31.84,
+                  0.9386186,
+                  -27.3
+                ]
+              },
+              {
+                "time": 1,
+                "value": -16.49734
+              }
+            ]
+          }
+        }
+      },
+      {
+        "bones": {
+          "driver": {
+            "translatey": [
+              {
+                "value": -5.19033,
+                "curve": [
+                  0.09693158,
+                  11.70097,
+                  0.2336666,
+                  37.18667
+                ]
+              },
+              {
+                "time": 0.3,
+                "value": 8
+              },
+              {
+                "time": 0.5,
+                "value": 32
+              },
+              {
+                "time": 0.9,
+                "value": -16,
+                "curve": [
+                  0.9134666,
+                  -20.04,
+                  0.951869,
+                  -13.7633
+                ]
+              },
+              {
+                "time": 1,
+                "value": -5.19033
+              }
+            ]
+          },
+          "follower": {
+            "rotate": [
+              {
+                "value": -24.695436,
+                "curve": [
+                  0.10005684,
+                  -29.802694,
+                  0.2752,
+                  31.53333
+                ]
+              },
+              {
+                "time": 0.3,
+                "value": 15
+              },
+              {
+                "time": 0.55,
+                "value": 44
+              },
+              {
+                "time": 0.95,
+                "value": -12,
+                "curve": [
+                  0.9621333,
+                  -20.32,
+                  0.9796746,
+                  -23.62456
+                ]
+              },
+              {
+                "time": 1,
+                "value": -24.695436
+              }
+            ]
+          }
+        }
+      },
+      {
+        "bones": {
+          "driver": {
+            "translatey": [
+              {
+                "value": -16,
+                "curve": [
+                  0.03999996,
+                  -28,
+                  0.3,
+                  52
+                ]
+              },
+              {
+                "time": 0.4,
+                "value": 8
+              },
+              {
+                "time": 0.6,
+                "value": 32
+              },
+              {
+                "time": 1,
+                "value": -16
+              }
+            ]
+          },
+          "follower": {
+            "rotate": [
+              {
+                "value": -4.999988
+              },
+              {
+                "time": 0.05,
+                "value": -12,
+                "curve": [
+                  0.11999995,
+                  -60,
+                  0.36999995,
+                  35
+                ]
+              },
+              {
+                "time": 0.4,
+                "value": 15
+              },
+              {
+                "time": 0.65,
+                "value": 44
+              },
+              {
+                "time": 1,
+                "value": -4.999988
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "allFourProbeAnimationsAndSourceRestored": true,
+    "ownedNativeProcessesClosed": true
+  },
+  "externalRuntime": {
+    "version": "4.3.13",
+    "samples": 364,
+    "oracle": {
+      "physicsConstraints": 0,
+      "physicsValues": 0,
+      "physicsTimelines": 0,
+      "physicsFrames": 0,
+      "regionComparisons": 11480,
+      "maxRegionError": 1.52587890625e-05,
+      "meshComparisons": 0,
+      "weightedMeshComparisons": 0,
+      "maxMeshError": 0,
+      "uvComparisons": 0,
+      "maxUVError": 0,
+      "runtime": "Spine 4.3 external oracle",
+      "bones": 7,
+      "slots": 4,
+      "skins": [
+        "default"
+      ],
+      "clips": [
+        {
+          "name": "clipboard",
+          "nativeEnd": 0.75,
+          "runtimeEnd": 0.75,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default"
+          ],
+          "maxWorldError": 7.325662764401386e-06
+        },
+        {
+          "name": "cycle_01_linear_memory",
+          "nativeEnd": 1,
+          "runtimeEnd": 1,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default"
+          ],
+          "maxWorldError": 1.4148056052931679e-05
+        },
+        {
+          "name": "cycle_02_closing_asymmetric_bezier",
+          "nativeEnd": 1,
+          "runtimeEnd": 1,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default"
+          ],
+          "maxWorldError": 1.3606155505385686e-05
+        },
+        {
+          "name": "cycle_03_descending_and_stepped",
+          "nativeEnd": 1,
+          "runtimeEnd": 1,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default"
+          ],
+          "maxWorldError": 9.686283519272365e-06
+        },
+        {
+          "name": "cycle_04_nonzero_loop_bounds",
+          "nativeEnd": 1.5,
+          "runtimeEnd": 1.5,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default"
+          ],
+          "maxWorldError": 1.1085684093359305e-05
+        },
+        {
+          "name": "retime",
+          "nativeEnd": 1,
+          "runtimeEnd": 1,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default"
+          ],
+          "maxWorldError": 1.200913195020803e-05
+        },
+        {
+          "name": "selection",
+          "nativeEnd": 1,
+          "runtimeEnd": 1,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default"
+          ],
+          "maxWorldError": 8.379792959090082e-06
+        }
+      ],
+      "tolerance": 0.001,
+      "maxWorldError": 1.4148056052931679e-05,
+      "comparisons": 15288,
+      "ikPoseComparisons": 0,
+      "maxIKMixError": 0,
+      "ikMixTolerance": 1e-06,
+      "drawOrderChecks": 364,
+      "imageChecks": 1435,
+      "colorComparisons": 5740
+    },
+    "inputsAndCliUnchanged": true,
+    "scope": "Saved closing-Bezier-authored result plus six retained clips; untouched Stepped/nonzero clips do not establish native Offset behavior in those domains."
+  },
+  "remaining": [
+    "Native Offset control and exact requested-seed selection mapping",
+    "Non-Bone and outside-loop/open tracks",
+    "Native Stepped, negative/full-period and nonzero-loop behavior",
+    "Broader intervening-edit/selection-context memory policy",
+    "Live desktop MCP bridge",
+    "Full Spine parity"
+  ]
+}

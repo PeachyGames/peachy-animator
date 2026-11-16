@@ -1367,3 +1367,37 @@ cross-restart layout preferences remain open. Hosted CI has not passed. The
 [scalar evidence](evidence/minimum-workspace.json) separates this follow-up from
 the historical `1558` authoring and MCP/runtime proofs. No proprietary editor or
 runtime implementation was inspected or copied.
+
+## Cycle Offset foundation — November 16, 2026
+
+The planner, Session memory/history integration and two MCP tools were written
+independently using our scalar sampler/subdivision, ordinary periodic curve
+mathematics and original Spine 4.3.26 input/output probes. No proprietary editor
+or runtime implementation was inspected. Licensed reference captures remain
+private; the public [baseline](../examples/peach-bot/cycle-offset-bot.peachy),
+[authored result](../examples/peach-bot/cycle-offset-authored-bot.peachy) and
+[97-command recipe](../examples/peach-bot/cycle-offset-authoring-commands.json)
+contain original fixture data only.
+
+Valid single-key and explicit Tree-scope controls establish whole-property
+expansion and affected-set memory: identical sets preserve originals regardless
+of exact seed membership/order; shrinking retains survivors and drops departed
+tracks; expansion captures every selected current track at phase zero. Earlier
+trials without the intended Tree scope are excluded. Raw/context stale guards,
+closed-loop restrictions and receipt handling are explicit implementation
+boundaries, not proof of every native selection/history edge case.
+
+Native v23 and 64 persistent commands stay unchanged; the 25-tool surface adds
+`offset_animation_keys` and `reset_cycle_offset_memory` through shared Session
+operations. Memory stays outside Document/exports, with explicit reset and
+Undo/Redo snapshots. Final source04 passes ten engine cases, four MCP unit/two
+actual stdio cases, discovery and prior pose/Translate regressions, formatting,
+Clippy/build and architecture7. Actual MCP04 passes 276 requests/97 construction
+commands/11 atomic negatives, seven-step installed-reference goldens and exact
+history/Save/reopen; its child closes with inputs/binaries unchanged. Public
+authored SHA `0316f848…3d73` stays unchanged and passes 364 public-API external
+runtime poses at 0.001, maximum world error 1.4148056052931679e−5 and Region error
+1.52587890625e−5. This is data/geometry proof. Full native Offset controls/seed-selection mapping,
+other families, outside-loop tracks, remaining reference gates and a live
+desktop MCP bridge are open. See [the slice](slices/cycle-offset.md) and
+[MCP contract](MCP.md#closed-bone-track-cycle-offset) and [scalar evidence](evidence/cycle-offset.json).

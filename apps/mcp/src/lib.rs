@@ -63,11 +63,11 @@ impl State {
     fn summary(&self) -> Value {
         match &self.project {
             None => {
-                json!({"revision":self.revision,"open":false,"dirty":false,"canUndo":false,"canRedo":false,"hasPendingEdits":false,"pendingPose":null})
+                json!({"revision":self.revision,"open":false,"dirty":false,"canUndo":false,"canRedo":false,"hasPendingEdits":false,"pendingPose":null,"hasCycleOffsetMemory":false})
             }
             Some(project) => {
                 let doc = project.session.document();
-                json!({"revision":self.revision,"open":true,"source":project.source.as_ref().map(|source|self.root.display(source)),"dirty":project.session.is_dirty(),"canUndo":project.session.can_undo(),"canRedo":project.session.can_redo(),"hasPendingEdits":!project.session.pose_edits().is_empty(),"pendingPose":project.session.pose_edits(),"name":doc.name,"format":doc.format,"fps":doc.fps,"bones":doc.bones.len(),"slots":doc.slots.len(),"constraints":doc.constraints.len(),"skins":doc.skins.keys().collect::<Vec<_>>(),"animations":doc.animations.iter().enumerate().map(|(index,animation)|json!({"index":index,"name":animation.name,"duration":animation.duration()})).collect::<Vec<_>>()})
+                json!({"revision":self.revision,"open":true,"source":project.source.as_ref().map(|source|self.root.display(source)),"dirty":project.session.is_dirty(),"canUndo":project.session.can_undo(),"canRedo":project.session.can_redo(),"hasPendingEdits":!project.session.pose_edits().is_empty(),"pendingPose":project.session.pose_edits(),"hasCycleOffsetMemory":!project.session.cycle_offset_memory().is_empty(),"name":doc.name,"format":doc.format,"fps":doc.fps,"bones":doc.bones.len(),"slots":doc.slots.len(),"constraints":doc.constraints.len(),"skins":doc.skins.keys().collect::<Vec<_>>(),"animations":doc.animations.iter().enumerate().map(|(index,animation)|json!({"index":index,"name":animation.name,"duration":animation.duration()})).collect::<Vec<_>>()})
             }
         }
     }
@@ -324,6 +324,38 @@ impl JsonSchema for TransformBonesInput {
     fn json_schema(_: &mut schemars::SchemaGenerator) -> schemars::Schema {
         schemars::Schema::try_from(schema::transform_bones_tool_schema())
             .expect("Bone transform tool schema is an object")
+    }
+}
+
+pose_object_input!(CycleOffsetRangeInput {
+    start: f32,
+    end: f32
+});
+pose_object_input!(OffsetAnimationKeysInput {
+    expected_revision: u64, animation: usize, keys: Vec<GroupAnimationKeyInput>,
+    range: CycleOffsetRangeInput, delta: f32,
+});
+pose_object_input!(ResetCycleOffsetMemoryInput {
+    expected_revision: u64
+});
+
+impl JsonSchema for OffsetAnimationKeysInput {
+    fn schema_name() -> std::borrow::Cow<'static, str> {
+        "OffsetAnimationKeysInput".into()
+    }
+    fn json_schema(_: &mut schemars::SchemaGenerator) -> schemars::Schema {
+        schemars::Schema::try_from(schema::offset_animation_keys_schema())
+            .expect("Cycle Offset schema is an object")
+    }
+}
+
+impl JsonSchema for ResetCycleOffsetMemoryInput {
+    fn schema_name() -> std::borrow::Cow<'static, str> {
+        "ResetCycleOffsetMemoryInput".into()
+    }
+    fn json_schema(_: &mut schemars::SchemaGenerator) -> schemars::Schema {
+        schemars::Schema::try_from(schema::reset_cycle_offset_memory_schema())
+            .expect("Cycle Offset reset schema is an object")
     }
 }
 
@@ -965,6 +997,55 @@ impl AnimatorServer {
     }
 
     #[tool(
+        description = "Offset complete closed Bone scalar tracks periodically through shared Session original-curve memory. Requires latest revision, a nonempty subset of exact current typed Bone key maps as track seeds, explicit inclusive range start/end and finite delta seconds. Every seed must exist; one seed identifies its WHOLE property track, including unselected keys. Duplicate identities reject. Each affected track must have first/end keys matching the bounds and matching endpoint values, with no outside keys. Memory belongs to canonical affected tracks, not seed membership/order. The same cohort continues originals; shrinking validates every old remembered track, preserves surviving originals/phases and drops departed tracks. Adding a newly affected property track validates old context then recaptures ALL selected CURRENT tracks at phase zero, including when a departed track returns. Stale remembered data/context refuses without clearing memory; explicit reset_cycle_offset_memory permits recapture. Returns all current affected keys, boundaryKeys and per-track phases. Undo/Redo restore their Session memory snapshots. Memory is session-only, excluded from Save/export and empty after Open/New. Outside/open tracks and non-Bone timelines are unsupported; this temporary foundation is not full Spine Offset parity. No live GUI bridge.",
+        annotations(
+            destructive_hint = false,
+            idempotent_hint = false,
+            open_world_hint = false
+        )
+    )]
+    fn offset_animation_keys(
+        &self,
+        Parameters(input): Parameters<OffsetAnimationKeysInput>,
+    ) -> CallToolResult {
+        self.access(|state| {
+            state.check_revision(input.expected_revision)?;
+            let keys = input.keys.into_iter().map(|key| key.0).collect::<Vec<_>>();
+            let receipt = state.project_mut()?.session.offset_animation_keys(
+                input.animation, &keys,
+                peachy_engine::CycleOffsetRange { start: input.range.start, end: input.range.end },
+                input.delta,
+            )?;
+            let phases = receipt.phases.iter().map(|phase| json!({
+                "source":phase.source,"range":{"start":phase.range.start,"end":phase.range.end},"phase":phase.phase,
+            })).collect::<Vec<_>>();
+            state.revision += 1;
+            Ok(json!({"revision":state.revision,"state":state.summary(),"keys":receipt.keys,
+                "boundaryKeys":receipt.boundary_keys,"phases":phases}))
+        })
+    }
+
+    #[tool(
+        description = "Explicitly clear ALL current remembered Cycle Offset track origins/phases. Requires latest revision; successful reset advances revision but changes no Document, pending pose, authoring history or dirty state. It does not offset or recapture keys, and cannot be combined implicitly with a possibly failing offset. Active gestures refuse reset. Read state.hasCycleOffsetMemory from get_document. Memory is not saved/exported; Open/New start empty. This headless tool is not a desktop connection.",
+        annotations(
+            destructive_hint = false,
+            idempotent_hint = false,
+            open_world_hint = false
+        )
+    )]
+    fn reset_cycle_offset_memory(
+        &self,
+        Parameters(input): Parameters<ResetCycleOffsetMemoryInput>,
+    ) -> CallToolResult {
+        self.access(|state| {
+            state.check_revision(input.expected_revision)?;
+            state.project_mut()?.session.reset_cycle_offset_memory()?;
+            state.revision += 1;
+            Ok(state.summary())
+        })
+    }
+
+    #[tool(
         description = "Key exact property lists for explicit bones at an animation index/time through one shared Session edit. Uses current authored values including pending poses, not constrained applied values. Duplicate/empty/invalid targets fail atomically. Requires the latest revision.",
         annotations(
             destructive_hint = false,
@@ -1153,6 +1234,8 @@ impl ServerHandler for AnimatorServer {}
 mod animation_key_query_tests;
 #[cfg(test)]
 mod bone_pose_tests;
+#[cfg(test)]
+mod cycle_offset_tests;
 #[cfg(test)]
 mod group_clipboard_tests;
 #[cfg(test)]

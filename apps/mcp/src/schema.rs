@@ -280,6 +280,30 @@ pub(super) fn copy_animation_key_group_schema() -> Value {
     ])
 }
 
+pub(super) fn offset_animation_keys_schema() -> Value {
+    object(&[
+        ("expected_revision", index()),
+        ("animation", index()),
+        (
+            "keys",
+            json!({"type":"array","items":animation_key_schema(),"minItems":1,"uniqueItems":true,
+                "description":"Exact current Bone scalar key seeds. Any nonempty valid subset selects its whole closed property tracks; every seed identity is validated. Non-Bone timelines are currently unsupported."}),
+        ),
+        (
+            "range",
+            object(&[
+                ("start", json!({"type":"number","minimum":0})),
+                ("end", json!({"type":"number","minimum":0})),
+            ]),
+        ),
+        ("delta", number()),
+    ])
+}
+
+pub(super) fn reset_cycle_offset_memory_schema() -> Value {
+    object(&[("expected_revision", index())])
+}
+
 pub(super) fn transform_bones_tool_schema() -> Value {
     object(&[
         ("expected_revision", index()),

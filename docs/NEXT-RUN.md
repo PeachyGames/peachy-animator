@@ -6,11 +6,10 @@ still apply.
 
 ## Current progress — November 16, 2026
 
-The accepted checkpoint remains **native v23 /64 commands /23 MCP tools**.
-Ordered multi-Bone selection, Local/Parent/World Translate, ancestor filtering,
-Parent numeric entry, pending/keying/history and edited Save/fresh reopen pass
-bounded native checks. The adaptive minimum workspace also passes: four complete
-Tree rows, reachable grouped channels and exact data/pending/redo preservation.
+The current shared engine/MCP checkpoint is **native v23 /64 commands /25 MCP tools**.
+The earlier desktop checkpoint verifies ordered multi-Bone selection, translation,
+Parent numeric entry, pending/keying/history and edited Save/fresh reopen. Its
+adaptive workspace retains four complete Tree rows and reachable grouped channels.
 See [multi-Bone evidence](evidence/multi-bone-authoring.json) and the
 [minimum-workspace review](evidence/minimum-workspace.html).
 
@@ -20,20 +19,32 @@ original clips; Wind has two clips demonstrating five mechanisms with artwork
 proxies. These remain mechanism reconstructions, not exact tutorial clones or
 fresh native playback. See [the four-group acceptance map](slices/training-recreation.md#four-group-acceptance-map).
 
-Offset engine foundation **`263ebca` is committed and pushed**. The current MCP
-working tree adds two tools for **25 tools**, with 64 commands/v23 unchanged;
-this is **work in progress, not an accepted Offset checkpoint**. Installed input
-confirms that one selected key seeds its whole property track. The corresponding
-seed follow-up passes nine engine checks and four MCP unit/two actual stdio
-checks. A further native control confirms that expanding from one selected key
-to all five current keys on the same property retains the original curves.
-Expanding to both property tracks instead carries an old seam into the result,
-exposing an unresolved memory-policy mismatch when the affected track set changes.
-All four reference animations and the original probe bytes are restored, and the
-owned Spine process is closed. Resolve that contract before final Offset
-integration/acceptance; earlier all-key study results do not close this gate.
-The live desktop MCP bridge remains open: current MCP sessions are independent
-headless editors, not control of the already-open native window.
+**Cycle Offset now has a verified shared engine and two MCP tools.** Exact key
+seeds identify whole closed Bone property tracks. Native reference checks establish
+that an unchanged affected set preserves original curves; shrinking retains the
+surviving origins/phases and drops departed tracks; adding or returning a track
+rebases all selected current curves. The corrected seven-step Linear sequence
+matches installed Spine scalars at 0.0001, with exact seven-step Undo/Redo snapshots.
+The separate closing-Bezier sequence matches +12/+18/+24-frame reference results.
+All four probe clips, raw source bytes and window bounds are restored; owned
+Spine and MCP processes are closed.
+
+Final checks pass ten engine tests, four MCP unit/two stdio tests, existing MCP
+regressions, formatting, all-target Clippy, workspace build and architecture7.
+Actual MCP run04 passes **276 requests /97 construction commands /11 atomic
+negative cases**, history, pending/cache exclusion and exact Save/fresh reopen.
+The saved result passes **364 external-runtime poses** at 0.001 across seven clips.
+See [scope](slices/cycle-offset.md), [scalar evidence](evidence/cycle-offset.json),
+the [editable authored result](../examples/peach-bot/cycle-offset-authored-bot.peachy)
+and [MCP contract](MCP.md).
+
+**Next:** integrate the native Offset control with engine-owned requested-seed
+mapping and fixed-baseline gestures. Native Stepped/negative/full-period/nonzero
+loop checks, broader typed timelines/outside-loop tracks and intervening-edit
+memory behavior remain gates. Preserve the scope distinction: the runtime check
+includes untouched Stepped/nonzero clips and does not establish their native
+Offset interaction. The live desktop MCP bridge remains open; current MCP
+sessions are independent headless editors.
 
 ## Adaptive workspace native follow-up — November 16, 2026
 

@@ -1,6 +1,6 @@
 //! Periodic key movement with original-curve memory, separate from ordinary retiming.
-//! The current implementation boundary is complete Bone scalar tracks. Other typed
-//! timelines and partial tracks are explicit extension gates, never dropped.
+//! Exact selected Bone scalar keys seed whole closed property tracks. Other typed
+//! timelines and tracks extending beyond the loop remain explicit extension gates.
 use crate::{AnimationKey, curve_value};
 use peachy_document::{Curve, Document, Keyframe, Property, Track};
 use std::{
@@ -60,8 +60,11 @@ struct TrackMemory {
     phase: f32,
 }
 
-/// Session-only original curves and accepted phases, independently retained per
-/// typed track and loop. Never serialize this into an editable Document.
+/// Session-only original curves and accepted phases for one active canonical
+/// property-track cohort. The map's keys include animation and loop identity.
+/// Shrinking keeps surviving origins; adding a track rebases current tracks.
+/// Both transitions validate the old context before discarding any origins.
+/// Never serialize this into an editable Document.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct CycleOffsetMemory {
     tracks: BTreeMap<TrackId, TrackMemory>,
@@ -151,7 +154,7 @@ impl CycleOffsetPlan {
             .get(animation)
             .ok_or("Unknown animation for Cycle Offset")?;
         if keys.is_empty() {
-            return Err("Select at least one complete track for Cycle Offset".into());
+            return Err("Select at least one existing key for Cycle Offset".into());
         }
         let mut selected = Vec::new();
         let mut requested: BTreeMap<TrackId, BTreeSet<u32>> = BTreeMap::new();
@@ -162,7 +165,7 @@ impl CycleOffsetPlan {
                 time,
             } = key
             else {
-                return Err("Cycle Offset currently supports complete Bone scalar tracks only; other selected timeline families remain unsupported".into());
+                return Err("Cycle Offset currently supports whole Bone scalar tracks only; other selected timeline families remain unsupported".into());
             };
             if !time.is_finite() || *time < 0. {
                 return Err(
@@ -183,21 +186,32 @@ impl CycleOffsetPlan {
                 return Err("Duplicate Cycle Offset source key".into());
             }
         }
-        let mut next = memory.clone();
+        // Seed order/count does not identify a context: the canonical affected
+        // property-track set does. Validate the whole previous context before
+        // discarding any origins, including a remembered track being left.
+        for (id, remembered) in &memory.tracks {
+            validate_expected(document, *id, remembered)?;
+        }
+        let expands_context = selected.iter().any(|id| !memory.tracks.contains_key(id));
+        let mut next = if expands_context {
+            CycleOffsetMemory::default()
+        } else {
+            let mut retained = memory.clone();
+            retained.tracks.retain(|id, _| requested.contains_key(id));
+            retained
+        };
         for id in &selected {
             let track = track(document, *id)?;
             let times = &requested[id];
-            if times.len() != track.keys.len()
-                || track
-                    .keys
-                    .iter()
-                    .any(|key| !times.contains(&time_id(key.time)))
-            {
-                return Err("Cycle Offset requires every exact key of each affected track; partial key selections remain unsupported".into());
+            let existing = track
+                .keys
+                .iter()
+                .map(|key| time_id(key.time))
+                .collect::<BTreeSet<_>>();
+            if !times.is_subset(&existing) {
+                return Err("Unknown exact Cycle Offset source key".into());
             }
-            if let Some(existing) = next.tracks.get(id) {
-                validate_expected(document, *id, existing)?;
-            } else {
+            if !next.tracks.contains_key(id) {
                 let first = track
                     .keys
                     .first()
@@ -210,7 +224,7 @@ impl CycleOffsetPlan {
                     || time_id(first.time) != id.start
                     || time_id(last.time) != id.end
                 {
-                    return Err("Cycle Offset needs explicit first/end keys at the loop bounds; outside-range and partial tracks remain unsupported".into());
+                    return Err("Cycle Offset needs explicit first/end keys at the loop bounds; tracks extending outside those bounds remain unsupported".into());
                 }
                 if first.value != last.value {
                     return Err("Cycle Offset first and last values must match".into());

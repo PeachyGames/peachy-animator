@@ -71,7 +71,7 @@ async fn stdio_transform_bones_tool_axes_descendant_filter_and_atomic_pending_hi
     let source = write_fixture(&root.0);
     let client = start(&root.0).await;
     let tools = client.list_tools(Default::default()).await.unwrap().tools;
-    assert_eq!(tools.len(), 23);
+    assert_eq!(tools.len(), 25);
     let tool = tools
         .iter()
         .find(|tool| tool.name == "transform_bones")

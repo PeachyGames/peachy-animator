@@ -267,7 +267,7 @@ async fn stdio_bone_poses_setup_full_transform_and_autokey_groups_are_atomic() {
     fixture(&root.0);
     let client = start(&root.0).await;
     let tools = client.list_tools(Default::default()).await.unwrap().tools;
-    assert_eq!(tools.len(), 23);
+    assert_eq!(tools.len(), 25);
     for name in ["edit_bone_poses", "key_bone_poses", "key_edited_pose"] {
         let tool = tools.iter().find(|t| t.name == name).unwrap();
         assert_eq!(

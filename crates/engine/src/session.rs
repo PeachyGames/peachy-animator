@@ -1623,9 +1623,10 @@ impl Session {
         self.cycle_offsets.clear();
         Ok(())
     }
-    /// Periodically move complete tracks from remembered originals. Selection
-    /// changes alone do not clear memory; stale affected tracks fail explicitly.
-    /// Current scope is complete Bone scalar tracks, not arbitrary key subsets.
+    /// Periodically move whole tracks seeded by exact selected keys. Same-cohort
+    /// seed changes and shrinking retain surviving originals. Adding a property
+    /// track rebases current tracks after validating the old context. Stale sources fail explicitly.
+    /// Current scope is closed Bone scalar tracks; selecting one key seeds its property track.
     pub fn offset_animation_keys(
         &mut self,
         animation: usize,

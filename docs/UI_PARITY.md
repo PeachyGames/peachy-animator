@@ -1,5 +1,28 @@
 # Spine workspace and interaction parity
 
+## Cycle Offset reference contract — November 16, 2026
+
+The current shared foundation adds `offset_animation_keys` and
+`reset_cycle_offset_memory` for **v23 /64 commands /25 MCP tools**; full native
+Peachy Offset UI and seed-selection mapping are not accepted. Installed 4.3.26
+input establishes that one valid selected Bone key offsets its whole property
+track. The same affected track set preserves original curves despite seed
+reselection/order; shrinking retains surviving memory and drops departed tracks;
+expanding with a new track recaptures all selected current tracks. These are
+reference observations, not acceptance inferred from generated key receipts.
+
+The temporary implementation requires complete closed Bone tracks exactly
+filling the explicit loop. Other families, outside-loop tracks and broader
+reference cases remain open, alongside the live desktop bridge. Final source04
+and actual MCP04 pass 276 requests/97 construction commands/11 atomic negatives,
+seven-step reference data and exact history/Save/reopen; the public authored
+result passes 364 external-runtime poses at 0.001. These are shared data/geometry
+proofs, not native Peachy Offset interaction acceptance. See the
+[contract](MCP.md#closed-bone-track-cycle-offset), [evidence](evidence/cycle-offset.json),
+[slice](slices/cycle-offset.md), [baseline](../examples/peach-bot/cycle-offset-bot.peachy),
+[authored result](../examples/peach-bot/cycle-offset-authored-bot.peachy) and
+[97-command recipe](../examples/peach-bot/cycle-offset-authoring-commands.json).
+
 ## Adaptive minimum workspace — November 16, 2026
 
 **Bounded native layout acceptance passes on Desktop `d1fc05d9…14e8`.** Adaptive

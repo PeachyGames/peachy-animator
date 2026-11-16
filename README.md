@@ -1,6 +1,23 @@
 # Peachy Animator
 
-The current **bounded adaptive workspace follow-up** passes native input on
+The current **cycle Offset engine/MCP foundation is verified**: native **v23 /64
+commands /25 MCP tools**. `offset_animation_keys` uses exact key seeds to offset
+whole closed Bone/property tracks; `reset_cycle_offset_memory` explicitly clears
+its transient cache. The same affected set preserves originals, shrinking keeps
+survivors, and adding a track rebases all selected current tracks after stale
+validation. Full native Offset controls/selection mapping, other timeline
+families, outside-loop tracks and the live desktop bridge remain open. Final
+checks04 and actual MCP04 pass 276 requests, 97 construction commands, 11 atomic
+negatives and exact history/Save/reopen; the public authored result passes 364
+external-runtime poses at unchanged 0.001 tolerance.
+Try the original [baseline](examples/peach-bot/cycle-offset-bot.peachy),
+[authored result](examples/peach-bot/cycle-offset-authored-bot.peachy) and
+[97-command recipe](examples/peach-bot/cycle-offset-authoring-commands.json).
+See the [bounded slice](docs/slices/cycle-offset.md),
+[MCP contract](docs/MCP.md#closed-bone-track-cycle-offset) and
+[scalar evidence](docs/evidence/cycle-offset.json).
+
+The earlier **bounded adaptive workspace follow-up** passes native input on
 Desktop `d1fc05d9…14e8`, with native v23 /64 commands /23 MCP tools unchanged.
 At 1120×740, the tested Dopesheet/Timeline layout retains a 206-pixel canvas and
 four complete Tree Bone rows; adding Playback leaves a 293.71875-pixel canvas.
