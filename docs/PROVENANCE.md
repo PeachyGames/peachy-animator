@@ -1,5 +1,276 @@
 # Implementation provenance
 
+## Leaf clipboard target references and receipts — November 15, 2026
+
+Five owned Spine 4.3.26 black-box goldens use the original six-bone/two-region
+fixture and one original PNG: no-owner, explicit other Bone, cross-animation,
+Slot pose Bone and true Region pose Bone. The earlier Tip attachment trial was
+actually Bone:tip and is excluded as Region evidence. Full reference export SHA,
+animations/bones, 933×728 bounds, Setup and original filters are restored; the
+owned process is closed. Licensed captures stay private; no proprietary code
+was inspected or copied.
+
+The independent desktop receipt keeps canonical source identity outside unchanged
+v2 portable payloads. Source checks04 and native Desktop5825 verify all five
+complete typed documents against actual MCP71 cases, visible Slot routing, Region
+pruning and native Undo. MCP/headless Undo/Redo is separate. The blank/one-PNG
+MCP study uses 25 construction commands, two atomic negatives and 12 pose queries;
+it adds no live selection bridge or external-runtime claim. Final same-name
+Region/clip1 native Save is byte-identical to [public MCP5d432](../examples/peach-bot/leaf-clipboard-bot.peachy).
+Fresh native typed reopen is exact with empty history/clipboard and one image;
+old OS text cannot revive the receipt. Three OS screenshots were inspected and
+all owned processes are closed. No new native inactive/pending/remap/minimum
+claim follows. Slot global DrawOrder presentation, full Region controls/styling
+and general Tree/Shift/Offset/Lock/Sync remain open. See [scope](slices/leaf-clipboard.md),
+[review](evidence/leaf-clipboard.html) and [scalar evidence](evidence/leaf-clipboard.json).
+
+## Grouped clipboard references and shared boundary — November 15, 2026
+
+Existing official Dopesheet/Keys/changelog references and the original six-bone
+fixture below were reused. Owned installed 4.3.26 input/exports establish one
+global origin, original-owner fallback with a single different target, identity
+preservation for the same bones reselected in reverse, and ordered two-other-
+parent mapping. Accepted four-source Paste/Cut and a leaf positive control show
+paste retains original selection. Unstable earlier selection trials are excluded;
+licensed native captures stay private. No proprietary implementation was read.
+
+Independent group types/codecs reuse shared leaf arithmetic with global anchoring
+and complete explicit canonical-unique target maps. Source-owner receipts remain
+session state outside portable payloads. Strict new group decoding does not alter
+old leaf codecs/version 2 envelopes; editor grouped envelopes use version 3.
+Current native v23 has 64 commands/19 tools. Actual MCP run02 starts from blank/
+one original PNG, constructs through 25 commands and passes 57 requests, nine atomic
+negatives, original/different-parent/cross-animation golden matches, exact history/
+reopen and 12 evaluated poses. Input image bytes are unchanged; the child is closed.
+
+Canonical saved SHA256 is
+`d833624039bbb2596aa8d0a0434607faf4807b24291a86decb6a60575566fbb3`.
+The public lab retains those exact bytes. Separate public-API-only external
+runtime 4.3.13 comparisons cover 104 other-target and 104 cross-animation poses,
+208 total at unchanged 0.001. World maxima are 1.200913195020803e−5 and
+1.1076360095785276e−5 respectively; both region maxima are 1.52587890625e−5.
+The observer remains an external oracle, not an application dependency or copied
+implementation. MCP run02 uses binary `0f659abb…9d112`; CLI is `a414e845…18ab6`.
+Four new MCP unit/two actual-stdio cases and final checks05/06 pass. Owned native
+input verifies grouped authoring/history and a separate leaf-v2 Copy/Paste/Cut
+selection control. At the user's request, `da1a1da` first pushed code with native
+minimum/persistence explicitly partial. The later unchanged-binary follow-up
+passes 1120×740/full image/eight visible key targets, actual CmdS and exact fresh
+typed-Document recovery with empty history/clipboard and one image. Public
+[native result](../examples/peach-bot/group-clipboard-native-result.peachy) SHA256
+is `194418f07951345927cbff588a9ba867a8b957713cfc16330200493d82cf0ae3`;
+it pastes in clip 0, while the unchanged MCPd833 case pastes in clip 1. Twelve
+saved-file/diagnostic decimal-spelling differences are f32-bit equal; no raw
+JSON byte equality is inferred. All owned native/Spine/MCP processes are closed.
+General Tree multi-target UI remains a gap; the later leaf checkpoint closes
+bounded no-Tree source fallback. Those finite geometry comparisons
+establish no broader clipboard interaction or pixel equivalence. See [scope](slices/grouped-clipboard.md) and
+[scalar evidence](evidence/grouped-clipboard.json).
+
+## Earlier multi-owner timeline references and authored query — November 15, 2026
+
+The official [Dopesheet guide](https://esotericsoftware.com/spine-dopesheet),
+[Keys guide](https://esotericsoftware.com/spine-keys),
+[4.3 release](https://esotericsoftware.com/blog/Spine-4.3-released) and
+[changelog](https://esotericsoftware.com/spine-changelog) were retrieved through
+agent-reach routing on November 15. They distinguish selection/Sync, ordinary
+movement, Shift ripple and cycle Offset. The retained Wind transcript's grouped
+cloth/hair timing supplies the tutorial workflow, not implementation code.
+
+Owned installed 4.3.26 observations use an original six-bone/two-region fixture and
+one original blue PNG. Exact exported pairs establish mixed selected-key +5,
+Undo, one clipboard origin across two bones, single-property Shift and bounded
+repeated Offset. That earlier reselection trial produced asymmetric per-track
+data and did not establish the complete-track contract. Later original
+closing-Bezier controls establish two completely selected tracks, repeated moves
+and reselection retaining original curves, with three Undo operations restoring
+all four clips exactly. Stepped, negative/full-period, nonzero-range and partial
+context cases remain open; this is reference calibration, not Offset acceptance.
+Three actual Undo operations in the earlier trial restore all animation data exactly.
+The reference window is closed with original bounds and Setup mode restored.
+Unstable/interrupted attempts are excluded. No proprietary implementation or
+artist artwork was read/copied; licensed interface captures remain private.
+
+The independently implemented authored inventory exposes explicit typed owners,
+exact stored keys and read-only unsupported-timeline metadata without a pose
+solve. That checkpoint used v23 and 63 commands/18 tools. A fresh actual MCP run creates the
+[public lab](../examples/peach-bot/multi-owner-bot.peachy), SHA256
+`88e6b67fdc058b4acb8bbf618dd1ebeb98fdbb3c765f24d301aebdf3d0c5c2cf`,
+from a blank root/one PNG through 25 authored commands in final03's 41 requests. Mixed move,
+read-only rejection, history/reopen and 12 retained poses pass. Baseline and moved
+exports each pass 104 separately licensed public-API runtime poses at 0.001; original
+inputs remain unchanged and the child is closed. Separate final Desktop
+`e1251a01…c70d1ee` native input verifies the original two-bone scalar group:
+Cmd-selection/move/history, held Escape/block/release, all-eight Delete/Undo,
+Graph owner/channel retention/pruning, 1120×740 targets and exact native Save/
+fresh-process reopen. The native pending baseline is empty; nonempty preservation
+is headless-only. Mixed Copy refuses without altering document/selection/redo or
+internal clipboard. Retimed saved SHA256 is
+`8c2ba3768e5f925f895d4348dfa09a56e496eca673eba2c779fe2d4f8dc2510d`;
+the public baseline stays unchanged. All owned native/MCP processes are closed.
+Group clipboard with explicit mapping/shared origin precedes Shift/Offset as the
+next slice; Lock/Sync and general Tree multi-selection remain separate. See [scope](slices/multi-owner-timeline.md) and
+[scalar evidence](evidence/multi-owner-timeline.json).
+
+## Multi-vertex Direct weights and pose capture — November 15, 2026
+
+The official [Weights guide](https://esotericsoftware.com/spine-weights),
+retrieved through agent-reach on November 15, supplies Direct terminology,
+selection conventions, mixed-value asterisks and proportional remainder.
+Existing single-vertex design/native records were reviewed before preparing
+new probes. They do not establish the new multi-selection rules by themselves.
+
+Owned installed Spine 4.3.26 windows used our original input with six vertices,
+three influence bones and one committed geometric PNG. Fourteen valid cases
+compare actual selected controls, numeric entry, held pointer paths and generated
+JSON. Fresh pruned input distinguishes a truly absent influence from an explicit zero entry
+retained internally. Both Setup and Animate produce bone-local `[0,0]` for the
+new positive influence; the original explicit-zero position remains unchanged
+when edited. Trials where the intended bone was unselected are excluded.
+Only visible controls/captures and original inputs/outputs were examined; no
+proprietary editor/runtime implementation, artist asset or vendor project was
+inspected or copied.
+
+The engine implementation independently extends the existing proportional
+arithmetic with absolute selection edits, skip-sole behavior and cumulative
+clamped targets using frozen original recipient ratios. Native pointer samples
+calibrate the bounded 1/350 response and axis activation behavior; exact universal
+diagonal/modifier rules are not inferred. Sparse insertion now follows an
+independent per-mesh precedence extension with first-appearance ties, preserving
+all old relative order and positions.
+An order-only B,A→A,B control resolved the observed editor import failure;
+consistent nonnumeric C,A,B also imports. Editor-only preflight rejects
+cross-vertex precedence cycles while Runtime preserves raw arrays. Stored/pending
+Deform layout changes fail rather than inventing a remapping. Applied-local pose
+capture now carries inheritance modes, with a
+strict optional legacy-compatible array; persistent native v22 is unchanged.
+
+The actual MCP study starts from a root-only project and the original PNG,
+constructs two weighted meshes through commands, and retains requests/poses.
+The separately licensed Spine 4.3 runtime is an external oracle through its
+public API only, never a Cargo dependency or bundled implementation. Core/MCP
+and MCP-authored runtime checks pass. A separate actual MCP consumer study
+verifies Editor rejection before writing, unchanged failure state and exact raw
+Runtime output. The exact final ordered Editor JSON imports/re-exports through
+installed 4.3.26 and passes 52 source-versus-returned poses at the unchanged
+0.001 geometry tolerance. Native zero pruning/weight rounding is recorded,
+not hidden as raw-lossless interchange. Actual native Peachy input verifies
+typed 50, mixed held clamp/reversal with one Undo, Escape/marquee held-input
+blocking, all-six skip-sole behavior, ordered sparse origin and pending-pose Save
+exclusion. The corrected native and MCP outputs match the public lab exactly.
+A fresh no-history reopen, early Cmd release, both panes, minimum layout and
+looping playback pass; all owned GUI instances are closed. Pies/overlays, exact
+styling, brushing, locks, Auto/Smooth/Update and multi-bone authoring remain open.
+See [the bounded contract](slices/weight-multivertex.md) and
+[scalar evidence](evidence/weight-multivertex.json). Private native captures,
+hashes and retained task evidence remain under the existing
+`weights-multivertex/` record; committed sources use original art only.
+
+## Global Animate draw-order authoring — November 14, 2026
+
+The public [Slots guide](https://esotericsoftware.com/spine-slots),
+[Keys guide](https://esotericsoftware.com/spine-keys) and
+[4.3 release post](https://esotericsoftware.com/blog/Spine-4.3-released) informed
+the global Tree/Dopesheet workflow and distinction from independently keyed
+folders. Owned installed 4.3.26 windows used our original four-slot geometric
+cutouts. Only visible controls/tooltips and generated JSON outputs were examined
+to establish movement direction, Shift clamping, pending edits, Auto Key flush,
+mixed persistent Undo, no-op redo and drag placement. No proprietary implementation,
+vendor artwork or UI asset files were inspected or copied. Icons and controls
+are independently implemented.
+
+Offset preservation reuses the independently verified decoder. New semantic
+encoding uses standard longest-increasing-subsequence/patience-sorting
+mathematics, checked against all 24 four-slot permutations using a separate brute
+subset oracle. The deterministic choice among equally minimal encodings is ours;
+untouched imported keys are not normalized. Movement, pending order, frozen
+previews and exact typed keys are shared engine operations. The observed native
+Undo clears pending visuals by re-evaluating keys; our existing history restores
+the pre-key pending snapshot, an explicit scope difference.
+
+Actual MCP authoring uses only four original PNGs from a root-only project; the
+finished reference is excluded from recipe inputs. Complete order, hidden slots,
+geometry and color are compared through the separately licensed runtime's public
+API. Detailed reference captures, requests and original probes remain private.
+See [the contract](slices/draw-order-authoring.md) and
+[current validation](VALIDATION.md#global-animate-draw-order-authoring--november-14-2026)
+for passed native/MCP runtime checks, actual native input/fresh reopen and
+installed 4.3.26 CLI interchange. The editor's equivalent time-zero minimal
+offset differs from ours; effective order matches at all 23 checked times.
+
+## Curves and scalar interpolation authoring — November 14, 2026
+
+The public [Graph guide](https://esotericsoftware.com/spine-graph),
+[Keys guide](https://esotericsoftware.com/spine-keys),
+[4.1 Curves announcement](https://esotericsoftware.com/blog/Spine-4-1-released#Curves-view),
+current changelog and attributed human staff statements informed the workflow.
+Original Peach Bot and independently constructed bone-only matrices were opened
+in owned installed 4.3.26 windows. Only visible controls, tooltips and generated
+JSON outputs were examined. Twelve reset cases, four incoming cases and normal
+live coupling establish the bounded arithmetic; extreme/adjacent cases are
+recorded as uncalibrated rather than copied or guessed.
+
+Relative/actual handle conversion, ray shortening, selection resolution and
+transaction planning are independently written engine code. Native and MCP use
+those same operations; all Graph/Curves surfaces share one UI preview controller.
+The separately licensed runtime is an external public-API oracle only. Reference
+captures stay private, public screenshots use original Peachy art, and no vendor
+implementation, art or UI assets are bundled. See [the contract](slices/curves-authoring.md).
+
+## Deform timeline and installed-editor comparison — November 14, 2026
+
+The [official Spine 4.3 announcement](https://esotericsoftware.com/blog/Spine-4.3-released),
+[Keys clipboard guide](https://esotericsoftware.com/spine-keys#Clipboard-buttons),
+and permitted black-box observations of installed 4.3.26 informed this work.
+Original Peach Bot exports were opened in isolated owned editor windows; matched
+1500×960 client-area screenshots established Deform row labels, bottom tabs,
+full-frame Graph transitions and 0–100 progress. A tiny independently constructed
+mesh fixture established cross-attachment clipboard behavior, including a
+retained one-influence weighted mesh accepting unweighted keys. Only generated
+editor outputs and public APIs were examined; no proprietary implementation,
+bundled art or UI assets were read or copied into the source.
+
+Deform key timing/clipboard operations extend our existing independent command
+and Session logic. Curve display samples the shared engine; it does not create
+a second evaluator. MCP exposes the same typed keys and engine operations.
+Detailed native reference captures and probe projects remain gitignored.
+
+## Fresh tutorial reconstruction — November 14, 2026
+
+Four user-supplied local training videos were decoded across their full audio
+ranges and examined through timestamped visual samples. The instructional
+portions are silent. The visual walkthrough uses 569 sampled frames and 31
+contact sheets; it is not a continuous frame-by-frame transcription. A brief
+Wind showcase outro has readable English subtitles; its spoken wording remains
+unverified, and rejected ASR hallucinations were not used as instructions.
+
+Reconstruction recipes use only the supplied raw PNG cutouts and the one-root,
+empty-animation Photoshop layout. Finished artist bone, mesh, weight and key data
+are excluded from recipe inputs. Bone placement, polygon hulls, triangulation,
+smooth weights and phased cubic motion were independently authored from artwork
+and observed actions. The Wind character source is absent; five technique studies
+use explicitly identified artwork proxies. This establishes bounded technique
+reproduction, not identical artist poses/timing or full Spine UI parity.
+
+Actual stdio MCP requests create the projects from one neutral root, apply rig
+and motion commands, undo/redo, save/reopen, and export. An offline preview shell
+rasterizes MCP-evaluated triangles; it does not implement another pose solver.
+The separately licensed runtime is used only through the existing external
+public-API harness. Private source artwork, projects, videos and detailed request
+logs remain gitignored. Source hashes are retained locally and unchanged.
+
+## Animate mesh vertices and texture startup — November 14, 2026
+
+The public [mesh transform tools guide](https://esotericsoftware.com/spine-meshes#Transform-tools)
+provides the Setup/Animate and vertex-drag distinction. Dense offsets reuse the
+already verified native deform representation. Weighted translation is our own
+inverse-affine calculation, checked by a forward world-coordinate residual;
+no proprietary implementation was read. Runtime checks use the separately
+installed runtime only through public APIs. Native reference/interaction captures
+and private training inputs remain local; no third-party artwork is committed.
+Texture handling was derived from the locally installed MIT-licensed egui/eframe
+API and the actual WGPU device limit.
+
 Started November 5, 2026 for Team Peachy. This is an independently written implementation
 from public format facts, general animation mathematics and controlled observations.
 The development record is not a legal certification of a formal two-team clean room.
@@ -657,3 +928,517 @@ painting uses egui's MIT-licensed cubic Bezier primitive. No proprietary editor
 or runtime implementation, icons or UI assets were inspected/copied. Committed
 screenshots show original Peach Bot artwork in our application only. Installed
 reference captures and native-input attempt logs remain local.
+
+## Slot authoring and native insertion calibration — November 14, 2026
+
+Independent slot controls and RGBA Graph follow permitted installed Spine 4.3.26
+observations and the public [Keys](https://esotericsoftware.com/spine-keys),
+[Graph](https://esotericsoftware.com/spine-graph#New-keys),
+[Slots](https://esotericsoftware.com/spine-slots) and
+[4.3 release](https://esotericsoftware.com/blog/Spine-4.3-released) references.
+Original 16-slot JSON fixtures and native Key Shown exports supply 52 initial plus
+52 held-out numeric split observations. Ordinary cubic finite differences and
+de Casteljau subdivision were derived independently and calibrated against those
+inputs/outputs. Only original numeric cases and observed indices enter engine
+regressions; proprietary implementation, icons and reference screenshots do not.
+
+Runtime checks use the separately installed official runtime as an external
+black box through its public API. No official code/dependency is added here.
+Native/reference screenshots remain private; committed captures contain Peachy
+and original Peach Bot artwork only. See [the scope](slices/slot-authoring.md).
+
+
+## Explicit export targets — November 14, 2026
+
+Original minimal region/mesh inputs were imported and re-exported through the
+installed Spine 4.3.26 CLI. Default implicit/equal names and a named-skin override
+serve as positive controls. Default overrides rename placeholders and clear
+Setup/swap references; valid mesh controls also move Deform/link references.
+An initial invalid linked-parent probe is excluded. The adapter adds a bounded
+Editor safety gate and explicit Runtime path rather than projecting identities.
+The public JSON format guide supplies terminology; observed current inputs and
+outputs determine this policy. See [the contract](slices/export-targets.md).
+No proprietary source, vendor example art or artist files were inspected or
+modified for these probes. Native screenshots use original Peach Bot only.
+
+## World X-to-Rotate Transform mapping — November 15, 2026
+
+The official [4.3 release post](https://esotericsoftware.com/blog/Spine-4.3-released),
+[Transform guide](https://esotericsoftware.com/spine-transform-constraints),
+[JSON-format page](https://esotericsoftware.com/spine-json-format) and
+[changelog](https://esotericsoftware.com/spine-changelog) were retrieved through
+agent-reach on November 15. The release post establishes cross-property mapping,
+clamping and separate source/target spaces. The guide/JSON prose still uses older
+controls/fields, so current layout and range editing come from permitted visible
+installed 4.3.26 controls and original generated inputs/outputs, not assumed
+defaults or proprietary implementation.
+
+An original six-bone input reuses one committed geometric PNG. Nine independently
+inspected range cases establish preserved partner endpoints, retained reversal
+and equal-endpoint Max = Min + 100 repair in both groups. Actual reference Undo,
+Redo and Clamp are checked against exported data. An expanded Offset capture
+shows Translate X/Y numeric fields/sliders. Pointer measurements fit a nominal
+−50..50 span over 107 coordinate units, with edits extrapolating outside it;
+there is no hard clamp in the measured paths. Two-decimal exports do not prove
+internal quantization, and private `clamped` filenames retain an initial
+hypothesis rather than an accepted behavior. Image dimensions/scales are explicit
+in the fresh MCP fixture,
+rather than concealing the earlier editor import's image-size canonicalization.
+
+Shared range queries/actions and X-to-Rotate evaluation were independently
+derived from these controls, general arithmetic and the separately licensed
+runtime's public-API outputs. The existing published f32 FK remains unchanged.
+A wider FK diagnostic uses current applied locals/inheritance without another
+constraint-solver pass to detect angular branch ambiguity. Paired native controls
+point down with unbiased/biased −180 inputs; the external JS consumer points up
+for the biased case. That case is explicitly refused, not called a runtime pass.
+Large-angle calibration fixes conversion-to-radians before mix; unrelated
+identity-Rotate behavior retains its established path.
+
+The final 103-case matrix has 101 evaluated cases within unchanged 0.001 world
+tolerance, one shared-consumer precision refusal and one finite-f32 overflow
+refusal. The fresh root-only `actual-mcp-04` study uses 122 actual stdio requests,
+53 commands/13 tools, an original PNG and no finished rig input; its authored
+project and external-runtime samples verify separately from native interaction.
+Persistent native format22 is unchanged. Raw finite native data remains distinct
+from adapter/evaluation capability, and imports do not apply semantic range repair.
+
+The exact `actual-mcp-04` Editor artifact also passes installed 4.3.26 CLI
+import/re-export and 52 source-versus-returned poses: 1,872 world, 832 region and
+832 UV values have zero error, with colors/order/images matching. Raw authored
+keys, mappings, region dimensions/transforms and other authored sections remain
+exact. The imported project name changes and JSON defaults/metadata canonicalize;
+Editor-roundtrip byte identity is not claimed. Immutable inputs and executable
+hashes stay unchanged.
+
+Actual native typed range repair/reversal, Clamp and Rotate mix 0.5 reach a saved
+project byte-identical to the final MCP source. Separate final native input
+verifies coalesced right-edge Mix preview/Escape, held re-entry blocking,
+numeric/offset history and cancellation, owned-field Save and pending Rotate 13.5
+exclusion. A raw-zero-scale SourceMax field stays blank; untouched Enter preserves
+redo, while typed 0 repairs the range to 100. Fresh public no-history reopen,
+one image and actual SourceMin/TargetMax/Clamp/Offset Y edits with exact Undo at
+1120×740 pass. Playback advances with Loop enabled and stops at zero; a wrap was
+not observed. All owned GUI instances are closed. This initial mapping run used
+native executable `9048ecf4` and did not establish Tree-pane resizing. These native
+results do not broaden the separate runtime consumer-precision refusal.
+
+A later bounded workspace continuation, native executable `a8cfabdd`, verifies
+actual Tree-divider grabs at center/−2/+2, Properties resizing with the full
+mapping table visible, unchanged document/history/selection and held Mix Escape
+after resizing. Owned process 41530 is closed. The updated full-table capture
+shows that later build; the minimum captures remain the original mapping run.
+An additional actual native `a8cfabdd` run on an original converted unweighted
+mesh verifies ArrowRight pending Deform, Key/Undo restoring pending work,
+Properties shrink preserving pending/redo, absent offscreen Key/Delete targets
+and one 80-pixel wheel event exposing Key. Actual Key creates the track and
+Delete restores the baseline; the source is unchanged and owned process 42475
+is closed. Native coverage is unweighted; weighted/unweighted event checks are
+separate. Automated pane checks do not establish actual native Weights/Curves
+divider behavior or cross-restart docking. Those remain explicit limits.
+See [the bounded contract](slices/transform-mapping-authoring.md) and
+[capture gallery](evidence/transform-mapping.html). Licensed reference
+captures/logs and original scalar records stay private in the existing
+`transform-mapping/` task. No proprietary editor/runtime implementation, artist
+asset, vendor project, icon or interface asset was inspected or copied into source.
+
+## Slider constraints — November 15, 2026 (bounded checkpoint verified; parity open)
+
+The public [4.3 release](https://esotericsoftware.com/blog/Spine-4.3-released),
+[Sliders guide](https://esotericsoftware.com/spine-sliders),
+[4.3 API](https://esotericsoftware.com/spine-api-reference#SliderData),
+[constraint-order guide](https://esotericsoftware.com/spine-constraints#Order)
+and [changelog archive](https://esotericsoftware.com/spine-changelog/archive)
+were retrieved through agent-reach. Permitted installed Spine 4.3.26 controls and
+CLI exports of our original six-bone/two-region blue-cutout rig establish current
+Time/Mix/range fields, separate key ownership, skin membership and four-coordinate
+Bezier wire data. The earlier Auto Key-on attempt is recorded as automatic key
+creation and supplies no pending Save-exclusion proof. The failed Graph-click
+attempt is excluded from curve evidence; the valid follow-up has separate data.
+
+Arithmetic is independently derived from original black-box observations through
+the separately licensed runtime's public API. The installed package is 4.3.13;
+the input/parsed 4.3.26 version describes the skeleton, not that runtime package.
+Public API declarations/descriptions are permitted reference material. No editor
+or runtime implementation source, vendor rig, interface asset or artist artwork
+was inspected, translated or copied. New Sequence aliases share the one existing
+original texture; no new pixels are copied/generated and no appearance comparison
+is inferred from frame identity.
+
+Native format 23 adds complete Slider data and required per-animation track lists.
+The strict v22 migration occurs in memory; frozen historical public project bytes
+remain unchanged. Shared commands, typed keys, authored/effective pose separation,
+ordered application and MCP 58-command/14-tool exposure are implemented. Source
+switch/clear and creation identity/order semantics remain open, so raw complete
+replacement is not presented as those semantic authoring actions.
+
+The current validated-cache domain matrix compares 170/170 cases at unchanged
+0.001 tolerance, maximum error 4.81771965e−5 and zero reconstructed engine-applied
+FK residual. Sources remain unchanged. Twelve earlier Path applied-local metadata
+mismatches exposed a read-contract issue: after constraints edit world transforms,
+the documented public
+[validateLocalTransform](https://esotericsoftware.com/spine-api-reference#BonePose-validateLocalTransform)
+method must precede applied-local reads. Observer v6 records exact unchanged
+pre/post WORLD bits, including signed zero, without another world update/solver.
+Earlier raw-cache observers and mismatch reports remain retained; the corrected
+metadata comparison does not weaken tolerance or conceal a world mismatch.
+
+Additional original studies establish signed/additive domain mixing, live source
+properties, inactive-target skips and Sequence frame identity. Their observation
+counts are separate from completed engine/MCP/native gates. Checked advancing
+Sequence counters stop at i32::MAX after an independently observed signed-counter
+boundary; rejected phases are not runtime passes. Physics/events and remaining
+Deform/source-transition domains remain explicit gaps.
+
+The ordinary-host inactive-slot sampling defect is now fixed through skin-aware
+sampling. The separate retained Sequence/inactive-target engine matrix compares
+177/177 cases, zero mismatches at unchanged 0.001 tolerance, maximum absolute error
+6.848346799870342e−6 and zero engine-applied FK residual. Every case preserves
+Setup/pending state and repeats exactly across three evaluations, without Setup
+substitution. Inactive slot data is compared without exclusions. The inactive
+runtime world caches are uncomputed; their activity/local values and all-engine
+FK consistency are checked separately. This is observed metadata/frame/active-
+world acceptance, not artwork vertices, UV, raster or event-output acceptance.
+Source hashes remain unchanged; the private report SHA256 is
+`41fe617e1edf08fcea59f52f266f01a3dd13df3b46923e732489503a2805e4fd`.
+
+Separate original source-only cases expose redundant named-skin Slider membership
+after the constraint's skin-required flag is off. The consumer accepts those
+lists without restricting nonrequired Slider activity. The narrow native
+validation fix retains that metadata through serialization while keeping unknown,
+duplicate, unflagged non-Slider/bone and default-skin references strict. Its
+focused adapter regression and affected 101-case/21-case matrix reruns pass.
+This does not broaden the other constraint types' skin-membership policy.
+
+Further controlled studies compare 72 source cases with 3 explicit Loop precision
+refusals; source Mix/order 6/6 each, original bone 34/34, nested 3/3 and driven
+Time/Mix 12/12 each. The manual adversarial set has 11 comparisons and **2 raw
+1e30 f32 precision mismatches**, retained as failures rather than passes/refusals.
+Sequence wide/integer sets compare 11/15 and 8/16, with respectively 4 and 8
+explicit counter refusals. Tolerance remains 0.001; refusals are not runtime passes.
+
+The original public Slider Lab is recreated from a blank project and one PNG
+through 84 actual MCP requests with 14 retained poses. Canonical SHA256 is
+`f097c00c4542d46b7e2ee846d72d74606c9a6e5fad9bf41ccc1dcdc277a60dc6`.
+Native manual Frame/Mix, pending Save, independent keying/K, history, Auto Key
+flush, beyond-end 120, signed Mix, Setup Loop/Additive, draft Save, held Escape/
+focus loss and Graph numeric/clipboard operations pass, including 1120×740 input.
+Native edits restore that MCP canonical document; independent native creation is
+not established. External geometry covers 104 poses, maximum world error
+1.838038693335875e−5 and 1,664 region values with maximum error
+2.288818359375e−5 at unchanged 0.001 tolerance.
+
+Installed 4.3.26 interchange also compares 104 returned poses: 3,744 world and
+1,664 region values have maximum error 1.52587890625e−5, with 1,664 UV values
+exact and 832 color/104 order checks. The retained strict authored report fails:
+native output orders Mix before Time and recanonicalizes Beziers. One inserted
+Time value changes from 0.61266667 to 0.6126666, with normalized handle drift
+about 6.3e−7. All ten non-animation sections remain exact after reimport. This
+establishes bounded lossy Editor compatibility at unchanged tolerance, not exact
+authored interchange. The failed strict report and semantic analysis are retained;
+the adapter and tolerances are not weakened to hide those changes.
+
+Final `actual-mcp-02` repeats 84 requests and the same canonical project hash.
+Native build `47ca392adf56a9881bf54b845656fcc01af390aa7e52fff88b87d2038a12bde8`
+freshly opens the public lab with one image, empty history and Graph handles.
+Actual playback reaches 0.224702 seconds, then stops/resets to zero. Document/hash
+stay unchanged and the owned window closes. The final skin-aware build and
+170/177/101/21-case reruns pass; engine Slider checks total 39. Formatting,
+all-target Clippy, workspace build and architecture checks pass.
+
+The bounded manual editing/MCP checkpoint is verified. Full Slider parity remains
+open, including source/creation transitions, referenced Physics/events, remaining
+Deform/attachment domains, strict authored interchange loss and the two raw 1e30
+precision failures. See [the bounded contract](slices/slider-constraints.md),
+[review gallery](evidence/slider-constraints.html) and
+[scalar evidence](evidence/slider-constraints.json).
+Licensed native captures/logs and complete local hashes stay in the existing
+private Slider task; no account identifiers or private asset paths are published.
+
+## Slider source/creation continuation — November 15, 2026 (bounded native acceptance passed)
+
+Original installed Spine 4.3.26 controls/exports in the retained Slider task
+establish automatic trailing-numeric naming and prepend order, including a Slider
+sharing an existing Transform's name. Source assignment deletes only Time tracks,
+preserving Mix and unrelated sections. Manual Frame 45 (0.75 seconds) survives
+assignment/range edits/process reload before Clear. A
+genuine Setup Mix edit captures preceding eligible sample Time (0.5925926 in the
+range study); unchanged Mix and incoming zero Mix preserve the hidden baseline.
+A separate order probe distinguishes unchanged Mix 100%/zero baseline from a
+genuine Mix 50% edit capturing own-turn **0.45**. A Loop probe distinguishes sampled
+**0.1875** from prewrapped **1.6875**. Range and Local edits do not capture.
+These discriminators replace the earlier overly broad
+inference that Clear itself always retains the current derived Time.
+
+Equal source endpoints repair Max=Min+100; equal target endpoints repair by the
+reference duration, measured **1.5 seconds/90 frames**. Reversed endpoints stay reversed.
+Raw f64 readback and finite f32 endpoint edits remain distinct; zero-scale
+SourceMax is explicitly undefined. Fresh property defaults are Scale X/Y **1..2**
+and the other four properties **0..100**. Cross-Slider/bone A→B→A probes establish a
+shared per-property source pair, with each Slider retaining its target range.
+Process restart resets nonactive choices, while controlled same-process Save/Open
+preserves distinctive Source Min **8**. This is Session/view memory rather than
+native document metadata.
+
+An order discriminator shows actual derived Frame **27** at the Slider turn; a
+later Transform leaves source rotation **90**, whose resampled result would
+falsely imply Frame **81**. The implementation records incoming/applied settings, sample
+time and eligibility during the original ordered pass. No second solve supplies
+the readout or Setup Mix capture.
+
+Creation uses explicit forward/inverse constraint identity effects for persistent
+references, pending state, previews and history. Raw Add still appends. The native
+format remains **23**, with **63 commands /17 tools**. Final source study04
+passes 141 requests and 15 retained poses from a blank project/one original PNG,
+with exact save/reopen and canonical private SHA256
+`60b75a59d56d4df1b41120dbb9e3d29abe187e3a0ceff7a1c287aa32f220b109`.
+The old public Slider Lab and original sources stay unchanged; owned MCP exits 0.
+Separate runtime geometry compares 104 poses, 3,744 world values (maximum
+8.897442157262958e−6) and 1,664 region values (maximum 1.52587890625e−5), at unchanged
+0.001. No new lossless interchange, extreme-value or physics/event capability
+is inferred. The prior strict authored failure and two raw `1e30`
+precision mismatches remain retained. No new internet retrieval or vendor
+implementation inspection was used for this continuation; licensed screenshots,
+logs and original case records remain private.
+
+Run01 retains a helper-decoding failure on a correct plain-text MCP rejection.
+Run02 instead exposed an actual production bug: object-form `{"scaleX":null}`
+was accepted for a string-only property, changing revision. The failed run/source
+are retained; a narrow command deserializer and engine/MCP regressions reject it.
+Run03 passes the unchanged negative expectation. Six source engine regressions
+are joined by a seventh source regression for a later positional-range-array
+strictness bug. Object-only range decoding preserves required/unknown/duplicate
+field errors; current totals are63 engine Slider,33 desktop,16 schema and6 stdio,
+plus six overlapping Session cases. Fmt/Clippy/build/seven-crate architecture pass.
+Final run04 repeats141 requests/15 samples after wire hardening, preserving the
+canonical project. The separate10-request range-wire report proves array
+rejection without document/history/revision changes, valid object acceptance and
+exact Undo. Earlier run03 and failed strictness reports keep their identities.
+
+Actual native New/history/selection, Frame45/source assignment, typed source8..1/
+targetFrames30..90, property-cache restoration and unchanged hidden Time pass.
+Localfalse/Clear preserves0.59259266; genuine Mix25%/Clear captures1.5. Minimum
+1120×740 actual SourceMax2/Undo and draft99/Save pass; shared MCP decoding confirms
+the saved document exactly. Canonical Cocoa Open loads one image/empty history,
+recalls source Min8 and Undo restores canonical bytes/no dirty state. Final
+presentation fits all original art at180% with four fields visible. Edited cleared
+and canonical editor/minimum images are labeled as different acceptance states.
+The earlier November 15 held-range attempt stayed8 and is excluded from native
+cancellation evidence; the later follow-up below closes that specific gap.
+Ten headless event cases remain independent coverage. Foreground guards
+remained active without other-app input. All owned processes are closed and
+reference bounds restored.
+
+Installed source interchange geometry compares104 poses at0.001, world maximum
+1.3513448465118927e−5 and region maximum1.52587890625e−5. Strict equality fails at
+hidden Time0.59259266→0, target minimum0.33333334→0.3333333, Mix Bezier0.2→0.19999997
+and name. This loss of editing state is not erased by geometry success. Cleanup
+retires25 owned duplicate inputs/helpers/redundant outputs; selected final
+transcripts, original cases and native/runtime/interchange witnesses remain only
+for active PR review until integration/supersession. The shared target serves the
+continuing goal. This is bounded acceptance, not full Slider/Spine parity.
+
+Detailed interactive evidence uses native binary `61db0591…5a867`. Final wire-
+hardened `6b638bb1…be3f` independently reopens the canonical public project in a
+normal foreground window, with one image/empty history/no error, unchanged source
+and verified close; its report SHA256 is
+`03db6462eaf67516a55b5338821dade4e5d0799bd60964f037d25cef0ea303ea`.
+That reopening was read-only; the subsequent held-range interaction is recorded
+separately below. Final MCP binary SHA256 is
+`fa9525d4abfb2ce9edb565fc03a004d3ffe253e8e0bf2d0a61756520c2ea83ed`;
+run04 report SHA256 is
+`b4049a31cd03b2a1e8a19d32234586b6fdc9997d29221017f76d1be04f8f6e94`.
+The10-request final wire report SHA256 is
+`3f0f56f0322384d1905c2ef1760aa2e58db1ce34c73bf72288252bc8955c3593`.
+Final CLI `8a0ad781…0768d` repeats both104-pose geometry checks with unchanged
+errors. Run04 exports are byte-identical to run03, so the installed oracle input
+is unchanged; this does not erase strict authored loss or broader native QA limits.
+
+### Slider held-range native follow-up — November 15, 2026, 19:58 UTC
+
+An actual guarded native run on commit `63eb72590cb76dba39654772b5cf78a1d5a94c87`,
+binary `6b638bb1236deb03e3c22515193078eb30ade65c6ae9033446fb4f17fe3bbe3f`,
+starts with an unfocused Source Min field. Staged absolute pointer moves change
+the document preview **10→13**, with `active.numeric=false`; hidden manual Time,
+Mix, pending poses and selection remain unchanged. Escape while held restores
+the exact document and redo. Continued movement is blocked until Primary Up;
+a fresh drag/release commits and has exact one-step Undo/Redo. Final document
+and source file retain SHA256
+`60b75a59d56d4df1b41120dbb9e3d29abe187e3a0ceff7a1c287aa32f220b109`.
+
+The private `source-workflow/held-range-native-report.json` SHA256 is
+`209175998f59bbf9501fdb499dd089b7c20e0ee3e5f530b5e606b6d651bceba6`.
+Public original-art captures are
+[the changed preview](evidence/slider-range-drag.png), SHA256
+`93813e434176ababc5174835add518873088d63d9a33ddc33ba49351e40259cd`,
+and [Escape restoration](evidence/slider-range-escape.png), SHA256
+`3e753298a0b7974e80ca0d23e1793753179d327650aa0402f2c7982e1343c228`.
+The earlier unchanged field8 trial stays historical and is not retroactively
+counted. Acceptance uses changed model state and exact restoration, not raw CG
+button-state observations alone. Exact process identity, foreground and normal
+window guards remain active; the owned process is closed. Three owned scratch/
+helper/bytecode files are retired under `held-range-task.json`; selected scalar,
+window and image witnesses remain for active PR review until integration or
+supersession. No editor/runtime implementation was inspected, no Rust code or
+API count changed, and no full Spine, pixel or lossless conversion is claimed.
+
+
+### Ordered Bone authoring and semantic translation — November 16, 2026
+
+The new selection, atomic Session transitions and group translation were written
+independently from ordinary affine mathematics, our original fixtures and
+permitted input/output observations in installed Spine 4.3.26. Public context is
+[Tree selection](https://esotericsoftware.com/spine-tree#Selection),
+[translation](https://esotericsoftware.com/spine-tools#Translate-tool),
+[compensation](https://esotericsoftware.com/spine-tools#Compensation) and
+[Graph order](https://esotericsoftware.com/spine-graph#Order). These guide pages
+are unversioned; their general descriptions do not replace the pinned native
+measurements. No Spine editor or runtime implementation was inspected or copied.
+
+An original three-branch control distinguishes first-survivor removal from a
+selected ancestor becoming the gizmo anchor. Separate saved native controls
+establish that Parent typed X affects every selected member, while viewport
+translation suppresses selected descendants and Local movement uses each edited
+Bone's frame. Compensation was off. Inconclusive Scale/Shear handle trials are
+retained as limits, not promoted to implementation acceptance. Owned reference
+processes were closed and their source bytes and window settings restored.
+
+The final workspace MCP independently constructs the public seven-Bone lab from
+57 commands and one existing original PNG. Its 104-request protocol study and
+156-pose separately licensed Spine 4.3.13 public-API oracle check are recorded in
+[the scalar evidence](evidence/multi-bone-authoring.json). The lab has four Region
+attachments; it adds no weighted-mesh evaluation claim. Desktop event checks are
+separate from the later bounded native acceptance on unchanged Desktop
+`1558c25671dde653965f221dcaab7c9bb41b1ff973f91dfe571787faa00e5763`.
+Actual guarded input verifies nine Tree and three viewport selection steps,
+Local/Parent/World translation, selected-ancestor anchor/filter behavior, Parent
+numeric assignment including descendants, pending Save exclusion with live
+pending retained, global K/full-set keys, exact history and changed held-preview
+Escape/block/release. Its historical 1120×740 acceptance covers the tested toolbar
+controls; the Tree was tiny and the rig clipped. The adaptive follow-up below
+separately measures the improved layout without claiming every stacked view.
+
+The actual edited [native result](../examples/peach-bot/multi-bone-native-result.peachy)
+has SHA256 `14f2e7039d5c90967f37fddd9d1233cac2537c4219c36b47f15313ecd9f513a2`.
+Fresh-process reopen restores the complete typed Document with empty history,
+pending pose and clipboard, and one original PNG. Two separate actual MCP
+save-readback processes use 15 requests each; the native-witness process uses 6,
+for 36 requests/14 pose queries total. Full typed-document comparison and exact
+Setup/0.5-second authored locals, applied locals and world witnesses pass.
+No blanket f32 conversion or raw JSON decimal equality substitutes for typed
+comparison. All owned processes are closed.
+
+The native `14f2` result differs from the MCP-authored `f3bd` result covered by the
+156-pose external-runtime report; no new runtime comparison of native `14f2` is
+claimed. Broader group Rotate/Scale/Shear, numeric/group Properties, semantic
+cycle Offset and a live desktop bridge remain open. Hosted CI has not passed;
+no full Spine or pixel parity follows. Private reference captures and transcripts
+remain outside Git; only original fixture data and Peachy captures are public.
+
+### Adaptive workspace follow-up — November 16, 2026
+
+The four-path UI change was written independently within our workspace/layout
+code and verified using our existing original multi-Bone native result. Guarded
+native input on Desktop
+`d1fc05d94a66032d50e262b566caa2046419a5702628a9b368b640ed394c14e8`
+measures a 206-pixel canvas with Dopesheet+Timeline and 293.71875 pixels with
+Playback at 1120×740, with four complete Tree Bone rows. Real pixel-wheel events
+reach the last Shear Y key and return to the first X key; document, pending pose,
+redo and selection are unchanged. Pending also survives foreground yield.
+Returning to 1500×960 after closing Playback restores the measured default pane
+heights with zero delta. Key/nudge probes are undone to source SHA256
+`14f2e7039d5c90967f37fddd9d1233cac2537c4219c36b47f15313ecd9f513a2`
+byte-exactly. All owned GUI processes are closed.
+
+Source checks03/04 pass workspace16, layout5, Dopesheet42, multi-Bone14, Graph47,
+Curves52, formatting, all-target Clippy, workspace build and architecture7;
+filters overlap. The checks04 divider filter matched no tests. A later correct
+`pane_resize_` filter passes five cases in a context that also contains eight
+passing uncommitted engine Offset-foundation tests. Those engine files are not
+part of this UI-only checkpoint, and its native binary was not rebuilt for the
+supplemental check. Neither that foundation nor closing-Bezier reference probes
+accept an Offset UI/MCP feature.
+
+No new MCP/runtime/interchange run or geometry algorithm is claimed. Native v23
+and 64 commands/23 tools stay unchanged. Full stacked-Graph minimum layout,
+Properties beyond membership, native custom-divider preference recovery and
+cross-restart layout preferences remain open. Hosted CI has not passed. The
+[review](evidence/minimum-workspace.html) publishes only original Peachy captures;
+[scalar evidence](evidence/minimum-workspace.json) separates this follow-up from
+the historical `1558` authoring and MCP/runtime proofs. No proprietary editor or
+runtime implementation was inspected or copied.
+
+## Cycle Offset foundation — November 16, 2026
+
+The planner, Session memory/history integration and two MCP tools were written
+independently using our scalar sampler/subdivision, ordinary periodic curve
+mathematics and original Spine 4.3.26 input/output probes. No proprietary editor
+or runtime implementation was inspected. Licensed reference captures remain
+private; the public [baseline](../examples/peach-bot/cycle-offset-bot.peachy),
+[authored result](../examples/peach-bot/cycle-offset-authored-bot.peachy) and
+[97-command recipe](../examples/peach-bot/cycle-offset-authoring-commands.json)
+contain original fixture data only.
+
+Valid single-key and explicit Tree-scope controls establish whole-property
+expansion and affected-set memory: identical sets preserve originals regardless
+of exact seed membership/order; shrinking retains survivors and drops departed
+tracks; expansion captures every selected current track at phase zero. Earlier
+trials without the intended Tree scope are excluded. Raw/context stale guards,
+closed-loop restrictions and receipt handling are explicit implementation
+boundaries, not proof of every native selection/history edge case.
+
+Native v23 and 64 persistent commands stay unchanged; the 25-tool surface adds
+`offset_animation_keys` and `reset_cycle_offset_memory` through shared Session
+operations. Memory stays outside Document/exports, with explicit reset and
+Undo/Redo snapshots. Final source04 passes ten engine cases, four MCP unit/two
+actual stdio cases, discovery and prior pose/Translate regressions, formatting,
+Clippy/build and architecture7. Actual MCP04 passes 276 requests/97 construction
+commands/11 atomic negatives, seven-step installed-reference goldens and exact
+history/Save/reopen; its child closes with inputs/binaries unchanged. Public
+authored SHA `0316f848…3d73` stays unchanged and passes 364 public-API external
+runtime poses at 0.001, maximum world error 1.4148056052931679e−5 and Region error
+1.52587890625e−5. This is the foundation's data/geometry proof; native controls
+and seed-selection mapping were still open at that checkpoint. The bounded
+follow-up below closes those measured cases. Other families, outside-loop tracks,
+remaining reference gates and a live desktop MCP bridge remain open. See [the slice](slices/cycle-offset.md) and
+[MCP contract](MCP.md#closed-bone-track-cycle-offset) and [scalar evidence](evidence/cycle-offset.json).
+
+### Native Offset controls and exact MCP replay — November 16, 2026
+
+Independent shared requested-key mappings distinguish original anchors from
+generated boundaries, preserve request order and handle endpoint collisions.
+The separate 32-request receipt/reset study (author29 plus observer3) saves
+`050f5abd…272ab`; its metadata fixture is distinct from the earlier `0316` result
+and the native result below. Neither earlier runtime report is reassigned to it.
+
+Guarded native input on Desktop
+`dc60e423a84a6994d3bd026b6333cf3b030c364b5a611f3059b4146c3a7b2998`
+passes single/mixed seeds, fast Offset and ordinary retime release, mapped seed
+selection, held preview/Escape/Save cancellation with continued-held blocking,
+unrelated pending X preservation, explicit/automatic loop bounds and Off/On
+recapture. The reserved footer keeps Offset/Loop Start/End controls visible at
+1120×740; the rig was manually fitted and Tree filtered, so all Tree rows are
+not claimed visible. Fresh reopen restores the complete Document with empty
+history, pending pose, cache and clipboard, and one image. All owned processes
+are closed. Final checks pass engine16, MCP6unit/2stdio, desktop Offset15,
+formatting, all-target Clippy, workspace build and architecture7; filters overlap.
+
+A separate 15-request actual MCP replay constructs the 97-command original lab
+from blank without importing a finished rig, then uses the measured native
+deltas. The entire Document and live authored/applied/world arrays with pending
+values match exactly; Save is byte-identical to the public
+[native result](../examples/peach-bot/cycle-offset-native-result.peachy), SHA256
+`68126b9a56801e5be6a2e6b6ca641dfcf4145832bbddbe6f348d3e7239ed42a4`.
+Opening that native file is also exact. Its separate external runtime 4.3.13
+check passes seven clips/364 poses at unchanged 0.001 tolerance, maximum world
+error 1.547993635142575e−5 and Region error 1.52587890625e−5. Source inputs and
+CLI remain unchanged; owned MCP children close.
+
+The [review](evidence/cycle-offset-ui.html) and
+[scalar evidence](evidence/cycle-offset-ui.json) publish only original fixture
+data and Peachy captures. Licensed reference captures stay private; no proprietary
+implementation was inspected. Shift/ripple, editable Current, broader styling,
+native negative/full-period/Stepped/nonzero-loop interaction, open/outside and
+non-Bone tracks, canonical start/end unmerge selection, broader history/context
+rules and a live desktop MCP bridge remain open. Hosted CI has not passed;
+this is bounded native/MCP acceptance, not full Spine parity.

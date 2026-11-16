@@ -3,8 +3,14 @@ use super::*;
 
 impl Editor {
     pub(super) fn cancel_gesture(&mut self) {
+        self.selection_input.clear();
+        self.cancel_slider_edit();
+        self.cancel_constraint_edit();
+        self.cancel_weights_pointer();
+        self.export_dialog = None;
         self.cancel_timeline_interaction();
         self.cancel_graph_edit();
+        self.cancel_draw_order_edit();
         self.cancel_slot_color_edit();
         self.pose_key_request = None;
         self.ik_bend_request = None;
@@ -91,8 +97,9 @@ impl Editor {
 
     pub(super) fn deselect(&mut self) {
         self.cancel_gesture();
-        self.selection_history.record(&self.selection, &None);
-        self.selection = None;
+        self.selection_history
+            .record(&self.selection, &TreeSelection::default());
+        self.selection = Default::default();
     }
     pub(super) fn step_frames(&mut self, delta: f32) {
         self.playing = false;
@@ -104,6 +111,15 @@ impl Editor {
             return;
         }
         if self.tool == Tool::Mesh {
+            if self.deform_drag.is_some() {
+                return;
+            }
+            if !self.setup_mode {
+                if let Some(key) = self.selected_attachment().cloned() {
+                    self.nudge_deform_vertex(key, delta);
+                }
+                return;
+            }
             if self.mesh_drag.is_none()
                 && let Some(key) = self.selected_attachment().cloned()
                 && self
@@ -125,7 +141,7 @@ impl Editor {
         }
     }
 
-    fn file_history_shortcuts(&mut self, ctx: &egui::Context) {
+    pub(super) fn file_history_shortcuts(&mut self, ctx: &egui::Context) {
         if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::O)) {
             self.open_project(ctx);
         }
@@ -207,7 +223,30 @@ impl Editor {
             self.capture = Some(self.capture_directory.join(format!("editor-{stamp}.png")));
             ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
         }
+        if self.export_dialog_shortcuts(ctx) {
+            return;
+        }
+        if self.draw_order_shortcuts(ctx) {
+            return;
+        }
+        if self.shared_curve_edit_active()
+            || self.deform_curve_edit_active()
+            || self.slot_curve_edit_active()
+        {
+            if !ctx.text_edit_focused() {
+                self.file_history_shortcuts(ctx);
+            }
+            if ctx.input_mut(|input| input.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
+                self.cancel_graph_edit();
+            }
+            if ctx.input_mut(|input| input.consume_key(egui::Modifiers::NONE, egui::Key::F9)) {
+                self.toggle_views();
+            }
+            return;
+        }
         if self.slot_color_shortcuts(ctx)
+            || self.slider_edit_shortcuts(ctx)
+            || self.constraint_edit_shortcuts(ctx)
             || self.ik_shortcuts(ctx)
             || self.transform_shortcuts(ctx)
             || self.weight_edit_shortcuts(ctx)
@@ -250,12 +289,14 @@ impl Editor {
         {
             return;
         }
-        if self.key_drag.is_some() && ctx.input(|input| input.key_pressed(egui::Key::Escape)) {
+        if self.key_drag.is_some()
+            && ctx.input_mut(|input| input.consume_key(egui::Modifiers::NONE, egui::Key::Escape))
+        {
             self.cancel_dopesheet_drag();
             return;
         }
         if ctx.input_mut(|input| input.consume_key(egui::Modifiers::NONE, egui::Key::F2)) {
-            if let Some(item) = self.selection.clone() {
+            if let Some(item) = self.selection.single().cloned() {
                 self.begin_rename(item);
             }
             return;
@@ -278,7 +319,7 @@ impl Editor {
                 self.selection_history.store(index, &self.selection);
                 self.status = format!(
                     "Selection group {index} {}",
-                    if self.selection.is_some() {
+                    if !self.selection.is_empty() {
                         "stored"
                     } else {
                         "cleared"
@@ -287,13 +328,14 @@ impl Editor {
             } else if ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, key))
                 && let Some(item) = self.selection_history.recall(index)
             {
-                self.select(item);
+                self.selection_history.record(&self.selection, &item);
+                self.restore_tree_selection(item);
             }
         }
 
         if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::L))
             && !self.setup_mode
-            && self.selected_bone().is_some()
+            && !self.selected_bones().is_empty()
             && self.selected_transform().is_some()
         {
             self.key_transform(&Property::ALL);
@@ -314,12 +356,12 @@ impl Editor {
         if ctx.input(|i| i.key_pressed(egui::Key::PageUp))
             && let Some(item) = self.selection_history.previous(&self.selection)
         {
-            self.restore_selection(item);
+            self.restore_tree_selection(item);
         }
         if ctx.input(|i| i.key_pressed(egui::Key::PageDown))
             && let Some(item) = self.selection_history.next(&self.selection)
         {
-            self.restore_selection(item);
+            self.restore_tree_selection(item);
         }
         if ctx.input(|i| i.key_pressed(egui::Key::F9)) {
             self.toggle_views();
@@ -328,7 +370,11 @@ impl Editor {
             self.deselect();
         }
         if ctx.input(|i| i.key_pressed(egui::Key::Escape)) {
-            if self.mesh_drag.is_some() || self.drag.is_some() || self.key_drag.is_some() {
+            if self.mesh_drag.is_some()
+                || self.deform_drag.is_some()
+                || self.drag.is_some()
+                || self.key_drag.is_some()
+            {
                 self.cancel_gesture();
             } else {
                 self.deselect();
@@ -363,7 +409,7 @@ impl Editor {
                 ));
                 self.playing = false;
             }
-            if self.selected_bone().is_some() && ctx.input(|i| i.key_pressed(egui::Key::L)) {
+            if !self.selected_bones().is_empty() && ctx.input(|i| i.key_pressed(egui::Key::L)) {
                 let properties = self.tool.properties();
                 if !properties.is_empty() && self.selected_transform().is_some() {
                     self.key_transform(properties);

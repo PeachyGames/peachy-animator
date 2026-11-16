@@ -3,7 +3,8 @@ use crate::*;
 use peachy_document::*;
 
 fn skin_lab() -> Document {
-    serde_json::from_str(include_str!("../../../examples/peach-bot/skin-bot.peachy")).unwrap()
+    crate::native_fixture::decode(include_str!("../../../examples/peach-bot/skin-bot.peachy"))
+        .unwrap()
 }
 
 #[test]

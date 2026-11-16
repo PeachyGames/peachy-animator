@@ -1,0 +1,190 @@
+{
+  "date": "2026-11-15",
+  "accepted": true,
+  "scope": "Bounded multi-vertex Direct weights and captured inheritance through native UI and MCP",
+  "nativeFormat": 22,
+  "commands": 52,
+  "tools": 12,
+  "reference": {
+    "editor": "Spine4.3.26",
+    "validNativeCases": 14,
+    "captures": "private original fixtures; no proprietary implementation inspected"
+  },
+  "project": {
+    "path": "examples/peach-bot/multi-weights-bot.peachy",
+    "sha256": "87214e61dc6410d8f9f0306deacd7b19b2a658a9353bd2b15b9f2be606540807",
+    "nativeMcpByteIdentical": true,
+    "originalPngSha256": "6e8f281942e95b5a77774e683622dac99ea2aef706c99f3627dad968d6c2120f"
+  },
+  "native": {
+    "passed": true,
+    "actualNativeInput": true,
+    "projectSha256": "87214e61dc6410d8f9f0306deacd7b19b2a658a9353bd2b15b9f2be606540807",
+    "freshPublicReopen": true,
+    "imageCount": 1,
+    "noHistoryAtReopen": true,
+    "fastCmdReleasedBeforeMouseUp": true,
+    "mixedFieldBlank": true,
+    "weightsLeftOfCurves": true,
+    "fullWidthDopesheet": true,
+    "minimumInnerSize": [
+      1120.0,
+      740.0
+    ],
+    "minimumViewportWidth": 320.0,
+    "minimumControlsClipped": false,
+    "actualPlayback": {
+      "first": 0.5052248239517212,
+      "second": 0.04754437506198883,
+      "stoppedAtZero": true
+    },
+    "sourceUnchanged": true,
+    "captures": {
+      "editor": "public-final-editor.png",
+      "minimum": "public-final-minimum.png",
+      "typed50": "peachy-pair-typed50.png"
+    },
+    "earlierNativeAcceptance": [
+      "peachy-pair-typed50.json",
+      "peachy-relative-committed.json",
+      "peachy-relative-escape-released.json",
+      "peachy-marquee-canceled.json",
+      "peachy-all-six-typed50.json",
+      "peachy-pending-save.json",
+      "ordered-native-report.json"
+    ],
+    "closed": true
+  },
+  "mcp": {
+    "actualStdio": true,
+    "requests": 90,
+    "rootOnlyCreation": true,
+    "finishedRigInput": false,
+    "retainedPoses": 51,
+    "savedReopened": true,
+    "schemaTests": 11,
+    "protocolTests": 15,
+    "stdioSubset": 13,
+    "consumerChecks": {
+      "passed": true,
+      "actualStdioMcp": true,
+      "requests": 9,
+      "editorRejectBeforeWrite": true,
+      "failedExportPreservesSession": true,
+      "runtimeRetainsExactRawOutput": true,
+      "orderedEditorExportAccepted": true,
+      "binarySha256": "1f91edb52fdd6c21a8f7abb8b495e70e463742139282516644e7c3ff30bc7d97",
+      "finalProjectSha256": "87214e61dc6410d8f9f0306deacd7b19b2a658a9353bd2b15b9f2be606540807",
+      "rejection": {
+        "error": "Spine Editor export: attachment default/sparse_mesh/sparse_mesh has contradictory per-vertex bone order; a precedence cycle prevents ordering [\"weight_A\", \"weight_B\", \"weight_C\"]. Export as Runtime43 to preserve the raw influence arrays",
+        "revision": 1
+      }
+    }
+  },
+  "runtime": {
+    "physicsConstraints": 0,
+    "physicsValues": 0,
+    "physicsTimelines": 0,
+    "physicsFrames": 0,
+    "regionComparisons": 0,
+    "maxRegionError": 0,
+    "meshComparisons": 1248,
+    "weightedMeshComparisons": 1248,
+    "maxMeshError": 3.0517578125e-05,
+    "uvComparisons": 2496,
+    "maxUVError": 0,
+    "runtime": "Spine 4.3 external oracle",
+    "bones": 4,
+    "slots": 2,
+    "skins": [
+      "default"
+    ],
+    "clips": [
+      {
+        "name": "orbit",
+        "nativeEnd": 1,
+        "runtimeEnd": 1,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default"
+        ],
+        "maxWorldError": 7.967635085037728e-06
+      }
+    ],
+    "tolerance": 0.001,
+    "maxWorldError": 7.967635085037728e-06,
+    "comparisons": 1248,
+    "ikPoseComparisons": 0,
+    "maxIKMixError": 0,
+    "ikMixTolerance": 1e-06,
+    "drawOrderChecks": 52,
+    "imageChecks": 104,
+    "colorComparisons": 416
+  },
+  "installedInterchange": {
+    "passed": true,
+    "reportSha256": "a71547c38ff291ff88075d31faa61f031ce3c1b39eae44aae98791238d64d6b0",
+    "samples": 52,
+    "maximumWeightedCoordinateError": 0.0001678466796875,
+    "worldError": 0,
+    "UVError": 0,
+    "tolerance": 0.001,
+    "nativePrunesZeros": 5,
+    "nativeWeightRoundingMax": 4.289999999990135e-06,
+    "survivingPositionsExact": true,
+    "survivingEntryReorders": 0
+  },
+  "bindingInheritance": {
+    "actualMcpRequests": 141,
+    "modes": 5,
+    "legacyNegativeControls": 4,
+    "maximumPreservedGeometryError": 3.0517578125e-05,
+    "runtimePoses": 260,
+    "runtimeWorldError": 1.4129895788528302e-05,
+    "runtimeMeshError": 6.103515625e-05,
+    "keyedModes": "imported original fixture data, not new MCP key authoring"
+  },
+  "checks": {
+    "engineMeshWeights": 10,
+    "engineInheritanceSnapshot": 4,
+    "legacyBinding": 13,
+    "legacyDirectWeights": 11,
+    "desktopWeights": 39,
+    "earlierCurves": 48,
+    "spineOrderConsumer": 4,
+    "legacyWeightedAdapter": 4,
+    "architectureCrates": 7,
+    "focusedWorkers": 2
+  },
+  "screenshots": {
+    "weight-multivertex-editor.png": {
+      "sha256": "d652b218ebce4c81c77f97f35a323eb0dd2b556ba6e2ad9a1fe68f548a67461a",
+      "pixels": [
+        1500,
+        960
+      ]
+    },
+    "weight-multivertex-minimum.png": {
+      "sha256": "b702ad758ea5c873ce1d4f3fd15eba40911642553580c9ca2a865efba19cc063",
+      "pixels": [
+        1120,
+        740
+      ]
+    },
+    "weight-multivertex-typed50.png": {
+      "sha256": "a7fa742167b34edc8b6ba335da44c4f1b66c892c0f478784a5d3730750ce94b3",
+      "pixels": [
+        1500,
+        960
+      ]
+    }
+  },
+  "limits": [
+    "Brush/Auto/Smooth/locks/Update and multiple bound-bone editing remain",
+    "Sparse Deform-layout remapping remains unsupported",
+    "Pies/overlay controls, exact styling and arbitrary docking remain",
+    "Runtime exports preserve raw arrays; Editor rejects contradictory precedence",
+    "No full Spine compatibility or pixel-equivalence claim"
+  ],
+  "hostedCI": "still a separate main-integration gate; feature PR remains draft"
+}

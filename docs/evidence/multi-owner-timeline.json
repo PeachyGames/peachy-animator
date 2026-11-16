@@ -1,0 +1,265 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-15",
+  "scope": "Bounded ordinary multi-owner key editing, not complete Spine workflow parity",
+  "versions": {
+    "nativeFormat": 23,
+    "commands": 63,
+    "mcpTools": 18,
+    "referenceEditor": "4.3.26",
+    "externalRuntime": "4.3.13"
+  },
+  "originalProject": {
+    "path": "examples/peach-bot/multi-owner-bot.peachy",
+    "sha256": "88e6b67fdc058b4acb8bbf618dd1ebeb98fdbb3c765f24d301aebdf3d0c5c2cf",
+    "authoringCommands": "examples/peach-bot/multi-owner-authoring-commands.json",
+    "commandCount": 25,
+    "commandsSha256": "85d45c82a2503c617cdaec020347eb4e20e98bf102eb036951b2f48088602ee0",
+    "originalPngSha256": "6e8f281942e95b5a77774e683622dac99ea2aef706c99f3627dad968d6c2120f"
+  },
+  "binaries": {
+    "peachy-animator": "e1251a01ee635d8c5484ba809e327dcf3cbb9892a29b978d35df04933c70d1ee",
+    "peachy-mcp": "93268b50871aa3a21fe68ef24c3bfbc98dce6f23dfc3199b580361300feeba1d",
+    "peachy-cli": "5d68cac6d49ddf46777d8415999b9c27af4a07bfde526b201ad97e223a9238b5"
+  },
+  "sourceChecks": [
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exitCode": 0
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "-j2",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exitCode": 0
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "build",
+        "--workspace",
+        "-j2"
+      ],
+      "exitCode": 0
+    },
+    {
+      "argv": [
+        "python3",
+        "scripts/check-architecture.py",
+        "--cargo",
+        "../.local-tools/peachy-animator/cargo"
+      ],
+      "exitCode": 0
+    }
+  ],
+  "focusedTests": {
+    "engineMultiOwner": 6,
+    "documentGeneration": 2,
+    "mcpQuery": 3,
+    "mcpSchema": 16,
+    "stdioInventory": 1,
+    "desktopDopesheet": 28,
+    "desktopGraph": 46,
+    "desktopCurves": 51,
+    "desktopSlot": 42,
+    "desktopSlider": 34,
+    "desktopDeform": 26,
+    "desktopKeyDrag": 4,
+    "desktopClipboard": 15,
+    "overlappingFilters": true,
+    "maxWorkers": 2
+  },
+  "actualMcp": {
+    "passed": true,
+    "requests": 41,
+    "authoredCommands": 25,
+    "poseSamples": 12,
+    "negativeReadOnlyQueries": 5,
+    "blankRootAndOnePng": true,
+    "exactUndoRedo": true,
+    "exactSaveReopen": true,
+    "childClosed": true,
+    "finishedRigImportedAsRecipeInput": false
+  },
+  "native": {
+    "passed": true,
+    "checks": {
+      "mixedOwnerCmdSelection": true,
+      "sharedExactRawMovement": true,
+      "oneStepUndoRedo": true,
+      "heldEscapeDocumentSelectionPrimaryRedo": true,
+      "continuedHeldBlocked": true,
+      "releaseFreshGesture": true,
+      "nativePendingBaselineEmpty": true,
+      "selectAllEightDeleteUndo": true,
+      "otherAnimationUnchanged": true,
+      "graphOwnerWithoutTreeBone": true,
+      "graphChannelSwitchRetainsOwner": true,
+      "treeOwnerPrunesRows": true,
+      "clearedOwnerNeverRevives": true,
+      "minimum1120x740EightVisibleTargets": true,
+      "mixedClipboardRefusedAtomically": true,
+      "nativeSaveFreshReopenExact": true,
+      "oneOriginalImage": true,
+      "allOwnedProcessesClosed": true
+    },
+    "acceptedDelta": 0.083333320915699,
+    "displayedSelectedFrames": [
+      10,
+      45,
+      25
+    ],
+    "savedScratchSha256": "8c2ba3768e5f925f895d4348dfa09a56e496eca673eba2c779fe2d4f8dc2510d",
+    "otherTypedOwnersNativeAccepted": false
+  },
+  "runtime": {
+    "passed": true,
+    "tolerance": 0.001,
+    "baseline": {
+      "poses": 104,
+      "maxWorldError": 1.200913195020803e-05,
+      "maxRegionError": 1.52587890625e-05
+    },
+    "retimed": {
+      "poses": 104,
+      "maxWorldError": 1.167843909399835e-05,
+      "maxRegionError": 1.52587890625e-05
+    }
+  },
+  "reference": {
+    "ordinaryMove": {
+      "driverFrames": [
+        0,
+        10,
+        45,
+        60
+      ],
+      "followerFrames": [
+        10,
+        25,
+        45,
+        60
+      ],
+      "exactUndo": true
+    },
+    "clipboardCommonOrigin": {
+      "driverPasteFrames": [
+        50,
+        70
+      ],
+      "followerPasteFrames": [
+        57,
+        80
+      ],
+      "spineOnly": true
+    },
+    "shift": {
+      "driverFrames": [
+        0,
+        15,
+        45,
+        65
+      ],
+      "followerUnchanged": true,
+      "spineOnly": true
+    },
+    "offset": {
+      "plus10Seams": {
+        "driver": -5.000002,
+        "follower": 26.66667
+      },
+      "repeatTotal15Seams": {
+        "driver": -7.500001,
+        "follower": 40
+      },
+      "reselectionMemoryUnresolved": true,
+      "threeUndoRestoresExactly": true,
+      "spineOnly": true
+    }
+  },
+  "limitations": [
+    "General multi-bone Tree/viewport posing is not implemented.",
+    "Group clipboard, Shift/Offset, Lock/filter/Sync and box timing transformations remain separate work.",
+    "Unrepresented timeline families are explicit read-only metadata; implicit Select All refuses partial groups.",
+    "Non-Bone typed owners and nonempty pending-pose preservation have focused engine/UI coverage, not new native acceptance here.",
+    "A snapped UI anchor produces its exact raw f32 delta; do not normalize query identities or infer lossless native-editor authored interchange.",
+    "MCP owns an independent session and exchanges saved files; no live desktop bridge."
+  ],
+  "artifacts": [
+    {
+      "path": "multi-owner-before.png",
+      "sha256": "ebee69b25bfbd4dba8720bdcb689510a476c1167f34dfd2f9cee6baf44e5cca5",
+      "inspection": "Native input + exact document",
+      "caption": "Three exact keys selected across two bones; cursor20."
+    },
+    {
+      "path": "multi-owner-after.png",
+      "sha256": "4a1db10bbca741a9674f183850855e12f1091b231c5af1679ca4c724d3bb452b",
+      "inspection": "Native input + exact document",
+      "caption": "Same cursor20 after moving only selected keys five displayed frames."
+    },
+    {
+      "path": "multi-owner-held.png",
+      "sha256": "4a1db10bbca741a9674f183850855e12f1091b231c5af1679ca4c724d3bb452b",
+      "inspection": "Native input + transaction state",
+      "caption": "Changed preview while primary button remains held."
+    },
+    {
+      "path": "multi-owner-escape.png",
+      "sha256": "c988dcbb31c1a981b81854ecfea08128f0fdaeac28120ba024234f500b6de4b6",
+      "inspection": "Native input + exact restoration",
+      "caption": "Escape restores document, selection, primary and redo while held."
+    },
+    {
+      "path": "multi-owner-graph.png",
+      "sha256": "03aa43e42eb7fadc62803b776acdd2ad0c579983e672a1150d4fd09dda90c972",
+      "inspection": "Native input + typed dispatch",
+      "caption": "Follower Rotate graph uses Bone4 while Tree selects the animation."
+    },
+    {
+      "path": "multi-owner-minimum.png",
+      "sha256": "42a5f8b7fa5dc76fc91761cafaaf1a770bea4978ac11c2777db87901fcf5f461",
+      "inspection": "Native input + visible-target inspection",
+      "caption": "1120\u00d7740: both groups and all eight exact key targets remain visible."
+    },
+    {
+      "path": "multi-owner-reopened.png",
+      "sha256": "ae22fd5fe730e1fc2b3c57f2de10f4c4590da68babb87d1d1f3e3896c9791e19",
+      "inspection": "Native Save + fresh reopen",
+      "caption": "Saved retiming opens in a new process with exact document, empty history and one original image; cursor0."
+    },
+    {
+      "path": "multi-owner-copy-limit.png",
+      "sha256": "547e13020669243ad3ef95715c395956f3df3c8e329af282ee5f9a221f8a729f",
+      "inspection": "Native refusal + exact invariants",
+      "caption": "Mixed-owner copying is explicitly refused without changing document, selection or redo."
+    }
+  ],
+  "lifecycle": {
+    "allOwnedProcessesClosed": true,
+    "retiredDisposableFiles": 79,
+    "retainedForActivePrReview": [
+      "final recipe, requests, schema, poses and scalar reports",
+      "selected exact native-state witnesses and two owned-window screenshots"
+    ],
+    "retainedForNextSlice": [
+      "original reference fixtures and exports for group clipboard/Offset calibration",
+      "shared Cargo target for continuing parity goal"
+    ],
+    "endConditions": "Retire when review integrates or evidence is superseded; retire target when no active build/release dependency remains",
+    "diskReclaimedClaim": false
+  }
+}

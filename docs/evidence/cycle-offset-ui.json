@@ -1,0 +1,230 @@
+{
+  "title": "Native Cycle Offset controls and shared selection mappings",
+  "date": "2026-11-16",
+  "nativeFormat": 23,
+  "commands": 64,
+  "mcpTools": 25,
+  "desktopSha256": "dc60e423a84a6994d3bd026b6333cf3b030c364b5a611f3059b4146c3a7b2998",
+  "nativeUiAcceptedScope": "Closed Bone scalar tracks: single/mixed seeds, fast release, held preview/cancel, pending Save exclusion, reset, loop bounds, minimum controls and fresh reopen",
+  "example": {
+    "path": "examples/peach-bot/cycle-offset-native-result.peachy",
+    "sha256": "68126b9a56801e5be6a2e6b6ca641dfcf4145832bbddbe6f348d3e7239ed42a4"
+  },
+  "screenshots": [
+    {
+      "name": "release",
+      "path": "cycle-offset-ui-release.png",
+      "sha256": "f25dd3200a15055926e2d34e2edc26178c8502f6e6227b3652c6ffc75643e13d",
+      "innerSize": [
+        1500.0,
+        960.0
+      ],
+      "scope": "Actual owned native UI; live pending X25 excluded from saved data"
+    },
+    {
+      "name": "minimum",
+      "path": "cycle-offset-ui-minimum.png",
+      "sha256": "771f12a9a6e405ee3d5c9c9a473cfdfbebe5c4d3b95ad89529acceb7194a166c",
+      "innerSize": [
+        1120.0,
+        740.0
+      ],
+      "scope": "Actual owned native UI; live pending X25 excluded from saved data"
+    },
+    {
+      "name": "wide",
+      "path": "cycle-offset-ui-wide.png",
+      "sha256": "0eb3c135d6317cb08b7c5f9bf3fb1b2167e9b7ea5e168384786b08da540b79ce",
+      "innerSize": [
+        1500.0,
+        960.0
+      ],
+      "scope": "Actual owned native UI; live pending X25 excluded from saved data"
+    }
+  ],
+  "sourceChecks": {
+    "engineOffset": 16,
+    "mcpUnit": 6,
+    "mcpStdio": 2,
+    "desktopOffset": 15,
+    "dopesheet": 43,
+    "keyDrag": 4,
+    "clipboard": 45,
+    "retainedUnaffectedGraph": 48,
+    "retainedWorkspace": 16,
+    "retainedPaneResize": 5,
+    "workerLimit": 2,
+    "formatting": true,
+    "allTargetClippy": true,
+    "workspaceBuild": true,
+    "architectureCrates": 7,
+    "hostedCiPassed": false
+  },
+  "native": {
+    "fastOffsetAndRetime": true,
+    "mixedTwoTrackOneUndo": true,
+    "pendingSameBoneXRetained": true,
+    "escapeAndSaveCancelWithHeldBlock": true,
+    "loopBoundsExplicitAndAutomatic": true,
+    "offOnRecapturesCurrentCurves": true,
+    "onlyMappedSeedsSelected": true,
+    "generatedSeamsDoNotStartOffset": true,
+    "minimumInnerSize": [
+      1120,
+      740
+    ],
+    "minimumTargets": [
+      "Offset",
+      "Loop Start",
+      "End"
+    ],
+    "manualFit": true,
+    "filteredTree": true,
+    "allTreeRowsVisibilityClaimed": false,
+    "freshDocumentExact": true,
+    "freshHistoryPendingCacheClipboardEmpty": true,
+    "freshImages": 1,
+    "ownedProcessesClosed": true
+  },
+  "actualMcpNativeReplay": {
+    "requests": 15,
+    "constructionCommands": 97,
+    "finishedRigImported": false,
+    "exactWholeDocument": true,
+    "exactAuthoredAppliedWorldWithPending": true,
+    "saveByteIdenticalToNative": true,
+    "nativeFileReopenedExact": true,
+    "binarySha256": "ee0bebd0b65bc478af2c79ee02cfb3cb61e4175a3d3fc825c387c9f44dba38f4",
+    "ownedChildClosed": true,
+    "inputDeltas": [
+      0.09999999403953552,
+      0.09999998658895493
+    ]
+  },
+  "externalRuntime": {
+    "version": "4.3.13",
+    "samples": 364,
+    "oracle": {
+      "physicsConstraints": 0,
+      "physicsValues": 0,
+      "physicsTimelines": 0,
+      "physicsFrames": 0,
+      "regionComparisons": 11480,
+      "maxRegionError": 1.52587890625e-05,
+      "meshComparisons": 0,
+      "weightedMeshComparisons": 0,
+      "maxMeshError": 0,
+      "uvComparisons": 0,
+      "maxUVError": 0,
+      "runtime": "Spine 4.3 external oracle",
+      "bones": 7,
+      "slots": 4,
+      "skins": [
+        "default"
+      ],
+      "clips": [
+        {
+          "name": "clipboard",
+          "nativeEnd": 0.75,
+          "runtimeEnd": 0.75,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default"
+          ],
+          "maxWorldError": 7.325662764401386e-06
+        },
+        {
+          "name": "cycle_01_linear_memory",
+          "nativeEnd": 1,
+          "runtimeEnd": 1,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default"
+          ],
+          "maxWorldError": 1.4148056052931679e-05
+        },
+        {
+          "name": "cycle_02_closing_asymmetric_bezier",
+          "nativeEnd": 1,
+          "runtimeEnd": 1,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default"
+          ],
+          "maxWorldError": 1.547993635142575e-05
+        },
+        {
+          "name": "cycle_03_descending_and_stepped",
+          "nativeEnd": 1,
+          "runtimeEnd": 1,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default"
+          ],
+          "maxWorldError": 9.686283519272365e-06
+        },
+        {
+          "name": "cycle_04_nonzero_loop_bounds",
+          "nativeEnd": 1.5,
+          "runtimeEnd": 1.5,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default"
+          ],
+          "maxWorldError": 1.1085684093359305e-05
+        },
+        {
+          "name": "retime",
+          "nativeEnd": 1,
+          "runtimeEnd": 1,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default"
+          ],
+          "maxWorldError": 1.200913195020803e-05
+        },
+        {
+          "name": "selection",
+          "nativeEnd": 1,
+          "runtimeEnd": 1,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default"
+          ],
+          "maxWorldError": 8.379792959090082e-06
+        }
+      ],
+      "tolerance": 0.001,
+      "maxWorldError": 1.547993635142575e-05,
+      "comparisons": 15288,
+      "ikPoseComparisons": 0,
+      "maxIKMixError": 0,
+      "ikMixTolerance": 1e-06,
+      "drawOrderChecks": 364,
+      "imageChecks": 1435,
+      "colorComparisons": 5740
+    },
+    "inputsAndCliUnchanged": true,
+    "scope": "Actual native-saved seven-clip result; no new mesh or private tutorial-asset coverage"
+  },
+  "observedReference": {
+    "version": "4.3.26",
+    "originalFixturesOnly": true,
+    "originalStartAndEndWrapToSameAnchor": true,
+    "nonzeroGeneratedSeamsUnselectable": true,
+    "realZeroAnchorSelectable": true,
+    "phaseZeroReturnRestoresEnd": true,
+    "offOnResetsMemory": true,
+    "proprietaryImplementationInspected": false
+  },
+  "remaining": [
+    "Shift/ripple and Adjust",
+    "Editable Current control and toolbar/track-bar styling",
+    "Native negative/full-period/Stepped/nonzero-loop interaction",
+    "Outside-loop/open and non-Bone track Offset",
+    "General selection/marquee and complete stacked Graph workflows",
+    "Canonical start/end unmerge selection and broader history/context rules",
+    "Live desktop MCP bridge",
+    "Full Spine parity"
+  ]
+}

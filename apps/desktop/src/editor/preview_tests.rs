@@ -61,7 +61,7 @@ fn key(editor: &mut Editor, ctx: &egui::Context, key: egui::Key, modifiers: egui
 fn main_state(editor: &Editor) -> serde_json::Value {
     serde_json::json!({
         "document":editor.session.document(), "pending":editor.session.pose_edits(),
-        "selection":editor.selection.as_ref().map(TreeItem::key),
+        "selection":editor.selection.single().map(TreeItem::key),
         "animation":editor.animation,"skin":editor.skin,"time":editor.time,
         "playing":editor.playing,"direction":editor.play_direction,"speed":editor.playback_speed,
         "looping":editor.looping,"tool":editor.tool as u8,
@@ -109,6 +109,7 @@ fn fixture() -> (Editor, egui::Context) {
         draw_order: vec![],
         path_tracks: vec![],
         sequence_tracks: vec![],
+        slider_tracks: vec![],
     });
     editor.session = Session::new(doc).unwrap();
     pending(&mut editor);
@@ -232,7 +233,7 @@ fn preview_reads_checked_keyed_weighted_mesh_and_ik_geometry_without_pending_pos
     }));
     editor.session = Session::new(doc).unwrap();
     editor.setup_mode = false;
-    editor.selection = Some(TreeItem::Bone(8));
+    editor.selection = Some(TreeItem::Bone(8)).into();
     pending(&mut editor);
     editor.open_preview_view();
     let ctx = editor_context();

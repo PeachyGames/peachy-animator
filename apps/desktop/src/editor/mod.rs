@@ -2,8 +2,18 @@ mod animation;
 mod animation_management;
 mod audio;
 mod audio_output;
+mod curve_controller;
+mod curve_gesture;
+mod curve_widgets;
+mod curves;
+#[cfg(test)]
+mod cycle_offset_ui_tests;
+mod deform_curves;
 mod dopesheet;
+mod dopesheet_scope;
 mod dopesheet_selection;
+mod draw_order;
+mod export_dialog;
 mod ghosting;
 mod graph;
 mod icons;
@@ -16,6 +26,8 @@ mod key_drag;
 mod layout;
 mod mesh;
 mod mesh_tools;
+#[cfg(test)]
+mod multi_bone_ui_tests;
 mod panels;
 mod physics;
 mod playback;
@@ -26,31 +38,42 @@ mod rename;
 mod scene_view;
 mod selection;
 mod selection_history;
+mod selection_input;
 mod shortcuts;
+mod slider;
+mod slider_edit;
+mod slider_source;
+mod slot_authoring;
 mod slot_color;
+mod slot_curves;
 mod style;
 #[cfg(test)]
 mod test_support;
+mod textures;
 mod timeline_clipboard;
 mod timeline_model;
 mod timeline_view;
 mod tools;
 mod transform_constraint;
+mod transform_constraint_edit;
 mod transform_gesture;
 use transform_gesture::TransformEdit;
 mod tree;
 mod tree_model;
-use selection::{Folder, TreeItem};
+use selection::{Folder, TreeItem, TreeSelection};
 use tree_model::TreeState;
 mod viewport;
 mod viewport_overlays;
 mod views;
 mod weight_direct;
 mod weights;
+mod weights_selection;
+mod workspace;
 use eframe::egui::{self, Color32, FontId, Pos2, RichText, Sense, Stroke, Vec2, pos2, vec2};
 use peachy_document::*;
 use peachy_engine::{
-    Affine, Axes, Command, EditTarget, KeyState, PlayDirection, Session, TransformTool,
+    Affine, Axes, BoneTransformFrame, Command, EditTarget, KeyState, PlayDirection, Session,
+    TransformTool,
 };
 use peachy_io as files;
 use std::{
@@ -94,13 +117,20 @@ pub(crate) struct Editor {
     project_path: Option<PathBuf>,
     asset_root: PathBuf,
     textures: BTreeMap<String, egui::TextureHandle>,
-    selection: Option<TreeItem>,
+    selection: TreeSelection,
+    selection_input: selection_input::SelectionInput,
     selection_history: selection_history::SelectionHistory,
     key_selection: dopesheet_selection::KeySelection,
+    dopesheet_focus: dopesheet_scope::DopesheetFocus,
     key_drag: Option<key_drag::KeyDrag>,
+    cycle_offset: key_drag::CycleOffsetView,
     timeline_clipboard: Option<peachy_engine::AnimationKeyClipboard>,
+    leaf_source: Option<timeline_clipboard::LeafSourceReceipt>,
+    group_clipboard: Option<timeline_clipboard::GroupClipboard>,
+    paste_receipt: Option<timeline_clipboard::PasteReceipt>,
     timeline_input: timeline_clipboard::TimelineInput,
     tree: TreeState,
+    draw_order: draw_order::DrawOrderView,
     hidden_bones: BTreeSet<usize>,
     hidden_slots: BTreeSet<usize>,
     animation: usize,
@@ -132,7 +162,11 @@ pub(crate) struct Editor {
     preview: preview::PreviewView,
     audio: audio::AudioView,
     graph: graph::GraphView,
+    curve_interaction: curve_gesture::CurveInteraction,
+    curves: curves::CurvesView,
     slot_color: slot_color::SlotColorView,
+    transform_constraint_view: transform_constraint_edit::TransformConstraintView,
+    slider_view: slider_edit::SliderView,
     weights: weights::WeightsState,
     weight_edit: Option<weight_direct::WeightEdit>,
     weight_blocked: Option<egui::Id>,
@@ -149,6 +183,7 @@ pub(crate) struct Editor {
     mesh_vertex: usize,
     mesh_triangle: usize,
     mesh_drag: Option<MeshDrag>,
+    deform_drag: Option<mesh::DeformDrag>,
     mesh_blocked: bool,
     mesh_tools: mesh_tools::MeshToolsView,
     capture_targets: BTreeMap<String, [f32; 4]>,
@@ -159,6 +194,7 @@ pub(crate) struct Editor {
     new_bone: String,
     rename: Option<rename::RenameState>,
     duplicate_animation: Option<animation_management::DuplicateAnimationState>,
+    export_dialog: Option<export_dialog::ExportDialog>,
     capture: Option<PathBuf>,
     capture_directory: PathBuf,
     frames: usize,
@@ -191,7 +227,7 @@ impl Editor {
         let (doc, asset_root, initial_error) = match loaded {
             Ok(doc) => (doc, path.parent().unwrap().to_path_buf(), None),
             Err(e) => (
-                serde_json::from_str(include_str!(concat!(
+                peachy_io::decode_project(include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
                     "/../../examples/peach-bot/peach-bot.peachy"
                 )))
@@ -220,13 +256,20 @@ impl Editor {
             project_path,
             asset_root,
             textures: BTreeMap::new(),
-            selection: Some(TreeItem::Bone(initial_bone)),
+            selection: Some(TreeItem::Bone(initial_bone)).into(),
+            selection_input: Default::default(),
             selection_history: Default::default(),
             key_selection: Default::default(),
+            dopesheet_focus: Default::default(),
             key_drag: None,
+            cycle_offset: Default::default(),
             timeline_clipboard: None,
+            leaf_source: None,
+            group_clipboard: None,
+            paste_receipt: None,
             timeline_input: Default::default(),
             tree,
+            draw_order: Default::default(),
             hidden_bones: BTreeSet::new(),
             hidden_slots: BTreeSet::new(),
             animation: 0,
@@ -253,6 +296,8 @@ impl Editor {
             timeline_view: Default::default(),
             show_weights: false,
             weights: Default::default(),
+            transform_constraint_view: Default::default(),
+            slider_view: Default::default(),
             weight_edit: None,
             weight_blocked: None,
             weight_controls: None,
@@ -268,6 +313,8 @@ impl Editor {
             preview: Default::default(),
             audio: Default::default(),
             graph: Default::default(),
+            curve_interaction: Default::default(),
+            curves: Default::default(),
             slot_color: Default::default(),
             drag: None,
             transform_blocked: false,
@@ -276,6 +323,7 @@ impl Editor {
             mesh_vertex: 0,
             mesh_triangle: 0,
             mesh_drag: None,
+            deform_drag: None,
             mesh_blocked: false,
             mesh_tools: Default::default(),
             capture_targets: BTreeMap::new(),
@@ -286,67 +334,36 @@ impl Editor {
             new_bone: String::new(),
             rename: None,
             duplicate_animation: None,
+            export_dialog: None,
             capture,
             capture_directory,
             frames: 0,
         };
         editor.reconcile_selection();
+        textures::configure_texture_limit(
+            &cc.egui_ctx,
+            cc.wgpu_render_state
+                .as_ref()
+                .map(|render| render.device.limits().max_texture_dimension_2d as usize),
+        );
         editor.load_textures(&cc.egui_ctx);
         editor
     }
 
-    fn load_textures(&mut self, ctx: &egui::Context) {
-        self.textures.clear();
-        self.ghosting.solid_textures.clear();
-        let paths: Vec<_> = self.session.document().image_paths().into_iter().collect();
-        let mut missing = vec![];
-        for path in paths {
-            let file = self.asset_root.join("images").join(format!("{path}.png"));
-            match image::open(&file) {
-                Ok(image) => {
-                    let image = image.into_rgba8();
-                    let size = [image.width() as usize, image.height() as usize];
-                    let mut solid = image.clone();
-                    for pixel in solid.pixels_mut() {
-                        pixel.0[..3].fill(255);
-                    }
-                    self.ghosting.solid_textures.insert(
-                        path.clone(),
-                        ctx.load_texture(
-                            format!("ghost-solid:{path}"),
-                            egui::ColorImage::from_rgba_unmultiplied(size, solid.as_raw()),
-                            egui::TextureOptions::LINEAR,
-                        ),
-                    );
-                    self.textures.insert(
-                        path.clone(),
-                        ctx.load_texture(
-                            path,
-                            egui::ColorImage::from_rgba_unmultiplied(size, image.as_raw()),
-                            egui::TextureOptions::LINEAR,
-                        ),
-                    );
-                }
-                Err(_) => missing.push(path),
-            }
-        }
-        if !missing.is_empty() {
-            self.error = Some(format!(
-                "Missing loose PNG images: {}. Slice 1 loads images from an images/ folder next to the project; packed-atlas import is a later slice.",
-                missing.join(", ")
-            ));
-        }
-    }
-
     fn dispatch(&mut self, command: Command) -> bool {
+        self.cancel_slider_edit();
+        self.cancel_constraint_edit();
+        self.export_dialog = None;
         self.cancel_slot_color_edit();
         self.cancel_graph_edit();
+        self.cancel_draw_order_edit();
         self.cancel_ik_edit();
         self.ik_target = None;
         self.cancel_weight_edit();
         self.cancel_transform_edit();
         match self.session.dispatch(command) {
             Ok(()) => {
+                self.apply_session_edit_effects();
                 self.reconcile_selection();
                 true
             }
@@ -355,6 +372,38 @@ impl Editor {
                 false
             }
         }
+    }
+    fn apply_session_edit_effects(&mut self) {
+        let Some(mapping) = self.session.last_edit_effects().constraint_indices.as_ref() else {
+            return;
+        };
+        self.selection.remap_constraints(mapping);
+        if let Some(source) = &mut self.leaf_source {
+            source.remap(mapping);
+        }
+        if let Some(group) = &mut self.group_clipboard {
+            group.remap(mapping);
+        }
+        self.selection_history.remap_constraints(mapping);
+        if let dopesheet_scope::DopesheetFocus::Owner(owner) = &self.dopesheet_focus {
+            self.dopesheet_focus = mapping
+                .map_owner(owner)
+                .ok()
+                .flatten()
+                .map_or(Default::default(), dopesheet_scope::DopesheetFocus::Owner);
+        }
+        self.tree.remap_constraints(mapping);
+        // Like document Undo/Redo, a structural transition drops key selection.
+        // Clipboard payloads have no constraint owner and remain unchanged.
+        self.key_selection.clear();
+        self.graph.reset_document();
+        let match_handles = self.curves.match_handles;
+        let separate = self.curves.separate;
+        self.curves = Default::default();
+        self.curves.match_handles = match_handles;
+        self.curves.separate = separate;
+        self.pose_view_generation = self.pose_view_generation.wrapping_add(1);
+        self.capture_targets.clear();
     }
     fn active_animation(&self) -> Option<usize> {
         if self.setup_mode {
@@ -380,13 +429,22 @@ impl Editor {
     }
 
     fn selected_bone(&self) -> Option<usize> {
-        self.selection.as_ref().and_then(TreeItem::bone)
+        self.selection.single().and_then(TreeItem::bone)
+    }
+    fn selected_bones(&self) -> Vec<usize> {
+        self.selection.bones()
+    }
+    fn primary_bone(&self) -> Option<usize> {
+        self.selection.primary().and_then(TreeItem::bone)
     }
     fn selected_attachment(&self) -> Option<&AttachmentRef> {
-        self.selection.as_ref().and_then(TreeItem::attachment)
+        self.selection.single().and_then(TreeItem::attachment)
     }
     fn transform_editable(&self) -> bool {
-        match &self.selection {
+        if self.selection.len() > 1 {
+            return self.axes == Axes::Parent || self.tool == Tool::Move;
+        }
+        match self.selection.single() {
             Some(TreeItem::Bone(_)) => true,
             Some(TreeItem::Attachment(k)) => {
                 self.setup_mode
@@ -400,11 +458,11 @@ impl Editor {
         }
     }
     fn transform_tool_editable(&self, tool: Tool) -> bool {
-        self.transform_editable() && (tool != Tool::Shear || self.selected_bone().is_some())
+        self.transform_editable() && (tool != Tool::Shear || !self.selected_bones().is_empty())
     }
     fn selected_transform(&self) -> Option<Transform> {
         let doc = self.session.document();
-        match self.selection.as_ref()? {
+        match self.selection.primary()? {
             TreeItem::Bone(i) => self
                 .session
                 .local_pose(self.active_animation(), self.time)
@@ -424,7 +482,11 @@ impl Editor {
         key.skin == "default" || key.skin == self.skin
     }
     fn edit_transform(&mut self, local: Transform, properties: &[Property]) {
-        if let Some(item) = self.selection.clone() {
+        if self.selection.len() > 1 {
+            self.status = "Group transform authoring awaits calibrated shared transforms".into();
+            return;
+        }
+        if let Some(item) = self.selection.single().cloned() {
             self.edit_item_transform(item, local, properties);
         }
     }
@@ -434,6 +496,8 @@ impl Editor {
         mut local: Transform,
         properties: &[Property],
     ) {
+        self.cancel_slider_edit();
+        self.cancel_constraint_edit();
         self.cancel_slot_color_edit();
         self.cancel_graph_edit();
         self.cancel_ik_edit();
@@ -486,6 +550,9 @@ impl Editor {
     }
 
     fn select(&mut self, item: TreeItem) {
+        if self.slider_source_selection(&item) {
+            return;
+        }
         if self.ik_target_selection(&item) {
             return;
         }
@@ -496,15 +563,22 @@ impl Editor {
         if !item.exists(self.session.document()) {
             return;
         }
-        self.selection_history
-            .record(&self.selection, &Some(item.clone()));
-        self.restore_selection(Some(item));
+        let next = TreeSelection::singleton(item);
+        self.selection_history.record(&self.selection, &next);
+        self.restore_tree_selection(next);
     }
-    fn restore_selection(&mut self, item: Option<TreeItem>) {
+    fn restore_selection(&mut self, item: impl Into<TreeSelection>) {
+        self.restore_tree_selection(item.into());
+    }
+    fn restore_tree_selection(&mut self, selection: TreeSelection) {
         self.cancel_gesture();
         self.weights.bind = None;
-        self.selection = item.clone();
-        let Some(item) = item else { return };
+        self.selection = selection;
+        self.reconcile_dopesheet_focus();
+        self.reconcile_slider_source_focus();
+        let Some(item) = self.selection.primary().cloned() else {
+            return;
+        };
         if let Some(key) = item.attachment() {
             self.capture_weights_mesh(key);
         }
@@ -543,17 +617,31 @@ impl Editor {
         }
     }
     fn reconcile_selection(&mut self) {
+        self.reconcile_dopesheet_focus();
+        self.reconcile_slider_context();
+        self.reconcile_constraint_context();
         self.reconcile_transform_edit();
         self.reconcile_weight_edit();
         if self.key_drag.as_ref().is_some_and(|drag| {
             self.setup_mode
-                || !self.show_dopesheet
+                || !self.dopesheet_visible()
                 || self.animation != drag.animation
-                || self.timeline_owner() != Some(drag.owner)
+                || self.timeline_scope() != drag.presentation_scope
+                || self.selection != drag.presentation
+                || drag.context.as_ref().is_some_and(|context| {
+                    self.skin != context.skin
+                        || self.session.document().fps != context.fps
+                        || drag.operation
+                            != self
+                                .cycle_offset
+                                .operation(self.animation, self.animation_end())
+                })
         }) {
             self.cancel_dopesheet_drag();
         }
         selection::reconcile(&mut self.selection, self.session.document());
+        self.reconcile_retained_graph_owner();
+        self.reconcile_slider_source_focus();
         self.ghosting.reconcile(self.session.document().bones.len());
         self.reconcile_ik();
         self.selection_history.reconcile(self.session.document());
@@ -581,7 +669,24 @@ impl Editor {
         self.reconcile_dopesheet_selection();
     }
     fn undo(&mut self) {
+        self.selection_input.clear();
+        if self.slider_edit_active() {
+            self.cancel_slider_edit();
+            return;
+        }
+        if self.constraint_edit_active() {
+            self.cancel_constraint_edit();
+            return;
+        }
         self.cancel_timeline_interaction();
+        if self.weights.pointer.is_some() || self.weights.vertex_press.is_some() {
+            self.cancel_gesture();
+            return;
+        }
+        if self.draw_order_edit_active() {
+            self.cancel_draw_order_edit();
+            return;
+        }
         if self.slot_color_edit_active() {
             self.cancel_slot_color_edit();
             return;
@@ -608,18 +713,38 @@ impl Editor {
             self.cancel_dopesheet_drag();
             return;
         }
-        if self.mesh_drag.is_some() {
+        if self.mesh_drag.is_some() || self.deform_drag.is_some() {
             self.cancel_mesh_drag();
             return;
         }
         self.session.undo();
+        self.invalidate_cycle_offset_mask();
+        self.apply_session_edit_effects();
         self.key_selection.clear();
         self.drag = None;
         self.mesh_drag = None;
+        self.deform_drag = None;
         self.reconcile_selection();
     }
     fn redo(&mut self) {
+        self.selection_input.clear();
+        if self.slider_edit_active() {
+            self.cancel_slider_edit();
+            return;
+        }
+        if self.constraint_edit_active() {
+            self.cancel_constraint_edit();
+            return;
+        }
         self.cancel_timeline_interaction();
+        if self.weights.pointer.is_some() || self.weights.vertex_press.is_some() {
+            self.cancel_gesture();
+            return;
+        }
+        if self.draw_order_edit_active() {
+            self.cancel_draw_order_edit();
+            return;
+        }
         if self.slot_color_edit_active() {
             self.cancel_slot_color_edit();
             return;
@@ -646,14 +771,17 @@ impl Editor {
             self.cancel_dopesheet_drag();
             return;
         }
-        if self.mesh_drag.is_some() {
+        if self.mesh_drag.is_some() || self.deform_drag.is_some() {
             self.cancel_mesh_drag();
             return;
         }
         self.session.redo();
+        self.invalidate_cycle_offset_mask();
+        self.apply_session_edit_effects();
         self.key_selection.clear();
         self.drag = None;
         self.mesh_drag = None;
+        self.deform_drag = None;
         self.reconcile_selection();
     }
 
@@ -681,7 +809,11 @@ impl Editor {
             .pick_file()
         {
             match files::load(&path).and_then(Session::new) {
-                Ok(session) => {
+                Ok(mut session) => {
+                    if let Err(error) = self.carry_slider_source_preferences(&mut session) {
+                        self.error = Some(error);
+                        return;
+                    }
                     self.return_from_mesh_tool();
                     self.session = session;
                     self.pose_view_generation = self.pose_view_generation.wrapping_add(1);
@@ -693,9 +825,12 @@ impl Editor {
                             None
                         };
                     self.selection_history = Default::default();
+                    self.selection_input = Default::default();
                     self.key_selection = Default::default();
+                    self.dopesheet_focus = Default::default();
                     self.key_drag = None;
-                    self.timeline_clipboard = None;
+                    self.cycle_offset = Default::default();
+                    self.clear_timeline_clipboard();
                     self.timeline_input = Default::default();
                     self.weights = Default::default();
                     self.view_tabs.reset_document();
@@ -705,6 +840,8 @@ impl Editor {
                     self.audio.reset_document();
                     self.graph.reset_document();
                     self.slot_color.reset_document();
+                    self.transform_constraint_view = Default::default();
+                    self.slider_view = Default::default();
                     self.weight_blocked = None;
                     self.weight_controls = None;
                     self.ik_edit = None;
@@ -713,7 +850,7 @@ impl Editor {
                     self.transform_blocked = false;
                     self.transform_blocked_control = None;
                     self.weights_handles.clear();
-                    self.selection = Some(TreeItem::Skeleton);
+                    self.selection = Some(TreeItem::Skeleton).into();
                     self.animation = 0;
                     self.time = 0.0;
                     self.playing = false;
@@ -723,6 +860,7 @@ impl Editor {
                     self.hidden_bones.clear();
                     self.hidden_slots.clear();
                     self.mesh_drag = None;
+                    self.deform_drag = None;
                     self.rename = None;
                     self.duplicate_animation = None;
                     self.reconcile_selection();
@@ -768,27 +906,7 @@ impl Editor {
     }
 
     fn export(&mut self) {
-        self.cancel_gesture();
-        self.pause_audio_for_modal();
-        if let Some(folder) = rfd::FileDialog::new()
-            .set_title("Choose parent folder for a new Spine export")
-            .pick_folder()
-        {
-            match files::export_bundle(&folder, self.session.document(), &self.asset_root) {
-                Ok(path) => {
-                    self.status = format!(
-                        "Spine 4.3 export saved to {}{}",
-                        path.display(),
-                        if self.session.pose_edits().is_empty() {
-                            ""
-                        } else {
-                            "; unkeyed pose excluded — press K to key it"
-                        }
-                    )
-                }
-                Err(e) => self.error = Some(e),
-            }
-        }
+        self.begin_export();
     }
 }
 
@@ -801,15 +919,23 @@ impl Editor {
             self.cancel_gesture();
         }
         self.reconcile_mesh_input(&ctx);
+        self.reconcile_weights_pointer(&ctx);
         self.mesh_tools.show_radius = false;
         self.capture_targets.clear();
         self.mesh_handles.clear();
         self.weights_handles.clear();
         self.reconcile_selection();
+        self.reconcile_dopesheet_input(&ctx);
         self.reconcile_timeline_input(&ctx);
         self.reconcile_graph_input(&ctx);
+        self.reconcile_draw_order_input(&ctx);
         self.reconcile_slot_color_input(&ctx);
+        self.reconcile_constraint_input(&ctx);
+        self.reconcile_slider_input(&ctx);
         self.shortcuts(&ctx);
+        if self.export_dialog.is_some() {
+            ui.disable();
+        }
         self.advance_preview(&ctx);
         self.advance_audio(&ctx);
         self.observe_timeline_input(&ctx);
@@ -818,130 +944,19 @@ impl Editor {
             self.advance_playback(ctx.input(|i| i.stable_dt));
             ctx.request_repaint();
         }
-        egui::Panel::top("toolbar")
-            .frame(egui::Frame::new().fill(PANEL).inner_margin(5))
-            .show(ui, |ui| self.toolbar(ui));
-        egui::Panel::bottom("status")
-            .frame(
-                egui::Frame::new()
-                    .fill(Color32::from_gray(38))
-                    .inner_margin(4),
-            )
-            .show(ui, |ui| {
-                ui.horizontal(|ui| {
-                    ui.label(
-                        RichText::new(if self.session.is_dirty() {
-                            "Modified"
-                        } else {
-                            "Saved"
-                        })
-                        .small()
-                        .color(if self.session.is_dirty() {
-                            ACCENT
-                        } else {
-                            MUTED
-                        }),
-                    );
-                    if !self.session.pose_edits().is_empty() {
-                        ui.label(
-                            RichText::new("Unkeyed pose · K to key")
-                                .small()
-                                .color(ACCENT),
-                        );
-                    }
-                    ui.separator();
-                    ui.label(
-                        RichText::new(self.evaluation_error.as_deref().unwrap_or(&self.status))
-                            .small()
-                            .color(if self.evaluation_error.is_some() {
-                                ACCENT
-                            } else {
-                                MUTED
-                            }),
-                    );
-                });
-            });
-        if self.show_tree || self.has_dock_views() {
-            egui::Panel::right("tree")
-                .default_size(310.0)
-                .min_size(260.0)
-                .resizable(true)
-                .frame(egui::Frame::new().fill(PANEL).inner_margin(6))
-                .show(ui, |ui| {
-                    if self.show_tree {
-                        egui::Panel::bottom("item-properties")
-                            .default_size(350.0)
-                            .min_size(160.0)
-                            .resizable(true)
-                            .frame(egui::Frame::new().fill(PANEL).inner_margin(6))
-                            .show(ui, |ui| {
-                                egui::ScrollArea::vertical()
-                                    .id_salt("properties-scroll")
-                                    .auto_shrink([false, false])
-                                    .show(ui, |ui| self.inspector(ui));
-                            });
-                    }
-                    if self.show_tree && self.has_dock_views() {
-                        egui::Panel::bottom("auxiliary-view-panel")
-                            .default_size(260.0)
-                            .min_size(160.0)
-                            .resizable(true)
-                            .frame(egui::Frame::new().fill(PANEL).inner_margin(6))
-                            .show(ui, |ui| self.auxiliary_dock(ui));
-                    }
-                    egui::CentralPanel::default()
-                        .frame(egui::Frame::new().fill(PANEL).inner_margin(3))
-                        .show(ui, |ui| {
-                            if self.show_tree {
-                                self.hierarchy(ui);
-                            } else {
-                                self.auxiliary_dock(ui);
-                            }
-                        });
-                });
+        self.workspace_panels(ui);
+        if !ctx.input(|input| input.pointer.primary_down()) {
+            self.cycle_offset.blocked = false;
         }
-        if !self.setup_mode && self.show_dopesheet {
-            let height = layout::timeline_panel_height(ui);
-            egui::Panel::bottom("dopesheet")
-                .default_size(height)
-                .min_size(height)
-                .resizable(true)
-                .frame(egui::Frame::new().fill(PANEL).inner_margin(6))
-                .show(ui, |ui| self.timeline(ui));
-        }
-        if !self.setup_mode && self.show_timeline {
-            let height = layout::compact_timeline_height(ui);
-            let enabled = self.error.is_none()
-                && self.rename.is_none()
-                && self.duplicate_animation.is_none()
-                && !egui::Popup::is_any_open(&ctx)
-                && ctx.input(|input| input.focused);
-            egui::Panel::bottom("compact-timeline")
-                .exact_size(height)
-                .frame(egui::Frame::new().fill(PANEL).inner_margin(6))
-                .show(ui, |ui| {
-                    ui.add_enabled_ui(enabled, |ui| self.compact_timeline(ui));
-                });
-        }
-        egui::CentralPanel::default()
-            .frame(
-                egui::Frame::new()
-                    .fill(Color32::from_gray(43))
-                    .inner_margin(0),
-            )
-            .show(ui, |ui| {
-                let height = layout::main_tools_height(ui);
-                egui::Panel::bottom("main-tools")
-                    .exact_size(height)
-                    .frame(egui::Frame::new().fill(PANEL).inner_margin(7))
-                    .show(ui, |ui| self.main_tools(ui));
-                self.canvas(ui);
-            });
         self.finish_idle_transactions(&ctx);
         self.observe_preview_focus(&ctx);
         self.observe_audio_focus(&ctx);
         self.observe_graph_focus(&ctx);
         self.observe_slot_color_focus(&ctx);
+        self.slot_color_dialog(&ctx);
+        if let Some(target) = self.export_target_dialog(&ctx) {
+            self.export_to_target(target);
+        }
         if let Some(error) = self.error.clone() {
             egui::Window::new("Project needs attention")
                 .collapsible(false)
@@ -983,8 +998,8 @@ impl Editor {
                     eprintln!("Capture failed: {e}");
                 }
                 let mut report = serde_json::json!({
-                    "document":self.session.document(),"selection":self.selection.as_ref().map(TreeItem::diagnostic),
-                    "selectedBone":self.selected_bone(),"hasSelection":self.selection.is_some(),
+                    "document":self.session.document(),"selection":self.selection.primary().map(TreeItem::diagnostic),
+                    "selectedBone":self.selected_bone(),"hasSelection":!self.selection.is_empty(),
                     "tool":match self.tool {Tool::Rotate=>"rotate",Tool::Move=>"translate",Tool::Scale=>"scale",Tool::Shear=>"shear",Tool::Mesh=>"vertices",Tool::Weights=>"weights"},
                     "treeVisible":self.show_tree,"dopesheetVisible":!self.setup_mode && self.show_dopesheet,"showDopesheet":self.show_dopesheet,
                     "animation":self.animation,"skin":self.skin,"time":self.time,"playing":self.playing,"playDirection":self.play_direction,"looping":self.looping,"zoom":self.zoom,
@@ -995,12 +1010,14 @@ impl Editor {
                     "selectedKeys":self.key_selection.diagnostic(),"dopesheetFocused":self.dopesheet_has_focus(&ctx),
                     "windowFocused":ctx.input(|input|input.focused),
                     "keyDrag":self.key_drag.as_ref().map(key_drag::KeyDrag::diagnostic),
-                    "clipboardKeys":self.timeline_clipboard.as_ref().map_or(0, timeline_clipboard::clipboard_len),
+                    "clipboardKeys":self.timeline_clipboard_count(),
                     "selectAllHeld":self.timeline_input.select_all_held(),
                     "selectedAttachment":self.selected_attachment(),"selectedVertex":self.mesh_vertex,"hiddenSlots":self.hidden_slots,
                     "pointer":ctx.input(|i|i.pointer.hover_pos().map(|p|[p.x,p.y])),
                     "targets":self.capture_targets,"meshHandles":self.mesh_handles,"innerSize":[ctx.content_rect().width(),ctx.content_rect().height()]
                 });
+                report["clipboard"] = self.timeline_clipboard_diagnostic();
+                report["cycleOffset"] = self.cycle_offset_diagnostic();
                 report["views"] = self.views_diagnostic();
                 report["showBones"] = self.show_bones.into();
                 report["treeQuery"] = self.tree.query.clone().into();
@@ -1009,21 +1026,33 @@ impl Editor {
                 report["preview"] = self.preview_diagnostic();
                 report["audio"] = self.audio_diagnostic();
                 report["graph"] = self.graph_diagnostic();
+                report["curves"] = self.curves_diagnostic();
+                report["drawOrder"] = self.draw_order_diagnostic();
                 report["slotColor"] = self.slot_color_diagnostic();
+                report["exportDialog"] = self.export_dialog_diagnostic();
                 report["playbackSpeed"] = self.playback_speed.into();
                 report["status"] = self.status.clone().into();
                 report["timelineOwner"] = serde_json::json!(self.timeline_owner());
+                report["treeSelection"] = self.selection.diagnostic();
+                report["viewportPress"] = self.viewport_press_diagnostic();
+                report["selectedBones"] = serde_json::json!(self.selected_bones());
+                report["primaryBone"] = serde_json::json!(self.primary_bone());
+                report["timelineFocus"] = self.dopesheet_focus_diagnostic();
+                report["timelineScope"] = self.key_selection.diagnostic()["scope"].clone();
                 report["animationEnd"] = self.animation_end().into();
+                report["deformDragging"] = self.deform_drag.is_some().into();
                 report["weightedMeshCount"] = self.weighted_mesh_count().into();
                 report["weightsContext"] = self.weights_diagnostic();
                 report["weightsDirect"] = self.weight_direct_diagnostic();
+                report["transformConstraint"] = self.constraint_edit_diagnostic();
+                report["sliderConstraint"] = self.slider_edit_diagnostic();
                 report["ik"] = self.ik_diagnostic();
                 report["evaluatedPose"] = match self
                     .session
                     .evaluated_pose(self.weights_edit_target())
                 {
                     Ok(pose) => {
-                        serde_json::json!({"authoredLocals":pose.authored_locals(),"appliedLocals":pose.applied_locals(),"ikPoses":pose.ik_poses(),"world":pose.world()})
+                        serde_json::json!({"authoredLocals":pose.authored_locals(),"appliedLocals":pose.applied_locals(),"ikPoses":pose.ik_poses(),"authoredSliderPoses":pose.authored_slider_poses(),"appliedSliderPoses":pose.applied_slider_poses(),"sliderEvaluations":pose.slider_evaluations(),"world":pose.world()})
                     }
                     Err(error) => serde_json::json!({"error":error}),
                 };

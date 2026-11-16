@@ -1,0 +1,220 @@
+[
+  {
+    "command": "setDeformKey",
+    "animation": 0,
+    "attachment": {
+      "skin": "default",
+      "slot": "hand.R",
+      "placeholder": "hand.R"
+    },
+    "key": {
+      "time": 0.0,
+      "curve": "linear",
+      "offsets": [
+        0.0,
+        -0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  },
+  {
+    "command": "setDeformKey",
+    "animation": 0,
+    "attachment": {
+      "skin": "default",
+      "slot": "hand.R",
+      "placeholder": "hand.R"
+    },
+    "key": {
+      "time": 0.3,
+      "curve": {
+        "bezier": [
+          0.3,
+          0.0,
+          0.7,
+          1.0
+        ]
+      },
+      "offsets": [
+        5.0,
+        -3.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  },
+  {
+    "command": "setDeformKey",
+    "animation": 0,
+    "attachment": {
+      "skin": "default",
+      "slot": "hand.R",
+      "placeholder": "hand.R"
+    },
+    "key": {
+      "time": 0.6,
+      "curve": "linear",
+      "offsets": [
+        0.0,
+        -0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  },
+  {
+    "command": "setDeformKey",
+    "animation": 0,
+    "attachment": {
+      "skin": "peach",
+      "slot": "body",
+      "placeholder": "body"
+    },
+    "key": {
+      "time": 0.0,
+      "curve": "linear",
+      "offsets": [
+        0.0,
+        -0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  },
+  {
+    "command": "setDeformKey",
+    "animation": 0,
+    "attachment": {
+      "skin": "peach",
+      "slot": "body",
+      "placeholder": "body"
+    },
+    "key": {
+      "time": 0.3,
+      "curve": {
+        "bezier": [
+          0.3,
+          0.0,
+          0.7,
+          1.0
+        ]
+      },
+      "offsets": [
+        5.0,
+        -3.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  },
+  {
+    "command": "setDeformKey",
+    "animation": 0,
+    "attachment": {
+      "skin": "peach",
+      "slot": "body",
+      "placeholder": "body"
+    },
+    "key": {
+      "time": 0.6,
+      "curve": "linear",
+      "offsets": [
+        0.0,
+        -0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  }
+]

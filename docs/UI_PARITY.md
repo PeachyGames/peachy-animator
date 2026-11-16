@@ -1,5 +1,650 @@
 # Spine workspace and interaction parity
 
+## Bounded native Cycle Offset — November 16, 2026
+
+**Native Offset acceptance passes on Desktop `dc60e423…b2998`**, retaining
+**v23 /64 commands /25 MCP tools**. The Dopesheet has an Offset toggle and frame
+Loop Start/End fields; blank fields use the full clip. Exact selected Bone seeds
+offset their whole closed property tracks, while selection follows only mapped
+requested seeds. Generated seams have no key hit in Offset mode. Fast coalesced
+move/release works for both Offset and ordinary retiming, and the footer names
+the active operation. Shared masks also filter keyboard selection without
+restarting the Select All expansion phase.
+
+Actual OS input verifies single/mixed two-track edits and one-step Undo/Redo,
+same-Bone pending X25 retained through Y Offset, changed held preview/Escape,
+continued-held blocking, Save cancellation/exclusion, off/on recapture, and
+explicit/automatic bounds. At **1120×740**, Offset, Loop Start and End are visible;
+manual Fit at 49% supplies the pictured camera. The Tree is filtered, Properties
+scrolls, and this is not every Tree row or full stacked-Graph visibility. Fresh
+native reopen restores the complete Document exactly, with empty history,
+pending edits, cycle memory and clipboard, plus one image. All owned processes
+are closed.
+
+Installed 4.3.26 input establishes phase-zero endpoint aliasing, nonzero generated
+seams, real zero anchors and off/on recapture. The same affected track set retains
+origins despite seed order/count; shrinking keeps surviving origins and drops
+departed tracks; a new/returning track rebases all selected current curves.
+The shared operation remains limited to closed Bone scalar tracks exactly
+filling explicit loop bounds. Other families, outside-loop/open tracks, native
+negative/full-period/Stepped/nonzero-loop interaction and broader history/context
+cases remain open. General marquee selection, Shift/ripple, Adjust, editable
+Current, complete stacked Graph and the live desktop MCP bridge also remain open.
+Offset's toolbar position, missing animation summary and connecting track bars
+differ visibly from Spine; no full or pixel parity is claimed.
+
+Final checks pass desktop Offset15, Dopesheet43, key-drag4 and clipboard45,
+engine16 and MCP6 unit/2 stdio cases, formatting, all-target Clippy, workspace
+build and architecture7. Filters overlap; no full-suite or hosted-CI pass follows.
+The native result `68126b9a…42a4` has a separate **15-request actual MCP replay**
+from a blank root/original PNG: complete Document and live pending authored,
+applied and world poses match exactly; saved bytes match native. That native
+seven-clip result passes **364 external-runtime poses at 0.001**, with maximum
+world error 1.547993635142575e−5 and region error 1.52587890625e−5. This includes
+untouched Stepped/nonzero-loop clips, not their native Offset interaction.
+
+See the [native review](evidence/cycle-offset-ui.html),
+[native scalar record](evidence/cycle-offset-ui.json),
+[editable native result](../examples/peach-bot/cycle-offset-native-result.peachy),
+[contract](MCP.md#closed-bone-track-cycle-offset) and [slice](slices/cycle-offset.md).
+The earlier [foundation evidence](evidence/cycle-offset.json) keeps its separate
+276-request/97-command/11-negative scope and
+[authored result](../examples/peach-bot/cycle-offset-authored-bot.peachy).
+
+## Adaptive minimum workspace — November 16, 2026
+
+**Bounded native layout acceptance passes on Desktop `d1fc05d9…14e8`.** Adaptive
+panel budgets retain a usable canvas and Tree while stacked animation views and
+Properties scroll their content. At **1120×740**, native Dopesheet/Timeline leaves
+a 206-pixel canvas; adding Playback leaves 293.71875 pixels in that measured
+layout. Four complete Bone rows (0,3,4,5) remain visible in both cases. These are
+specific layout states, not a guarantee that every view combination fits.
+
+With two selected Bones, the keyed Dopesheet includes all seven property channels
+per Bone, 14 total. Actual pixel-wheel scrolling exposes the last Bone4 ShearY
+key and recovers the first Bone2 X key, both fully inside the rows clip. Document,
+pending values, selection and redo remain exact through resizing, scrolling and
+a foreground yield. Native key/nudge probes are undone back to the byte-exact
+public `14f2e703…13a2` source. Closing Playback and expanding to **1500×960**
+restores Tree, Properties and animation-view heights with measured zero deltas.
+Custom divider-height retention has source/event coverage; the native expansion
+probe verifies the default heights, not arbitrary manually resized preferences.
+
+Focused checks pass workspace16, layout5, Dopesheet42, multi-Bone14, Graph47 and
+Curves52, with overlapping filters; formatting, all-target Clippy, workspace build
+and architecture7 also pass. The attempted `divider` filter matched zero tests
+and provides no divider-test evidence. A separate combined-working-tree check
+passes five `pane_resize_` tests; its eight engine Offset foundation tests remain
+unfinished feature work, without Offset UI/MCP acceptance. This UI checkpoint adds no MCP or external
+runtime run and does not change the pending-Undo policy. All owned GUI instances
+are closed. Offset was unfinished at that layout checkpoint; its later bounded
+native acceptance is recorded above.
+
+The earlier `1558c256…5763` multi-Bone minimum capture below remains valid
+historical evidence; the adaptive checkpoint addresses its tiny Tree/clipped
+workspace limitation in the measured states. Full stacked Graph minimum layout,
+complete group Properties beyond membership and broader docking remain open.
+See the [before/after review](evidence/minimum-workspace.html),
+[scalar evidence](evidence/minimum-workspace.json) and unchanged
+[native source](../examples/peach-bot/multi-bone-native-result.peachy).
+
+## Bounded multi-Bone authoring checkpoint — November 16, 2026
+
+**Bounded native authoring acceptance passes on Desktop `1558c256…5763`, alongside
+the separate actual MCP/source proof.** Ordered Tree Bone membership and primary now
+travel together through selection history, number groups, remaps and gesture
+contexts. Shared Session APIs compose explicit multi-Bone poses and keys before
+one publication. Parent numeric typing affects all selected members; viewport
+Translate uses one frozen evaluated frame and suppresses selected descendants.
+The effective gizmo anchor can be the logical primary's highest selected
+ancestor without changing selection order. Local movement follows each edited
+Bone's frame; Parent and World use their shared engine conversions.
+
+Installed Spine 4.3.26 reference controls separately establish Cmd-add behavior,
+first-survivor fallback in three independent branches, effective ancestor anchors,
+Parent numeric assignment to both ancestor and descendant, and descendant
+suppression for all three Translate axes. Bones/Images compensation was off.
+Reference processes are closed and exact source restoration is verified.
+Some Rotate/Scale controls produced observations, but their general contract is
+incomplete; Shear was inconclusive. They do not authorize group Rotate/Scale/Shear
+implementation or acceptance beyond the bounded Translate/numeric workflow.
+
+The original seven-Bone/three-clip study passes 104 actual MCP requests from a
+blank root/one PNG, including 57 construction commands, 21 pose queries, four
+atomic negative cases, pending/history, Auto Key and exact Save/reopen. Engine
+group8/Session9 and MCP6-unit/4-stdio focused checks pass. All fourteen new
+desktop event tests and the final affected-context, formatting, all-target Clippy,
+workspace build and seven-crate architecture checks pass. The exact authored
+result `f3bdde6a…0983` also passes 156 external-runtime poses at 0.001. These remain
+the MCP-authored geometry proof; the later native-edited result has no separate
+external-runtime comparison. Hosted CI has not passed.
+
+The unchanged native build passes nine actual Tree selection states and three
+viewport Cmd-add/remove cases, preserving ordered membership and logical primary.
+Local/Parent/World Translate previews commit nominal 20-unit movements (actual
+primary delta 20.000030517578125), each with one exact Undo. A selected descendant
+keeps its local transform while its selected ancestor moves; the effective gizmo
+anchors that ancestor. Changed held preview/Escape restores the exact baseline
+and redo, continued movement stays blocked, and release permits a fresh gesture.
+Parent numeric X assignment deliberately affects both ancestor and descendant.
+
+Native pending values survive Save while staying outside the saved Document.
+Global K and the full-set XY key button create the expected four keys; Undo
+restores pending values and Redo restores the exact keyed Document. This is
+Peachy's established pending-history policy, not a claim of exact Spine pending
+Undo equivalence. At **1120×740**, Translate, XY fields/key, Auto Key, Key Edited
+and all three axes controls are visible. The Tree is tiny and the rig is clipped;
+this does not accept all Tree rows or a fully fitted rig at minimum size. Group
+Properties currently reports membership, not complete group property controls.
+
+Actual edited Save produces public native `14f2e703…13a2`; fresh-process reopen
+matches the complete typed Document with empty Undo/Redo, pending and clipboard,
+and one original image loaded. Separate actual MCP readbacks total **36 requests
+and 14 pose queries**: two typed full-Document comparisons plus exact native Setup
+and edited 0.5-second authored/applied/world witnesses. Both sides use production native
+decoding rather than raw JSON decimal spelling comparisons. Queries are read-only,
+sources stay unchanged and all owned native/MCP processes are closed.
+
+Open the [baseline](../examples/peach-bot/multi-bone-bot.peachy),
+[MCP-authored result](../examples/peach-bot/multi-bone-authored-bot.peachy),
+[native-edited result](../examples/peach-bot/multi-bone-native-result.peachy) or
+[57-command construction recipe](../examples/peach-bot/multi-bone-authoring-commands.json).
+Exact hashes and scope are in [scalar evidence](evidence/multi-bone-authoring.json)
+and the [native review gallery](evidence/multi-bone-authoring.html).
+Group Rotate/Scale/Shear, non-Parent numeric operations, group numeric dragging,
+general Shift-range, clipboard/selection overlaps, compound Graph/Deform editing,
+Shift/ripple/cycle Offset, Lock/Sync and a live GUI bridge remain open. Full Spine
+interaction parity and the overall goal are incomplete.
+
+## Installed compound Bone/Slot/Region scope — November 15, 2026
+
+**Bounded native Peachy acceptance now passes on Desktop `14b0575f…68d4`,
+alongside installed Spine 4.3.26 calibration and shared source/MCP checks.**
+Native v23 and **64 commands /19 tools** are unchanged. The original installed
+compound fixture establishes these scopes in the active `clipboard` animation:
+
+| Selected context | Observed Dopesheet rows |
+| --- | --- |
+| `follower` Bone, a directly owned sibling Slot, or true `follower_bar` Region | `follower` header, Rotate, keyed sibling RGBA rows (`follower_accent`, `follower_bar`, and `follower_zebra` in the four-slot control), Attach for `follower_bar`, plus global Draw order → Default |
+| Unrelated `driver_marker` Slot | `driver` header, Translate Y and RGBA for `driver_marker`, plus the same global Draw order; the follower family is excluded |
+| Unkeyed `follower_parent` Bone | Its empty Bone header and global Draw order; no empty scalar channels or descendant follower rows |
+| Cleared selection | Both keyed Bone/Slot families and global Draw order; no empty seven-channel expansion |
+
+These are compound presentation groups, not a conversion of Slot keys into Bone
+keys. Switching the selected Region to `offset`, which has only Bone keys, shows
+the follower header and Rotate without empty RGBA/Attach or DrawOrder rows.
+Selecting the global Draw order Tree node retains the preceding follower family
+in one capture and driver family in another; it does not force a global-only
+row list in these observed states.
+
+The installed Graph retains the compound row tree and displays the family's
+Bone/RGBA curves together. Peachy's bounded typed-owner Graph does not yet
+establish that complete compound display/editing workflow; visible curves alone
+do not verify editing every timeline kind. Full visible Slot/Region properties,
+parent-Bone pose-tool behavior and exact
+row/header styling remain separate acceptance questions.
+
+The four-slot discriminator resolves the observed ordering: the Tree lists zebra,
+accent, bar and driver (indices 3/2/1/0), while the follower Dopesheet lists Rotate,
+then all keyed RGBA rows in name order accent/bar/zebra, then the Attach row for
+bar. Slot property families are grouped together, not interleaved per Slot or
+ordered by the Tree's front-to-back list.
+
+Installed export readback confirms that explicit `Slot: driver_marker` paste at
+Frame 50 adds the red `follower_bar` RGBA key and retains its old target keys.
+Other raw differences are native writer rounding, omitted defaults and metadata;
+strict JSON equality is false. Installed Undo has visual evidence only.
+
+Peachy's same-fixture before capture shows the actual visible `DrawOrderSlot:2`
+with only global DrawOrder rows and an unchanged complete Document. The final
+native build passes actual visible Slot and true Region family scopes, global
+root retention, explicit Slot-color paste with complete-document Undo/Redo, and
+12-key movement by five displayed frames matching the complete MCP document.
+The additional [native Slot-color paste capture](evidence/compound-dopesheet-slot-paste.png)
+shows the explicit driver target at frame 50; its complete-document comparison
+and Undo/Redo are recorded separately from the pictures.
+A changed held preview followed by Escape restores the baseline, all 12 IDs,
+primary and redo; continued movement stays blocked until release. At
+**1120×740**, all 12 full 9×9 key targets lie inside the rows clip with the
+original image loaded. This checks timeline targets, not every Tree row: the
+minimum capture has a very short default Tree pane, and pane sizing remains a
+broader layout review item.
+
+Actual edited Save and fresh-process reopen preserve the complete typed moved
+Document, with empty history/clipboard and one image. The saved result is
+`06d53f2e…07a5`. A separate 10-request actual MCP process opens that native save,
+matches the complete moved Document and checks visibility in six samples around
+the moved attachment boundaries, leaves
+the source unchanged and closes cleanly. The earlier 44-request original MCP
+recipe and source checks remain separate evidence. All owned instances are closed.
+
+See the [before/after review](evidence/compound-dopesheet.html),
+[scalar results](evidence/compound-dopesheet.json),
+[original construction recipe](../examples/peach-bot/compound-dopesheet-authoring-commands.json),
+[move recipe](../examples/peach-bot/compound-dopesheet-move-commands.json) and
+[native saved result](../examples/peach-bot/compound-dopesheet-native-result.peachy).
+
+Native cancellation starts with empty pending edits; nonempty pending,
+inactive-owner and remapping guards have headless coverage. These finite checks
+do not establish general Tree multi-selection, recursive descendant or mixed
+Deform scope, every Sync/filter mode, Shift/Offset, compound Graph editing,
+pixel equivalence or full Spine interaction parity.
+
+## Verified bounded leaf target routing — November 15, 2026
+
+Desktop `58255481…a4c19` passes all five native owner cases against complete MCP71
+typed documents: NoOwner/original, explicit other Bone, cross-animation NoOwner,
+the actual visible `DrawOrderSlot:1` row→Bone4 and true Region→Bone4. Native Paste
+retains the original two IDs and leaves incoming keys unselected; direct Cut
+removes originals and two Undo operations restore baseline. Other/cross/Slot
+cases Undo exactly. Native Redo is not claimed; MCP/headless Undo/Redo passes.
+Region selection prunes unrelated Driver keys and uses Bone4 property rows.
+
+Native Save of the same-name Region/clip1 case is byte-identical to the public
+[MCP leaf lab](../examples/peach-bot/leaf-clipboard-bot.peachy). Fresh reopen restores
+the complete typed Document with empty history/clipboard and one image; old OS
+Paste cannot recreate a source receipt. Three OS screenshots were inspected and
+all owned processes are closed. Inventory stays v23, **64 commands /19 tools**.
+See [scope](slices/leaf-clipboard.md), [review](evidence/leaf-clipboard.html) and
+[scalar evidence](evidence/leaf-clipboard.json).
+
+At that leaf checkpoint the visible Slot's Dopesheet still had global DrawOrder
+scope. The [accepted compound section above](#installed-compound-boneslotregion-scope--november-15-2026)
+now closes that bounded presentation/native acceptance gap. Full Region pose
+controls/picking, general Tree multi-selection, compound Graph editing and exact
+header styling remain open. The leaf checkpoint adds no native inactive/pending/
+constraint-remap or minimum-window claim; those guards have headless coverage
+and prior grouped minimum evidence stays separate. General Tree/Shift/Offset/
+Lock/Sync remain open.
+
+## Verified bounded grouped clipboard — November 15, 2026 follow-up
+
+Current inventory is **64 commands /19 tools**, native v23 unchanged. Desktop
+group Copy/Cut/Paste uses portable globally relative entries and editor-session
+source-owner bindings. Its new OS envelope is version 3; version 2 leaf payloads
+remain unchanged. Shared engine/MCP paste accepts explicit complete target maps.
+Actual MCP run02 passes 57 requests and focused four-unit/two-stdio checks.
+Separate target/cross-animation exports pass 208 runtime poses at 0.001; that
+geometry evidence does not establish mouse/keyboard behavior.
+Final checks05/06 and **bounded native acceptance pass**, including the subsequent
+minimum-window and Save/fresh-reopen checks on unchanged Desktop87ee.
+
+Final Desktop `87ee7d48…dee59` now passes four-key/two-entry Copy, Cmd-toggle and
+ruler Frame 50 selection/primary retention. Paste creates 50/70 and 57/80 while retaining
+original IDs/primary; document generation correctly changes. One Undo/Redo is
+whole-document exact, with Undo's established transient-selection clearing.
+Independent fresh Paste→Cut removes the original four only; two Undo operations restore
+the baseline. Group Paste with Tree bone 1 still targets original bones 2/4 and preserves
+Tree selection; Cut/Delete without shown selected keys do not edit. Cross-
+animation paste retains source 0 bindings, leaves clip 0 unchanged and undoes
+exactly. A separate leaf-v2 control passes Copy2, original selection retention on
+Paste, Cut of the originals and exact recovery after two Undo operations.
+At 1120×740 all eight key rectangles are inside RowsClip and full original artwork
+is loaded/fitted, with actual OS-window proof. Native CmdS clears dirty state;
+fresh-process reopen matches the preclose typed Document exactly, with empty
+Undo/Redo/clipboard and one image. The [native saved result](../examples/peach-bot/group-clipboard-native-result.peachy)
+pastes in clip 0; the MCP fixture pastes in clip 1. Saved-file versus preclose
+diagnostic JSON has twelve decimal-spelling differences with identical f32 bits,
+so raw-byte JSON equality is not claimed.
+All owned processes are closed. The earlier `da1a1da` code-push checkpoint was
+explicitly partial; this follow-up closes its two remaining native gates.
+
+Installed group paste keeps original selected keys. Paste at 50 followed by Cut
+removes the four original keys, leaving only driver 50/70 and follower 57/80.
+Reselecting original bones in reverse does not reverse their identities; two
+different selected parents map in the measured order. General Tree multi-selection
+is absent, so the latter is available only through explicit MCP mapping. The
+later leaf checkpoint closes bounded no-Tree source fallback. Accepted pasted
+IDs are diagnostics, not automatic replacement selection. See
+[scope](slices/grouped-clipboard.md), [review](evidence/grouped-clipboard.html) and
+[scalar evidence](evidence/grouped-clipboard.json).
+
+## Earlier multi-owner Dopesheet continuation — November 15, 2026
+
+At `b45d18d`, the interface was **63 commands /18 tools**, native v23 unchanged. Shared
+authored inventory drives bounded all-owner Dopesheet rows and ordinary mixed
+selection/retiming. **Bounded native acceptance passes** on the original two-bone
+scalar fixture, separately from MCP. Final blank-root/one-PNG MCP run03 passes
+41 requests/25 authored commands, exact mixed move/history/reopen and read-only
+errors; baseline/moved exports each pass
+104 runtime poses. See [scope](slices/multi-owner-timeline.md),
+[review](evidence/multi-owner-timeline.html) and
+[scalar evidence](evidence/multi-owner-timeline.json).
+
+Actual Cmd-selection spans three keys on bones 2/4; a +5 displayed-frame move
+matches the shared command at accepted raw delta 0.083333320915699, with one-step
+Undo/Redo. Held Escape restores document, selected keys/primary and redo; held
+movement stays blocked until release, then a fresh gesture works. Pending state
+is empty here; nonempty preservation is headless-only. Cmd+A/Delete/Undo restores
+all eight keys and leaves the other clip unchanged. Graph follows the selected
+key's owner/channel while Tree holds the animation; owner-header pruning and
+Space clear remove stale context. All eight targets remain visible at 1120×740.
+Mixed Copy refuses with document/selection/redo/internal clipboard unchanged.
+Native Save/fresh-process reopen preserves the full edited document with empty
+history and one image; the public baseline source remains unchanged.
+
+Installed 4.3.26 establishes selected-key +5 movement, exact Undo, one clipboard
+origin across two bones, single-property Shift and bounded repeated Offset.
+Offset reselection is not a general reset contract. Group clipboard, Shift/Offset,
+Lock/Sync, general Tree multi-selection and simultaneous curves from multiple
+owners in Graph remain separate gaps.
+
+## Earlier Slider source and creation continuation — November 15, 2026
+
+The installed 4.3.26 reference now establishes New → Slider prepend/automatic
+numeric naming, the source Bone/Property/Local arrangement, paired source and
+target endpoints, and derived Frame at the Slider's own constraint turn. The
+own-turn probe displays Frame **27**; resampling the later final source rotation
+would incorrectly display **81**. First source assignment uses Rotate/Local and
+source 0..100; Scale X/Y defaults are 1..2, and the other properties use 0..100.
+Property changes preserve target endpoints and recall a process-view source pair
+shared across Sliders/bones. Process restart resets nonactive remembered choices;
+controlled same-process Save/Open preserves distinctive Source Min **8**.
+
+Clear preserves the hidden manual baseline. A genuine Setup Mix edit first
+captures the preceding eligible sampled Time; unchanged entries and incoming
+zero Mix do not force a new source calculation. Range/Local changes do not
+capture. The native ordering probe's genuine Mix 50% edit captures **0.45 seconds**;
+unchanged Mix 100% leaves the zero baseline. Endpoint equality repairs source span
+to **100** and target span to the
+reference duration; reversed intervals remain reversed and zero-scale SourceMax
+stays blank until explicitly resolved. See the [precise contract](slices/slider-constraints.md#source-and-creation-continuation).
+
+Shared commands, identity receipts, mapping/own-turn queries and source choices
+are implemented at **63 commands /17 tools**. The 141-request actual MCP study and
+15 retained poses pass; external geometry covers 104 poses at 0.001. First-build
+native New/Undo/Redo with selection clearing, typed Frame45, follower assignment
+and Time-only deletion pass. Final native Scale X/Rotate cache switching, all four
+typed range endpoints, Local/Clear, genuine Mix/Clear capture and divider widening
+pass. At1120×740 the fields remain reachable; actual SourceMax2/Undo is exact.
+Draft99/Save excludes the draft and shared decoding confirms the saved document.
+Actual Cocoa Open restores canonical data/one image/empty history, recalls Min8
+after a property switch and Undo restores canonical bytes/no dirty state.
+
+The [canonical editor capture](evidence/slider-source-editor.png) shows
+Rotate10..100 → Frames20..90; the [cleared capture](evidence/slider-source-cleared.png)
+shows a separate edited Local-false clear/baseline35.56 case. The
+[fitted minimum capture](evidence/slider-source-minimum.png) shows full original
+art at180%, one image and empty history. It is separate from the endpoint-edit
+witness. A separate final-build native held-range check now changes Source Min
+**10→13** with `active.numeric=false`, preserving hidden Time, Mix, pending poses
+and selection. Escape while held restores the exact document and redo;
+continued movement stays blocked until Primary Up. A fresh gesture commits with
+exact one-step Undo/Redo. The [changed preview](evidence/slider-range-drag.png)
+and [Escape restoration](evidence/slider-range-escape.png) pair records those
+states. The earlier November 15 field-stayed8 attempt remains an excluded,
+unchanged trial. Foreground guards remain active, no other-app
+input occurred, all owned windows are closed and reference bounds are restored.
+Current checks are63 engine/33 desktop/16 schema/6 stdio, plus overlapping Session
+checks and fmt/Clippy/build/architecture. Exact styling and broader parity remain
+open. Source interchange geometry passes but strict authored equality fails.
+
+After final object-only range-wire hardening, a fresh native read-only reopen on
+binary `6b638bb1…be3f` verifies the normal foreground window, one image, empty
+history, no evaluation error, unchanged public project and exact owned closure.
+Detailed source interactions were on `61db0591…5a867`. The separate held-range
+replay on `6b638bb1…be3f` closes that specific input gap; it does not imply a
+broad interactive replay or pixel parity. Final MCP run04 repeats141
+requests/15 samples and the same canonical hash; a separate10-request range-wire
+test proves strict rejection and exact valid-object Undo.
+
+## Manual Slider controls and Graph — November 15, 2026
+
+At the verified manual checkpoint, Slider Properties follows the Frame/Mix arrangement: referenced
+Frames at the project FPS, unbounded signed Mix percentages, independent key
+buttons, Setup Loop/Additive and a disabled source selector. Time/Mix share typed
+Dopesheet rows, Graph selection, frame/percent numeric handles and clipboard
+operations. Source selection/ranges/clear and creation are verified within the
+bounded continuation above; exact styling remains a gap.
+
+Actual native input verifies Frame45 and Mix−50% pending poses outside Save,
+independent keying and K, pending-restoring Undo/Redo, Auto Key's atomic pending
+flush, Frame120 beyond the referenced end, Setup Loop/Additive and signed Mix.
+Owned draft Save discards uncommitted text; stale Enter cannot apply it. Held
+rails and Graph tangents cancel on Escape, block continued movement until release,
+and restore history. Hiding/reactivating only the task-owned app verifies focus-loss
+cancellation. Both controls remain reachable at **1120×740**.
+
+Graph checks verify Time handles in referenced Frames, host X in Frames, tangent
+commit/Undo, key-value drag cancellation, and actual typed Time Copy/Paste/Delete
+with Mix unchanged. Undo clears key selection; tests reselect the actual marker
+before continuing. Unchanged-time Q preserves pending work; an actual cursor move
+clears it. These are observed workflows, not general native interaction identity.
+Native edits return to the MCP-authored canonical lab; independent native rig
+creation is not claimed. The final rebuilt public lab reopens with one image and
+empty history, advances playback to 0.224702 seconds, then stops/resets to 0. All
+owned windows are closed. Installed-editor geometry passes with documented lossy
+Bezier conversion. See the [bounded contract](slices/slider-constraints.md) and
+[review gallery](evidence/slider-constraints.html).
+
+## Workspace divider input — November 15, 2026
+
+The canvas now leaves the nearest right pane's native egui resize grab band to
+the pane. Only its click/drag input rectangle is inset; the full painted
+viewport, Fit, scene/mesh projection and the 320-pixel minimum viewport budget
+are unchanged. The same stable canvas input owner handles drags begun inside,
+including continuation across the strip. With no right pane, the full viewport
+accepts input. No arbitrary resize width, docking model or saved workspace
+preference was added.
+
+Actual native input on the rebuilt editor verifies all three Tree grabs at
+**−2, 0 and +2 logical points** from its border, preserving document, history and
+selection. Properties resizing then exposes the complete six-row mapping table
+and Options; held Mix/Escape still works after resizing. The updated
+[full-table capture](evidence/transform-mapping-editor.png) records that layout.
+Five focused whole-workspace tests cover all three Tree/Weights-only/Curves-only
+grab starts, view-only pending/history preservation, within-session released-size
+persistence, minimum layout and an owned canvas Move continuing across the band.
+Weights/Curves divider coverage is **headless only**; native checks here establish
+Tree and Properties behavior, not every pane or cross-restart docking.
+
+The same regression sweep found old Deform key/Delete capture targets below the
+visible inspector. They now report only positive, finite visible intersections.
+The existing weighted/unweighted keying test wheels the actual Properties pane
+until the button is visible and checks every reported key/Delete target against
+the clip before clicking. Shared keying behavior is unchanged. Native input on
+an original converted **unweighted** mesh verifies Arrow Right posing, Key/Undo
+restoring the pending pose, and Properties shrinking with pending pose/redo intact.
+Offscreen key/Delete targets disappear; an actual 80-pixel wheel reveals Key,
+then Key/Delete returns to the baseline document. Source artwork is unchanged
+and the owned window is closed. Weighted/unweighted cases retain focused event
+coverage; this new native replay does not establish weighted-mesh input parity.
+All final affected checks pass: 5 pane, 26 Transform, 40 Weights, 52 Curves and
+26 Deform tests, formatting, Clippy, build and the architecture check.
+
+## World Translate X to Rotate mapping — November 15, 2026
+
+**Bounded native/MCP acceptance passed.** Installed Spine
+4.3.26 shows Source/Targets links, expandable Offset and Mix groups, a six-row
+Properties table and Options. Peachy follows this arrangement for the bounded
+world-space **Translate X → Rotate** mapping: source Min/Max on the left,
+target Min/Max on the right, independently drawn colored nodes/connection,
+Rotate mix as a percent number and slider, and Clamp. Expanded Offset contains
+paired **Translate X/Y** numbers and sliders; it does not expose the ineffective
+Rotate offset for this cross mapping. The rails extrapolate beyond their nominal
+−50..50 span without clamping or rounding existing values.
+
+All four endpoint controls use shared engine range queries and semantic edits,
+also available through MCP. Equal endpoints repair Max to Min+100; reversed
+ranges remain reversed. Raw zero scale displays a blank, undefined Source Max.
+Only genuine finite text resolves that endpoint; focus/no-op entry never invents
+a range. Numeric/slider previews own one frozen Session transaction, preserve
+unrelated pending poses and block a canceled held primary pointer until release.
+The Properties table and paired Offset row scroll horizontally in a narrow Tree;
+this preserves legible controls instead of reproducing native tiny-field
+truncation. The outer Properties scrollbar reserves its own hit area.
+
+Actual native input has verified range repair/reversal, Clamp, Mix 50%, exact
+one-step Undo/Redo, held Escape and secondary-button blocking, Offset X 12.5 and
+an extrapolated rail value of 77.1028 with cancellation, owned-field Save/stale
+Enter protection, and exclusion of a pending 13.5-degree bone pose from Save.
+The saved native outcome matches the independent MCP-authored canonical data.
+The rebuilt native editor also verifies a coalesced right-edge Mix drag to 0.92
+and Escape, untouched zero-scale Source Max preserving redo and typed 0 repairing
+Max to 100. At **1120×740**, actual scrolling reaches Source Min, Target Max,
+Clamp and Offset Y; edits undo exactly. A fresh public-lab process starts with
+no history and loads its one original image. Playback advances from 0.244 to
+1.025 seconds with Loop enabled, then Q stops at time 0; boundary wrapping was
+not observed. All owned GUI instances are closed. Whole-workspace tests cover staged and coalesced press/
+move input; the affected 26 Transform, 39 Weights and 51 Curves checks, formatting,
+Clippy, build and architecture checks pass.
+
+See the [capture gallery](evidence/transform-mapping.html),
+[original public lab](../examples/peach-bot/transform-mapping-bot.peachy) and
+[measured contract](slices/transform-mapping-authoring.md). The workspace
+continuation above resolves the former shared-edge Tree resize gap; general
+docking and cross-restart workspace persistence remain outside this acceptance.
+
+Other cross-property destinations, local/additive modes, connection creation/removal,
+Properties Match and Transform timelines remain outside this slice. Existing
+same-property mappings retain their supported evaluation and read-only mapping
+metadata. No complete Transform or pixel parity is claimed. This supersedes the
+November 9 Properties checkpoint below within the stated scope only.
+
+## Multi-vertex Direct weights — November 15, 2026
+
+The installed 4.3.26 reference shows a dedicated Weights column, explicit
+vertex selection, bone-list asterisks and a blank Weight field for mixed values.
+Peachy now supports click/box/additive/Select All for one mesh and one bound
+bone, absolute numeric/slider edits and cumulative vertical viewport dragging.
+Weights sits left of Curves/Tree; both panes remain visible above the full-width
+Dopesheet. Native format **22** is unchanged; the shared boundary exposes
+**52 commands / 12 MCP tools**, including raw mixed/uniform weight readback.
+
+Actual native input verifies typed 50 and history, a blank mixed held field,
+clamp/reversal to approximately 6/7 with original recipient ratios and one Undo,
+Escape/marquee held-input blocking, all-six skip-sole editing and ordered sparse
+insertion at bone-local `[0,0]`. Save excludes a pending 13.5-degree pose.
+Corrected native/MCP outputs match the public lab exactly. A fresh no-history
+open verifies early Cmd release, mixed display, both panes and looping playback.
+At 1120×740, the viewport stays 320 wide and checked controls are not clipped.
+All owned GUI instances are closed. See the [capture gallery](evidence/weight-multivertex.html),
+[scalar evidence](evidence/weight-multivertex.json),
+[contract](slices/weight-multivertex.md) and
+[original public lab](../examples/peach-bot/multi-weights-bot.peachy).
+
+Installed-editor import controls establish that influence order must remain
+consistent across vertices: an order-only B,A→A,B repair imports, and consistent
+nonnumeric C,A,B also imports. New sparse insertion preserves old entries using
+an independent per-mesh precedence extension. Editor export rejects precedence
+cycles before writing; Runtime preserves raw arrays. The exact final Editor
+artifact passes the 52-pose roundtrip within 0.001, with native zero pruning and
+weight rounding explicitly recorded rather than treated as lossless authoring.
+
+Auto/Smooth, brushes, locks, Update, multiple selected bones, sparse Deform-layout
+remapping, Pies/overlay controls and exact styling remain open. General vertex
+selection in other tools and arbitrary docking are separate gaps. The November 6
+weight checkpoints below remain historical records; this slice supersedes their
+single-vertex Direct, viewport-drag and provisional-placement limits only within
+the stated scope. No pixel or browser-render equivalence is claimed.
+
+## Global Animate draw order — November 14, 2026
+
+Installed 4.3.26 shows a Draw order Tree category with frontmost slots first,
+a key button beside that category, Reset below the Tree, and discrete blue
+Draw order → Default Dopesheet keys. Peachy follows that control hierarchy;
+engine order remains back to front and setup slot identities stay fixed.
+`=` / `-` moves the selected slot one place; Shift moves five, clamped at the
+bounds. Auto Key off keeps both absent-time and existing-key edits pending.
+Enabling Auto Key keys mixed pending edits together through the shared Session.
+
+Actual native input verifies typed Rotate 15, pending Save exclusion, mixed
+flush Undo/Redo, Shift clamping, boundary and Reset no-op redo, row drag with
+one-step history, unselected source identity, Escape, held-pointer blocking,
+outside release cancellation and full-width row re-entry. Exact global keys
+support native keyboard copy/paste, reset-key retime to 1.75 seconds and Delete
+with Undo/Redo. The exact final eight-key public example reopens in a fresh
+process with four images and working playback. Both authored runtime checks and
+installed 4.3.26 interchange pass. See [the review gallery](evidence/draw-order-authoring.html)
+and [the measured contract](slices/draw-order-authoring.md).
+
+Peachy restores pending work on mixed-flush Undo; the measured native reference
+instead re-evaluates its keyed pose. Cross-layout clipboard mapping, draw-order
+folders, Setup slot reordering, exact styling and the reference's compact
+Tree/property sizing remain open. This is bounded control and interaction
+parity, not pixel equivalence. Curves footer buttons now fit their column so
+the plot keeps a stable width during a drag.
+
+## Curves and scalar Graph — November 14, 2026
+
+Installed 4.3.26 places Curves between viewport and Tree, above the full-width
+Graph/Dopesheet dock. Peachy now follows that layout in Animate, with normalized
+relative handles, a colored primary and gray secondary curves, Match/Separate,
+and fitted finite Y controls. The fit freezes during a drag. Flat intervals leave
+the plot blank while retaining raw excursions. Scalar Graph shares exact typed
+selection and adds actual-value numeric/tangent editing through the same engine
+actions and preview controller used by Deform and RGBA Graph.
+
+Actual native input verifies drag/history, held and numeric Escape, repeated
+Bezier reset, single-/multiple-final behavior, typed 6.5 handles and pending
+rotation 13.5. Save excludes the pose; fresh-process exact recovery, all images
+and playback pass. See [before/after review](evidence/curves-authoring.html) and
+[the measured scope](slices/curves-authoring.md). Preset management remains
+disabled; Last chosen, grouped native properties and several coupled domains
+remain open. This is layout/interaction evidence, not pixel equivalence.
+
+The current inventory is 16 of the installed editor's 17 views. Problems is still
+missing; broader Color semantics and arbitrary docking remain.
+
+## Slot attachment and RGBA authoring — November 14, 2026
+
+Installed 4.3.26 observations put attachment keys beside the slot row and color
+keys beside its Properties swatch. Properties opens Set slot color: vertical
+alpha, SV square, hue strip, HSB/RGBA/hex fields and explicit OK/Cancel. Native
+Dopesheet labels are Attach and RGBA; grouped RGBA curves show R/G/B/A values in
+percent. Peachy now follows those controls with independent drawings and math,
+neutral Attach markers and pink RGBA markers.
+
+Actual native input verifies integer Alpha entry (128.9 becomes 128), full Cancel
+rollback, pending Save exclusion, mixed-property K in one undo step, R tangent
+editing at 80%, keyboard clipboard/Delete, numeric/held Escape cancellation and
+fresh-process persistence/playback. Native exact-key labels use short frame
+presentation while retaining exact f32 identities. See the
+[before/after and controls gallery](evidence/slot-authoring.html).
+
+Remaining differences include full Color-view Setup targets, separate RGB/alpha,
+all-owner curves, exact styling, arbitrary docking and native
+sub-byte precision/half-byte sampling ties. Numeric native calibration is a
+separate gate from visual placement; neither establishes pixel equivalence.
+Bounded all-owner Dopesheet rows have the separate ordinary-move acceptance above.
+
+## Deform timeline comparison — November 14, 2026
+
+Matched 1500×960 client-area captures from an owned installed Spine 4.3.26 window
+show blue `Deform: <attachment>` rows under bones, full-width bottom
+Graph/Dopesheet tabs beneath the Tree, and cyan 0–100 transitions resetting at
+each key on a frame-based Graph axis. The continuing implementation follows
+those observations through shared typed keys, clipboard operations and curve
+commands. Native verification is recorded in [the slice](slices/deform-timeline.md).
+Actual native acceptance passes key retiming, tangent drag, numeric percentage
+entry, keyboard clipboard/delete, atomic history, Escape cancellation, playback
+and fresh-process persistence. See the [review gallery](evidence/deform-timeline.html).
+Reference captures remain private; committed screenshots use only Peachy and
+original Peach Bot art.
+
+The actual Views menu has 17 entries. At this Deform checkpoint Peachy implemented
+15; Curves is now covered above. Problems is missing, and Slot Color does not yet establish current Color-view
+behavior. This supersedes older claims of a complete 15-view reference inventory.
+See [the current update audit](slices/spine-blog-audit-20261114.md).
+
+
+## Animate mesh vertices — November 14, 2026
+
+The public [mesh transform tools reference](https://esotericsoftware.com/spine-meshes#Transform-tools)
+separates Setup vertex movement from Animate deform keys. Vertices now stays
+in the current mode. In Animate, dragging or arrow-nudging one weighted or
+unweighted vertex changes its deform pose. Existing Auto Key and K controls
+apply; attachment properties show a colored Deform key and Delete key control.
+World position is read-only. Setup soft-selection controls are disabled in Animate.
+Escape/history/context cancellation follows the established gesture lifecycle.
+See [the exact scope](slices/deform-authoring.md).
+
+Remaining differences: explicit Vertices entry and contextual key/delete placement
+are provisional. Transform-tool vertex selection, multiple vertices, rotation/scale,
+Animate soft selection remain; Deform timeline/Graph is covered above. The installed
+reference opened, but its exact mesh interaction was not established; the public
+guide is the behavioral reference. Runtime agreement is a separate gate.
+
 Chris's November 5 requirement is to reproduce Spine's visual layout, controls,
 terminology and interaction conventions so a Spine user can use familiar habits.
 UI parity is an acceptance criterion for every vertical slice. Match the reference
@@ -19,11 +664,11 @@ The baseline is the documented default workspace; user layouts/hotkeys can diffe
 | Reference convention | Current alignment |
 | --- | --- |
 | Menu and file/history shortcuts at top left | Compact Peachy menu, Open/Save/Undo/Redo; export in menu and Cmd/Ctrl+E |
-| Views selector at top right | Full 15-view public-guide inventory, seven bounded working views, explicit disabled gaps, close/reopen, workspace restore and F9 |
+| Views selector at top right | 16 bounded implemented views, close/reopen, workspace restore and F9; installed 4.3.26 has 17 views, with Problems still missing |
 | Viewport left, Tree right | Right-side Tree; item properties below it; resizable panes |
 | Setup/Animate at viewport's upper left | Mode switch there; Dopesheet appears in Animate |
 | Main transform tools below viewport | Rotate/Translate selectors; numeric rotation, translation and scale |
-| Animation views below viewport | Frame-based Dopesheet below main tools, beside the full-height Tree |
+| Animation views below viewport | Frame-based Graph/Dopesheet tabs across the bottom beneath the Tree; exact styling and arbitrary docking remain |
 | Dense neutral dark UI, orange emphasis | Initial independent styling; detailed metrics/icons remain to align |
 | C / V / X tools | Rotate / Translate / Scale; right-click switches the last two tools, right-drag pans |
 | D playback; R / F frames | Forward play/stop, next/previous frame; Shift advances ten frames |
@@ -45,10 +690,11 @@ attachment properties. Interpolation labels are Linear, Stepped and Bezier.
   or reparenting. Exact glyphs, spacing and every Tree preference remain to align.
 - Complete main tool organization with Shear/Pose/Create, full Weights editing and compensation.
   Rotate/Translate/Scale and the axis selectors now cover the supported transform subset.
-- Add movable tabs, docking, saved workspace state and the Graph view. Tree and
-  Dopesheet currently provide resizers/visibility controls only.
-- Add multiple/box selection and complete view-dependent input focus/navigation
-  preferences. Extend Auto Key/unkeyed editing to new keyable types
+- Add movable tabs, arbitrary docking and saved workspace state. Graph/Dopesheet
+  share bottom tabs with resizers and visibility controls.
+- Add multiple/box selection outside the accepted one-mesh/one-bone Direct
+  workflow and complete view-dependent input focus/navigation preferences.
+  Extend Auto Key/unkeyed editing to new keyable types
   as their model and adapters are implemented.
 - Match Dopesheet key selection, dragging, clipboard, pan/zoom and selection tools.
 - Implement Edit Mesh UV/topology controls with their own reference semantics.
@@ -210,9 +856,11 @@ Dopesheet clicks select exact source keys independently of playhead position.
 Cmd/Ctrl-click toggles keys; Delete/Backspace requires focus in the visible canvas.
 Double-click deletes the clicked key. The toolbar offers the same deletion command
 with an independent icon. Rotation/translation/scale keys use narrow green/blue/red
-bars, following the public row images. Only the selected bone's supported scalar
-tracks are covered; multi-bone rows, overview rows, box selection
-and Graph synchronization remain pending. Jump-to-key is on;
+bars, following the public row images. The original single-bone scope is extended
+by bounded all-owner represented rows and ordinary mixed-key movement, with
+bounded native two-bone acceptance. Full overview/group selection, box selection,
+Lock/Sync, general Tree multi-selection and Graph synchronization remain pending.
+Jump-to-key is on;
 configurable selection/scrubbing preferences remain pending.
 
 
@@ -772,6 +1420,9 @@ comparison with the installed editor; keying inheritance is not offered yet.
 
 ## Transform constraint properties — November 9, 2026
 
+Historical checkpoint; the November 15 X-to-Rotate continuation above adds
+observed mapping controls, shared range edits and an owned numeric lifecycle.
+
 Transform constraints appear in the Constraints folder with an original
 follow icon. Properties show Source and constrained Bones as links and, for each
 mapped property, Mix (percent, unbounded) and Offset; Setup edits apply once per
@@ -810,3 +1461,17 @@ Dash length, stroke widths and hover presentation are bounded local choices;
 this is not pixel parity. Spine's CLI enables `convex` on the Clip Lab import,
 so the original runtime-validated native polygon remains the geometry reference.
 Installed-editor screenshots stay under `.local/overlays-20261110/`.
+
+
+## Export consumer choice — November 14, 2026
+
+The native Export action now opens an explicit Editor 4.3 / Runtime 4.3 chooser
+before the directory panel. This is a consumer-safety control required by observed
+name/placeholder import behavior, not a claim to match Spine's complete export
+dialog layout. Each invocation defaults to Editor; Runtime retains independent
+identities. Cancel/Escape and background input guards preserve pending edits and
+history; a rejected Editor export creates no output. Actual native input and owned
+Cocoa controls confirm the resulting export, plus preserved pending rotation and
+redo. Native/MCP/CLI bundles match byte for byte. See the [review gallery](evidence/export-targets.html)
+and [precise reference/acceptance contract](slices/export-targets.md). Broader
+workspace, curve and current Color parity remain open in the blog audit.

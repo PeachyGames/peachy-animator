@@ -4,6 +4,15 @@ name: Rust checks
 # restarting workflows in Team Peachy's existing repositories.
 on:
   workflow_dispatch:
+    inputs:
+      test_filter:
+        description: Focused Rust test name filter
+        required: true
+        type: string
+
+env:
+  CARGO_BUILD_JOBS: "2"
+  RUST_TEST_THREADS: "2"
 
 permissions:
   contents: read
@@ -19,7 +28,12 @@ jobs:
       - name: Install native Linux build dependencies
         run: sudo apt-get update && sudo apt-get install -y libwayland-dev libxkbcommon-dev libegl1-mesa-dev
       - run: cargo fmt --all -- --check
-      - run: cargo test --workspace --locked
+      - name: Run focused Rust checks
+        env:
+          TEST_FILTER: ${{ inputs.test_filter }}
+        run: |
+          test -n "$TEST_FILTER"
+          cargo test --workspace --locked -j 2 "$TEST_FILTER" -- --test-threads=2
       - run: python3 scripts/check-architecture.py
       - run: cargo clippy --workspace --all-targets --locked -- -D warnings
       - run: cargo build --workspace --locked

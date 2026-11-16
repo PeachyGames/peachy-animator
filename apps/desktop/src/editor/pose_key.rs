@@ -3,9 +3,13 @@ use super::*;
 
 #[derive(Clone)]
 pub(super) enum PoseKeyAction {
-    Transform {
-        bone: usize,
-        properties: Vec<Property>,
+    DrawOrder,
+    Slider {
+        constraint: usize,
+        properties: Vec<SliderProperty>,
+    },
+    Transforms {
+        keys: Vec<peachy_engine::BonePoseKey>,
     },
     Edited {
         bone: Option<usize>,
@@ -13,12 +17,20 @@ pub(super) enum PoseKeyAction {
     Ik {
         constraint: usize,
     },
+    Deform {
+        attachment: AttachmentRef,
+    },
+    Slot {
+        slot: usize,
+        properties: Vec<peachy_engine::SlotProperty>,
+    },
 }
 
 pub(super) struct PoseKeyRequest {
     action: PoseKeyAction,
     animation: usize,
     time: f32,
+    selection: TreeSelection,
 }
 
 impl Editor {
@@ -37,8 +49,15 @@ impl Editor {
             action,
             animation: self.animation,
             time: self.time,
+            selection: self.selection.clone(),
         };
-        if self.drag.is_some() || self.ik_edit.is_some() {
+        if self.drag.is_some()
+            || self.ik_edit.is_some()
+            || self.deform_drag.is_some()
+            || self.slot_color_edit_active()
+            || self.draw_order_edit_active()
+            || self.slider_edit_active()
+        {
             self.pose_key_request = Some(request);
         } else {
             self.apply_pose_key(request);
@@ -46,10 +65,28 @@ impl Editor {
     }
 
     fn apply_pose_key(&mut self, request: PoseKeyRequest) {
+        if matches!(&request.action, PoseKeyAction::Transforms { .. })
+            && request.selection != self.selection
+        {
+            self.status = "Bone selection changed before keying".into();
+            return;
+        }
         let result = match request.action {
-            PoseKeyAction::Transform { bone, properties } => {
+            PoseKeyAction::Transforms { keys } => {
                 self.session
-                    .key_pose(request.animation, request.time, bone, &properties)
+                    .key_poses(request.animation, request.time, &keys)
+            }
+            PoseKeyAction::Slider {
+                constraint,
+                properties,
+            } => self.session.key_slider_pose(
+                request.animation,
+                request.time,
+                constraint,
+                &properties,
+            ),
+            PoseKeyAction::DrawOrder => {
+                self.session.key_draw_order(request.animation, request.time)
             }
             PoseKeyAction::Edited { bone } => {
                 self.session
@@ -59,17 +96,31 @@ impl Editor {
                 self.session
                     .key_ik_pose(request.animation, request.time, constraint)
             }
+            PoseKeyAction::Deform { attachment } => {
+                self.session
+                    .key_deform_pose(request.animation, request.time, attachment)
+            }
+            PoseKeyAction::Slot { slot, properties } => {
+                self.session
+                    .key_slot_pose(request.animation, request.time, slot, &properties)
+            }
         };
         match result {
             Ok(()) => {
                 self.seal_transform_for_key();
                 self.seal_ik_for_key();
+                self.seal_deform_for_key();
+                self.seal_slot_color_for_key();
+                self.seal_draw_order_for_key();
+                self.seal_slider_for_key();
                 self.session.commit_transaction();
                 self.status = "Keyed the current authored pose".into();
             }
             Err(error) => {
                 self.hold_transform_key_error(&error);
                 self.hold_ik_key_error(&error);
+                self.hold_slot_color_key_error(&error);
+                self.hold_slider_key_error(&error);
                 self.status = format!("Cannot key the current pose: {error}");
             }
         }
@@ -85,6 +136,8 @@ impl Editor {
         if let Err(error) = self
             .transform_key_ready()
             .and_then(|()| self.ik_key_ready())
+            .and_then(|()| self.slot_color_key_ready())
+            .and_then(|()| self.slider_key_ready())
         {
             self.status = format!("Cannot key the current pose: {error}");
             return;

@@ -16,5 +16,6 @@ Keyed attachments and colors travel in `AuthoredPose`, so every scene shows the
 swaps and tint; draws carry the color as bytes. The runtime check now compares
 each slot's visibility and color (within half a byte) at every sample.
 
-Not yet: authoring slot keys in the editor, Dopesheet rows for them, and the
-`rgb`, `alpha`, `rgba2`/`rgb2` (dark tint) and `sequence` slot timelines.
+Native and MCP slot authoring, typed Dopesheet rows and RGBA Graph editing are
+now covered by the [November 14 continuation](slot-authoring.md). Separate
+`rgb`, `alpha`, `rgba2`/`rgb2` (dark tint) and `sequence` authoring remain open.

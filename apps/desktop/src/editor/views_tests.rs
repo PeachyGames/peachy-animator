@@ -43,6 +43,7 @@ fn full_view_inventory_is_discoverable_and_setup_rejects_animate_panels() {
     for name in [
         "Animations",
         "Audio",
+        "Curves",
         "Dopesheet",
         "Ghosting",
         "Graph",
@@ -95,6 +96,14 @@ fn full_view_inventory_is_discoverable_and_setup_rejects_animate_panels() {
     click(
         &mut editor,
         &ctx,
+        "viewCurves",
+        egui::PointerButton::Primary,
+    );
+    assert!(!editor.curves_visible());
+    assert!(!editor.view_tabs.open.contains(&DockView::Curves));
+    click(
+        &mut editor,
+        &ctx,
         "viewMetrics",
         egui::PointerButton::Primary,
     );
@@ -139,6 +148,13 @@ fn animation_and_skin_panels_activate_without_redirecting_typed_selection_or_doc
     );
     assert_eq!(editor.skin, "mint");
     assert_eq!(editor.selection, Some(TreeItem::Animation(0)));
+    let [left, top, right, bottom] = editor.capture_targets["skinsPanelClip"];
+    let clip = egui::Rect::from_min_max(pos2(left, top), pos2(right, bottom));
+    let [left, top, right, bottom] = editor.capture_targets["skinsRow:peach"];
+    assert!(clip.contains_rect(egui::Rect::from_min_max(
+        pos2(left, top),
+        pos2(right, bottom)
+    )));
     click(
         &mut editor,
         &ctx,
@@ -192,6 +208,12 @@ fn f9_round_trip_preserves_all_views_and_each_view_can_close_and_reopen() {
     click(&mut editor, &ctx, "viewsMenu", egui::PointerButton::Primary);
     click(&mut editor, &ctx, "viewTree", egui::PointerButton::Primary);
     assert!(editor.show_tree);
+    click(
+        &mut editor,
+        &ctx,
+        "animationViewTab:Dopesheet",
+        egui::PointerButton::Primary,
+    );
     click(
         &mut editor,
         &ctx,

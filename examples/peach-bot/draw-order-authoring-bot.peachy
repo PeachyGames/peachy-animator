@@ -1,0 +1,226 @@
+{
+  "format": 22,
+  "name": "draw-order-probe",
+  "fps": 60,
+  "bones": [
+    {
+      "name": "root",
+      "parent": null,
+      "length": 0.0,
+      "setup": {
+        "x": 0.0,
+        "y": 0.0,
+        "rotation": 0.0,
+        "scale_x": 1.0,
+        "scale_y": 1.0,
+        "shear_x": 0.0,
+        "shear_y": 0.0
+      },
+      "inherit": "normal"
+    }
+  ],
+  "constraints": [],
+  "slots": [
+    {
+      "name": "s00_red_cutout",
+      "bone": 0,
+      "attachment": "red_cutout",
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "name": "s01_green_cutout",
+      "bone": 0,
+      "attachment": "green_cutout",
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "name": "s02_blue_cutout",
+      "bone": 0,
+      "attachment": "blue_cutout",
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "name": "s03_gold_cutout",
+      "bone": 0,
+      "attachment": "gold_cutout",
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ]
+    }
+  ],
+  "skins": {
+    "default": {
+      "s00_red_cutout": {
+        "red_cutout": {
+          "type": "region",
+          "path": "red_cutout",
+          "width": 128.0,
+          "height": 128.0,
+          "transform": {
+            "x": 0.0,
+            "y": 0.0,
+            "rotation": 0.0,
+            "scale_x": 1.0,
+            "scale_y": 1.0
+          }
+        }
+      },
+      "s01_green_cutout": {
+        "green_cutout": {
+          "type": "region",
+          "path": "green_cutout",
+          "width": 128.0,
+          "height": 128.0,
+          "transform": {
+            "x": 0.0,
+            "y": 0.0,
+            "rotation": 0.0,
+            "scale_x": 1.0,
+            "scale_y": 1.0
+          }
+        }
+      },
+      "s02_blue_cutout": {
+        "blue_cutout": {
+          "type": "region",
+          "path": "blue_cutout",
+          "width": 128.0,
+          "height": 128.0,
+          "transform": {
+            "x": 0.0,
+            "y": 0.0,
+            "rotation": 0.0,
+            "scale_x": 1.0,
+            "scale_y": 1.0
+          }
+        }
+      },
+      "s03_gold_cutout": {
+        "gold_cutout": {
+          "type": "region",
+          "path": "gold_cutout",
+          "width": 128.0,
+          "height": 128.0,
+          "transform": {
+            "x": 0.0,
+            "y": 0.0,
+            "rotation": 0.0,
+            "scale_x": 1.0,
+            "scale_y": 1.0
+          }
+        }
+      }
+    }
+  },
+  "skin_scope": {
+    "required_bones": [],
+    "required_constraints": [],
+    "skins": {}
+  },
+  "events": [],
+  "reference_scale": 100.0,
+  "animations": [
+    {
+      "name": "calibration",
+      "tracks": [
+        {
+          "bone": 0,
+          "property": "rotation",
+          "keys": [
+            {
+              "time": 1.0,
+              "value": 15.0,
+              "curve": "linear"
+            }
+          ]
+        }
+      ],
+      "ik_tracks": [],
+      "physics": [],
+      "physics_resets": [],
+      "inherit_tracks": [],
+      "deform_tracks": [],
+      "attachment_tracks": [],
+      "color_tracks": [],
+      "events": [],
+      "draw_order": [
+        {
+          "time": 0.0,
+          "offsets": [
+            {
+              "slot": 1,
+              "offset": -1
+            }
+          ]
+        },
+        {
+          "time": 0.5,
+          "offsets": [
+            {
+              "slot": 0,
+              "offset": 2
+            }
+          ]
+        },
+        {
+          "time": 1.0,
+          "offsets": [
+            {
+              "slot": 0,
+              "offset": 3
+            }
+          ]
+        },
+        {
+          "time": 1.0166667,
+          "offsets": []
+        },
+        {
+          "time": 1.0333333,
+          "offsets": []
+        },
+        {
+          "time": 1.05,
+          "offsets": [
+            {
+              "slot": 2,
+              "offset": -1
+            },
+            {
+              "slot": 3,
+              "offset": -3
+            }
+          ]
+        },
+        {
+          "time": 1.5,
+          "offsets": []
+        },
+        {
+          "time": 1.75,
+          "offsets": []
+        }
+      ],
+      "path_tracks": [],
+      "sequence_tracks": []
+    }
+  ]
+}

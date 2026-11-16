@@ -1,53 +1,59 @@
 //! Direct control routing only. Session owns redistribution and fixed-base history.
 use super::*;
-use peachy_engine::MeshBindPose;
+use peachy_engine::{
+    MeshBindPose, MeshWeightGesture, MeshWeightSelection, MeshWeightValue, mesh_bone_weights,
+};
 
 #[derive(Clone, Debug, PartialEq)]
 pub(super) struct WeightTarget {
     mesh: AttachmentRef,
-    vertex: usize,
+    vertices: Vec<usize>,
     bone: usize,
 }
 
 pub(super) struct WeightEdit {
     target: WeightTarget,
     pose: MeshBindPose,
+    gesture: MeshWeightGesture,
     setup: bool,
     animation: usize,
     time: f32,
     control: egui::Id,
     numeric: bool,
     numeric_touched: bool,
-    percent: f64,
+    percent: Option<f64>,
     finish_pending: bool,
     error: Option<String>,
 }
 
 impl Editor {
-    fn direct_target(&self) -> Result<(WeightTarget, f64), String> {
+    fn direct_target(&self) -> Result<(WeightTarget, Option<f64>), String> {
         let mesh = self.weights.mesh.clone().ok_or("Select an active mesh")?;
         if !self.weights_mesh_active(&mesh) {
             return Err("Select an active mesh".into());
         }
-        let vertex = self.weights.vertex.ok_or("Select one vertex")?;
-        let bone = self.weights.bone.ok_or("Select one bound bone")?;
-        let Some(Attachment::Mesh(data)) = self.session.document().attachment(&mesh) else {
-            return Err("Select a mesh".into());
-        };
-        let MeshVertices::Weighted { influences } = &data.vertices else {
-            return Err("Bind the mesh before adjusting weights".into());
-        };
-        let entries = influences.get(vertex).ok_or("Select a valid vertex")?;
-        let mut seen = BTreeSet::new();
-        if entries.iter().any(|entry| !seen.insert(entry.bone)) {
-            return Err("Repeated bone bindings on this vertex are ambiguous".into());
+        if self.weights.vertices.is_empty() {
+            return Err("Select vertices".into());
         }
-        let entry = entries.iter().find(|entry| entry.bone == bone).ok_or(
-            "Selected bone has no binding on this vertex; sparse bindings cannot be adjusted yet",
+        let bone = self.weights.bone.ok_or("Select one bound bone")?;
+        let query = mesh_bone_weights(
+            self.session.document(),
+            &MeshWeightSelection {
+                attachment: mesh.clone(),
+                vertices: self.weights.vertices.clone(),
+                bone,
+            },
         )?;
         Ok((
-            WeightTarget { mesh, vertex, bone },
-            f64::from(entry.weight) * 100.,
+            WeightTarget {
+                mesh,
+                vertices: query.selection.vertices,
+                bone,
+            },
+            match query.value {
+                MeshWeightValue::Uniform(weight) => Some(f64::from(weight) * 100.),
+                MeshWeightValue::Mixed => None,
+            },
         ))
     }
     fn begin_weight_edit(&mut self, control: egui::Id, numeric: bool) -> Result<(), String> {
@@ -58,10 +64,20 @@ impl Editor {
         self.session.commit_transaction();
         self.playing = false;
         let pose = self.session.mesh_bind_pose(self.weights_edit_target())?;
+        let gesture = MeshWeightGesture::new(
+            self.session.document(),
+            MeshWeightSelection {
+                attachment: target.mesh.clone(),
+                vertices: target.vertices.clone(),
+                bone: target.bone,
+            },
+            pose.clone(),
+        )?;
         self.session.begin_transaction();
         self.weight_edit = Some(WeightEdit {
             target,
             pose,
+            gesture,
             setup: self.setup_mode,
             animation: self.animation,
             time: self.time,
@@ -76,15 +92,14 @@ impl Editor {
     }
     fn preview_weight(&mut self, percent: f64) -> Result<(), String> {
         let edit = self.weight_edit.as_mut().ok_or("No active Weight edit")?;
-        edit.percent = percent;
-        let result = self
-            .session
-            .preview_transaction(Command::SetMeshBoneWeight {
-                attachment: edit.target.mesh.clone(),
-                vertex: edit.target.vertex,
-                bone: edit.target.bone,
-                weight: (percent / 100.) as f32,
-                pose: edit.pose.clone(),
+        edit.percent = Some(percent);
+        let result = edit
+            .gesture
+            .absolute((percent / 100.) as f32)
+            .and_then(|candidate| {
+                self.session.preview_mesh_bone_weights(&candidate)?;
+                edit.gesture = candidate;
+                Ok(())
             });
         edit.error = result.as_ref().err().cloned();
         self.status = match &result {
@@ -93,7 +108,34 @@ impl Editor {
         };
         result
     }
+    pub(super) fn begin_weight_viewport_edit(&mut self) -> Result<(), String> {
+        self.begin_weight_edit(Self::weights_viewport_id(), false)
+    }
+    pub(super) fn preview_weight_viewport_delta(&mut self, pixels: f32) {
+        let Some(edit) = self.weight_edit.as_mut() else {
+            return;
+        };
+        let result = edit.gesture.relative(pixels / 350.).and_then(|candidate| {
+            self.session.preview_mesh_bone_weights(&candidate)?;
+            edit.percent = match candidate.query().value {
+                MeshWeightValue::Uniform(weight) => Some(f64::from(weight) * 100.),
+                MeshWeightValue::Mixed => None,
+            };
+            edit.gesture = candidate;
+            Ok(())
+        });
+        edit.error = result.as_ref().err().cloned();
+        if let Err(error) = result {
+            self.status = error;
+        }
+    }
+    pub(super) fn finish_weight_viewport_edit(&mut self) {
+        if let Some(edit) = self.weight_edit.as_mut() {
+            edit.finish_pending = true;
+        }
+    }
     pub(super) fn cancel_weight_edit(&mut self) {
+        self.cancel_weights_pointer();
         if let Some(edit) = self.weight_edit.take() {
             // Ignore stale text/lost-focus responses and an ongoing pointer until release.
             self.weight_blocked = Some(edit.control);
@@ -113,6 +155,7 @@ impl Editor {
                 || edit.setup != self.setup_mode
                 || edit.animation != self.animation
                 || edit.time != self.time
+                || !edit.gesture.matches_document(self.session.document())
                 || self
                     .direct_target()
                     .map_or(true, |(target, _)| target != edit.target)
@@ -130,12 +173,7 @@ impl Editor {
         let Some(edit) = self.weight_edit.as_ref() else {
             return false;
         };
-        if !ctx.input(|input| input.focused)
-            || self.error.is_some()
-            || self.rename.is_some()
-            || self.duplicate_animation.is_some()
-            || egui::Popup::is_any_open(ctx)
-        {
+        if !self.weights_input_available(ctx) {
             self.cancel_weight_edit();
             return false;
         }
@@ -192,8 +230,14 @@ impl Editor {
         }
         false
     }
-    fn weight_response(&mut self, response: &egui::Response, percent: f64, numeric: bool) {
-        if self.weight_blocked.is_some() {
+    fn weight_response(
+        &mut self,
+        response: &egui::Response,
+        percent: f64,
+        numeric: bool,
+        parsed: Option<f64>,
+    ) {
+        if self.weight_blocked.is_some() || !self.weights_input_available(&response.ctx) {
             return;
         }
         let starts =
@@ -225,8 +269,14 @@ impl Editor {
             let value_changed = self
                 .weight_edit
                 .as_ref()
-                .is_some_and(|edit| edit.percent != percent);
-            if response.changed() && explicit && value_changed {
+                .is_some_and(|edit| edit.percent != Some(percent));
+            let entered_mixed_zero = numeric
+                && parsed == Some(percent)
+                && self
+                    .weight_edit
+                    .as_ref()
+                    .is_some_and(|edit| edit.percent.is_none());
+            if (response.changed() || entered_mixed_zero) && explicit && value_changed {
                 let _ = self.preview_weight(percent);
             }
             let editing_text = numeric && response.has_focus();
@@ -241,7 +291,7 @@ impl Editor {
     }
     pub(super) fn weight_controls(&mut self, ui: &mut egui::Ui) {
         self.reconcile_weight_edit();
-        if egui::Popup::is_any_open(ui.ctx()) {
+        if !self.weights_input_available(ui.ctx()) {
             self.cancel_weight_edit();
         }
         if let Some(control) = self.weight_blocked {
@@ -257,12 +307,15 @@ impl Editor {
         let target = self.direct_target();
         let enabled = target.is_ok()
             && self.weights.bind.is_none()
-            && ui.input(|input| input.focused)
-            && !egui::Popup::is_any_open(ui.ctx());
-        let mut percent = self.weight_edit.as_ref().map_or_else(
-            || target.as_ref().map_or(0., |(_, percent)| *percent),
+            && self.weights.pointer.is_none()
+            && self.weights.vertex_press.is_none()
+            && self.weights_input_available(ui.ctx());
+        let shown = self.weight_edit.as_ref().map_or_else(
+            || target.as_ref().ok().and_then(|(_, percent)| *percent),
             |edit| edit.percent,
         );
+        let mut percent = shown.unwrap_or(0.);
+        let mixed = target.is_ok() && shown.is_none();
         // A context change gets new widget IDs, so old numeric text cannot commit to a different target.
         let mesh_id = self
             .weights
@@ -272,32 +325,71 @@ impl Editor {
         let control_scope = ui.make_persistent_id((
             "direct-weight",
             mesh_id,
-            self.weights.vertex,
+            &self.weights.vertices,
             self.weights.bone,
         ));
         let row = ui
-            .push_id(control_scope, |ui| {
+            .scope_builder(egui::UiBuilder::new().id(control_scope), |ui| {
                 ui.add_enabled_ui(enabled, |ui| {
                     ui.horizontal(|ui| {
+                        // Keep the numeric control accessible at the vertical
+                        // pane's minimum width instead of growing its parent.
+                        ui.spacing_mut().slider_width = (ui.available_width() - 130.).max(32.);
                         ui.label("Weight");
-                        let slider = ui.add(
-                            egui::Slider::new(&mut percent, 0.0..=100.0)
-                                .show_value(false)
-                                .clamping(egui::SliderClamping::Edits),
-                        );
-                        self.record_target("weightsWeightSlider", slider.rect);
-                        self.weight_response(&slider, percent, false);
-                        let value = ui.add(
-                            egui::DragValue::new(&mut percent)
-                                .range(0.0..=100.0)
-                                .clamp_existing_to_range(false)
-                                .speed(0.2)
-                                .fixed_decimals(2)
-                                .suffix("%"),
-                        );
-                        self.weight_controls = Some([slider.id, value.id]);
+                        let parsed = std::cell::Cell::new(None);
+                        let formatted = std::cell::RefCell::new(None);
+                        let value = ui
+                            .scope_builder(
+                                egui::UiBuilder::new().id(control_scope.with("numeric")),
+                                |ui| {
+                                    ui.add_sized(
+                                        [70., 22.],
+                                        egui::DragValue::new(&mut percent)
+                                            .range(0.0..=100.0)
+                                            .clamp_existing_to_range(false)
+                                            .speed(0.2)
+                                            .fixed_decimals(2)
+                                            .custom_formatter(|value, _| {
+                                                let text = if mixed {
+                                                    String::new()
+                                                } else {
+                                                    format!("{value:.2}")
+                                                };
+                                                *formatted.borrow_mut() = Some(text.clone());
+                                                text
+                                            })
+                                            .custom_parser(|text| {
+                                                let value = text
+                                                    .trim()
+                                                    .parse::<f64>()
+                                                    .ok()
+                                                    .filter(|value| value.is_finite());
+                                                parsed.set(value);
+                                                value
+                                            })
+                                            .suffix(if mixed { "" } else { "%" }),
+                                    )
+                                },
+                            )
+                            .inner;
+                        self.weights.formatted_percent = formatted.into_inner();
                         self.record_target("weightsWeightValue", value.rect);
-                        self.weight_response(&value, percent, true);
+                        self.weight_response(&value, percent, true, parsed.get());
+                        let slider = ui
+                            .scope_builder(
+                                egui::UiBuilder::new().id(control_scope.with("slider")),
+                                |ui| {
+                                    ui.add(
+                                        egui::Slider::new(&mut percent, 0.0..=100.0)
+                                            .show_value(false)
+                                            .clamping(egui::SliderClamping::Edits),
+                                    )
+                                },
+                            )
+                            .inner;
+                        self.weight_controls = Some([slider.id, value.id]);
+                        self.record_target("weightsWeightSlider", slider.rect);
+                        self.weight_response(&slider, percent, false, None);
                     })
                     .response
                 })
@@ -322,6 +414,7 @@ impl Editor {
     pub(super) fn finish_idle_transactions(&mut self, ctx: &egui::Context) {
         self.settle_slot_color_input(ctx);
         self.settle_graph_input(ctx);
+        self.settle_draw_order_input(ctx);
         // A menu/modal can open during this frame, after keyboard routing queued an action.
         if !ctx.input(|input| input.focused)
             || self.error.is_some()
@@ -335,6 +428,8 @@ impl Editor {
         self.settle_pose_key();
         self.settle_ik_edit(ctx);
         self.settle_transform_edit(ctx);
+        self.settle_constraint_input(ctx);
+        self.settle_slider_input(ctx);
         if !ctx.input(|input| input.pointer.any_down())
             && self
                 .weight_edit
@@ -344,7 +439,10 @@ impl Editor {
             self.finish_weight_edit();
         }
         if self.weight_edit.is_none()
+            && !self.slider_edit_active()
+            && !self.constraint_edit_active()
             && !self.graph_edit_active()
+            && !self.draw_order_edit_active()
             && !self.slot_color_edit_active()
             && self.ik_edit.is_none()
             && self.drag.is_none()
@@ -355,9 +453,11 @@ impl Editor {
     }
     pub(super) fn weight_direct_diagnostic(&self) -> serde_json::Value {
         let current = self.direct_target();
-        serde_json::json!({"mode":"direct","mesh":self.weights.mesh,"vertex":self.weights.vertex,"bone":self.weights.bone,
+        let mixed = current.as_ref().is_ok_and(|(_, percent)| percent.is_none());
+        serde_json::json!({"mode":"direct","mesh":self.weights.mesh,"vertices":self.weights.vertices,"vertex":(self.weights.vertices.len()==1).then(||self.weights.vertices[0]),"bone":self.weights.bone,
             "percent":current.as_ref().ok().map(|(_,percent)| percent),"unavailable":current.err(),
-            "blocked":self.weight_blocked.is_some(),"active":self.weight_edit.as_ref().map(|edit| serde_json::json!({"mesh":edit.target.mesh,"vertex":edit.target.vertex,"bone":edit.target.bone,
+            "mixed":mixed,"formattedPercent":self.weights.formatted_percent,
+            "blocked":self.weight_blocked.is_some(),"active":self.weight_edit.as_ref().map(|edit| serde_json::json!({"mesh":edit.target.mesh,"vertices":edit.target.vertices,"bone":edit.target.bone,
                 "setup":edit.setup,"animation":edit.animation,"time":edit.time,"numeric":edit.numeric,"percent":edit.percent,"error":edit.error,"pose":edit.pose}))})
     }
 }
@@ -370,7 +470,7 @@ mod tests {
     fn ready() -> (Editor, AttachmentRef) {
         let (mut editor, key) = mesh_editor(true);
         editor.set_tool(Tool::Weights);
-        editor.weights.vertex = Some(0);
+        editor.weights.vertices = vec![0];
         editor.weights.bone = Some(8);
         (editor, key)
     }
@@ -440,6 +540,215 @@ mod tests {
             }],
         );
     }
+    fn pane_frame(editor: &mut Editor, ctx: &egui::Context, size: Vec2, events: Vec<egui::Event>) {
+        let mut output = ctx.run_ui(
+            egui::RawInput {
+                screen_rect: Some(egui::Rect::from_min_size(Pos2::ZERO, size)),
+                focused: true,
+                events,
+                ..Default::default()
+            },
+            |ui| editor.workspace_ui(ui),
+        );
+        output.textures_delta.clear();
+    }
+    fn pane_rect(editor: &Editor, name: &str) -> egui::Rect {
+        let [left, top, right, bottom] = *editor
+            .capture_targets
+            .get(name)
+            .unwrap_or_else(|| panic!("Missing capture target {name}"));
+        egui::Rect::from_min_max(pos2(left, top), pos2(right, bottom))
+    }
+    #[test]
+    fn weights_pane_has_top_controls_scrollable_bones_and_visible_footer_at_minimum_window() {
+        for both in [false, true] {
+            let (mut editor, _) = ready();
+            if both {
+                editor.set_setup_mode(false);
+                editor.open_curves_view();
+                // The retained Weights mesh remains explicit while a bone with
+                // scalar keys supplies the simultaneously visible Graph.
+                editor.select(TreeItem::Bone(8));
+                editor.open_graph_view();
+            }
+            let ctx = editor_context();
+            for _ in 0..4 {
+                pane_frame(&mut editor, &ctx, vec2(1120., 740.), vec![]);
+            }
+            let viewport = pane_rect(&editor, "viewport");
+            let weights = pane_rect(&editor, "weightsPanel");
+            let tree = pane_rect(&editor, "tree");
+            assert!(
+                viewport.width() >= 300. && viewport.height() >= 100.,
+                "{viewport:?}"
+            );
+            assert!(viewport.right() <= weights.left());
+            assert!(weights.right() <= tree.left());
+            assert!(!editor.capture_targets.contains_key("viewTab:Weights"));
+            for name in [
+                "closeView:Weights",
+                "weightsDirect",
+                "weightsWeightSlider",
+                "weightsWeightValue",
+                "weightsBonesClip",
+                "weightsFooter",
+                "weightsBind",
+                "weightsRemoveAll",
+            ] {
+                let rect = pane_rect(&editor, name);
+                assert!(
+                    rect.is_finite() && weights.contains_rect(rect),
+                    "{name}: {rect:?} outside {weights:?}"
+                );
+            }
+            let bones = pane_rect(&editor, "weightsBonesClip");
+            assert!(pane_rect(&editor, "weightsWeightValue").bottom() < bones.top());
+            assert!(bones.bottom() <= pane_rect(&editor, "weightsFooter").top());
+            if both {
+                let curves = pane_rect(&editor, "curvesView");
+                let bottom = pane_rect(&editor, "animationViews");
+                assert!(weights.right() <= curves.left() && curves.right() <= tree.left());
+                assert!(weights.bottom() <= bottom.top() && curves.bottom() <= bottom.top());
+                assert!(pane_rect(&editor, "graphPlot").width() > 1000.);
+            }
+        }
+    }
+    #[test]
+    fn weights_pane_preview_keeps_both_vertical_panes_stable_and_escape_restores_document() {
+        for size in [vec2(1120., 740.), vec2(1500., 960.)] {
+            let (mut editor, _) = ready();
+            editor.set_setup_mode(false);
+            editor.open_curves_view();
+            let ctx = editor_context();
+            for _ in 0..4 {
+                pane_frame(&mut editor, &ctx, size, vec![]);
+            }
+            let before = editor.session.document().clone();
+            let bounds =
+                ["weightsPanel", "curvesView", "viewport"].map(|name| pane_rect(&editor, name));
+            let slider = pane_rect(&editor, "weightsWeightSlider");
+            let press = pos2(slider.left() + slider.width() * 0.2, slider.center().y);
+            pane_frame(
+                &mut editor,
+                &ctx,
+                size,
+                vec![
+                    egui::Event::PointerMoved(press),
+                    egui::Event::PointerButton {
+                        pos: press,
+                        button: egui::PointerButton::Primary,
+                        pressed: true,
+                        modifiers: egui::Modifiers::NONE,
+                    },
+                ],
+            );
+            pane_frame(
+                &mut editor,
+                &ctx,
+                size,
+                vec![egui::Event::PointerMoved(pos2(slider.center().x, press.y))],
+            );
+            assert!(editor.weight_edit.is_some());
+            assert_ne!(editor.session.document(), &before);
+            for (name, expected) in ["weightsPanel", "curvesView", "viewport"]
+                .into_iter()
+                .zip(bounds)
+            {
+                assert_eq!(pane_rect(&editor, name), expected, "{name}");
+            }
+            pane_frame(
+                &mut editor,
+                &ctx,
+                size,
+                chord(egui::Key::Escape, egui::Modifiers::NONE),
+            );
+            assert!(editor.weight_edit.is_none());
+            assert_eq!(editor.session.document(), &before);
+            pane_frame(
+                &mut editor,
+                &ctx,
+                size,
+                vec![egui::Event::PointerButton {
+                    pos: press,
+                    button: egui::PointerButton::Primary,
+                    pressed: false,
+                    modifiers: egui::Modifiers::NONE,
+                }],
+            );
+            assert_eq!(editor.session.document(), &before);
+        }
+    }
+    #[test]
+    fn weights_pane_narrow_toolbar_scroll_reaches_controls_without_exposing_hidden_targets() {
+        let (mut editor, _) = ready();
+        editor.set_setup_mode(false);
+        editor.open_curves_view();
+        let ctx = editor_context();
+        let size = vec2(1120., 740.);
+        for _ in 0..4 {
+            pane_frame(&mut editor, &ctx, size, vec![]);
+        }
+        let mut reached = BTreeSet::new();
+        // Include intermediate offsets: the axes column can sit between the
+        // two extremes when content is wider than twice the visible toolbar.
+        for delta in [0., -100., -100., -100., -100., -10000., 10000.] {
+            let clip = pane_rect(&editor, "mainToolsClip");
+            let point = pos2(clip.left() + 10., clip.center().y);
+            pane_frame(
+                &mut editor,
+                &ctx,
+                size,
+                vec![
+                    egui::Event::PointerMoved(point),
+                    egui::Event::MouseWheel {
+                        unit: egui::MouseWheelUnit::Point,
+                        delta: vec2(delta, 0.),
+                        modifiers: egui::Modifiers::NONE,
+                        phase: egui::TouchPhase::Move,
+                    },
+                ],
+            );
+            for _ in 0..4 {
+                pane_frame(&mut editor, &ctx, size, vec![]);
+            }
+            let clip = pane_rect(&editor, "mainToolsClip");
+            for name in Property::ALL
+                .into_iter()
+                .map(|property| format!("value:{property:?}"))
+                .chain([
+                    "weightsTool".into(),
+                    "axes:World".into(),
+                    "autoKey".into(),
+                    "keyEdited".into(),
+                ])
+            {
+                if editor.capture_targets.contains_key(&name) {
+                    let rect = pane_rect(&editor, &name);
+                    assert!(rect.is_positive() && rect.is_finite() && clip.contains_rect(rect));
+                    assert!(
+                        rect.height() < clip.height() / 2.,
+                        "wrapped toolbar control {name}: {rect:?}"
+                    );
+                    reached.insert(name);
+                }
+            }
+        }
+        for name in Property::ALL
+            .into_iter()
+            .map(|property| format!("value:{property:?}"))
+            .chain([
+                "weightsTool".into(),
+                "axes:World".into(),
+                "autoKey".into(),
+                "keyEdited".into(),
+            ])
+        {
+            assert!(
+                reached.contains(&name),
+                "toolbar control was unreachable: {name}; reached {reached:?}"
+            );
+        }
+    }
     #[test]
     fn initial_bind_add_zero_then_direct_changes_only_the_explicit_vertex_in_one_undo_step() {
         let (mut editor, key) = mesh_editor(false);
@@ -448,7 +757,7 @@ mod tests {
         editor.select(TreeItem::Bone(0));
         assert!(editor.error.is_none());
         let initial = editor.session.document().clone();
-        editor.weights.vertex = Some(0);
+        editor.weights.vertices = vec![0];
         editor.begin_weights_bind();
         editor.select(TreeItem::Bone(8));
         assert!(editor.error.is_none());

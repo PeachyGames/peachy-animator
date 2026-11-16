@@ -15,15 +15,21 @@ enum Input {
         touched: bool,
         valid_text: bool,
         text: bool,
+        mixed: bool,
     },
 }
 
 pub(super) struct TransformEdit {
+    selection: TreeSelection,
     item: TreeItem,
     initial: Transform,
     applied_initial: Transform,
     applied_world: Affine,
     parent: Affine,
+    members: Vec<(usize, super::tools::SelectedPose)>,
+    frame: Option<BoneTransformFrame>,
+    skin: String,
+    pose_generation: u64,
     tool: Tool,
     axes: Axes,
     setup: bool,
@@ -58,16 +64,48 @@ impl Editor {
             || properties
                 .iter()
                 .any(|p| matches!(p, Property::ShearX | Property::ShearY))
-                && self.selected_bone().is_none()
+                && self.selected_bones().is_empty()
         {
             return Err("Select a bone for Shear, or an editable transform".into());
         }
-        let pose = self.selected_pose()?;
+        let frame = if self.selection.len() > 1 && matches!(input, Input::Viewport { .. }) {
+            if self.tool != Tool::Move {
+                return Err("Group Rotate, Scale and Shear gestures await calibration".into());
+            }
+            Some(self.selected_bone_transform_frame()?)
+        } else {
+            None
+        };
+        let members = if self.selection.len() > 1 && matches!(input, Input::Numeric { .. }) {
+            if self.axes != Axes::Parent || !matches!(input, Input::Numeric { text: true, .. }) {
+                return Err("Use typed Parent values for group numeric edits; group dragging is awaiting calibration".into());
+            }
+            self.selected_bone_poses()?
+        } else {
+            vec![]
+        };
+        let pose = if let Some(frame) = &frame {
+            super::tools::SelectedPose {
+                authored: frame.primary_authored(),
+                applied: frame.primary_applied(),
+                parent: frame.primary_parent(),
+                world: frame.primary_world(),
+            }
+        } else if members.is_empty() {
+            self.selected_pose()?
+        } else {
+            members
+                .iter()
+                .find(|(bone, _)| Some(*bone) == self.primary_bone())
+                .map(|(_, pose)| *pose)
+                .ok_or("Selected primary bone is missing")?
+        };
         let (initial, parent) = (pose.authored, pose.parent);
         if let Input::Numeric {
             property,
             ref mut base,
             ref mut value,
+            ref mut mixed,
             ..
         } = input
         {
@@ -75,21 +113,43 @@ impl Editor {
                 if property.is_scale() || matches!(property, Property::ShearX | Property::ShearY) {
                     initial
                 } else {
-                    peachy_engine::transform_values(initial, parent, self.axes)
+                    self.transform_display_values(self.selection.primary(), initial, parent)
                 },
             );
             *base = current;
             *value = current;
+            *mixed = members.iter().any(|(bone, pose)| {
+                let value = if property.is_scale()
+                    || matches!(property, Property::ShearX | Property::ShearY)
+                {
+                    pose.authored
+                } else {
+                    self.transform_display_values(
+                        Some(&TreeItem::Bone(*bone)),
+                        pose.authored,
+                        pose.parent,
+                    )
+                };
+                property.read(value) != current
+            });
         }
         self.playing = false;
         self.transform_blocked = false;
         self.session.begin_transaction();
         self.drag = Some(TransformEdit {
-            item: self.selection.clone().unwrap(),
+            selection: self.selection.clone(),
+            item: frame.as_ref().map_or_else(
+                || self.selection.primary().cloned().unwrap(),
+                |frame| TreeItem::Bone(frame.primary()),
+            ),
             initial,
             applied_initial: pose.applied,
             applied_world: pose.world,
             parent,
+            members,
+            frame,
+            skin: self.skin.clone(),
+            pose_generation: self.pose_view_generation,
             tool: self.tool,
             axes: self.axes,
             setup: self.setup_mode,
@@ -149,7 +209,7 @@ impl Editor {
     }
     pub(super) fn reconcile_transform_edit(&mut self) {
         if self.drag.as_ref().is_some_and(|edit| {
-            self.selection.as_ref() != Some(&edit.item)
+            self.selection != edit.selection
                 || !edit.item.exists(self.session.document())
                 || self.tool != edit.tool
                 || self.axes != edit.axes
@@ -157,12 +217,17 @@ impl Editor {
                 || self.animation != edit.animation
                 || self.time != edit.time
                 || self.auto_key != edit.auto_key
+                || self.skin != edit.skin
+                || self.pose_view_generation != edit.pose_generation
         }) {
             self.cancel_transform_edit();
         }
     }
     fn preview_transform(&mut self, mut transform: Transform) -> Result<(), String> {
         let edit = self.drag.as_ref().ok_or("No active transform gesture")?;
+        if !edit.members.is_empty() || edit.frame.is_some() {
+            return Err("Group transforms require an explicit member operation".into());
+        }
         if edit.setup && edit.properties.contains(&Property::Rotation) {
             transform.rotation = self.setup_rotation_value(Some(&edit.item), transform.rotation);
         }
@@ -196,6 +261,44 @@ impl Editor {
         if let Err(error) = &result {
             self.status = error.clone();
         }
+        result
+    }
+    fn preview_group_numeric(&mut self, property: Property, value: f32) -> Result<(), String> {
+        let edit = self.drag.as_ref().ok_or("No active transform gesture")?;
+        if edit.members.is_empty() || edit.axes != Axes::Parent {
+            return Err("No Parent bone group is being edited".into());
+        }
+        let mut edits = Vec::with_capacity(edit.members.len());
+        for (bone, pose) in &edit.members {
+            let mut transform = peachy_engine::set_transform_value(
+                pose.authored,
+                pose.parent,
+                Axes::Parent,
+                property,
+                value,
+            )?;
+            if edit.setup && property == Property::Rotation {
+                transform.rotation =
+                    self.setup_rotation_value(Some(&TreeItem::Bone(*bone)), transform.rotation);
+            }
+            edits.push(peachy_engine::BonePoseEdit {
+                bone: *bone,
+                transform,
+                properties: edit.properties.clone(),
+            });
+        }
+        let target = if edit.setup {
+            EditTarget::Setup
+        } else {
+            EditTarget::Animate {
+                animation: edit.animation,
+                time: edit.time,
+            }
+        };
+        let result = self
+            .session
+            .preview_edit_poses(target, &edits, edit.auto_key);
+        self.drag.as_mut().unwrap().error = result.as_ref().err().cloned();
         result
     }
     pub(super) fn prepare_viewport_transform_press(&mut self, ui: &egui::Ui, rect: egui::Rect) {
@@ -240,21 +343,40 @@ impl Editor {
         let Some(tool) = edit.tool.transform_tool() else {
             return;
         };
-        let result = peachy_engine::drag_transform_in_frame(
-            edit.initial,
-            edit.applied_initial,
-            edit.parent,
-            edit.applied_world,
-            peachy_engine::TransformGesture {
-                tool,
-                axes: edit.axes,
-                axis,
-                start,
-                end,
-                snap_rotation,
-            },
-        );
-        let result = result.and_then(|transform| self.preview_transform(transform));
+        let gesture = peachy_engine::TransformGesture {
+            tool,
+            axes: edit.axes,
+            axis,
+            start,
+            end,
+            snap_rotation,
+        };
+        let result = if let Some(frame) = &edit.frame {
+            let target = if edit.setup {
+                EditTarget::Setup
+            } else {
+                EditTarget::Animate {
+                    animation: edit.animation,
+                    time: edit.time,
+                }
+            };
+            frame.drag(gesture).and_then(|edits| {
+                self.session
+                    .preview_edit_poses(target, &edits, edit.auto_key)
+            })
+        } else {
+            peachy_engine::drag_transform_in_frame(
+                edit.initial,
+                edit.applied_initial,
+                edit.parent,
+                edit.applied_world,
+                gesture,
+            )
+            .and_then(|transform| self.preview_transform(transform))
+        };
+        if let Some(edit) = self.drag.as_mut() {
+            edit.error = result.as_ref().err().cloned();
+        }
         if let Err(error) = result {
             if let Some(edit) = self.drag.as_mut() {
                 edit.error = Some(error.clone());
@@ -278,6 +400,12 @@ impl Editor {
                 ..
             }) if control == id => (value, base),
             _ => (current, current),
+        }
+    }
+    pub(super) fn transform_numeric_mixed(&self, id: egui::Id, current: bool) -> bool {
+        match self.drag.as_ref().map(|edit| edit.input) {
+            Some(Input::Numeric { control, mixed, .. }) if control == id => mixed,
+            _ => current,
         }
     }
     pub(super) fn prepare_transform_numeric(&mut self, ui: &mut egui::Ui, id: egui::Id) {
@@ -325,36 +453,17 @@ impl Editor {
             } else {
                 vec![property]
             };
-            let current = match self.selected_pose() {
-                Ok(pose) => {
-                    let (local, parent) = (pose.authored, pose.parent);
-                    property.read(
-                        if property.is_scale()
-                            || matches!(property, Property::ShearX | Property::ShearY)
-                        {
-                            local
-                        } else {
-                            peachy_engine::transform_values(local, parent, self.axes)
-                        },
-                    )
-                }
-                Err(error) => {
-                    self.evaluation_error = Some(error.clone());
-                    self.status = error;
-                    return;
-                }
-            };
-            let base = current;
             if let Err(error) = self.begin_transform_edit(
                 properties,
                 Input::Numeric {
                     control: response.id,
                     property,
-                    base,
-                    value: base,
+                    base: 0.,
+                    value: 0.,
                     touched: false,
                     valid_text: true,
                     text: response.has_focus(),
+                    mixed: false,
                 },
             ) {
                 self.status = error;
@@ -370,6 +479,7 @@ impl Editor {
             valid_text,
             text,
             value: requested,
+            mixed,
             ..
         } = &mut edit.input
         else {
@@ -382,11 +492,21 @@ impl Editor {
         if response.has_focus() || response.is_pointer_button_down_on() {
             edit.finish_pending = false;
         }
-        if let Some(valid) = parsed {
+        if let Some(valid) = parsed
+            && (*touched || !*mixed)
+        {
             *valid_text = valid;
         }
-        let changes =
-            *valid_text && response.changed() && (!*text || *touched) && value != *requested;
+        let explicit_mixed_commit = *mixed
+            && *touched
+            && parsed == Some(true)
+            && (response.lost_focus()
+                || response
+                    .ctx
+                    .input(|input| input.key_pressed(egui::Key::Enter)));
+        let changes = *valid_text
+            && (response.changed() && (!*text || *touched) || explicit_mixed_commit)
+            && (value != *requested || *mixed);
         if changes {
             *requested = value;
         }
@@ -395,17 +515,23 @@ impl Editor {
         edit.finish_pending |= finish;
         if changes {
             let edit = self.drag.as_ref().unwrap();
-            let result = peachy_engine::set_transform_value(
-                edit.initial,
-                edit.parent,
-                edit.axes,
-                property,
-                value,
-            )
-            .and_then(|transform| self.preview_transform(transform));
+            let result = if !edit.members.is_empty() {
+                self.preview_group_numeric(property, value)
+            } else {
+                peachy_engine::set_transform_value(
+                    edit.initial,
+                    edit.parent,
+                    edit.axes,
+                    property,
+                    value,
+                )
+                .and_then(|transform| self.preview_transform(transform))
+            };
             if let Err(error) = result {
                 self.drag.as_mut().unwrap().error = Some(error.clone());
                 self.status = error;
+            } else if let Input::Numeric { mixed, .. } = &mut self.drag.as_mut().unwrap().input {
+                *mixed = false;
             }
         }
     }
@@ -483,13 +609,22 @@ impl Editor {
         }
     }
     pub(super) fn transform_gesture_diagnostic(&self) -> serde_json::Value {
-        self.drag.as_ref().map_or(serde_json::Value::Null,|edit|serde_json::json!({
-            "item":edit.item.diagnostic(),"tool":match edit.tool {Tool::Rotate=>"rotate",Tool::Move=>"translate",Tool::Scale=>"scale",Tool::Shear=>"shear",Tool::Mesh=>"mesh",Tool::Weights=>"weights"},"initialPose":edit.initial,"appliedInitialPose":edit.applied_initial,"appliedWorld":edit.applied_world,"parent":edit.parent,"axes":edit.axes,
+        self.drag.as_ref().map_or(serde_json::Value::Null,|edit| {
+            let mut report=serde_json::json!({
+            "item":edit.item.diagnostic(),"selection":edit.selection.diagnostic(),"memberBones":edit.members.iter().map(|(bone,_)|*bone).collect::<Vec<_>>(),"tool":match edit.tool {Tool::Rotate=>"rotate",Tool::Move=>"translate",Tool::Scale=>"scale",Tool::Shear=>"shear",Tool::Mesh=>"mesh",Tool::Weights=>"weights"},"initialPose":edit.initial,"appliedInitialPose":edit.applied_initial,"appliedWorld":edit.applied_world,"parent":edit.parent,"axes":edit.axes,
             "setup":edit.setup,"animation":edit.animation,"time":edit.time,"autoKey":edit.auto_key,
             "properties":edit.properties,"error":edit.error,"finishPending":edit.finish_pending,
             "input":match edit.input {Input::Viewport {start,axis}=>serde_json::json!({"kind":"viewport","start":start,"axis":axis}),
                 Input::Numeric {property,base,value,text,..}=>serde_json::json!({"kind":"numeric","property":property,"base":base,"value":value,"text":text})}
-        }))
+        });
+            if let Some(frame)=&edit.frame {
+                report["memberBones"]=serde_json::json!(frame.members());
+                report["editBones"]=serde_json::json!(frame.edit_bones());
+                report["selectionPrimary"]=serde_json::json!(frame.selection_primary());
+                report["gizmoBone"]=serde_json::json!(frame.primary());
+            }
+            report
+        })
     }
 }
 
@@ -670,7 +805,7 @@ mod tests {
         editor.set_setup_mode(false);
         editor.set_time(0.37);
         editor.set_tool(Tool::Weights);
-        editor.weights.vertex = Some(0);
+        editor.weights.vertices = vec![0];
         editor.weights.bone = Some(8);
         editor.select(TreeItem::Bone(8));
         let baseline = editor.session.document().attachment(&mesh).unwrap().clone();

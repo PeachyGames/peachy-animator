@@ -1,9 +1,81 @@
 # Views audit and implemented scope
 
-Implementation progress: **15 of 15 views implemented**. The latest completed
-view is **Audio**. Every named view now has functional controls within the
-explicit scope below. Feature-level parity gaps remain listed; this is not a
-claim that every Spine feature is supported.
+Workspace divider continuation (November 15): Tree resize input now owns the
+full advertised grab band beside the canvas. Native −2/0/+2 border grabs preserve
+document/history/selection, and Properties resizing exposes the complete mapping
+table/Options; Mix/Escape works afterward. Canvas painting, projection and the
+320-pixel minimum budget are unchanged: only its stable click/drag input rectangle
+excludes the adjacent egui resize radius. Already owned canvas drags continue
+through the strip; hiding all right panes restores full input. Five focused
+tests also cover Weights-only/Curves-only dividers, pending-pose safety, released
+size persistence within the session and the minimum workspace. Those pane
+variants have no new native divider acceptance, and cross-restart docking/
+workspace persistence is not claimed.
+
+Deform key/Delete capture targets now omit offscreen controls. The existing
+weighted/unweighted authoring test scrolls actual Properties to a visible button
+and asserts captured targets remain inside its clip. Shared keying is unchanged.
+Native input on an original converted unweighted mesh verifies nudge, Key/Undo,
+shrinking Properties with pending pose/redo intact, absent offscreen captures,
+one 80-pixel wheel revealing Key, and Key/Delete restoring the baseline document.
+The source image is unchanged and the owned window is closed. The existing
+weighted/unweighted event checks pass; no new native weighted-mesh claim follows.
+All final affected checks pass, including the five pane regressions.
+
+Transform Properties continuation (November 15, **bounded acceptance passed**): the
+Tree inspector now follows the observed Source/Targets, Offset, Mix, six-row
+Properties and Options groups for bounded world Translate X → Rotate mapping.
+Source/target Min/Max use the same semantic range operation as MCP; Mix Rotate
+has numeric/slider input, Clamp is editable, and expanded Offset has paired
+Translate X/Y numbers and extrapolating sliders. Undefined zero-scale Source Max
+stays blank until genuine finite text; viewing does not rewrite data. All these
+numerics share one owned Session preview/cancel lifecycle. Other mapping-range
+metadata stays read-only; supported same-property Mix/Offset controls remain
+available. Unsupported Match/local/additive controls are disabled.
+This adds contextual Tree controls, not a new view. See
+[the measured contract](slices/transform-mapping-authoring.md).
+
+The natural-width mapping table and Offset row use horizontal scrolling in a
+narrow Tree; the outer vertical Properties scrollbar reserves its own hit area.
+Actual native range/history, held cancellation/blocking, Offset extrapolation,
+owned-field Save and pending-pose Save exclusion pass. The final rebuilt native
+editor verifies the coalesced scrollbar-edge Mix drag and Escape, blank zero-scale
+Source Max/no-op redo/typed-zero repair, actual minimum-window control access
+and exact Undo, and fresh no-history public reopen with its image. Playback time
+advances with Loop enabled and Q stops at time 0; boundary wrapping was not
+observed. See the [gallery](evidence/transform-mapping.html) and
+[public lab](../examples/peach-bot/transform-mapping-bot.peachy).
+Tree/Properties resizing now has the bounded native acceptance described above;
+the earlier failed exact-edge probe identified overlapping canvas input.
+
+Curves continuation (November 14): the separate Animate relative-transition pane
+now shares typed Dopesheet selection and engine actions with Scalar/Deform/RGBA
+Graph. Fitted handles, Match/Separate, exact presets, scalar tangents and numeric
+entry have bounded native/MCP acceptance. Preset management is disabled; Last
+chosen, grouped properties and uncalibrated coupling remain. See
+[the measured scope](slices/curves-authoring.md) and [review](evidence/curves-authoring.html).
+
+Slot continuation (November 14): Slot Color now edits sampled/pending Animate
+poses as well as Setup. Properties opens the observed Color dialog with explicit
+OK/Cancel, HSB/RGBA/hex fields and adjacent key control. The RGBA Graph overlays
+four percentage-value curves with per-channel presets, tangent/numeric edits and
+shared typed clipboard/history. Actual native input, cancellation, playback and
+Save/reopen pass. This supersedes earlier Setup-only/Animate-read-only statements
+for these controls; full current Color targets and separate RGB/alpha remain open.
+See [the verified slot contract](slices/slot-authoring.md) and
+[review gallery](evidence/slot-authoring.html).
+
+Installed-reference update (November 14): the actual Spine 4.3.26 Views menu
+contains 17 entries, including Metrics. Peachy's current 16 views lack Problems,
+and `Slot Color` still needs the broader `Color` behavior and name.
+Earlier inventory claims below describe the bounded implementation at that
+checkpoint, not complete current-editor parity. See the
+[official-update/native inventory audit](slices/spine-blog-audit-20261114.md).
+
+
+Implementation progress: **16 of the installed editor's 17 views have bounded
+implementations**. The older November 6 guide inventory had 15 entries; Audio
+completed that earlier list. Feature-level parity gaps remain explicit below.
 
 The old selector contained only **Tree, Dopesheet and Weights** because those were
 the only implemented panels. It was not an installation, license or rendering
@@ -18,9 +90,10 @@ availability and bounded feature scopes are explicit below.
 | --- | --- |
 | Animations | New searchable animation list in Animate. Click activates without changing the current bone selection; right-click selects its Tree properties without activation; double-click opens the existing Rename dialog. |
 | Audio | New session-only WAV waveform and independent audition view: Load, Play/Pause/Stop, seek, zoom/pan, Loop, Volume and Mute. Native macOS output uses the validated byte snapshot. Audio event timelines, animation synchronization and audio Save/export remain pending. |
-| Dopesheet | Existing supported bone-transform keys, curves, selection, clipboard and retiming. |
+| Curves | Separate Animate relative-transition pane; primary/gray curves, fitted handles, Match/Separate and shared engine/MCP presets/handle edits. Flat data stays intact with a blank relative plot. Native/MCP acceptance passes within the calibrated scope; stored presets/default preferences and uncalibrated coupling remain. |
+| Dopesheet | Typed Bone/IK/Slider/Deform/Slot/DrawOrder keys, exact/row/shown selection and retime/copy/delete. Grouped MCP run02,208 runtime poses, source checks and bounded native authoring/minimum/Save/fresh-reopen pass. Eight targets fit1120×740; typed recovery is exact with empty history/clipboard and one image. Owned processes are closed. Later leaf routing passes all five native owner cases against MCP71, native Undo and exact same-case Save/fresh reopen. Visible Animate Slot retains global DrawOrder scope; Region pose controls/extra rows/header styling, general Tree mapping, Shift/Offset and Lock/Sync remain. See [leaf scope](slices/leaf-clipboard.md) and [leaf evidence](evidence/leaf-clipboard.json). See [native result](../examples/peach-bot/group-clipboard-native-result.peachy), [group scope](slices/grouped-clipboard.md) and [ordinary timing](slices/multi-owner-timeline.md). |
 | Ghosting | New Animate onion-skin view: fractional Frames and exact Key Frames, Current keyed-pose comparison, per-side colors, Images/Solid display and opacity, Anchor, On top, Loop, per-frame offsets and typed bone Selection with Lock/Refresh. Renders checked region/mesh/IK poses in the main viewport. |
-| Graph | New editable scalar graph for the selected bone and seven supported transform properties. Exact-key picker, engine-sampled curves, vertical value dragging, Fit and Zoom Keys. Existing key times/curves stay fixed; tangents, retiming and multiple curves remain pending. |
+| Graph | Scalar bone-value, Deform progress and RGBA value graphs share exact typed selection, presets, numeric/draggable handles and one preview controller. Native interaction/persistence and authored runtime checks pass. General mixed/all-owner curves and navigation remain bounded. |
 | Mesh Tools | New soft-selection view with Size, Feather and Hull vertices. Affects neighboring vertices during unweighted Setup vertex drags and arrow nudges, with falloff colors and radius rings. Weighted/Animate transforms and multi-vertex selection remain pending. |
 | Metrics | New counts for bones, constraints, slots, all attachments, visible attachments, visible vertices and triangles. Animate additionally shows native scalar-track and key counts. |
 | Outline | New clean secondary display of the current evaluated pose, including pending unkeyed edits and static IK. Fit, right/middle drag pan, wheel zoom, and click to center the main viewport. |
@@ -29,12 +102,16 @@ availability and bounded feature scopes are explicit below.
 | Skins | New searchable named-skin list. Click activates, right-click selects Tree properties, Clear skin uses shared default attachments. Single active skin only. |
 | Slot Color | New inline Setup HSV/Hue/Alpha chooser and exact #RRGGBBAA entry for a typed slot or attachment's owner. Persistent native7 RGBA tint reaches all image views. Animate is read-only; color timelines/dark tint remain pending. |
 | Timeline | New compact Animate ruler below the viewport. Shared cursor/transport/Loop, exact all-track key markers, decimal frame entry, snapped or Shift-subframe scrubbing, wheel/slider zoom, right-drag pan and Zoom Keys. Works with Dopesheet closed. |
-| Tree | Existing typed outline, filters, activation dots and contextual properties. The Slots filter shows draw order; Spine has no separate Slots view in this inventory. |
-| Weights | Existing bounded Bind/Remove all/Add binding/Direct workflow; still no brush, Update, locks or multi-vertex editing. |
+| Tree | Typed outline, filters, activation dots and contextual properties, including the accepted bounded six-row X→Rotate editor with shared range/Clamp/Mix/Offset commands. Native scrolling and Tree/Properties resizing verify access, including −2/0/+2 border grabs. General docking and saved workspace preferences remain. The Slots filter shows draw order; Spine has no separate Slots view in this inventory. |
+| Weights | Dedicated vertical Weights pane; Bind/Remove all/Add binding and single-/multi-vertex Direct numeric/slider/viewport editing through the shared engine/MCP. Brush, Auto/Smooth, Update and locks remain. See [multi-vertex scope](slices/weight-multivertex.md). |
 
 All 15 views now have bounded implementations; no view remains a disabled placeholder.
 
-Animations, Audio, Ghosting, Graph, Mesh Tools, Metrics, Outline, Playback, Preview, Skins, Slot Color and Weights use a resizable tabbed panel in the right rail.
+Animations, Audio, Ghosting, Mesh Tools, Metrics, Outline, Playback, Preview,
+Skins and Slot Color use a resizable tabbed panel in the right rail. Weights and
+Animate Curves have separate vertical panes between viewport and Tree, ordered
+viewport → Weights → Curves → Tree when both are open. Graph and Dopesheet share
+tabs in the full-width bottom animation area, including when Tree is closed.
 With the Tree closed, they use that rail's full height. Opening an already open
 entry focuses its tab. Individual close buttons are present on these views, Tree
 and Dopesheet; they reopen from Views. F9 stores/restores all view visibility,
@@ -145,11 +222,11 @@ poses stay unchanged. Hue-only changes on white/gray retain the chosen UI hue
 without rewriting RGBA or creating history. The picker never roundtrips native
 bytes through premultiplied Color32 simply to display them.
 
-Graph displays the selected bone's existing Rotation, X/Y, Scale X/Y or Shear X/Y
-track. Values are native Setup offsets (degrees/units) or scale multipliers, not
+For a selected bone, Graph displays its existing Rotation, X/Y, Scale X/Y or
+Shear X/Y track. Values are native Setup offsets (degrees/units) or scale multipliers, not
 pending pose values. The orange playhead shares the main clip/time,
-while Graph's selected key is presentation-only and never redirects Dopesheet
-clipboard/Delete operations. Missing tracks are read-only; no phantom keys appear.
+while scalar Graph's selected key is presentation-only and never redirects
+Dopesheet clipboard/Delete operations. Missing tracks are read-only; no phantom keys appear.
 
 Choose overlapping/close native keys independently from the exact-key picker,
 then use Zoom Keys. Drag a marker vertically to edit its value. The exact time,
@@ -164,9 +241,44 @@ Curves use engine sampling with bounded render work (at most 257 markers and
 about 1,024 sampled points); native keys are never merged or deleted for display.
 The virtualized picker retains every exact time. Fit and Zoom Keys change only
 presentation. Main pose-evaluation errors do not prevent correcting finite key
-values. Tangent handles, key creation/retiming, clipboard editing, general pan/zoom,
-multiple curves and absolute posed-value display remain pending. Dopesheet keeps
-its current curve/timing tools; exact installed Graph parity is not claimed.
+values. For these scalar bone tracks, tangent handles, key creation/retiming,
+clipboard editing, general pan/zoom, multiple curves and absolute posed-value
+display remain pending. The Deform workflow below has its own scope; exact
+installed Graph parity is not claimed.
+
+For a selected deformable attachment, the Deform Dopesheet shows one typed
+`Deform: <attachment>` row. Linked attachments that share timelines resolve to
+their source owner, while independent links retain their own keys. Exact/row/
+shown selection, retime/copy gestures, Delete and Copy/Cut/Paste use the shared
+engine timeline and Session history. Clipboard data retains complete dense
+values and curves; compatibility checks per-vertex offset segmentation rather
+than only flat vector length. Unweighted and one-influence-per-vertex weighted
+layouts can exchange the same values without converting geometry or bindings.
+
+The selected attachment's Graph shows normalized progress between consecutive
+Deform poses: 0–100% per interval with a reset at each key, rather than vertex
+X/Y values. It offers an exact-key picker, Linear/Stepped/Bezier presets,
+draggable tangent handles, numeric handle entry, Fit and Zoom Keys. Handle times
+are normalized to their interval and numeric handle values use percentages;
+finite overshoot remains representable. These operations change only outgoing
+interpolation, preserving key times and dense offsets. The Deform Graph shares
+its typed key selection and clipboard/Delete routing with Dopesheet; the scalar
+bone Graph retains its independent selection policy above.
+
+Tangent drags freeze the exact attachment/key, chart mapping and pose/context,
+preview from one Session baseline, and commit one history step on release.
+Escape, focus/context/view/file/history changes cancel the preview and block a
+held pointer from restarting until release. Numeric fields reject nonfinite
+input; graph rendering is bounded while the exact-key picker retains source
+identities. Pending poses remain separate from stored keys and exports.
+
+Focused engine, desktop Deform/scalar/views and actual MCP stdio checks pass.
+Actual native placement, key retiming, tangent drag, percentage typing, keyboard
+clipboard/delete, one-step history, Escape cancellation, playback and fresh-process
+persistence pass. Both native- and MCP-authored exports match the external runtime. Multi-vertex
+shape editing, all-bone row hierarchy, arbitrary multi-curve Graph selection,
+advanced Offset and full docking/styling parity remain separate work. See the
+[Deform timeline contract](slices/deform-timeline.md).
 
 Preview chooses its own animation and skin and evaluates committed keys through
 the same checked region/mesh/static-IK engine. It does not display pending unkeyed

@@ -1,0 +1,202 @@
+{
+  "date": "2026-11-14",
+  "baselineCommit": "cc985a492a0d5638c105009ce2c1ca98bcc981d0",
+  "nativeFormat": 22,
+  "goal": "Continue native UI and MCP parity against installed Spine and official updates",
+  "reference": {
+    "editor": "4.3.26",
+    "clientPixels": [
+      1500,
+      960
+    ],
+    "nativeSnapshotsInspected": true,
+    "views": 17,
+    "missingViews": [
+      "Curves",
+      "Problems"
+    ],
+    "broaderColorViewPending": true
+  },
+  "changes": {
+    "deformTypedOwners": true,
+    "linkedCanonicalOwners": true,
+    "retimeCopyDeleteClipboard": true,
+    "exactCurveCommand": "setDeformCurve",
+    "readOnlyMcpCopy": "copy_animation_keys",
+    "mcpTools": 11,
+    "commandVariants": 41,
+    "fullWidthBottomTabs": true,
+    "frameBasedGraph": true,
+    "progressRange": [
+      0,
+      100
+    ]
+  },
+  "focusedChecks": {
+    "engineDeformTimeline": 10,
+    "mcpSchemas": 5,
+    "mcpStdio": 3,
+    "desktopDeformTimeline": 19,
+    "desktopScalarGraph": 9,
+    "desktopViews": 8,
+    "engineTimelineFilterIncludingDeform": 25,
+    "desktopLayout": 1,
+    "workspaceClippyAllTargets": true,
+    "workspaceBuild": true,
+    "architecture": true
+  },
+  "mcpAuthoring": {
+    "actualStdio": true,
+    "undoRedo": true,
+    "savedReopened": true,
+    "sourceUnchanged": true,
+    "crossAttachmentAndClipPaste": true
+  },
+  "runtime": {
+    "comparisons": 28080,
+    "maxWorldError": 2.6533745369761164e-05,
+    "meshComparisons": 5200,
+    "weightedMeshComparisons": 3120,
+    "maxMeshError": 3.0517578125e-05,
+    "uvComparisons": 10400,
+    "maxUVError": 0,
+    "tolerance": 0.001
+  },
+  "nativeClipboardProbe": {
+    "referenceVersion": "4.3.26",
+    "unweightedToUnweighted": true,
+    "unweightedToSingleInfluenceWeighted": true,
+    "rawOffsetsPreserved": true,
+    "unweightedToTwoInfluences": {
+      "applied": false,
+      "sourceDenseLength": 10,
+      "targetDenseLength": 20,
+      "targetKeyUnchanged": true
+    },
+    "differentWeightedSegmentation": {
+      "applied": false,
+      "sourceInfluenceCounts": [
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "targetInfluenceCounts": [
+        1,
+        3,
+        2,
+        2,
+        2
+      ],
+      "bothDenseLength": 20,
+      "targetHasNoDeformTrack": true
+    },
+    "positiveControl": {
+      "sameWeightedOwnerPasteAt": 1.5,
+      "inserted": true,
+      "denseValuesUnchanged": true
+    },
+    "nativeReverseCrossMode": "Not separately observed; engine reverse path covered by symmetric segmentation test"
+  },
+  "nativeEditorAcceptance": {
+    "passed": true,
+    "realNativeInput": true,
+    "retimedFrom": 0.75,
+    "retimedTo": 0.8999999761581421,
+    "actualTangentDrag": true,
+    "gestureOneUndoAndRedo": true,
+    "typedPercentage": 25,
+    "finalCurve": {
+      "bezier": [
+        0.33202677965164185,
+        0.25,
+        0.699999988079071,
+        0.8999999761581421
+      ]
+    },
+    "denseOffsetsUnchanged": true,
+    "graphKeyboardCopy": true,
+    "dopesheetKeyboardPasteDelete": true,
+    "clipboardUndoRedo": true,
+    "savedDocumentMatches": true,
+    "imageCount": 10,
+    "evaluationError": null,
+    "capture": "peachy-graph-full-after.png",
+    "reopened": true,
+    "freshProcessNoUndo": true,
+    "escapeCancelsHeldGesture": true,
+    "cancelledHoldDoesNotRearm": true,
+    "actualPlayback": true,
+    "playbackDocumentUnchanged": true,
+    "status": "passed",
+    "ownedProcessesClosed": true
+  },
+  "scopeLimits": [
+    "Selected-owner Deform rows/curves; full keyed bone hierarchy and mixed-owner Graph remain open.",
+    "Arbitrary docking, complete styling and every other Spine feature are unclaimed.",
+    "No proprietary implementation or third-party artwork included."
+  ],
+  "nativeAuthoredRuntime": {
+    "physicsConstraints": 0,
+    "physicsValues": 0,
+    "physicsTimelines": 0,
+    "physicsFrames": 0,
+    "regionComparisons": 29120,
+    "maxRegionError": 3.0517578125e-05,
+    "meshComparisons": 5200,
+    "weightedMeshComparisons": 3120,
+    "maxMeshError": 3.0517578125e-05,
+    "uvComparisons": 10400,
+    "maxUVError": 0,
+    "runtime": "Spine 4.3 external oracle",
+    "bones": 15,
+    "slots": 14,
+    "skins": [
+      "default",
+      "mint",
+      "peach"
+    ],
+    "clips": [
+      {
+        "name": "idle",
+        "nativeEnd": 2,
+        "runtimeEnd": 2,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default",
+          "mint",
+          "peach"
+        ],
+        "maxWorldError": 1.9268052795951007e-05
+      },
+      {
+        "name": "wave",
+        "nativeEnd": 2.4000000953674316,
+        "runtimeEnd": 2.4000000953674316,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default",
+          "mint",
+          "peach"
+        ],
+        "maxWorldError": 2.6533745369761164e-05
+      }
+    ],
+    "tolerance": 0.001,
+    "maxWorldError": 2.6533745369761164e-05,
+    "comparisons": 28080,
+    "ikPoseComparisons": 0,
+    "maxIKMixError": 0,
+    "ikMixTolerance": 1e-06,
+    "drawOrderChecks": 312,
+    "imageChecks": 4160,
+    "colorComparisons": 16640
+  },
+  "review": "deform-timeline.html",
+  "hostedCI": {
+    "status": "unresolved workflow registration",
+    "registeredWorkflows": 0,
+    "mainIntegration": false
+  }
+}

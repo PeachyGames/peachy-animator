@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Peachy Animator — multi-owner timeline review</title>
+<style>
+  :root { color-scheme: dark; font: 16px/1.5 system-ui, sans-serif; background: #17191d; color: #e8e9ed; }
+  body { max-width: 1600px; margin: auto; padding: 28px; }
+  h1 { font-size: 30px; margin-bottom: 8px; }
+  h2 { font-size: 19px; }
+  p { max-width: 1000px; }
+  a { color: #a6d7ff; }
+  table { width: 100%; border-collapse: collapse; margin: 22px 0; }
+  th, td { text-align: left; border-bottom: 1px solid #41444d; padding: 10px; vertical-align: top; }
+  input { width: min(95%, 650px); padding: 11px; font: inherit; background: #24272e; color: inherit; border: 1px solid #626772; border-radius: 5px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 600px), 1fr)); gap: 20px; margin-top: 22px; }
+  article { background: #22252b; border: 1px solid #41444d; border-radius: 8px; padding: 16px; }
+  article h2 { margin: 0 0 8px; }
+  article img { width: 100%; height: auto; border: 1px solid #555; }
+  .level { font-size: 13px; color: #c1c7d4; }
+  [hidden] { display: none !important; }
+  code { font-size: .9em; }
+</style>
+<h1>Keys across multiple bones</h1>
+<p>November 15, 2026 · native v23 · 63 commands / 18 MCP tools. Ordinary selection,
+movement and deletion now share exact typed identities across owners. These are
+Peachy native captures of original blue artwork. Installed Spine 4.3.26 reference
+captures remain private. Full pixel and workflow parity is still open.</p>
+<p><a href="multi-owner-timeline.json">Scalar results and image hashes</a> ·
+<a href="../slices/multi-owner-timeline.md">Measured contract and limits</a> ·
+<a href="../../examples/peach-bot/multi-owner-bot.peachy">Original editable project</a> ·
+<a href="../../examples/peach-bot/multi-owner-authoring-commands.json">25 authoring commands</a></p>
+<table>
+  <thead><tr><th>Inspection</th><th>Verified outcome</th><th>Limit</th></tr></thead>
+  <tbody>
+    <tr><td>Native OS input and exact state</td><td>Cmd selection, three-key drag, one-step Undo/Redo, held Escape/block/release, eight-key Select All/Delete, typed Graph routing, minimum window, Save/fresh reopen.</td><td>Two Bone owners; native pending baseline empty.</td></tr>
+    <tr><td>Actual MCP stdio</td><td>41 requests create from blank root and one PNG; 25 authoring commands, five rejected read-only queries, 12 poses, exact history and persistence.</td><td>Independent headless session; saved-file handoff.</td></tr>
+    <tr><td>Focused core and UI checks</td><td>Mixed typed owners, exact payloads, f64 IK controls, collisions, pending/history, read-only metadata and cache invalidation.</td><td>Other typed owners have no new native acceptance here.</td></tr>
+    <tr><td>External runtime</td><td>104 baseline and 104 retimed poses pass 0.001; maximum world error 0.00001201, region error 0.00001526.</td><td>Geometry agreement does not establish authored interchange equality.</td></tr>
+  </tbody>
+</table>
+<p>Remaining work: one-origin grouped clipboard, Shift/Offset and seam handling,
+Lock/filter/Sync, broader Tree selection and timing-box transformations. Mixed-owner
+copy currently refuses explicitly. Some placement, labels and styling still differ
+from Spine; no pixel-match claim is made.</p>
+<label for="search">Find an interaction or inspection level</label><br>
+<input id="search" type="search" placeholder="Try Escape, Graph, native, minimum, clipboard…">
+<main class="grid">
+  <article><h2>Before: three keys, two owners</h2><p class="level">Native input + exact document · cursor20</p><a href="multi-owner-before.png"><img src="multi-owner-before.png" alt="Three selected keys across driver and follower rows"></a><p>Driver40 and follower5/20 are selected together. Tree selects the animation.</p></article>
+  <article><h2>After: five displayed frames later</h2><p class="level">Native input + exact document · same cursor20</p><a href="multi-owner-after.png"><img src="multi-owner-after.png" alt="Selected keys moved to driver45 and follower10/25"></a><p>Only those times move. Values, curves, other keys and the other clip stay exact. One Undo restores the baseline.</p></article>
+  <article><h2>Held preview</h2><p class="level">Native input + transaction state</p><a href="multi-owner-held.png"><img src="multi-owner-held.png" alt="Changed key timing while the pointer remains held"></a><p>The accepted preview uses the gesture's fixed baseline and publishes exact returned identities.</p></article>
+  <article><h2>Escape restores the baseline</h2><p class="level">Native input + exact restoration</p><a href="multi-owner-escape.png"><img src="multi-owner-escape.png" alt="Baseline keys restored after held Escape"></a><p>Document, selection, primary key and redo are restored. Continued held movement stays blocked until release.</p></article>
+  <article><h2>Graph follows the explicit key owner</h2><p class="level">Native input + typed dispatch</p><a href="multi-owner-graph.png"><img src="multi-owner-graph.png" alt="Follower rotation graph while Tree has an animation selected"></a><p>Bone4 remains the target through Rotation/Y channel switches. Clearing presentation scope does not revive a cached bone.</p></article>
+  <article><h2>1120 × 740 minimum window</h2><p class="level">Native input + visible-target inspection</p><a href="multi-owner-minimum.png"><img src="multi-owner-minimum.png" alt="Both groups and eight keys visible in the minimum window"></a><p>All eight key targets fit inside the row clip. Original artwork is loaded and fitted.</p></article>
+  <article><h2>Save and reopen in a fresh process</h2><p class="level">Native persistence + exact document · cursor0</p><a href="multi-owner-reopened.png"><img src="multi-owner-reopened.png" alt="Saved retiming opened with both owner rows"></a><p>The complete decoded document is exact, history is empty, and the one original PNG is loaded. The cursor differs from the before/after pair.</p></article>
+  <article><h2>Current grouped-copy limit</h2><p class="level">Native refusal + exact invariants</p><a href="multi-owner-copy-limit.png"><img src="multi-owner-copy-limit.png" alt="Explicit unsupported mixed-owner clipboard message"></a><p>The refusal preserves document, selection, redo and internal clipboard. Shared-origin grouped copying is the next slice.</p></article>
+</main>
+<script>
+  document.querySelector('#search').addEventListener('input', event => {
+    const query = event.target.value.toLocaleLowerCase().trim();
+    document.querySelectorAll('article').forEach(card => {
+      card.hidden = !card.textContent.toLocaleLowerCase().includes(query);
+    });
+  });
+</script>
+</html>

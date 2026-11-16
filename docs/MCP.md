@@ -6,6 +6,87 @@ native window. The server calls the same document, command, Session, checked pos
 evaluation and file services as the desktop. It uses the official
 [Rust MCP SDK](https://github.com/modelcontextprotocol/rust-sdk), pinned by Cargo.lock.
 
+The current implementation publishes **native v23 /64 commands /25 tools**.
+The two new tools, `offset_animation_keys` and `reset_cycle_offset_memory`, expose
+the shared closed Bone-track Offset operations. Requested-key mapping checks now
+pass 16 engine cases, six MCP unit/two actual stdio cases, fifteen desktop cases,
+regressions, formatting, Clippy/build and architecture7. The latest exact-server
+study passes **32 requests**: 29 in an authoring session that constructs the
+97-command lab from a blank root; three in a separate observer that reads the
+public baseline for typed comparison. No finished rig is imported into the authoring session.
+Mapping/reset controls and exact Save/reopen pass, inputs/binary remain unchanged,
+and both owned children close. Saved `050f5abd…272ab` is this Linear reset result;
+it differs from the earlier public `0316f848…3d73` authored fixture.
+
+Bounded native Offset acceptance now passes on Desktop `dc60e423…b2998`: fast
+Offset/retime release, requested-key selection mappings, held preview/cancel,
+pending Save exclusion, reset, loop bounds, minimum footer controls and exact
+fresh reopen. A **separate 15-request** MCP replay starts blank, constructs the
+97-command lab and reproduces the native whole Document and live authored/
+applied/world pose with pending values. Its Save is byte-identical to the
+[native `68126b9a…d42a4` result](../examples/peach-bot/cycle-offset-native-result.peachy),
+and opening that native file is exact. All owned children close. This native
+seven-clip result passes **364 external-runtime poses** at **0.001**: maximum
+world error **1.547993635142575e−5**, Region error **1.52587890625e−5**.
+
+The earlier foundation source04 passed ten engine cases and four MCP unit/two
+actual stdio cases plus its other checks. Its separate actual MCP04 passes
+276 requests, 97 construction commands and 11 atomic negatives, seven-step
+installed-reference goldens and exact Undo/Redo/Save/reopen; its owned child is
+closed. The unchanged public authored result passes 364 external-runtime poses
+at 0.001. That runtime proof belongs to `0316`, not the new `050f` result.
+The `0316`, `050f` and native `68126` results remain separate evidence scopes.
+No live desktop bridge is claimed. See the [native review](evidence/cycle-offset-ui.html)
+and [scalar evidence](evidence/cycle-offset-ui.json).
+
+The earlier November 16 multi-Bone **bounded native/MCP checkpoint** keeps native **v23** and **64 commands**,
+with **23 tools** including shared semantic Translate. Actual run03 on the final
+workspace binary passes
+**104 stdio requests**, **57 construction commands**, **21 pose queries** and
+**four atomic negative cases** from a blank root/one original PNG, with
+pending/history, Auto Key and exact Save/reopen. Final combined source gates pass;
+**bounded native candidate acceptance also passes** on unchanged Desktop `1558`.
+Separate native-save Setup/keyed readbacks and native-pose witnesses use
+**36 actual MCP requests /14 pose queries**; Setup and 0.5-second authored/applied
+locals and worlds match exactly. Edited native Save/fresh reopen is exact with
+empty history/pending/clipboard and one PNG; all owned processes are closed.
+The MCP-authored result passes 156 external-runtime poses at 0.001 with the current CLI, separately from
+the MCP protocol run. See the
+[original baseline](../examples/peach-bot/multi-bone-bot.peachy),
+[construction recipe](../examples/peach-bot/multi-bone-authoring-commands.json),
+[authored result](../examples/peach-bot/multi-bone-authored-bot.peachy) and
+[native saved result](../examples/peach-bot/multi-bone-native-result.peachy), plus
+[checkpoint evidence](evidence/multi-bone-authoring.json).
+
+The later adaptive workspace follow-up is UI-only: native Desktop `d1fc05d9…14e8`
+passes the measured 1120×740 canvas/Tree budgets, actual first-to-last property
+key scrolling, exact pending/redo/selection preservation and default-height
+recovery at 1500×960. It reuses the byte-exact native `14f2` project and adds no
+MCP tool, command, protocol replay or runtime comparison. See the
+[workspace review](evidence/minimum-workspace.html) and
+[scalar evidence](evidence/minimum-workspace.json). The subsequently pushed engine
+Offset foundation (`263ebca`) and current 25-tool continuation are separate from
+that UI-only proof; their temporary contract is described below.
+
+The preceding 22-tool explicit-pose
+checkpoint passed 138 actual MCP requests from a blank project/one original PNG,
+plus 104 external-runtime poses across two clips at 0.001 (maximum world error
+1.200913195020803e−5; region error 1.52587890625e−5). Those are dated prior proofs;
+the new semantic study has its own separate 156-pose current-CLI comparison.
+Bounded desktop OS input acceptance is separate evidence; the native `14f2` save
+differs from the MCP-authored `f3bd` result and has no fresh runtime comparison. Explicit
+pose inputs, pending readback and requested-skin evaluation are described below.
+
+The preceding grouped checkpoint used **64 commands /19 tools**. Shared
+grouped clipboard copy/paste adds one global origin and explicit target mapping.
+Actual MCP, final checks05/06 and bounded native acceptance pass, including the
+later minimum-window and native Save/fresh-reopen checks on the same binary.
+The earlier `da1a1da` push was partial; those gates are now closed. All owned
+processes are closed. Earlier ordinary acceptance remains verified. Shift/Offset,
+Lock/Sync and general Tree target multi-selection remain open. The later leaf
+checkpoint keeps 64/19 unchanged and closes bounded desktop no-Tree fallback;
+actual MCP71 verifies its five explicit-owner data cases. See [scope](slices/leaf-clipboard.md).
+
 Each server process owns an independent headless document and history. It does
 **not** attach to a running desktop editor, change its selection, refresh its open
 document or consume that window's unsaved changes. Saved projects can be opened in
@@ -17,7 +98,7 @@ work; `evaluate_pose` currently returns checked geometry and transforms.
 Build from the repository root:
 
 ```sh
-cargo build -p peachy-mcp --locked
+cargo build -p peachy-mcp --locked -j 2
 ```
 
 Configure an MCP client to launch the resulting executable with an explicit,
@@ -49,21 +130,459 @@ client's working directory. Absolute paths are accepted only inside that root.
 
 | Tool | Behavior |
 | --- | --- |
-| `get_document` | Complete native document, current revision, dirty flag, undo/redo availability, source and animation/skin inventory. Before Open it returns revision 0 and no document. |
+| `get_document` | Complete native document, current revision, committed-data dirty flag, undo/redo availability, source and animation/skin inventory. `hasPendingEdits`/`pendingPose` describe transient poses; `hasCycleOffsetMemory` reports whether remembered Offset origins exist. Before Open it returns revision 0, no document and no memory. |
+| `create_project` | New in-memory root-only native document with an empty default skin. Uses an existing asset directory within `--root`; no finished rig is loaded and no file is written. Source is null until Save. |
 | `inspect_file` | Read-only native validation or Spine capability report. Does not replace the working document. |
 | `open_project` | Load `.peachy` (including supported legacy migrations) or supported Spine 4.3 JSON into a new Session. Failed imports leave the current session intact. |
-| `get_command_schema` | Full JSON Schema for the 24 supported flat command variants; the same schema appears inline in `apply_commands` discovery. |
+| `get_command_schema` | Full JSON Schema for the 64 supported flat command variants; the same schema appears inline in `apply_commands` discovery. |
 | `apply_commands` | Apply a nonempty flat list through one engine Batch, atomically and as one undo step. No file writes. |
+| `edit_bone_poses` | Revision-checked explicit multi-Bone Session edit. Setup replaces complete authored-local transforms; Animate edits exact per-Bone properties, either pending or Auto Key. Atomic across all records. |
+| `transform_bones` | Revision-checked semantic Translate for an explicit ordered Bone selection, selected primary and required skin. Uses one evaluated input frame and shared Local/Parent/World conversion, filters selected descendants, then applies all candidate poses atomically through Session. |
+| `key_bone_poses` | Revision-checked keying of explicit per-Bone property lists from one shared authored/pending snapshot. One atomic undo step; no implicit X/Y grouping. |
+| `key_edited_pose` | Revision-checked global K equivalent: key every edited Bone/IK/Slider/Deform/Slot/DrawOrder target for one animation/time in one shared Session operation. |
+| `offset_animation_keys` | Revision-checked periodic Offset of whole closed Bone scalar tracks identified by actual anchor seeds. Uses canonical track-set memory. Returns affected keys, bounds, phases and request-ordered `{source,target|null}` mappings; cached generated boundary seeds are ignored and do not affect the track set. See the temporary scope below. |
+| `reset_cycle_offset_memory` | Revision-checked explicit clearing of all current remembered Offset tracks. Changes no Document, pending pose, dirty baseline or authoring history; successful reset advances revision. |
+| `get_animation_keys` | Revision-checked authored inventory and exact keys for required explicit owners. Empty owners return inventory with no selected keys. Reports unsupported timeline families; no pending pose, geometry solve, visibility filtering or mutation. See the strict contract below. |
+| `copy_animation_keys` | Read-only capture of exact keys from one bone, IK or Slider constraint, Deform attachment, slot or global draw order. Slider clipboards retain independent Time/Mix identities and one relative origin. Slot clipboards can mix attachment and color keys; Deform includes vertex/influence layout. Draw order requires the identical ordered slot-name layout on paste. Requires the current revision. |
+| `copy_animation_key_group` | Revision-checked read-only mixed-owner copy of exact typed keys. Returns portable `clipboard.entries` sharing one global origin and separate `sourceOwners` in first-owner appearance order. Paste through `pasteAnimationKeyGroup` with an explicit complete entry-to-target map. |
+| `get_mesh_weights` | Read exact selected weights and a uniform/mixed aggregate through the engine; absent influences of an already bound bone read zero. Requires the current revision and exact attachment identity. |
+| `get_transform_mapping` | Read raw-derived Min/Max endpoints of one exact world X→Rotate constraint mapping at the current revision. Undefined SourceMax is null; querying never repairs stored coefficients or changes history. |
+| `get_slider_pose` | Read a Slider's authored Time/Mix at a host animation cursor, or Setup. Time is referenced-animation seconds; this query does not solve geometry or substitute bone-derived effective time. Requires the current revision. |
+| `get_slider_mapping` | Revision-checked raw-derived bone-source endpoints in referenced-animation seconds. Undefined SourceMax is null. Does not solve, repair, capture Time or change history. |
+| `get_slider_source_choices` | Revision-checked six property/range choices for a bound Slider from Session view preferences. Each includes an explicit `setSliderSourceProperty` command snapshot; querying does not remember a choice or alter preferences. |
+| `get_slider_evaluation` | Revision-checked own-turn snapshot from one checked solve: incoming/applied settings, eligibility and effective `sampleTime` after Loop. `sampleTime` is null when no application occurs. Accepts Setup or an exact host animation name, host seconds and skin; never recomputes from a later final source pose. |
 | `history` | Undo or redo one complete edit using the shared Session history. |
-| `evaluate_pose` | Setup or a named animation at a nonnegative time in seconds, with optional skin. Returns authored locals, IK-applied locals, world matrices, textured vertex/UV/index buffers and bounds. |
+| `evaluate_pose` | Setup or a named animation at a nonnegative time, with requested skin and matching Session pending overlays. Does not change Session skin, history or revision. Returns authored `locals`, ordered-constraint `appliedLocals`, effective `inherits`, world matrices, raw `slotAttachments`/`slotColors`, complete `drawOrder`, `authoredSliderPoses`/`appliedSliderPoses`, textured geometry and bounds from one checked solve. |
 | `save_project` | Create a new directory containing `project.peachy` and the required loose `images/`; marks the headless Session saved. |
-| `export_project` | New Spine JSON file, or a fresh packed JSON/atlas/PNG directory inside an existing parent. Does not mark the native document saved. |
+| `export_project` | New Spine JSON file, or a fresh packed JSON/atlas/PNG directory inside an existing parent. Optional `target` defaults to `spineEditor43`; use `runtime43` to retain independent attachment names/placeholders for runtime consumers. Does not mark the native document saved. |
 
-All tools publish parameter schemas, descriptions and behavior annotations through
+These 25 tools publish parameter schemas, descriptions and behavior annotations through
 MCP `tools/list`. Successful results include both `structuredContent` and matching
 serialized text for older clients. Operational failures return `isError: true`
 with the current revision; malformed tool arguments use the SDK's protocol error.
 Read-only tools do not change session state.
+
+## Explicit multi-Bone poses and pending edits
+
+`edit_bone_poses` requires exactly `expected_revision`, `target`, `edits` and
+`auto_key`. Target is `{"mode":"setup"}` or
+`{"mode":"animate","animation":0,"time":0.5}`. Each edit contains `bone`,
+a complete seven-field local `transform` and a nonempty exact `properties` list.
+Properties are string tokens `x`, `y`, `rotation`, `scaleX`, `scaleY`, `shearX`,
+`shearY`; transform field names use the native snake-case form below.
+
+```json
+{"expected_revision":2,"target":{"mode":"animate","animation":0,"time":0.5},"auto_key":false,"edits":[{"bone":1,"transform":{"x":73.25,"y":0,"rotation":0,"scale_x":1,"scale_y":1,"shear_x":0,"shear_y":0},"properties":["x"]}]}
+```
+
+Setup replaces each complete transform, matching the existing Session Setup
+contract; its property list is still required and validated. Animate changes
+only the listed properties, with no automatic X/Y expansion or group/pivot/axis
+calculation. Values are authored local poses, not setup-relative raw key offsets.
+Auto Key off creates undoable transient poses; `get_document.document` and
+Save/export exclude them while `state.hasPendingEdits`/`state.pendingPose` expose
+their presence and exact authored overrides. Auto Key on keys the corresponding
+translation, scale or shear property groups (for example, X also keys Y).
+Open/Create refuse to replace a session with pending edits unless
+`discard_changes:true` is explicit, including after a Save that excluded those
+pending values. This guard is specific to the headless session.
+
+`key_bone_poses` requires `expected_revision`, `animation`, `time` and `keys`, e.g.
+`[{"bone":1,"properties":["x"]},{"bone":2,"properties":["y"]}]` for `keys`.
+It samples the shared authored/pending pose once and keys exact properties.
+`key_edited_pose` requires only `expected_revision`, `animation` and `time`; it
+keys all edited domains for that animation, including pending non-Bone targets.
+Both are independent of the editor Tree and create at most one undo entry.
+
+New inputs require objects at every object boundary. Missing/null/unknown fields,
+positional arrays, non-string property tokens, duplicate bones/properties, empty
+record/property lists, nonfinite transforms/times, bad indices and stale revisions
+reject without changing document, pending values, history or revision. Successful
+mutators advance revision even for a no-op, matching `apply_commands` policy.
+Save retains pending Session values but writes only Document data; successful
+Open/New replaces the Session and clears pending state. `dirty` continues to
+describe committed document changes, separately from pending values.
+
+`evaluate_pose` and Slider own-turn evaluation use requested-skin authored sampling
+plus matching pending overlays through a read-only Session query. All effective
+domains and geometry derive from one checked solve. This is neither a transient
+skin switch nor a live GUI bridge. At the 23-tool checkpoint, focused MCP checks passed six unit and
+four actual stdio cases; the 104-request study also exercises the semantic tool.
+The later bounded native replay separately accepts selection, Translate, Parent
+numeric assignment, pending/keying/history and held cancellation. Minimum
+1120×740 acceptance on `1558` covered tested toolbar controls only; its tiny Tree
+and clipped rig are historical limitations. The later adaptive workspace check
+above accepts the measured canvas/Tree/scroll cases. Full stacked-Graph minimum
+layout, Properties beyond membership and full group-transform parity remain open.
+
+## Semantic Bone translation — code/MCP checkpoint
+
+`transform_bones` requires exactly `expected_revision`, `target`, `skin`, `bones`,
+`primary`, `operation` and `auto_key`. `bones` is a nonempty ordered unique list;
+`primary` must be a member. Target uses the same explicit Setup/Animate shape as
+`edit_bone_poses`. Skin is required and selects the sampling/keying context
+without changing Session's selected skin.
+
+```json
+{"expected_revision":4,"target":{"mode":"animate","animation":0,"time":0.5},"skin":"default","bones":[2,4],"primary":2,"operation":{"type":"translate","axes":"world","delta":{"x":10,"y":-4}},"auto_key":false}
+```
+
+The delta is in named tool-space units, independent of pointer movement. Parent
+adds the delta to each edited root's authored local XY. Local uses each member's
+applied rotation; World converts the common world delta through each edited
+root's parent. Selected descendants inherit movement from their highest selected
+ancestor and receive no second authored-local edit. This differs from explicit
+numeric assignment, which can intentionally assign both ancestor and descendant.
+The logical primary stays explicit; the shared frame chooses its selected
+ancestor as the effective Translate anchor when necessary.
+
+The shell samples the requested skin/pending pose and checks one evaluated input
+frame, then asks the same engine transform operation used by the viewport for
+all candidate edits. Session commits the complete result atomically; Auto Key
+may perform additional continuity validation and keys translation groups.
+Auto Key off retains pending values outside Save/export, as above. The tool does
+not simulate a pointer, solve separately per member or mutate Session skin.
+
+Only `operation.type:"translate"` and string axes `local`, `parent`, `world` are
+published. Every object boundary is strict, including `operation` and `delta`;
+arrays, missing/null/unknown fields, duplicate/empty Bone lists, a primary outside
+the list, invalid/inactive members, nonfinite/unrepresentable results and stale
+revisions reject with document, pending values, history, revision and skin
+unchanged. Parent/Local semantic deltas need no parent inverse; World requires
+one only for actual edit roots. Skipped descendants do not create an inverse
+requirement. Rotate/Scale/Shear group operations remain outside this tool.
+Decoder/state/stdio, actual 104-request checks and final combined source gates
+pass, alongside bounded native Translate interaction acceptance. Group
+Rotate/Scale/Shear, non-Parent numeric operations, group numeric dragging,
+cycle Offset outside the closed Bone-track scope and a live GUI bridge remain open.
+
+## Closed Bone-track cycle Offset
+
+`offset_animation_keys` requires exactly `expected_revision`, `animation`, `keys`,
+`range` and `delta`. Animation is an index; delta is signed finite f32 seconds.
+Range is an object with finite `start`/`end`, nonnegative start and end greater
+than start. Use exact current key IDs from `get_animation_keys`; this example
+assumes a selectable original start key at remembered phase zero:
+
+```json
+{"expected_revision":7,"animation":0,"keys":[{"type":"bone","bone":2,"property":"y","time":0}],"range":{"start":0,"end":1},"delta":0.1}
+```
+
+Every supplied key must exist. A nonempty valid subset of **actual anchor seeds**
+shifts its whole Bone/property tracks, including unselected keys. Multiple
+distinct seeds on the same track still apply one offset; duplicate exact IDs
+reject. Each affected track must fill the explicit range, with first/end keys
+exactly at the bounds and matching endpoint values. Outside-range/open tracks
+and non-Bone families are unsupported. This tool does not retime an arbitrary
+partial key selection or infer a loop from the current selection.
+
+`get_animation_keys` inventories stored keys, including generated boundaries;
+their presence does not by itself make them selectable Offset anchors. At
+remembered phase zero, original start/end keys are actual anchors. With nonzero
+movement, those two distinct requested IDs may map to the same wrapped target.
+At a nonzero remembered phase, the closing end is fake; start is actual only
+when an original anchor lands there. Cached generated boundary requests map to
+`null`, are ignored and do not seed tracks. Classification happens before a
+cohort recapture. Mixed requests operate only on tracks seeded by actual anchors.
+
+A valid only-fake request succeeds with `keys:[]`, `boundaryKeys:[]`, `phases:[]`
+and one null-target mapping per requested key in request order. Document, pending
+poses, history/redo, dirty state and the entire prior cache remain unchanged;
+MCP revision still advances by one. Full-period/zero-movement no-ops preserve
+actual key identities, including distinct original start/end IDs at phase zero;
+fake mappings remain null even on a no-op.
+
+Session memory identifies tracks by animation, Bone, property and loop bounds;
+seed count/order do not define the cohort. The same affected track set continues
+its remembered originals and phases. Shrinking the set preserves surviving
+origins/phases and drops departed tracks. Adding any new track recaptures **all
+selected current tracks** at phase zero before applying the delta. A returning
+departed track counts as new; its old memory is not revived. Prior seam keys may
+therefore become ordinary source keys when an expanded set is recaptured.
+Changing selection without calling Offset does not itself mutate memory.
+
+Every remembered old track/context is checked before a shrink or expansion,
+including tracks about to depart. Raw edits, rename/FPS changes or other stale
+affected context refuse atomically. Reset explicitly before intentional recapture;
+a failing offset never silently clears the old cache. Missing/null/unknown fields,
+positional objects encoded as arrays, non-string property tokens, invalid IDs,
+duplicate seeds, nonfinite/unrepresentable results and stale revisions also
+preserve Document, pending values, redo, memory and revision.
+
+The response is `{revision,state,keys,boundaryKeys,phases,mappings}`. `keys` includes all
+current keys of the affected tracks, not just seeds; `boundaryKeys` identifies the
+two loop bounds per track. Each phase record contains `source`, `range:{start,end}`
+and `phase`, relative to that cohort's captured originals. `mappings` preserves
+the original requested key order, with one `{source,target}` entry per request;
+target is an exact accepted key ID or null. Distinct endpoint sources can share
+one accepted target without losing either mapping entry. Whole-track output keys
+and generated seams are not automatic selection instructions. These receipts do
+not change an open desktop window.
+
+`reset_cycle_offset_memory` requires only `{"expected_revision":7}`. It clears
+all current remembered tracks without changing Document, pending values, dirty
+state or authoring history; it refuses an active transaction. Successful reset
+advances server revision, even if memory was already empty. Reset is separate
+from Offset so a later failure cannot erase memory as a side effect.
+
+An Offset that changes authoring data creates at most one Session history step
+and preserves unrelated pending poses. No-op/context-only cache capture creates
+no authoring history and does not clear redo. Successful tool calls still advance
+server revision. Undo/Redo restore authoring state and their remembered-memory snapshots;
+the explicit reset itself creates no authoring Undo entry. Save/export exclude
+memory and pending values. Save retains the live Session cache; Open/New start
+with empty memory. `state.hasCycleOffsetMemory` exposes presence only, outside
+saved native data. Neither tool adds a Command variant or format migration.
+
+The earlier 213-request actual run passed its then-current any-change-rebase
+policy; it is historical after the native shrink correction. Final corrected
+source04 and actual MCP04 now pass: 276 requests/97 construction commands/11
+atomic negatives, seven-step reference goldens, exact Undo/Redo/Save/reopen and
+unchanged inputs/binaries. The saved authored SHA `0316f848…3d73` is unchanged.
+The current CLI checks all seven authored clips at 52 samples each: **364 poses**
+at unchanged **0.001**, maximum world error **1.4148056052931679e−5** and Region
+error **1.52587890625e−5**. See [scalar evidence](evidence/cycle-offset.json).
+The later 32-request receipt study on exact server `ee0bebd0…a38f4` verifies
+original endpoint collisions, fake-only no-ops, mixed mappings and explicit reset
+matching the installed toggle/recapture control. Its saved `050f5abd…272ab` result
+reopens exactly with empty transient state; it has no new runtime comparison.
+The subsequent native `dc60` checkpoint and separate 15-request blank-root replay
+verify the same shared operations through actual desktop controls, including fast
+release and the reserved Offset/Loop Start/End footer at 1120×740. They produce
+the distinct public `68126` result and its own 364-pose runtime proof above; they
+do not assign that runtime result to `050f`. See the [native review](evidence/cycle-offset-ui.html)
+and [scalar evidence](evidence/cycle-offset-ui.json).
+Broader timeline families, open/outside ranges, Shift/ripple, native negative/
+full-period/Stepped/nonzero-loop interactions, canonical start/end unmerge
+selection, broader history/context rules and full Spine Offset parity remain open.
+
+## Exact authored key inventory and mixed timing
+
+`get_animation_keys` requires an object with exactly `expected_revision`,
+`animation` (an index) and `owners` (an array). Each owner is an explicit object:
+`{"type":"bone","bone":2}`, `{"type":"ik","constraint":0}`,
+`{"type":"slider","constraint":0}`, `{"type":"slot","slot":0}`,
+`{"type":"drawOrder"}`, or `{"type":"deform","attachment":{"skin":"default","slot":"cloth","placeholder":"mesh"}}`
+with exact attachment strings. Missing/null fields, positional arrays,
+unknown fields/variants, invalid indices and duplicate owners—including linked
+aliases resolving to the same Deform owner—reject. No implicit current selection
+or wildcard is accepted.
+
+```json
+{"expected_revision":2,"animation":1,"owners":[]}
+```
+
+The response contains `revision`, `animation`, `inventory:{owners,
+unsupportedTimelines}` and `selection:{keys,unsupportedTimelines}`. An empty
+request means **inventory only**, not all selected keys. To request keys, pass
+explicit inventory owners; keys preserve requested owner order and exact stored
+f32 times. For example:
+
+```json
+{"expected_revision":2,"animation":1,"owners":[{"type":"bone","bone":4},{"type":"bone","bone":2}]}
+```
+
+The query covers represented Bone, IK, Slider Time/Mix, Deform, Slot
+attachment/RGBA and DrawOrder keys independently of skin/visibility. Inherit,
+Sequence, Path, Physics/reset and Event markers remain read-only metadata.
+`inventory.unsupportedTimelines` describes the full clip;
+`selection.unsupportedTimelines` describes scoped omissions. Inspect both before
+treating the editable subset as a complete group. The query does not include
+pending poses, solve geometry or change document, history, preferences or revision.
+Stale-revision and invalid requests leave the Session untouched.
+
+Pass returned exact IDs to existing `moveAnimationKeys` with one animation,
+finite seconds `delta` and explicit `copy:false` for an atomic mixed-owner move.
+Do not round source IDs to frames. `copy_animation_keys` still captures one
+owner; its name does not promise a portable multi-owner clipboard or cycle Offset.
+
+The public [25-command recipe](../examples/peach-bot/multi-owner-authoring-commands.json)
+recreates the [original Multi-owner Lab](../examples/peach-bot/multi-owner-bot.peachy)
+without opening a finished rig:
+
+1. Start this server with the repository checkout as `--root`. Call
+   `create_project` with `expected_revision:0`, a name, `fps:60` and
+   `asset_root:"examples/peach-bot"`; only the original `images/blue_cutout.png`
+   is referenced.
+2. Send the file's 25-command array as `apply_commands.commands` at revision 1.
+   It creates six bones, two regions and `clipboard`/`retime` clips.
+3. Query animation 1 at revision 2, first with `owners:[]`, then explicit bones 4/2.
+   Reuse the returned IDs for follower Rotate Frames 5/20 and driver Y Frame 40;
+   move those three keys by 5/60 seconds in one command.
+4. Check Undo/Redo and Save into a fresh directory, then reopen it. Query the
+   current revision before each mutation; Save/Open also advance it.
+
+Final actual stdio study03 passes 41 requests, including 25 authoring commands,
+five rejected read-only queries, exact mixed movement/history/reopen and 12 pose
+samples. Baseline and moved exports each pass 104 external-runtime poses at 0.001.
+Separate native ordinary-move acceptance passes. At that historical 63/18
+checkpoint mixed Copy explicitly refused; the grouped continuation below now adds
+shared copy/paste, with bounded native minimum/persistence acceptance verified.
+Shift/Offset, Lock/Sync
+and general Tree multi-selection remain open. See
+[scope](slices/multi-owner-timeline.md), [review](evidence/multi-owner-timeline.html)
+and [scalar evidence](evidence/multi-owner-timeline.json).
+
+## Grouped clipboard and explicit paste mapping
+
+`copy_animation_key_group` requires exactly `expected_revision`, an animation
+index and a nonempty `keys` array of exact typed IDs. Leaf records and nested
+attachment references are object-only; Bone/Slider properties are string tokens.
+Unknown/missing/null/wrong primitive fields, duplicate exact canonical IDs and
+stale revisions reject without document/history/pending/preferences changes.
+Existing `copy_animation_keys` and its single-owner wire remain unchanged.
+
+```json
+{"expected_revision":2,"animation":0,"keys":[{"type":"bone","bone":4,"property":"rotation","time":0.20000000298023224},{"type":"bone","bone":2,"property":"y","time":0.0833333358168602}]}
+```
+
+The response is `{revision, clipboard:{entries:[...]}, sourceOwners:[...]}`.
+Each entry uses an existing Bone/IK/Slider/Deform/Slot/DrawOrder leaf payload.
+Entries follow first source-owner appearance; all times share one earliest-key
+origin. The first entry above is delayed and only the second contains zero.
+`sourceOwners` is a separate receipt, not embedded in portable data or an implicit
+target choice.
+
+Send the returned `clipboard` unchanged in a `pasteAnimationKeyGroup` command,
+with destination `animation`, finite nonnegative `time` in seconds and complete
+`targets`. For the same original owners, the explicit map is:
+
+```json
+[{"entry":0,"target":{"type":"bone","bone":4}},{"entry":1,"target":{"type":"bone","bone":2}}]
+```
+
+Changing the two target bone indices to 3/1 respectively reproduces the measured different-
+parent outcome. Every entry must appear exactly once, canonical targets must be
+distinct, and kind/layout validation applies before any edit. New group objects,
+leaf keys, layouts, offsets, target records and references require the published
+object forms. A later invalid entry rolls back the entire `apply_commands` batch
+and preserves redo. Existing missing-name skip rules retain the global origin;
+all-skipped groups preserve document/history, while successful `apply_commands`
+still advances its revision. Query authored keys after mutation when needed;
+the accepted incoming IDs do not imply changing the user's original selection.
+
+Actual blank-root/one-PNG run02 passes 57 requests, 25 construction commands,
+nine negative atomic cases, same-owner/different-parent/cross-animation nominal
+frames and values matching installed goldens, Undo/Redo and Save/reopen with 12
+pose queries. Separate other-target/cross-animation exports pass 104 external
+runtime poses each, 208 total at 0.001 (world maxima 1.200913195020803e−5 /
+1.1076360095785276e−5; both region maxima 1.52587890625e−5). Four new unit/two
+actual-stdio tests and final checks05/06 pass. Native authoring passes, including
+the leaf-v2 selection/Cut control. The subsequent 1120×740 and native Save/fresh-
+reopen proof verifies complete typed Document equality with empty history/
+clipboard and one image. The [native clip0 result](../examples/peach-bot/group-clipboard-native-result.peachy)
+differs from the MCP clip1 case; raw JSON byte equality is not claimed. All owned
+processes are closed. The earlier `da1a1da` code-push partial state is historical. The public
+[Grouped Clipboard Lab](../examples/peach-bot/group-clipboard-bot.peachy),
+[scope](slices/grouped-clipboard.md), [review](evidence/grouped-clipboard.html) and
+[scalar evidence](evidence/grouped-clipboard.json) distinguish implementation
+from accepted interaction. General Tree target multi-selection, Shift/Offset and
+Lock/Sync remain outside this checkpoint. Bounded single-leaf fallback is accepted
+by the later continuation below.
+
+## Leaf clipboard owner routing
+
+No new tool or command is added. Existing `copy_animation_keys` and
+`pasteAnimationKeys` retain the v2 leaf payload; MCP uses an explicit target owner.
+The desktop's process-local source receipt and Tree/pose target resolution are
+separate from the server. Actual MCP71 constructs from blank/one original PNG
+through 25 commands, reproduces five installed owner cases, checks two atomic
+negatives, Undo/Redo, 12 poses and exact Save/reopen; its child is closed. Inspect
+the [public lab](../examples/peach-bot/leaf-clipboard-bot.peachy) and
+[single paste command](../examples/peach-bot/leaf-clipboard-paste-commands.json).
+
+Independent native Desktop5825 matches all five complete case documents and
+verifies Undo, final same-name Region/clip1 Save byte equality to MCP5d432 and
+exact fresh reopen with empty history/clipboard/one image. Native Redo and a new
+external-runtime comparison are not claimed. All owned processes are closed.
+Slot global DrawOrder scope and broader Region controls/styling remain open.
+See [scope](slices/leaf-clipboard.md), [review](evidence/leaf-clipboard.html) and
+[scalar evidence](evidence/leaf-clipboard.json).
+
+## Export targets
+
+`export_project.target` accepts only `spineEditor43` or `runtime43`. Editor
+export rejects default-skin attachment name overrides and named/default
+placeholder collisions, plus contradictory weighted bone ordering, before writing
+an output. The error identifies the
+unsafe attachment. Runtime export preserves valid names, raw influence arrays, placeholder references
+and skin fallback without applying those Editor-only restrictions; all other
+supported-feature validation remains. Neither target rewrites the native
+document or changes revision/history. A runtime export is not an Editor import
+guarantee. Successful responses include `exportTarget` and `targetVersion`.
+
+For example, export runtime data from the current revision into a fresh file:
+
+```json
+{
+  "expected_revision": 1,
+  "kind": "json",
+  "path": "exports/runtime.json",
+  "target": "runtime43"
+}
+```
+
+The `exports` directory must already exist inside `--root`. The same target
+field applies to `kind: "bundle"`. See [the export-target contract](slices/export-targets.md)
+for installed-editor observations and the corresponding native/CLI controls.
+
+## Create from artwork
+
+For fresh rig authoring, place the prepared PNGs under an existing asset
+directory's `images/` child inside `--root`, then call `create_project`:
+
+```json
+{
+  "expected_revision": 0,
+  "name": "Tutorial recreation",
+  "fps": 30,
+  "asset_root": "art-input"
+}
+```
+
+The result is revision 1 with one neutral `root` bone, an empty `default` skin,
+and no slots, constraints or animations. FPS defaults to 30 and must be 1–240.
+The asset directory must exist and resolve inside the configured workspace;
+creation does not copy or alter it. Invalid arguments, an asset-root escape or a
+stale revision leave the current document intact. Replacing a dirty headless
+document requires explicit `discard_changes:true`, as with Open.
+
+Use `addBone` in parent-before-child order, then `addSlot` and `addAttachment`
+through `apply_commands`. New slots start with `attachment:null`. Attachments
+require an existing named skin and slot, and an unoccupied placeholder. No
+existing attachment is replaced and no skin is created implicitly. Use
+`setSlotAttachment` after insertion to activate the placeholder; the whole list
+can be one atomic undo step.
+
+`addAttachment.value` accepts native `region` or `mesh` data. Regions have an
+image path, source dimensions and region transform. Meshes may be authored with
+an arbitrary explicit hull, UVs and triangulation, using either slot-local
+positions or per-vertex bone-local influences. This creates new geometry; it
+does not reindex an existing animated mesh. The engine validates topology,
+influence references, finite values and the rest of the native contract before
+publishing the edit. Path/clipping creation and general topology replacement
+remain outside these commands.
+
+For example, a region can be added and displayed on the new root:
+
+```json
+{
+  "expected_revision": 1,
+  "commands": [
+    {"command":"addSlot","slot":{"name":"body","bone":0,"attachment":null,"color":[255,255,255,255]}},
+    {"command":"addAttachment","attachment":{"skin":"default","slot":"body","placeholder":"body"},"value":{"type":"region","path":"body","width":140,"height":148,"transform":{"x":0,"y":0,"rotation":0,"scale_x":1,"scale_y":1}}},
+    {"command":"setSlotAttachment","slot":0,"attachment":"body"},
+    {"command":"addAnimation","name":"idle","duration":0}
+  ]
+}
+```
+
+This references `art-input/images/body.png`. Add bone keys with `setKey` or
+`setPose`, IK through the existing constraint/key commands, and dense mesh keys
+with `setDeformKey`. These commands can author motion without opening/importing
+a finished project. `evaluate_pose`, Save and Export use the same engine and
+I/O boundary as existing-document edits. Prepared PNG artwork is still required;
+the MCP server does not separate Photoshop layers or paint missing artwork.
 
 ## Editing workflow
 
@@ -101,11 +620,23 @@ To evaluate, call `evaluate_pose`:
 
 Omit `animation` for Setup, `time` for zero and `skin` for `default`. Bone-only
 documents with no skins are supported. Bind commands require a complete
-**applied-local** snapshot from `appliedLocals`; this captures the checked IK result
-once. Do not substitute authored `locals` for this snapshot. Transform commands
+**applied-local** snapshot from `appliedLocals` together with its sampled
+`inherits` array. Use `{"locals": evaluated.appliedLocals, "inherits": evaluated.inherits}`
+for the command's `pose`; this captures the checked IK result and animated
+inheritance once. Do not substitute authored `locals` for this snapshot.
+Legacy poses omitting `inherits` still use document Setup modes. A supplied
+array must have one mode per bone; null, unknown modes and wrong lengths fail
+without applying the batch. Transform commands
 require seven fields: `x`, `y`, `rotation`, `scale_x`, `scale_y`, `shear_x`,
 `shear_y`. SetKey values use the native setup-relative convention; scale keys
 multiply setup. Shared engine validation and unsupported-feature gates apply.
+
+`slotAttachments` and `slotColors` are indexed by the document's slot list,
+including hidden slots. Attachment entries are placeholder names or null.
+Colors are finite, unmultiplied float RGBA in normalized channel units, before
+attachment tint, scene display conversion or byte rounding; finite Bezier
+overshoot may exceed 0–1. Reading them never quantizes or writes a key. Use these
+raw channels when keying a sampled slot, rather than a textured draw's tint.
 
 Save with `save_project`:
 
@@ -124,15 +655,350 @@ desktop. Save advances revision to 3. Export a packed runtime bundle with:
 The response identifies the new timestamped bundle directory. JSON-only export
 uses `kind:"json"` and a fresh `.json` output path instead.
 
+## Slider Time and Mix
+
+A Slider references an existing animation by index. Its authored `time` is a
+position in that **referenced** animation; key identities and query cursors use
+**host** animation seconds. Mix uses raw normalized units (`1` means 100%) and
+may be signed or exceed one. Native controls display referenced frames and
+percent, but MCP values remain seconds and normalized Mix.
+
+The complete command payload is explicit, including nullable `bone` and
+`property`. For example, after creating two animations, append a manual Slider
+referencing animation0 and author its separate host-animation1 channels:
+
+```json
+{
+  "expected_revision": 2,
+  "commands": [
+    {"command":"addSliderConstraint","constraint":{"name":"calibration","animation":0,"bone":null,"property":null,"local":false,"loop":false,"additive":false,"from":0,"to":0,"scale":0,"max":0,"setup":{"time":0,"mix":1}}},
+    {"command":"setSliderKey","animation":1,"constraint":0,"property":"time","key":{"time":0,"value":0.5,"curve":{"bezier":[0.33333334,0,0.6666667,1]}}},
+    {"command":"setSliderKey","animation":1,"constraint":0,"property":"time","key":{"time":0.25,"value":0.75,"curve":"linear"}},
+    {"command":"setSliderKey","animation":1,"constraint":0,"property":"mix","key":{"time":0,"value":1,"curve":"linear"}},
+    {"command":"setSliderKey","animation":1,"constraint":0,"property":"mix","key":{"time":0.75,"value":0.25,"curve":"linear"}}
+  ]
+}
+```
+
+The command's `constraint`/`value` contains Slider fields without the enclosing
+native constraint union's `type:"slider"` tag. Names, animation and constraint
+indices come from `get_document`; this example assumes constraint0 is the new
+Slider. All fields and numbers must satisfy the strict native schema.
+
+| Command | Behavior |
+| --- | --- |
+| `addSliderConstraint` | Append complete `constraint` data to the ordered constraint list; the referenced animation must exist. |
+| `setSliderConstraint` | Replace raw Slider configuration at `constraint` with complete `value`. It preserves indices and does not perform the native source-picker transition. |
+| `setSliderKey` | `animation`, `constraint`, `property:"time"\|"mix"`, `key:{time,value,curve}`. Exact insertion/replacement with the supplied curve, without splitting neighboring curves. |
+| `setSliderCurve` | `animation`, `constraint`, `property`, exact existing `time`, `curve`. Changes only that property's outgoing curve; missing exact keys fail. |
+| `insertSliderKey` | `animation`, `constraint`, `property`, `time`, `value`. Semantic new-key insertion uses the measured frame-space Bezier split. An existing exact key retains its curve; the sibling property stays unchanged. |
+
+New-key insertion is separate from the raw setter. Query the authored value
+first if the intent is to key the current sampled reading, then pass that value
+to `insertSliderKey`; do not average endpoint values or rebuild curves in the
+client. The supplied value is an authored edit, so inserting a different value
+can intentionally change the motion. Raw finite fractional key times stay
+distinct; these persistent commands do not apply the desktop's frame snapping.
+Bezier and BezierOffset metadata remain explicit.
+
+For read-only authored state, call `get_slider_pose`:
+
+```json
+{"expected_revision":3,"constraint":0,"animation":"host","time":0.125}
+```
+
+The response includes `revision`, `constraint`, the host `animation`/`hostTime`,
+`kind:"authored"`, and `pose:{time,mix}`. Omit `animation` or supply null for
+Setup; `time` still must be finite and nonnegative. Unknown references, unknown
+fields and stale revisions fail without changing the document or history.
+Reading this value does not clamp it to displayed frames or percentages.
+
+For example, key an explicit referenced time at that host cursor:
+
+```json
+{"expected_revision":3,"commands":[{"command":"insertSliderKey","animation":1,"constraint":0,"property":"time","time":0.125,"value":0.625}]}
+```
+
+`evaluate_pose` instead returns both `authoredSliderPoses` and
+`appliedSliderPoses`, indexed by the **full constraint list**, with inactive
+placeholders at non-Slider indices. The latter contains effective settings from
+the same ordered solve as `appliedLocals`, world frames, inheritance, slots and
+geometry. A bone-driven time or an earlier Slider's effect can differ from the
+raw authored Time/Mix. Do not use that effective result as a replacement for
+authored state, key it implicitly, or solve again while preparing geometry or a
+binding snapshot. Unsupported domain/order combinations and nonfinite results
+fail explicitly.
+
+Typed identities retain the property even at coincident host times. Pass this
+to read-only `copy_animation_keys`:
+
+```json
+{
+  "expected_revision":4,
+  "animation":1,
+  "keys":[
+    {"type":"slider","constraint":0,"property":"time","time":0},
+    {"type":"slider","constraint":0,"property":"mix","time":0}
+  ]
+}
+```
+
+The returned `clipboard` has `type:"slider"` and `keys:[{property,key}]` with one
+shared relative origin. Use it unchanged with `pasteAnimationKeys`, an
+`animation`, `time`, and `target:{type:"slider",constraint:0}`. The same exact
+identities work with `moveAnimationKeys` and `deleteAnimationKeys`; Time and Mix
+remain separate. Copy and authored queries preserve revision/history; Apply
+batches remain atomic and undoable.
+
+Raw configuration permits a source `bone` plus one of the strict source-property
+strings `rotate`, `x`, `y`, `scaleX`, `scaleY`, `shearY`. Configuration fields
+`from`, `to`, `scale` and `max` retain their stored meanings; they are not the
+manual Setup time. Raw setters do not delete Time keys on source assignment or
+bake a remembered effective time when clearing a source. Those native semantic
+transitions, source-picker/range UI and native creation order remain separate
+work. Native New→Slider prepends, while this raw add command appends.
+
+Both Time and Mix omit-value defaults are `1` when importing Spine JSON;
+manual Setup time defaults separately to `0`. Raw `setSliderKey` key objects
+require an explicit value and curve; semantic insertion takes the explicit value
+and handles curve splitting itself. MCP does not expose a live desktop pending-pose
+editor: the native Session's Auto Key/K/Save-exclusion lifecycle is a separate
+client workflow, not a side effect of these raw persistent commands.
+
+## Deform timeline editing
+
+Deform keys now use the same typed timeline identities as bone and IK keys:
+
+```json
+{"type":"deform","attachment":{"skin":"default","slot":"hand.R","placeholder":"hand.R"},"time":0.6}
+```
+
+Use exact times returned by `get_document`, including fractional values. Pass
+identities to `copy_animation_keys` with `expected_revision`, the animation index
+and `keys`. Copy preserves revision/history and returns a typed `clipboard` with
+relative times. Deform layouts distinguish unweighted vertex counts from weighted
+per-vertex influence counts; paste validates compatible offset segmentation.
+`pasteAnimationKeys` accepts a Deform target on another compatible attachment
+or clip. Linked attachments resolve to their shared timeline owner.
+
+The same identities work with `moveAnimationKeys` (`copy:false` for retiming,
+`copy:true` for duplication) and `deleteAnimationKeys`. Those commands preserve
+complete dense offsets and curves, and apply atomically. `setDeformCurve` takes
+`animation`, `attachment`, exact `time`, and `curve`; it changes interpolation
+without replacing the key's geometry. All existing curve shapes remain native
+values. Clipboard compatibility is a documented engine policy, not a claim that
+every installed-editor weighted binding combination has been verified.
+
+## Shared interval curve actions
+
+`applyCurvePreset` and `editCurveHandle` use the same engine actions as Curves
+and Graph. Both take an `animation` and the complete `selection`, an array of
+`{key:<typed AnimationKey>,channel:<index>}` entries. Scalar, IK and Deform use
+channel 0, as do Slider Time/Mix; slot color uses R/G/B/A indices 0–3. Discrete attachment keys count
+toward the selection but have no curve. Keep the complete selection when
+editing only its primary curve: filtering it can change final-key resolution.
+
+A single selected final key addresses its preceding interval. Multiple selected
+keys skip final keys. An empty effective selection makes no history entry and
+preserves redo. Raw setters below instead address the exact supplied key.
+
+`applyCurvePreset` takes `preset` (`"linear"`, `"stepped"`, `"bezier"`, or
+`{"custom":[x1,y1,x2,y2]}`) and `separate`. Custom controls use relative
+time/value coordinates. Reapplying Bezier resets its handles. Separate controls
+whether adjoining explicit Bezier angles affect preset application.
+
+`editCurveHandle` takes `primary` (a resolved left-interval key/channel from
+the complete selection), `handle` (0 or 1), `point:[seconds,value]`,
+`match_curves`, and `separate`. Values are actual scalar/Mix values, normalized
+RGBA, normalized Deform progress, Slider referenced seconds, or normalized
+Slider Mix. Slider handle X coordinates remain host seconds. Match copies the selected handle's relative
+position across effective curves and preserves each other handle. A flat
+primary has no relative value coordinate, so matched editing refuses it.
+All targets are planned atomically; an unsupported or invalid target leaves
+the document and history unchanged. Native values, times and pending poses are
+preserved. Separate-off Bezier reset matches adjoining explicit Bezier angles,
+shortening an excessive handle along its ray within its own endpoint's value
+span; it leaves outer curves unchanged. Normal Separate-off live edits adjust
+the adjoining tangent and retain its exact horizontal coordinate, within the
+documented native comparison tolerance. These are different actions.
+
+Uncalibrated Separate-off adjacent selected intervals, Custom presets with
+Bezier neighbors, and live vertical/outside-time, flat-linked or extreme
+coupling fail explicitly. Separate-on permits independent finite handle edits.
+Matched edits onto flat destinations remain unsupported. User preset storage,
+Last chosen preferences and combined native property groups remain open. See
+[the measured scope](slices/curves-authoring.md).
+
+```json
+{
+  "commands": [
+    {"command":"applyCurvePreset","animation":0,"selection":[{"key":{"type":"bone","bone":8,"property":"rotation","time":0},"channel":0}],"preset":"bezier","separate":true},
+    {"command":"editCurveHandle","animation":0,"selection":[{"key":{"type":"bone","bone":8,"property":"rotation","time":0},"channel":0}],"primary":{"key":{"type":"bone","bone":8,"property":"rotation","time":0},"channel":0},"handle":0,"point":[0.1,6],"match_curves":false,"separate":true}
+  ]
+}
+```
+
+## Scalar and IK curve-only commands
+
+`setKeyCurve` takes `animation`, `bone`, `property`, an exact existing `time`,
+and `curve`. It changes only that scalar key's outgoing interpolation, retaining
+its raw value and time, sibling properties, pending pose and history semantics.
+All seven bone properties and native Linear, Stepped, Bezier and BezierOffset
+shapes are accepted. Missing exact identities fail atomically; there is no
+nearest-key upsert or implicit final-key redirection.
+
+`setIkCurve` similarly takes `animation`, `constraint`, exact `time` and typed
+`IkCurve`. Its Bezier payload retains f64 normalized time handles and absolute
+Mix controls; it does not cast them to scalar f32 controls or change Mix/Positive.
+Raw terminal curve metadata is explicit in both commands. Interactive interval
+selection and preset policies are separate from these exact setters.
+
+```json
+{
+  "expected_revision": 1,
+  "commands": [
+    {"command":"setKeyCurve","animation":0,"bone":8,"property":"rotation","time":0.5,"curve":{"bezier":[0.25,0,0.75,1]}},
+    {"command":"setIkCurve","animation":0,"constraint":0,"time":0.5,"curve":{"type":"bezier","time":[0.16666666666666669,0.8333333333333333],"mix":[0.25,1.25]}}
+  ]
+}
+```
+
+Both commands use the same atomic command/history boundary as native controls.
+The example requires both exact keys to exist; a failed second command restores
+the complete batch. These setters also operate within the current native v23
+model; the current tool inventory is above.
+
+## Slot attachment and RGBA authoring
+
+Four persistent commands author animation slots through the shared engine:
+
+| Command | Payload and behavior |
+| --- | --- |
+| `setSlotAttachmentKey` | `animation`, `slot`, `key:{time,attachment}`. Creates or replaces the exact key; null hides the slot. |
+| `setSlotColorKey` | `animation`, `slot`, `key:{time,color,curves}`. Stores four RGBA bytes and all four explicit outgoing curves, without splitting neighboring curves. |
+| `setSlotColorCurves` | `animation`, `slot`, exact `time`, `curves`. Changes only the existing key's four curves, preserving its bytes and identity; an absent exact key fails. |
+| `insertSlotColorKey` | `animation`, `slot`, `time`, `color`. Accepts four precise float RGBA channels, splits an interior interval's curves, then encodes the new key once at native byte precision. An existing exact key retains its curves. |
+
+Evaluation uses Setup before each channel's first key and holds its last key
+after the track ends. Attachment swaps are discrete; null is an explicit hide.
+
+The four curve entries are ordered R, G, B, A. Linear and Bezier types can differ
+per channel; Stepped must apply to all four. Bezier handles must be finite;
+`bezierOffset` retains value offsets for flat endpoints and overshoot. When
+changing a value with `setSlotColorKey`, supply the existing four curves to
+preserve them. This explicit setter retains the complete supplied payload;
+interactive new-key insertion and MCP `insertSlotColorKey` share the separate
+curve-splitting command.
+
+For example, after opening `examples/peach-bot/slot-bot.peachy` at revision 1,
+create a fade with a hide key and insert its sampled midpoint in one undo step:
+
+```json
+{
+  "expected_revision": 1,
+  "commands": [
+    {"command":"setSlotAttachmentKey","animation":1,"slot":8,"key":{"time":0.75,"attachment":null}},
+    {"command":"setSlotColorKey","animation":1,"slot":8,"key":{"time":0.25,"color":[255,128,64,255],"curves":[{"bezier":[0.25,0,0.75,1]},"linear","linear","linear"]}},
+    {"command":"setSlotColorKey","animation":1,"slot":8,"key":{"time":0.75,"color":[0,128,64,0],"curves":["linear","linear","linear","linear"]}},
+    {"command":"insertSlotColorKey","animation":1,"slot":8,"time":0.5,"color":[0.5,0.5019608,0.2509804,0.5]}
+  ]
+}
+```
+
+Commands reject unknown fields. Times are finite nonnegative seconds stored as
+f32, not frame numbers. Reuse exact times returned by the document/copy tools;
+do not round fractional identities or infer them from a displayed frame. These
+persistent commands do not apply the desktop's interactive frame snapping.
+
+A slot owner is `{"type":"slot","slot":8}`. Typed identities distinguish
+`slotAttachment` from `slotColor`, including coincident keys. For a mixed copy:
+
+```json
+{
+  "expected_revision": 2,
+  "animation": 1,
+  "keys": [
+    {"type":"slotColor","slot":8,"time":0.5},
+    {"type":"slotAttachment","slot":8,"time":0.75}
+  ]
+}
+```
+
+Pass this to read-only `copy_animation_keys`. Its clipboard has
+`type:"slot"`, `attachment_keys` and `color_keys`; both arrays share the earliest
+copied time as zero. This example returns color time 0 and attachment time 0.25,
+with complete color values/curves. `pasteAnimationKeys` takes that clipboard,
+an animation index, a typed slot `target` and a destination `time` in seconds.
+The same identities support exact `moveAnimationKeys` and `deleteAnimationKeys`.
+
+Pasting a named attachment checks the target slot's placeholder names across
+all skins. An unavailable name skips only that incoming attachment key; hide
+keys and valid color keys still paste with the original shared timing origin.
+An existing destination key at a skipped identity remains untouched. All-skipped
+paste leaves document/history unchanged, though a successful `apply_commands`
+still advances the MCP revision. Explicit attachment-key setters and imports
+continue to retain nonempty names that do not currently resolve.
+
+Interior Bezier insertion uses an independently derived 300-step absolute-time
+scan calibrated against 104 native 4.3.26 channel parameters, including a separate
+nonzero-origin holdout. Subdivision retains precise float controls before rebasing
+them onto stored byte endpoints. Stepped intervals inherit Stepped. Extreme or
+adjacent f32 times that cannot support the scan use stable exact inversion;
+that fallback is outside the calibrated native range. Persistent color keys
+remain bytes in native v23: explicit keying can incur at most half a byte per
+channel, while unrepresentable colors fail atomically. Existing sampling
+arithmetic may differ from the installed editor by one encoded byte at
+half-byte ties; this is not a claim of lossless subbyte key storage or complete
+native UI acceptance.
+
+## Global draw-order authoring
+
+`setDrawOrder` accepts every slot index exactly once, **back to front**, including
+hidden slots and slots without attachments. For a four-slot document, this moves
+slot 0 to the front at half a second and restores setup order at 1.5 seconds:
+
+```json
+{
+  "expected_revision": 1,
+  "commands": [
+    {"command":"setDrawOrder","animation":0,"time":0.5,"order":[1,2,3,0]},
+    {"command":"setDrawOrder","animation":0,"time":1.5,"order":[0,1,2,3]}
+  ]
+}
+```
+
+These are persistent stepped keys; the Tree displays the reverse order, with
+frontmost slots first. A new identity-order key is an explicit reset/hold,
+distinct from no key. `setDrawOrderKey` accepts an exact native key such as
+`{"time":0.5,"offsets":[{"slot":0,"offset":3}]}`. Offsets are signed integers;
+entries must be in setup-slot order and have distinct in-range destinations.
+Valid redundant zero entries survive raw authoring, history, clipboard and
+persistence. Semantic replacement of a key with the same order preserves that
+key's raw encoding. Newly encoded keys minimize moved entries independently;
+exact native tie choices are not claimed.
+
+Copy, move and delete use exact identities `{"type":"drawOrder","time":0.5}`.
+Paste targets the singleton `{"type":"drawOrder"}`. Its clipboard carries
+relative-time raw keys plus ordered slot names; paste requires the identical
+ordered slot-name layout and rejects mismatches atomically. No slot or bone
+index belongs on the global owner. Global keys have no interpolated Graph or
+Curves channels. Read the complete sampled order from `evaluate_pose.drawOrder`;
+visible attachment geometry omits hidden/empty slots.
+
+MCP commands persist keys directly in the independent headless session. Native
+pending order and Auto Key use the shared Session boundary but are not a live
+desktop connection. Setup slot reordering, draw-order folders and cross-layout
+clipboard mapping remain outside this slice.
+
 ## History and file boundaries
 
-Open, Apply, Undo, Redo and Save advance a monotonic revision. Each of those tools,
+Create, Open, Apply, Undo, Redo and Save advance a monotonic revision. Each of those tools,
 and Export, requires `expected_revision`; a stale value fails without side effects.
 Re-read state before retrying. Revisions belong to one server process and reset
 when it exits. Concurrent requests serialize around the same Session; independent
 server processes do not share documents or history.
 
-Opening another document refuses to discard unsaved edits unless the call
+Opening or creating another document refuses to discard unsaved edits unless the call
 explicitly supplies `discard_changes:true`. Successful Save marks the saved native
 document clean; Export preserves the native dirty baseline. Unsupported imports,
 invalid edits and failed output operations preserve the Session and revision.
@@ -156,7 +1022,8 @@ supported Spine feature subset.
 ## Verification
 
 ```sh
-cargo test -p peachy-mcp --locked
+cargo test -p peachy-mcp --locked -j 2 stdio -- --test-threads=2
+cargo test -p peachy-mcp --locked -j 2 schema -- --test-threads=2
 cargo clippy -p peachy-mcp --all-targets --locked -- -D warnings
 python3 scripts/check-architecture.py
 ```
@@ -170,3 +1037,109 @@ primary/output/image symlink escapes. A schema test decodes and reserializes eve
 published flat command shape using strict engine serde. Exact native GUI behavior
 and external runtime compatibility remain covered by their separate project
 acceptance checks; MCP does not establish additional Spine feature parity.
+
+Slot protocol coverage includes raw hidden-slot float evaluation, mixed
+attachment/color copy and paste, exact value/curve commands, curve-preserving
+insertion, undo/redo, failed-batch rollback and Save/reopen. Shared engine tests
+also verify skipped-name collisions cannot select or delete untouched keys.
+
+The fresh-creation protocol case starts with the actual `create_project` tool,
+authors a region and a weighted triangulated mesh, adds bone/deform animation,
+checks failed-batch rollback and undo/redo, saves with unchanged image copies,
+exports JSON and an atlas bundle, and reopens the saved native project. It loads
+no finished rig as its starting document. This is a creation capability check;
+recreating a particular tutorial remains a separate artifact/visual acceptance
+task.
+
+
+## Multi-vertex Direct weights
+
+`get_mesh_weights` reads one explicit attachment and bound bone at the current
+revision. For example:
+
+```json
+{"expected_revision":17,"skin":"default","slot":"dense_mesh","placeholder":"dense_mesh","vertices":[3,2],"bone":1}
+```
+
+The response sorts vertex indices and returns raw `weights` plus
+`value: {"kind":"mixed"}` or `value: {"kind":"uniform","weight":0.5}`.
+It never averages, normalizes or edits data. An absent contribution of a bone
+already bound elsewhere on the mesh reads zero. Empty/duplicate selections,
+unknown identities, repeated ambiguous influences and stale revisions fail.
+
+`editMeshBoneWeights` takes `attachment`, `vertices`, `bone`, `pose` and `edit`.
+Capture **both** `appliedLocals` and `inherits` from one `evaluate_pose` result:
+pass them as `pose.locals` and `pose.inherits`. The new `edit` object is one of:
+
+```json
+{"mode":"absolute","weight":0.5}
+```
+
+```json
+{"mode":"relative","deltas":[2.0,-0.14285715]}
+```
+
+Weights and deltas use 0–1 weight units. Ordered deltas describe **one gesture**:
+each step clamps each vertex's target while redistribution uses the original
+positive recipient ratios. Thus clamping to one and reversing can restore those
+ratios within the gesture. A later command starts from committed data. Absolute
+entry assigns the same value to every eligible vertex; sole-positive vertices
+without recipients stay unchanged while the others can change. Both forms are
+one atomic undo step and preserve bind positions and unselected vertices.
+
+For a truly absent influence of an already bound bone, a positive edit appends
+a `(0,0)` bone-local entry in the mesh’s existing binding order, matching the
+measured Setup/Animate origin policy.
+Existing entries retain their relative order and positions. Sparse insertion uses
+an independent topological extension of mesh bone sequences, with first-appearance
+ties; repeated or contradictory ordering rejects positive creation atomically.
+Existing zero entries retain their positions. Zero/no-change relative input
+preserves raw absence and nonunit data. Creating a missing influence on a mesh
+with keyed or pending Deform data is rejected until offset-layout remapping is
+implemented; explicit existing entries can still be edited. Ambiguous repeated
+bones and nonfinite resulting geometry fail atomically. The strict legacy
+`setMeshBoneWeight` retains its previous sparse/sole-recipient rejection policy.
+
+Legacy pose payloads that omit `inherits` retain Setup modes. A supplied array
+must have one valid mode per bone; `null` is rejected. Native captures and new
+MCP recipes include the array so animated inheritance is retained when binding.
+See [the measured contract](slices/weight-multivertex.md) for native-reference
+calibration, differences and verification limits.
+
+## World X to Rotate mapping
+
+The implementation inventory is v23, with **64 commands /25 tools**; bounded semantic Translate and closed Bone-track Offset native/MCP acceptance pass their separate checks. Broader Offset workflows and the live desktop bridge remain open.
+An existing world-space X→Rotate transform constraint can be edited by the same
+semantic range operation as the native Min/Max controls:
+
+```json
+{"command":"editTransformMappingRange","constraint":0,"from":"x","to":"rotate","field":"sourceMax","value":100}
+```
+
+`field` is exactly `sourceMin`, `sourceMax`, `targetMin` or `targetMax`; `value`
+is a finite f64 endpoint with checked f32 storage. The operation retains the
+other endpoints subject to stored coefficient precision, repairs an edited equal span by setting Max to Min+100, and
+retains reversed ranges. Put ordered field edits in one `apply_commands` list
+for one atomic history entry. Existing raw `addTransformConstraint` and
+`setTransformConstraint` still expose complete native data.
+
+Call `get_transform_mapping` with:
+
+```json
+{"expected_revision":1,"constraint":0,"from":"x","to":"rotate"}
+```
+
+The response includes `revision`, exact mapping identity and
+`range: {sourceMin, sourceMax, targetMin, targetMax}`. Endpoints are derived from
+stored offsets, max and scale without rounding or mutation. A zero raw scale
+returns `sourceMax: null`; known-field no-ops preserve that data. An explicit
+SourceMax edit can resolve it when the target span is nonzero. Other unresolved
+edits, collapsed/nonrepresentable storage and ambiguous writers reject atomically.
+
+The evaluated subset is world source/target, nonadditive and one X→Rotate writer;
+legacy identity Rotate and same-property X/Y mappings remain supported. Other
+cross mappings, local/additive modes and transform timelines remain outside this
+slice. `evaluate_pose` reports the observed native/runtime precision conflict at
+certain half-turn boundaries explicitly; it does not publish a guessed pose.
+The separately calibrated 0.001 comparisons count that refusal separately from
+successful runtime evaluations. See [the measured scope and evidence](slices/transform-mapping-authoring.md).

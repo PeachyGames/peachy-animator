@@ -2,7 +2,8 @@ use crate::{Command, Session, apply_command};
 use peachy_document::*;
 
 fn fixture() -> Document {
-    serde_json::from_str(include_str!("../../../examples/peach-bot/peach-bot.peachy")).unwrap()
+    crate::native_fixture::decode(include_str!("../../../examples/peach-bot/peach-bot.peachy"))
+        .unwrap()
 }
 
 #[test]

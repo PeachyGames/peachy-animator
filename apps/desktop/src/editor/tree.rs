@@ -1,10 +1,14 @@
 use super::*;
-use tree_model::{Entry, Filters, project, row_visible};
+use tree_model::{Entry, Filters, project_with_order, row_visible};
 
 enum Action {
     Key(usize),
     KeyIk(usize),
-    Select(TreeItem),
+    KeySlot(usize, peachy_engine::SlotProperty),
+    KeyDrawOrder,
+    DeleteDrawOrder,
+    BeginDrawOrderDrag(usize),
+    Select(TreeItem, egui::Modifiers),
     Rename(TreeItem),
     Dot(TreeItem, bool),
     Branch(usize, bool),
@@ -15,6 +19,10 @@ impl Editor {
     pub(super) fn hierarchy(&mut self, ui: &mut egui::Ui) {
         self.record_target("tree", ui.max_rect());
         let mut actions = vec![];
+        let mut order_rows = vec![];
+        let mut order_drop_rect = None;
+        #[cfg(test)]
+        self.reset_draw_order_row_ids();
         ui.horizontal(|ui| {
             super::icons::heading(ui, super::icons::Icon::Tree, "Tree");
             ui.menu_button(
@@ -106,11 +114,13 @@ impl Editor {
         );
         self.record_target("treeSearch", search.rect);
         ui.separator();
-        let entries = project(
+        let order = self.current_draw_order().ok();
+        let entries = project_with_order(
             self.session.document(),
             &self.skin,
             self.setup_mode,
             &self.tree,
+            order.as_deref(),
         );
         let mut children = vec![false; entries.len()];
         for e in &entries {
@@ -121,14 +131,16 @@ impl Editor {
         egui::ScrollArea::vertical()
             .id_salt("tree-scroll")
             .show(ui, |ui| {
+                order_drop_rect=Some(ui.clip_rect());
+                if !self.setup_mode {self.record_target("drawOrderDropArea",ui.clip_rect());}
                 for (index, e) in entries.iter().enumerate() {
                     if !row_visible(&entries, index, &self.tree) {
                         continue;
                     }
                     let key = e.item.key();
                     let dot = self.tree_dot(&e.item);
-                    let selected = self.selection.as_ref() == Some(&e.item);
-                    ui.horizontal(|ui| {
+                    let selected = self.selection.contains(&e.item);
+                    ui.scope_builder(egui::UiBuilder::new().id(egui::Id::new(("tree-row",&key))),|ui| { ui.horizontal(|ui| {
                         let (r, response) = ui.allocate_exact_size(vec2(15., 19.), Sense::click());
                         if let Some(active) = dot {
                             ui.painter().circle(
@@ -146,6 +158,37 @@ impl Editor {
                                     response.secondary_clicked(),
                                 ));
                             }
+                        }
+                        if !self.setup_mode {
+                            if e.item==TreeItem::DrawOrder {
+                                match self.draw_order_state() {
+                                    Ok(state)=> {
+                                        let enabled=self.draw_order_input_available(ui.ctx());
+                                        let key=ui.add_enabled_ui(enabled,|ui|super::animation::pose_key_button(ui,state)).inner;
+                                        self.record_target("drawOrderKey",key.rect);
+                                        if key.clicked() {actions.push(Action::KeyDrawOrder);}
+                                        if key.secondary_clicked() {actions.push(Action::DeleteDrawOrder);}
+                                        key.on_hover_text("Key global draw order. Right-click removes its key.");
+                                    }
+                                    Err(error)=> {ui.colored_label(ACCENT,"Key timing error").on_hover_text(error);}
+                                }
+                            } else if let TreeItem::Slot(slot) = e.item {
+                                let property = peachy_engine::SlotProperty::Attachment;
+                                match self.slot_property_state(slot, property) {
+                                    Ok(state) => {
+                                        let enabled = self.slot_authoring_input_available(ui.ctx());
+                                        let key = ui.add_enabled_ui(enabled, |ui| super::animation::pose_key_button(ui, state)).inner;
+                                        if key.rect.intersects(ui.clip_rect()) {
+                                            self.record_target(&format!("slotAttachmentKey:{slot}"), key.rect);
+                                            if selected { self.record_target("slotAttachmentKey", key.rect); }
+                                        }
+                                        if key.on_hover_text("Key the shown attachment, or None to hide this slot").clicked() {
+                                            actions.push(Action::KeySlot(slot, property));
+                                        }
+                                    }
+                                    Err(error) => { ui.colored_label(ACCENT, "Key timing error").on_hover_text(error); }
+                                }
+                            } else { ui.add_space(22.); }
                         }
                         ui.add_space(e.depth as f32 * 11.);
                         let (arrow, click) = ui.allocate_exact_size(vec2(13., 19.), Sense::click());
@@ -172,24 +215,33 @@ impl Editor {
                             .attachment()
                             .is_some_and(|k| !self.attachment_editable(k))
                             || matches!(e.item, TreeItem::Constraint(index) if self.current_ik_pose(index).is_ok_and(|ik|ik.mix == 0.) || self.physics_constraint(index).is_some_and(|physics|physics.setup.mix == 0.));
-                        let row = ui.selectable_label(
-                            selected,
-                            RichText::new(format!("    {}", e.label)).color(if selected {
+                        let text=RichText::new(format!("    {}", e.label)).color(if selected {
                                 ACCENT
                             } else if inactive {
                                 MUTED
                             } else {
                                 Color32::LIGHT_GRAY
-                            }),
-                        );
+                            });
+                        let row=if matches!(e.item,TreeItem::DrawOrderSlot{..}) {
+                            ui.add(egui::Button::selectable(selected,text).sense(Sense::click_and_drag()).truncate())
+                        } else {ui.selectable_label(selected,text)};
+                        self.selection_input.observe(&row, &e.item);
+                        if let TreeItem::DrawOrderSlot{slot}=e.item {
+                            #[cfg(test)]
+                            self.record_draw_order_row_id(slot,row.id);
+                            order_rows.push((slot,row.rect));
+                            if row.drag_started_by(egui::PointerButton::Primary) {actions.push(Action::BeginDrawOrderDrag(slot));}
+                        }
                         let physics = matches!(e.item, TreeItem::Constraint(index) if self.physics_constraint(index).is_some());
                         let transform = matches!(e.item, TreeItem::Constraint(index) if self.transform_constraint(index).is_some());
+                        let slider = matches!(e.item, TreeItem::Constraint(index) if self.slider_constraint(index).is_some());
                         draw_icon(
                             ui.painter(),
                             row.rect.min + vec2(4., 4.),
                             &e.item,
                             physics,
                             transform,
+                            slider,
                             if selected { ACCENT } else { MUTED },
                         );
                         if row.rect.intersects(ui.clip_rect()) {
@@ -198,7 +250,8 @@ impl Editor {
                         if row.double_clicked() {
                             actions.push(Action::Rename(e.item.clone()));
                         } else if row.clicked() {
-                            actions.push(Action::Select(e.item.clone()));
+                            let modifiers = self.selection_input.modifiers(&row, &e.item);
+                            actions.push(Action::Select(e.item.clone(), modifiers));
                         }
                         if row.secondary_clicked() && children[index] {
                             actions.push(Action::Branch(index, true));
@@ -220,7 +273,7 @@ impl Editor {
                                 actions.push(Action::Key(bone));
                             }
                         }
-                        if !self.setup_mode && let TreeItem::Constraint(index)=e.item {
+                        if !self.setup_mode && let TreeItem::Constraint(index)=e.item && self.ik_constraint(index).is_some() {
                             match self.ik_group_state(index) {
                                 Ok(state)=>{
                                     let key=super::animation::pose_key_button(ui,state);
@@ -247,20 +300,28 @@ impl Editor {
                                     for (constraint,name) in annotations.into_iter().rev() {
                                         let annotation=icons::toolbar_button(ui,icons::Icon::IkConstraint,&format!("Select IK constraint: {name}"),"",true);
                                         self.record_target(&format!("ikAnnotation:{bone}:{constraint}"),annotation.rect);
-                                        if annotation.clicked() { actions.push(Action::Select(TreeItem::Constraint(constraint))); }
+                                        if annotation.clicked() { actions.push(Action::Select(TreeItem::Constraint(constraint),egui::Modifiers::NONE)); }
                                     }
                                 });
                             }
                         }
-                    });
+                    }); });
                 }
             });
         for action in actions {
             match action {
                 Action::Key(bone) => self.key_edited(Some(bone)),
                 Action::KeyIk(index) => self.key_ik(index),
-                Action::Select(item) => {
-                    self.select(item);
+                Action::KeySlot(slot, property) => self.key_slot_property(slot, property),
+                Action::KeyDrawOrder => self.key_draw_order(),
+                Action::DeleteDrawOrder => self.delete_draw_order_key(),
+                Action::BeginDrawOrderDrag(slot) => {
+                    if let Some(drop_rect) = order_drop_rect {
+                        self.begin_draw_order_drag(slot, &order_rows, drop_rect, ui.ctx());
+                    }
+                }
+                Action::Select(item, modifiers) => {
+                    self.select_with_modifiers(item, modifiers);
                     // A clicked row is already visible. Scrolling it here can move
                     // the target away between the two clicks of a double-click.
                     self.tree.reveal = None;
@@ -294,23 +355,26 @@ impl Editor {
                 }
             }
         }
+        self.update_draw_order_pointer(ui.ctx(), &order_rows, order_drop_rect);
     }
 
     fn tree_dot(&self, item: &TreeItem) -> Option<bool> {
         let doc = self.session.document();
         match item {
             TreeItem::Bone(i) => Some(!self.hidden_bones.contains(i)),
-            TreeItem::Slot(i) => Some(!self.hidden_slots.contains(i)),
+            TreeItem::Slot(i) | TreeItem::DrawOrderSlot { slot: i } => {
+                Some(!self.hidden_slots.contains(i))
+            }
             TreeItem::Skin(s) => Some(&self.skin == s),
             TreeItem::Folder(Folder::Skins) => Some(self.skin == "default"),
             TreeItem::Animation(i) => Some(self.animation == *i),
-            TreeItem::Attachment(k) => item.slot(doc).map(|slot| {
-                doc.resolved_attachment(&self.skin, slot)
-                    .is_some_and(|(shown, _)| &shown == k)
-            }),
-            TreeItem::Placeholder { slot, name } => {
-                Some(doc.slots[*slot].attachment.as_ref() == Some(name))
-            }
+            TreeItem::Attachment(k) => item
+                .slot(doc)
+                .map(|slot| self.shown_slot_attachment(slot).as_ref() == Some(k)),
+            TreeItem::Placeholder { slot, name } => self
+                .current_slot_pose(*slot)
+                .ok()
+                .map(|pose| pose.attachment.as_ref() == Some(name)),
             _ => None,
         }
     }
@@ -333,7 +397,7 @@ impl Editor {
                     }
                 }
             }
-            TreeItem::Slot(slot) => {
+            TreeItem::Slot(slot) | TreeItem::DrawOrderSlot { slot } => {
                 let hide = !self.hidden_slots.contains(slot);
                 set_hidden(&mut self.hidden_slots, *slot, hide);
             }
@@ -345,38 +409,41 @@ impl Editor {
             TreeItem::Folder(Folder::Skins) => self.activate_skin("default".into()),
             TreeItem::Animation(i) => self.activate_animation(*i),
             TreeItem::Attachment(k) => {
-                if self.setup_mode {
-                    if k.skin != "default" && k.skin != self.skin {
+                if self.setup_mode || self.attachment_editable(k) {
+                    if self.setup_mode && k.skin != "default" && k.skin != self.skin {
                         self.activate_skin(k.skin.clone());
                     }
                     if let Some(slot) = item.slot(self.session.document()) {
-                        self.dispatch(Command::SetSlotAttachment {
+                        self.edit_slot_attachment(
                             slot,
-                            attachment: if was_visible {
+                            if was_visible {
                                 None
                             } else {
                                 Some(k.placeholder.clone())
                             },
-                        });
+                        );
                     }
                 } else {
-                    self.status="Attachment timelines are not implemented; change the setup attachment in Setup.".into();
+                    self.status =
+                        "Activate this attachment's skin before editing its slot pose.".into();
                 }
             }
-            TreeItem::Placeholder { slot, name } if self.setup_mode => {
+            TreeItem::Placeholder { slot, name } => {
                 self.toggle_slot_attachment(*slot, name);
             }
             _ => {}
         }
     }
     fn toggle_slot_attachment(&mut self, slot: usize, name: &str) {
-        let attachment = if self.session.document().slots[slot].attachment.as_deref() == Some(name)
+        let attachment = if self
+            .current_slot_pose(slot)
+            .is_ok_and(|pose| pose.attachment.as_deref() == Some(name))
         {
             None
         } else {
             Some(name.into())
         };
-        self.dispatch(Command::SetSlotAttachment { slot, attachment });
+        self.edit_slot_attachment(slot, attachment);
     }
 }
 
@@ -403,13 +470,24 @@ fn draw_icon(
     item: &TreeItem,
     physics: bool,
     transform: bool,
+    slider: bool,
     color: Color32,
 ) {
     let stroke = Stroke::new(1., color);
     let r = egui::Rect::from_min_size(origin, vec2(10., 10.));
     match item {
+        TreeItem::DrawOrder => {
+            for index in 0..3 {
+                let y = r.top() + 2. + index as f32 * 3.;
+                p.line_segment(
+                    [pos2(r.left() + index as f32, y), pos2(r.right(), y)],
+                    stroke,
+                );
+            }
+        }
         TreeItem::Constraint(_) if physics => icons::draw_physics(p, r, color),
         TreeItem::Constraint(_) if transform => icons::draw_transform(p, r, color),
+        TreeItem::Constraint(_) if slider => icons::draw_slider(p, r, color),
         TreeItem::Constraint(_) | TreeItem::Folder(Folder::Constraints) => {
             icons::draw_ik(p, r, color)
         }

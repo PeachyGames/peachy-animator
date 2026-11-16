@@ -170,6 +170,7 @@ fn add_zero_preserves_old_nonunit_repeated_signed_zero_payloads_in_setup_and_pen
         let pending = session.pose_edits().clone();
         let pose = MeshBindPose {
             locals: session.local_pose(Some(0), time),
+            inherits: None,
         };
         let before = positions(&original, &pose);
         session
@@ -414,7 +415,13 @@ fn invalid_weights_repeats_sparse_rebinding_and_batches_are_atomic_with_pending_
         add(1, pose.clone()),
         add(3, pose.clone()),
         add(usize::MAX, pose.clone()),
-        add(2, MeshBindPose { locals: vec![] }),
+        add(
+            2,
+            MeshBindPose {
+                locals: vec![],
+                inherits: None,
+            },
+        ),
         add(2, invalid_pose.clone()),
         direct(usize::MAX, 3, 0.6, pose.clone()),
         direct(0, usize::MAX, 0.6, pose.clone()),
@@ -510,6 +517,7 @@ fn fixed_base_add_previews_restore_raw_payload_pending_pose_saved_state_and_redo
     let pending = session.pose_edits().clone();
     let pose = MeshBindPose {
         locals: session.local_pose(Some(0), 0.137),
+        inherits: None,
     };
     session.begin_transaction();
     session.preview_transaction(add(3, pose.clone())).unwrap();
@@ -544,6 +552,7 @@ fn direct_previews_rescale_from_base_and_commit_one_undo_with_pending_animate_po
     let pending = session.pose_edits().clone();
     let pose = MeshBindPose {
         locals: session.local_pose(Some(0), 0.137),
+        inherits: None,
     };
     let expected = apply_command(&original, direct(0, 3, 0.6, pose.clone())).unwrap();
     session.begin_transaction();

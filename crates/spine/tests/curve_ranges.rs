@@ -72,3 +72,62 @@ fn genuinely_unrepresentable_controls_fail_without_null_or_clamping() {
     );
     assert_eq!(native, unchanged);
 }
+
+#[test]
+fn scalar_flat_curves_retain_time_handles_and_subthreshold_value_offsets() {
+    for timeline in [
+        "translatex",
+        "translatey",
+        "rotate",
+        "scalex",
+        "scaley",
+        "shearx",
+        "sheary",
+    ] {
+        for (value, controls) in [(0., [-0.2, 1e-7, 1.2, -1e-7]), (7., [0.125, 7., 0.875, 7.])] {
+            let input = fixture(timeline, value, value, controls);
+            let doc = import_json(&input, "Flat scalar handles").unwrap();
+            assert_eq!(
+                doc.animations[0].tracks[0].keys[0].curve,
+                Curve::BezierOffset([
+                    controls[0],
+                    controls[1] - value,
+                    controls[2],
+                    controls[3] - value
+                ])
+            );
+            let output = export_json(&doc).unwrap();
+            assert_eq!(import_json(&output, &doc.name).unwrap(), doc);
+        }
+    }
+    let paired = json!({"skeleton":{"spine":"4.3.26"},"bones":[{"name":"root"}],"slots":[],"skins":[],
+    "animations":{"flat":{"bones":{"root":{"translate":[
+        {"x":4,"y":6,"curve":[-0.2,4,1.2,4,0.125,6.000001_f32,0.875,5.999999_f32]},
+        {"time":1,"x":4,"y":6}
+    ]}}}}});
+    let doc = import_json(&paired, "Paired flat handles").unwrap();
+    assert!(
+        doc.animations[0]
+            .tracks
+            .iter()
+            .all(|t| matches!(t.keys[0].curve, Curve::BezierOffset(_)))
+    );
+    assert_eq!(
+        import_json(&export_json(&doc).unwrap(), &doc.name).unwrap(),
+        doc
+    );
+
+    let invalid = fixture(
+        "shearx",
+        -f32::MAX,
+        -f32::MAX,
+        [0.2, f32::MAX, 0.8, f32::MAX],
+    );
+    let unchanged = invalid.clone();
+    assert!(
+        import_json(&invalid, "Unrepresentable flat offsets")
+            .unwrap_err()
+            .contains("Bezier offset exceeds")
+    );
+    assert_eq!(invalid, unchanged);
+}

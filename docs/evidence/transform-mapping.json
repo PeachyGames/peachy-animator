@@ -1,0 +1,430 @@
+{
+  "date": "2026-11-15",
+  "accepted": true,
+  "scope": "Bounded world X to Rotate mapping with shared Min/Max authoring through native UI and MCP",
+  "nativeFormat": 22,
+  "commands": 53,
+  "tools": 13,
+  "reference": {
+    "editor": "Spine4.3.26",
+    "independentlyViewedRangeCases": 9,
+    "equalEndpointRepair": "Max=Min+100 in the edited endpoint group",
+    "reversedRangesPreserved": true,
+    "offsetRail": "Observed nominal -50..50 span with unclamped extrapolation; not a universal default",
+    "privateCaptures": true,
+    "proprietaryImplementationRead": false
+  },
+  "project": {
+    "path": "examples/peach-bot/transform-mapping-bot.peachy",
+    "sha256": "62a637db493f5abf41bd197c4cdb5db03c83120d95acae6e4fd24f285204757d",
+    "nativeMcpByteIdentical": true,
+    "originalPng": "examples/peach-bot/images/blue_cutout.png",
+    "originalPngSha256": "6e8f281942e95b5a77774e683622dac99ea2aef706c99f3627dad968d6c2120f",
+    "finishedRigRecipeInput": false
+  },
+  "native": {
+    "passed": true,
+    "binarySha256": "9048ecf435ec6abf840698ad2d930a21016f3faac353179076fb366ac56794ec",
+    "freshPublicReopen": true,
+    "projectSha256": "62a637db493f5abf41bd197c4cdb5db03c83120d95acae6e4fd24f285204757d",
+    "imageCount": 1,
+    "noHistoryAtReopen": true,
+    "coalescedRightEdgeMix": true,
+    "minimumInnerSize": [
+      1120,
+      740
+    ],
+    "minimumActualEdits": [
+      "SourceMin",
+      "TargetMax",
+      "Clamp",
+      "OffsetY"
+    ],
+    "allUndosRestoreCanonical": true,
+    "actualPlayback": {
+      "first": 0.24419033527374268,
+      "second": 1.0249435901641846,
+      "stoppedAtZero": true,
+      "loopEnabled": true
+    },
+    "sourceUnchanged": true,
+    "closed": true,
+    "captures": {
+      "editor": "public-editor.png",
+      "minimumLeft": "public-minimum-left.png",
+      "minimumRight": "public-minimum-right.png"
+    },
+    "initialTreePaneResize": "Attempted, no verified change; remains explicit gap; superseded by the verified workspace divider continuation below"
+  },
+  "earlierNativeInput": {
+    "typedEndpointSequence": true,
+    "clampAndMix": true,
+    "oneUndoRedo": true,
+    "heldEscape": true,
+    "secondaryWhilePrimaryHeldCannotReenter": true,
+    "freshPrimaryAfterRelease": true,
+    "offsetXTyped": 12.5,
+    "offsetXRailBeyondNominal": 77.1028060913086,
+    "offsetCancelRestoresRaw": true,
+    "ownedNumericSaveCancels": true,
+    "staleEnterCannotApply": true,
+    "pendingRootRotation": 13.5,
+    "autoKeyOffPendingSaveExcluded": true,
+    "undefinedSourceMax": {
+      "display": "blank",
+      "untouchedEnterPreservesRawAndRedo": true,
+      "actualTypedZeroRepairsMax": 100.00000223517424,
+      "undoRestoresRawZeroScale": true,
+      "notMeasuredSpineCreationDefault": true
+    }
+  },
+  "mcp": {
+    "actualStdioMcp": true,
+    "rootOnlyCreation": true,
+    "finishedRigInput": false,
+    "requests": 122,
+    "poses": 51,
+    "savedReopenedExact": true,
+    "typedNativeSequenceRecreated": true,
+    "exactNoopPreservesRedo": true,
+    "atomicRejected": 4,
+    "staleReadonlyRejected": true,
+    "binarySha256": "aa1c1e9a4dd8fa6c1eff406b7ba8b0c4efd4a97be7f815ad9d5ffa76875e5c6e",
+    "cliSha256": "4cfd17eae353de4fb042464ff698ca51e108e130bb9a7e2824029a0325c3bcd3",
+    "inputUnchanged": true,
+    "binaryUnchanged": true
+  },
+  "runtime": {
+    "physicsConstraints": 0,
+    "physicsValues": 0,
+    "physicsTimelines": 0,
+    "physicsFrames": 0,
+    "regionComparisons": 832,
+    "maxRegionError": 1.52587890625e-05,
+    "meshComparisons": 0,
+    "weightedMeshComparisons": 0,
+    "maxMeshError": 0,
+    "uvComparisons": 0,
+    "maxUVError": 0,
+    "runtime": "Spine 4.3 external oracle",
+    "bones": 6,
+    "slots": 2,
+    "skins": [
+      "default"
+    ],
+    "clips": [
+      {
+        "name": "calibration",
+        "nativeEnd": 1.5,
+        "runtimeEnd": 1.5,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default"
+        ],
+        "maxWorldError": 1.6592621648214845e-05
+      }
+    ],
+    "tolerance": 0.001,
+    "maxWorldError": 1.6592621648214845e-05,
+    "comparisons": 1872,
+    "ikPoseComparisons": 0,
+    "maxIKMixError": 0,
+    "ikMixTolerance": 1e-06,
+    "drawOrderChecks": 52,
+    "imageChecks": 104,
+    "colorComparisons": 416
+  },
+  "implementationMatrix": {
+    "selectedCases": 103,
+    "runtimePassed": 101,
+    "expectedF32Rejections": 1,
+    "consumerPrecisionRejections": 1,
+    "unexpectedFailures": 0,
+    "comparisons": 3648,
+    "maxWorldError": 1.611465881978802e-05,
+    "tolerance": 0.001,
+    "sourceInputsUnchanged": true,
+    "cliUnchanged": true,
+    "publicRuntimeApiOnly": true,
+    "passed": true
+  },
+  "consumerPrecisionBoundary": {
+    "nativeBothControls": "Down at half mix, driverX=-180, sourceParentY=0 or120",
+    "externalBiasedRuntime": "Up, with source worldX=-180.0000027846124",
+    "policy": "Explicit refusal at conflicting angular branches; never counted as runtime pass",
+    "publishedF32PoseUnchanged": true,
+    "toleranceUnchanged": true
+  },
+  "installedInterchange": {
+    "passed": true,
+    "sourceProjectSha256": "62a637db493f5abf41bd197c4cdb5db03c83120d95acae6e4fd24f285204757d",
+    "sourceEditorJsonSha256": "87ef8f631db36b5efabc3b6c64b8bd954731d107f0b530f6cbc51e9028e1bd02",
+    "reportSha256": "bcac0d57b1124c57d57372d24cbcde2ce81494df0968b080f87652a42dac3df2",
+    "poseComparison": {
+      "poses": 52,
+      "worldValues": 1872,
+      "regionCoordinates": 832,
+      "uvValues": 832,
+      "colorValues": 416,
+      "drawOrderChecks": 52,
+      "imageChecks": 104,
+      "maxWorldError": 0.0,
+      "maxRegionError": 0.0,
+      "maxUVError": 0.0,
+      "passed": true,
+      "orderScope": "All two slots are visible in this exact fixture; full attachment sequence compared. Hidden-slot order is outside this CLI report."
+    },
+    "rawSectionsExact": {
+      "format": true,
+      "fps": true,
+      "bones": true,
+      "constraints": true,
+      "slots": true,
+      "skins": true,
+      "skin_scope": true,
+      "events": true,
+      "reference_scale": true,
+      "animations": true
+    },
+    "allKeyTimesValuesCurvesExact": true,
+    "rawConstraintMappingsAndParametersExact": true,
+    "nativeProjectByteIdentical": false,
+    "serializationLimit": "Native metadata/default omission or scalar canonicalization is reported explicitly; pose agreement does not imply byte-identical or generally lossless editor interchange.",
+    "immutableSourcesUnchanged": true,
+    "binariesUnchanged": true
+  },
+  "checks": {
+    "engineTransform": 22,
+    "engineCrossSubset": 9,
+    "engineRangeSubset": 6,
+    "mcpSchema": 12,
+    "mcpProtocol": 17,
+    "mcpStdioSubset": 15,
+    "spineCrossMapping": 4,
+    "spineLegacyTransform": 2,
+    "desktopTransformFilter": 26,
+    "desktopConstraintSubset": 12,
+    "desktopWeightFilter": 39,
+    "desktopCurveFilter": 51,
+    "filtersOverlap": true,
+    "maxWorkers": 2,
+    "fmt": true,
+    "clippyWorkspaceAllTargets": true,
+    "workspaceBuild": true,
+    "architectureCrates": 7,
+    "temporaryInstrumentationRemoved": true,
+    "hostedCi": "Unavailable; main integration remains gated"
+  },
+  "captures": {
+    "editor": {
+      "path": "docs/evidence/transform-mapping-editor.png",
+      "sha256": "d1f0c94db550c79b0615c43c2d7bfe918d8c6252d6f8ee07ed6092b1f2e5b607",
+      "nativeBinarySha256": "a8cfabddb25112361a3ffb3464e88e0266d34914873f82be38fb9132fc39c7f6"
+    },
+    "minimumLeft": {
+      "path": "docs/evidence/transform-mapping-minimum-left.png",
+      "sha256": "97d630776bb877d14d74fb085d2a5a4bd5dfd3851813398455089ca5ebce05fa"
+    },
+    "minimumRight": {
+      "path": "docs/evidence/transform-mapping-minimum-right.png",
+      "sha256": "15857629bd23a9a03efbee4ab853db03ae47aeedb4c801ba6b7fd18a00cd2fc5"
+    }
+  },
+  "limits": [
+    "World source and target, nonadditive, one X to Rotate writer per constrained property",
+    "Other cross mappings, local/additive domains, Transform timelines, Match and native creation/reconnection remain open",
+    "Undefined SourceMax resolution is an explicit shared range policy; not an observed Spine creation default",
+    "Playback was observed with Loop enabled; boundary wrap not claimed",
+    "No pixel equivalence or full Spine parity claim",
+    "Static gallery checked without browser-render verification",
+    "Tree and Properties native resizing is verified in this workspace continuation; Weights/Curves dividers have focused event checks only. General docking, cross-restart persistence and exact styling remain gaps."
+  ],
+  "workspaceDividerContinuation": {
+    "passed": true,
+    "nativeBinarySha256": "a8cfabddb25112361a3ffb3464e88e0266d34914873f82be38fb9132fc39c7f6",
+    "nativeActualTreeGrabOffsets": [
+      -2,
+      0,
+      2
+    ],
+    "treeCases": [
+      {
+        "offset": -2,
+        "viewportBefore": [
+          0.0,
+          59.0,
+          1190.0,
+          817.0
+        ],
+        "inputBefore": [
+          0.0,
+          59.0,
+          1186.9998779296875,
+          817.0
+        ],
+        "viewportAfter": [
+          0.0,
+          59.0,
+          1108.0,
+          817.0
+        ],
+        "treeBefore": [
+          1200.0,
+          42.0,
+          1491.0,
+          574.0
+        ],
+        "treeAfter": [
+          1118.0,
+          42.0,
+          1491.0,
+          574.0
+        ],
+        "documentAndHistoryUnchanged": true
+      },
+      {
+        "offset": 0,
+        "viewportBefore": [
+          0.0,
+          59.0,
+          1108.0,
+          817.0
+        ],
+        "inputBefore": [
+          0.0,
+          59.0,
+          1104.9998779296875,
+          817.0
+        ],
+        "viewportAfter": [
+          0.0,
+          59.0,
+          1028.0,
+          817.0
+        ],
+        "treeBefore": [
+          1118.0,
+          42.0,
+          1491.0,
+          574.0
+        ],
+        "treeAfter": [
+          1038.0,
+          42.0,
+          1491.0,
+          574.0
+        ],
+        "documentAndHistoryUnchanged": true
+      },
+      {
+        "offset": 2,
+        "viewportBefore": [
+          0.0,
+          59.0,
+          1028.0,
+          817.0
+        ],
+        "inputBefore": [
+          0.0,
+          59.0,
+          1024.9998779296875,
+          817.0
+        ],
+        "viewportAfter": [
+          0.0,
+          59.0,
+          950.0,
+          817.0
+        ],
+        "treeBefore": [
+          1038.0,
+          42.0,
+          1491.0,
+          574.0
+        ],
+        "treeAfter": [
+          960.0,
+          42.0,
+          1491.0,
+          574.0
+        ],
+        "documentAndHistoryUnchanged": true
+      }
+    ],
+    "nativePropertiesResize": {
+      "before": [
+        957.0,
+        584.0,
+        1484.0,
+        921.0
+      ],
+      "after": [
+        957.0,
+        417.0,
+        1494.0,
+        921.0
+      ]
+    },
+    "fullMappingTableVisible": true,
+    "mixHeldEscapeRestoresCanonical": true,
+    "fullPaintingAndProjectionRectUnchanged": true,
+    "nativeDocumentAndHistoryUnchanged": true,
+    "headlessMinimumViewportWidth": 320,
+    "headlessPaneResizeTests": 5,
+    "headlessDividerVariants": [
+      "Tree",
+      "Weights only",
+      "Curves only"
+    ],
+    "affectedDesktopFilters": {
+      "transform": 26,
+      "weight": 40,
+      "curve": 52,
+      "deform": 26
+    },
+    "filtersOverlap": true,
+    "fmt": true,
+    "clippyAllTargets": true,
+    "workspaceBuild": true,
+    "architectureCrates": 7,
+    "ownedNativeWindowClosed": true,
+    "nativeDeformScrollReplay": {
+      "passed": true,
+      "nativeActualInput": true,
+      "binarySha256": "a8cfabddb25112361a3ffb3464e88e0266d34914873f82be38fb9132fc39c7f6",
+      "fixtureSha256": "708d1dc2ff09d9f12cb1254cdd7a909a59db5c9dccf5405c67b408331bdb27bc",
+      "unweightedMesh": true,
+      "originalPngImages": 1,
+      "actualVertexNudge": true,
+      "keyUndoRestoresPending": true,
+      "resizePreservesPendingAndRedo": true,
+      "propertiesClipped": [
+        1195.9375,
+        417.21875,
+        1484.0,
+        614.21875
+      ],
+      "offscreenKeyAndDeleteTargetsAbsent": true,
+      "actualWheelSteps": 1,
+      "visibleKeyTarget": [
+        1252.78125,
+        565.0,
+        1274.78125,
+        586.0
+      ],
+      "actualKeyCreatesTrack": true,
+      "actualDeleteRestoresBaselineDocument": true,
+      "sourceFileUnchanged": true,
+      "closed": true,
+      "scope": "Original unweighted mesh only in native; weighted/unweighted checked by focused event tests"
+    },
+    "scope": "Native Tree/Properties only; other divider variants are event-driven headless checks; cross-restart docking is not claimed",
+    "allOwnedWindowsClosed": true,
+    "coreAndMcpUnchanged": true,
+    "binaryHashes": {
+      "peachy-animator": "a8cfabddb25112361a3ffb3464e88e0266d34914873f82be38fb9132fc39c7f6",
+      "peachy-cli": "4cfd17eae353de4fb042464ff698ca51e108e130bb9a7e2824029a0325c3bcd3",
+      "peachy-mcp": "aa1c1e9a4dd8fa6c1eff406b7ba8b0c4efd4a97be7f815ad9d5ffa76875e5c6e"
+    }
+  }
+}

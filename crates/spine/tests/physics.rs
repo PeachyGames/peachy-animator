@@ -255,7 +255,7 @@ fn inspection_names_each_constraint_kind_instead_of_calling_it_ik() {
     assert!(
         joined.contains("Transform copy: local and additive transform constraints are unsupported")
     );
-    assert!(joined.contains("Slider constraint rail: slider constraints are unsupported"));
+    assert!(joined.contains("Slider rail: animation must be a name"));
     assert!(!joined.contains("IK constraint"), "{joined}");
 }
 

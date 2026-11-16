@@ -4,6 +4,315 @@ Target: Spine **4.3.x JSON**, with export metadata `4.3.26`. The initial externa
 oracle is separately installed `@esotericsoftware/spine-core` **4.3.13**.
 Compatibility applies to the subset below, not every 4.3 project or future patch.
 
+## Leaf clipboard owner routing — November 15, 2026 (bounded acceptance passed)
+
+Native v23 and **64 commands /19 tools** are unchanged. The v2 leaf portable
+payload is unchanged; an editor-session receipt supplies canonical no-owner
+fallback, with explicit Bone or active Slot/Region parent-Bone overrides.
+Actual MCP71 from blank/one original PNG verifies five explicit owner cases,
+two atomic negatives, exact Undo/Redo and Save/reopen. Native replay matches all
+five complete typed documents, including the actual Animate Slot row. Native
+Undo and exact fresh reopen pass; the final same-name Region/clip1 Save is
+byte-identical to [MCP5d432](../examples/peach-bot/leaf-clipboard-bot.peachy).
+This adds no external-runtime or lossless Spine-interchange claim. All owned
+processes are closed. Slot scope is still global DrawOrder; full Slot/Region
+controls, Region row/header styling and general Tree/Shift/Offset/Lock/Sync remain
+gaps. See [scope](slices/leaf-clipboard.md), [review](evidence/leaf-clipboard.html)
+and [scalar evidence](evidence/leaf-clipboard.json).
+
+## Grouped clipboard — November 15, 2026 (bounded acceptance passed)
+
+Current native v23 has **64 commands /19 tools**. Portable grouped entries share
+one global origin, with separate source-owner receipts and complete explicit
+target maps. Canonical target aliases, incompatible layouts and malformed new
+nested shapes reject before mutation; old single-owner wire remains unchanged.
+Actual MCP run02 passes 57 requests, nine atomic-negative cases and exact
+history/Save/reopen with 12 pose queries. Focused MCP four-unit/two-stdio checks
+pass. Separate other-target and cross-animation exports each pass 104 runtime
+poses at unchanged 0.001, 208 total. World maxima are 1.200913195020803e−5 and
+1.1076360095785276e−5 respectively; both region maxima are 1.52587890625e−5.
+Final source checks05/06 and bounded native authoring pass, including a leaf-v2
+selection/Cut positive control. Minimum 1120×740 and actual Save/fresh-process
+typed Document recovery now pass on the unchanged binary, with empty history/
+clipboard and one image. All owned processes are closed. The earlier `da1a1da`
+code push left those gates partial at the user's direction; this follow-up closes
+them. The [native result](../examples/peach-bot/group-clipboard-native-result.peachy)
+is clip 0 paste; MCPd833 is clip 1. Saved-file versus preclose diagnostic JSON has
+twelve numeric spelling differences with identical f32 bits; no raw-byte equality
+is claimed.
+
+Installed observations distinguish original-owner fallback, unchanged identity
+when the same bones are reselected in reverse, and ordered mapping onto two
+different parents. Native paste preserves original selection; source owners and
+accepted destination IDs must not be conflated. Tree multi-target mapping remains
+a gap; the later leaf checkpoint closes bounded no-Tree source fallback. Existing slot/skin/layout
+guards and Slider lossy interchange/precision failures are unchanged. See
+[scope](slices/grouped-clipboard.md) and [scalar evidence](evidence/grouped-clipboard.json).
+
+## Earlier multi-owner timing — November 15, 2026 (bounded acceptance passed)
+
+The `b45d18d` checkpoint used v23 and **63 commands /18 tools**. A revision-checked authored
+key query returns explicit Bone/IK/Slider/Deform/Slot/DrawOrder owners and exact
+keys. Empty owners request inventory without selecting keys; unsupported Inherit,
+Sequence, Path, Physics/reset and Event timelines remain visible metadata rather
+than editable group members. Querying never solves, includes pending poses or
+changes history/revision. The bounded all-owner UI passes native selection,
+ordinary movement/history, held cancellation, Graph identity, minimum layout and
+exact Save/fresh-process reopen on the original two-bone scalar fixture.
+Mixed-owner Copy explicitly refuses without changing document, selection, redo or
+internal clipboard. Native cancellation has empty pending state; preservation of
+nonempty pending edits is headless coverage only.
+
+The final03 blank-root/one-PNG MCP recipe passes 41 requests/25 authored commands,
+mixed-owner movement matching installed frames/values, exact Undo/Redo and
+Save/reopen. Its baseline and moved exports each pass 104 runtime poses at 0.001;
+maximum world errors are 1.200913195020803e−5 and 1.167843909399835e−5, with region
+maximum 1.52587890625e−5 for both. Group clipboard, Shift/Offset, Lock/Sync and general
+Tree multi-selection remain outside this checkpoint. Prior Slider precision,
+lossy interchange and referenced-domain guards below are unchanged. See
+[the contract](slices/multi-owner-timeline.md) and
+[scalar evidence](evidence/multi-owner-timeline.json).
+
+## Earlier Slider source/creation continuation — November 15, 2026 (bounded acceptance passed)
+
+The native format remains **v23**, with **63 commands /17 tools**. Actual source
+study04 passes 141 MCP requests and 15 retained poses from a blank project/one PNG;
+its source project SHA256 is
+`60b75a59d56d4df1b41120dbb9e3d29abe187e3a0ceff7a1c287aa32f220b109`.
+Separate 104-pose runtime geometry has world maximum 8.897442157262958e−6 across
+3,744 values and region maximum 1.52587890625e−5 across 1,664 values at 0.001.
+Bounded native source/creation acceptance passes. Installed returned geometry
+passes while strict authored equality remains false; the earlier manual
+checkpoint below remains its own dated result.
+
+The continuation separates semantic prepend/numeric-name creation and identity
+receipts from raw append, and source assignment/property/clear from complete raw
+replacement. Assignment removes Time keys and preserves Mix. Genuine Setup Mix
+edits capture eligible own-turn sample Time into the hidden manual baseline;
+range/Local edits, unchanged entries and incoming zero Mix do not force capture.
+Raw endpoint query stays `f64`, zero scale leaves SourceMax undefined, and finite
+endpoint edits use the measured source+100/target+reference-duration equal-span
+repair while preserving reversals. Property source pairs are nonpersistent
+process-view memory shared across Sliders/bones; each Slider retains its target
+endpoints. No document cache or format migration is added. Process-restart reset
+and distinctive Source Min **8** surviving same-process Save/Open are measured;
+bounded native cache/Open/history acceptance passes. See the
+[contract](slices/slider-constraints.md#source-and-creation-continuation).
+
+Run02's accepted object-form source property exposed a schema/deserializer
+mismatch; string-only command decoding now rejects it. A later four-request probe
+also found positional source-range arrays accepted by derived struct decoding;
+object-only decoding fixes that independent wire bug. Current coverage is63
+engine Slider cases (seven source regressions),33 desktop,16 schema,6 stdio and
+six overlapping Session cases. Fmt/Clippy/build/seven-crate architecture pass.
+Final run04 repeats141 requests/15 samples and the same canonical project after
+range-wire hardening. A separate10-request strict test confirms array rejection
+leaves document/history/revision unchanged; valid-object authoring/Undo is exact.
+
+Actual native creation/history/selection, Frame45/source assignment, all four
+typed endpoints, property-cache restoration, Local/Clear and genuine Mix/Clear
+capture pass. Minimum1120×740 SourceMax edit/Undo, draft99/Save/shared decode,
+canonical Cocoa Open/one image/empty history and exact canonical Undo also pass.
+The final minimum presentation fits the full original art. All owned processes
+are closed and reference bounds are restored. A separate final-build native
+held-range check changes Source Min10→13 with a nontext drag, preserves hidden
+Time/Mix/pending/selection, and verifies exact Escape/redo restoration while held,
+continued movement blocking, release and fresh-gesture one-step Undo/Redo. The
+source project remains unchanged. The earlier November 15 field-stayed8 attempt
+is retained as an unchanged trial, not cancellation evidence.
+
+The final wire-hardened desktop performs a fresh read-only canonical reopen with
+one image/empty history/no error and closes without changing the source. This is
+separate from the detailed earlier interactive replay and the later held-range
+check. Final104-pose runtime and
+returned checks pass with the same errors; run04 Editor/Runtime JSON is byte-
+identical to run03, preserving the installed-editor oracle input.
+
+The source installed roundtrip compares104 poses at0.001, world maximum
+1.3513448465118927e−5 and region maximum1.52587890625e−5. Strict equality fails at
+four paths: hidden Time0.59259266→0, target minimum0.33333334→0.3333333, Mix Bezier
+0.2→0.19999997 and name. Hidden-baseline loss is an editing difference, so current
+geometry success does not imply future Clear equivalence or lossless conversion.
+
+The existing strict authored-interchange failure, two raw `1e30` precision failures,
+Loop/counter refusals and referenced Physics/events/remaining Deform guards below
+are preserved. These authoring controls do not expand evaluation capability.
+
+## Slider checkpoint — November 15, 2026 (bounded manual/MCP verified; parity open)
+
+The verified manual checkpoint uses **v23**, with **58 commands / 14 MCP tools**. Strict
+v22 decoding adds empty Slider tracks in memory; historical public project files
+keep their original bytes. Slider data, independent absolute Time/Mix keys,
+curve-preserving insertion, typed clipboard operations and authored/effective
+readback share the engine with native and MCP clients.
+
+One ordered constraint pass applies manual or six-property local/world sources
+to the incoming effective state. Calibrated referenced domains include bone
+scalars, slot attachment/RGBA, inheritance, global draw order, plain/weighted mesh
+Deform, IK/Path settings, other Sliders and Sequence frames. Inactive targets skip
+writes while global draw order retains every slot. Redundant named-skin Slider
+membership is preserved without requiring that membership for nonrequired Slider
+activity; duplicate/unknown and other unsupported memberships stay strict.
+
+Separate completed metadata/active-world matrices compare **170/170** cases
+(maximum **4.81771965e−5**) and **177/177** cases (maximum
+**6.848346799870342e−6**) at unchanged **0.001** tolerance, with zero engine-applied
+FK residual. Documented applied-local cache validation leaves WORLD bits exactly
+unchanged. The second matrix verifies the skin-aware host-sampling repair,
+including inactive slot data without exclusions. These reports do not contain
+artwork vertices/UV or event output.
+
+Focused checks pass: 9 adapter Slider, 39 engine Slider, 18 desktop Slider,
+14 schema and 2 actual-stdio cases. Incoming-state 101/101 and other-Slider 21/21
+reruns pass. Source has 72 comparisons plus 3 explicit Loop precision refusals;
+source Mix/order are 6/6 each, bone/nested 34/34 and 3/3, driven Time/Mix 12/12 each.
+The manual adversarial set retains **2 raw 1e30 f32 precision mismatches** alongside
+11 comparisons; those failures are neither passes nor declared refusals. Sequence
+wide/integer sets compare 11/15 and 8/16, with 4 and 8 counter refusals.
+
+Actual MCP recreation uses 84 requests, a blank project and one PNG, with 14
+retained poses. Bounded native Frame/Mix/keying/pending Save/history/Auto Key,
+Loop/Additive, cancellation, Graph and 1120×740 controls pass and restore the MCP
+canonical rig; independent native creation is not established. Separate geometry
+checks cover 104 poses (maximum world 1.838038693335875e−5) and 1,664 region values
+(maximum 2.288818359375e−5) at 0.001.
+
+Installed-editor interchange has 104 returned geometry poses within 0.001,
+maximum world/region error 1.52587890625e−5 and 1,664 exact UV values. Its strict
+authored report remains failed: Mix/Time track ordering and Bezier recanonicalization
+change animations, including Time 0.61266667→0.6126666 and handle drift around
+6.3e−7. Ten non-animation sections remain exact. This is bounded **lossy** Editor
+compatibility, not lossless authored interchange; both strict failure and semantic
+analysis stay retained.
+
+Final actual MCP recreation repeats the same 84 requests/canonical hash. Fresh
+public reopen on native build `47ca392a…8a12bde8` has one image, empty history and
+Graph handles, with playback to 0.224702 seconds followed by stop/reset zero.
+Document/hash stay unchanged and the owned window closes. Final 170/177/101/21
+reruns and formatting/all-target Clippy/build/architecture checks pass. The
+bounded manual/MCP checkpoint is verified; full Slider parity remains open.
+Source switching/clear and creation identity/order, Physics/events, remaining
+Deform/attachment cases, counter guards, strict authored interchange loss and
+the two precision failures remain explicit limits. See
+[the bounded contract](slices/slider-constraints.md),
+[review gallery](evidence/slider-constraints.html) and
+[scalar evidence](evidence/slider-constraints.json).
+
+## Earlier accepted checkpoints
+
+The dated entries below retain their historical native-format and API inventory
+counts. The Slider extension above updates that earlier baseline within its
+stated bounds; older Slider refusal entries do not describe the new implementation.
+
+World X→Rotate addition (November 15): world source/target, nonadditive constraints
+can map the source frame's offset-point X to rotation, with offsets, signed scale,
+reversed clamp bounds and signed Mix. Each destination has one writer. The exact
+negative half-turn uses the observed strict boundary; identity Rotate and the
+existing same-property X/Y arithmetic remain unchanged. Native v22 stays, with
+**53 commands / 13 MCP tools**, including shared Min/Max edits and raw-derived
+endpoint readback. A zero scale leaves SourceMax undefined until explicitly
+resolved; imports and queries do not repair it.
+
+The implementation matrix passes 101 evaluated cases at the unchanged 0.001
+tolerance. One mapped-angle overflow and one measured native/runtime half-turn
+precision conflict are explicit refusals, counted separately. A private wide FK
+diagnostic uses applied locals without another constraint solve; published f32
+poses remain unchanged. The 122-request root-only MCP lab passes external runtime
+and exact installed-editor roundtrip checks. Actual native typing, held-input
+cancellation/history, minimum layout, pending Save and fresh reopen/playback
+pass with byte-identical native/MCP authored data. Local/additive modes, other cross mappings, multiple destination writers,
+transform timelines and native mapping creation/reconnection remain unsupported.
+See [the precise contract](slices/transform-mapping-authoring.md).
+
+Multi-vertex Direct addition (November 15): one bound bone can be edited across
+an explicit vertex set through native numeric/slider/viewport controls and the
+shared MCP command. Exact raw uniform/mixed readback brings MCP to **52 commands /
+12 tools**, with native v22 unchanged. Absolute edits skip sole-positive vertices
+without recipients; relative steps retain one gesture's frozen recipient ratios.
+Positive sparse creation inserts a new bone-local `[0,0]` entry in consistent mesh
+binding order, preserving existing entries. It rejects keyed/pending Deform layout
+changes until remapping exists. Bind snapshots capture applied locals and sampled
+inheritance together; omitted modes preserve legacy Setup behavior.
+
+Actual native input, byte-identical native/MCP saves, fresh reopen/playback,
+external runtime and installed4.3.26 interchange pass. Editor export rejects
+contradictory cross-vertex bone precedence before writing. Runtime export retains
+raw arrays, including repeated/zero entries. This consumer restriction does not
+sort or normalize native data. Brushes/Auto/Smooth/locks/Update, multiple selected
+bones and exact styling remain gaps. See [the contract](slices/weight-multivertex.md).
+
+Global draw-order authoring addition (November 14): native Animate controls add
+pending order and Auto Key/K. Exact raw-key/complete-permutation commands and
+typed retime/copy/paste/delete share the engine with MCP. MCP has **51 commands /
+11 tools**; native v22 is unchanged. Full order readback includes hidden and
+empty slots. Untouched imported offsets stay as written; semantic same-order
+overwrites preserve their raw representation. New semantic keys use an independent
+minimal LIS encoder whose tie choice does not claim native identity.
+
+Clipboard paste requires the identical ordered slot-name layout. Setup order is
+readable, while Setup reordering, draw-order folders, constraint-modified order
+and broader clipboard mapping remain deferred. Peachy's mixed-flush Undo restores
+the pre-key pending pose; the measured native Undo instead re-evaluates keys.
+Native input, fresh-process reopen, both authored runtime checks and installed
+4.3.26 reimport/re-export pass. The editor may choose a different equivalent
+minimal offset list. See [the bounded contract](slices/draw-order-authoring.md).
+
+Curves authoring addition (November 14): exact scalar/IK curve-only setters and
+shared interval presets/handle actions are available natively and through MCP
+(native v22). Scalar import retains flat Bezier controls.
+Curves fits relative handles and keeps flat plots blank; absolute Graph retains
+their excursions. Native interaction, fresh-process persistence and both authored
+runtime comparisons pass. Separate-off adjacent selected intervals, Custom with
+Bezier neighbors, and extreme/vertical/outside-time/flat-linked live coupling
+remain explicitly refused. Stored presets, Last chosen and grouped native
+properties remain open. See [the measured contract](slices/curves-authoring.md).
+
+Export targets (November 14): native, CLI and MCP export share explicit Editor
+and Runtime policies. Editor remains the default and rejects default-skin name
+overrides that the installed importer can rename while clearing Setup and swap
+keys. Runtime preserves both identities and skips Editor naming and weighted
+bone-order consumer restrictions.
+No native data is renamed or removed; all other feature guards remain. See the
+[observed cases and precise contract](slices/export-targets.md).
+
+Slot authoring addition (November 14): native controls and MCP now key attachment
+swaps/hiding and RGBA colors, with shared pending poses, Auto Key/K, typed
+retime/copy/delete/clipboard actions and exact four-channel curves. The selected
+slot's Graph edits percentage channel values; Properties uses an explicit Color
+OK/Cancel dialog. New color keys split adjacent curves. Native and MCP authored
+outputs pass the external runtime, while native input and fresh-process
+persistence pass separately. Native v22 stays unchanged. Persistent colors remain
+bytes; the established sampler can differ from the editor at half-byte ties.
+Extreme-time split fallback is outside native calibration. Default-attachment
+name overrides require the explicit Runtime target; Editor export refuses them. See the
+[precise scope and evidence](slices/slot-authoring.md); this does not add separate
+RGB/alpha, dark tint or the broader Color view's Setup targets.
+
+Current authoring addition (November 14): unweighted/weighted mesh deform keys
+can be created through single-vertex Animate drags/nudges, Auto Key, K or the
+attachment key control, and deleted at the current key. Pending offsets are
+excluded from saves/exports. Native format stays v22. Attachment-owned Deform
+Dopesheet rows now support exact retime/copy/delete and Copy/Cut/Paste through
+the same engine/MCP commands. Deform Graph edits normalized transition progress
+with curve presets, tangent dragging and numeric handles; it preserves stored
+vertex offsets and exact key times. Clipboard compatibility follows per-vertex
+offset segmentation, including unweighted ↔ one-influence-per-vertex weighted
+pastes; equal flat lengths alone are insufficient. See the
+[timeline scope](slices/deform-timeline.md) and
+[vertex-authoring guards](slices/deform-authoring.md). Actual native key/curve/clipboard edits, cancellation, playback and fresh-process
+persistence pass; both native- and MCP-authored exports match the external
+runtime at the existing 0.001 tolerance. Multi-vertex and
+Animate soft editing remain gaps. Startup image loading uses the actual
+renderer limit and refuses oversized images without resizing or aborting.
+
+Fresh headless authoring now starts with MCP `create_project`, then append-only
+bone/slot/region/mesh commands. Weighted bind points, topology, curves and deform
+keys use the same document validation and engine as the editor. These are MCP/core
+creation APIs; desktop image-import and freeform topology workflows remain gaps.
+The single-page atlas exporter now packs up to 4096×4096 without resizing source
+art (maximum image dimension 4092 with its two-pixel border). Multipage export
+remains unsupported. See [tutorial outcome scope](slices/training-recreation.md).
+
 Static IK is a bounded subset: one or two connected bones, unit positive scale
 and zero shear on their chain/ancestors, and a parent for the first bone. Chains
 may nest (a toe below a leg) and solve sequentially in constraint order; shared
@@ -25,7 +334,7 @@ Input-only obsolete integer `order` is validated and omitted, never used to sort
 | Slots | Setup attachment, exact RGBA tint, normal/additive/multiply/screen blend modes | Dark/two-color tint |
 | Skins | Region/mesh maps, explicit attachment names, default-skin fallback; skin-required bones and IK/transform/physics constraints with per-skin activation | Skin path-constraint lists, a unified skin `constraints` list, non-required bones under required parents |
 | Animation | Path position and spacing keys; draw order keys (offsets as written); event keys with per-key overrides; slot attachment and RGBA color keys; mesh deform keys (unweighted and weighted); bone rotation, translation, scale and shear; combined or scalar input timelines; grouped IK Mix/Positive timelines; physics setting and reset timelines, including global (`""`) timelines | Draw order folders; transform, path and other slot (rgb, alpha, dark tint, sequence) timelines |
-| Curves | Linear, stepped, normalized cubic handles (time handles may cross or leave the key interval); overshoot between equal values as offset handles | Nonfinite controls; overshooting curves between equal values |
+| Curves | Linear, stepped, normalized cubic handles (time handles may cross or leave the key interval); overshoot between equal values as offset handles | Nonfinite controls; interactive coupled actions have the separate bounded authoring limits above |
 | Constraints | One-/two-bone normal IK with keyed Mix/Positive, two-bone Positive, nested chains in list order, off-axis child offsets; animated targets. Physics constraints as data: every setting, Scale Y mode and Global flag, in unified constraint order. World transform constraints: identity Rotate, X/Y mappings with offsets, scale and clamping; IK under any transformed ancestors | Advanced IK settings, shared-bone or cross-target chains, transformed chains; skin-required physics; transform, path, slider and other constraints |
 | Images | Loose PNGs for editing; one untrimmed atlas page for desktop export | Packed-atlas import, rotated/trimmed atlas regions, multipage export |
 | Files | `.peachy` v22; in-memory v1–v21 migration; Spine JSON adapter; event definitions and `skeleton.referenceScale` stored as data | Native `.spine` projects and binary `.skel` |

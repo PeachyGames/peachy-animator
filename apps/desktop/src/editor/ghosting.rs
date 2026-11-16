@@ -165,6 +165,9 @@ impl Editor {
         if !self.ghosting.enabled || self.setup_mode || self.ghosting.opacity == 0. {
             return Ok(GhostFrame::default());
         }
+        if self.ghosting.selection_only && !self.ghosting.locked && self.selection.len() > 1 {
+            return Err("Selection-only ghosting for bone groups is not implemented yet".into());
+        }
         let doc = self.session.document();
         let samples =
             peachy_engine::ghost_samples(doc, self.animation, self.time, &self.ghost_sampling())?;
@@ -501,6 +504,7 @@ mod slot_tint_tests {
             .unwrap();
         doc.slots[slot].color = [128, 255, 0, 64];
         editor.session = Session::new(doc).unwrap();
+        editor.session.set_skin(&editor.skin);
         let texture = ctx.load_texture(
             "ghost-slot-tint-proof",
             egui::ColorImage::from_rgba_unmultiplied([1, 1], &[255; 4]),

@@ -23,7 +23,7 @@ pub(super) fn workspace_frame(editor: &mut Editor, ctx: &egui::Context, events: 
 }
 
 pub(super) fn editor_fixture() -> Editor {
-    let mut doc: Document = serde_json::from_str(include_str!(
+    let mut doc: Document = peachy_io::decode_project(include_str!(
         "../../../../examples/peach-bot/peach-bot.peachy"
     ))
     .unwrap();
@@ -52,13 +52,20 @@ pub(super) fn editor_fixture() -> Editor {
         project_path: None,
         asset_root: PathBuf::new(),
         textures: BTreeMap::new(),
-        selection: Some(TreeItem::Bone(8)),
+        selection: Some(TreeItem::Bone(8)).into(),
+        selection_input: Default::default(),
         selection_history: Default::default(),
         key_selection: Default::default(),
+        dopesheet_focus: Default::default(),
         key_drag: None,
+        cycle_offset: Default::default(),
         timeline_clipboard: None,
+        leaf_source: None,
+        group_clipboard: None,
+        paste_receipt: None,
         timeline_input: Default::default(),
         tree,
+        draw_order: Default::default(),
         hidden_bones: BTreeSet::new(),
         hidden_slots: BTreeSet::new(),
         animation: 0,
@@ -85,6 +92,8 @@ pub(super) fn editor_fixture() -> Editor {
         timeline_view: Default::default(),
         show_weights: false,
         weights: Default::default(),
+        transform_constraint_view: Default::default(),
+        slider_view: Default::default(),
         weight_edit: None,
         weight_blocked: None,
         weight_controls: None,
@@ -100,6 +109,8 @@ pub(super) fn editor_fixture() -> Editor {
         preview: Default::default(),
         audio: Default::default(),
         graph: Default::default(),
+        curve_interaction: Default::default(),
+        curves: Default::default(),
         slot_color: Default::default(),
         drag: None,
         transform_blocked: false,
@@ -107,6 +118,7 @@ pub(super) fn editor_fixture() -> Editor {
         mesh_vertex: 0,
         mesh_triangle: 0,
         mesh_drag: None,
+        deform_drag: None,
         mesh_blocked: false,
         mesh_tools: Default::default(),
         capture_targets: BTreeMap::new(),
@@ -117,10 +129,12 @@ pub(super) fn editor_fixture() -> Editor {
         new_bone: String::new(),
         rename: None,
         duplicate_animation: None,
+        export_dialog: None,
         capture: None,
         capture_directory: PathBuf::new(),
         frames: 0,
     };
+    editor.session.set_skin(&editor.skin);
     editor.reconcile_selection();
     select_rotation(&mut editor);
     editor
@@ -140,7 +154,8 @@ pub(super) fn select_rotation(editor: &mut Editor) {
 pub(super) fn animated_ik_editor() -> Editor {
     let mut editor = editor_fixture();
     let mut document: Document =
-        serde_json::from_str(include_str!("../../../../examples/peach-bot/ik-bot.peachy")).unwrap();
+        peachy_io::decode_project(include_str!("../../../../examples/peach-bot/ik-bot.peachy"))
+            .unwrap();
     document.animations[0].tracks.clear();
     document.animations[0].ik_tracks = vec![IkTrack {
         constraint: 1,
@@ -161,7 +176,7 @@ pub(super) fn animated_ik_editor() -> Editor {
     }];
     editor.session = Session::new(document).unwrap();
     editor.time = 0.25;
-    editor.selection = Some(TreeItem::Constraint(1));
+    editor.selection = Some(TreeItem::Constraint(1)).into();
     editor.key_selection.clear();
     editor.reconcile_selection();
     editor
@@ -210,7 +225,7 @@ pub(super) fn mesh_editor(weighted: bool) -> (Editor, AttachmentRef) {
     }
     editor.session = Session::new(document).unwrap();
     editor.setup_mode = true;
-    editor.selection = Some(TreeItem::Attachment(key.clone()));
+    editor.selection = Some(TreeItem::Attachment(key.clone())).into();
     editor.time = 0.;
     editor.fit = true;
     editor.reconcile_selection();

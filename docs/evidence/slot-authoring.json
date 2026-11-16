@@ -1,0 +1,265 @@
+{
+  "date": "2026-11-14",
+  "baselineCommit": "5dc7496eb7a21f637025297d37011d5e4bb6c36b",
+  "nativeFormat": 22,
+  "reference": {
+    "installedEditor": "4.3.26",
+    "clientPixels": [
+      1500,
+      960
+    ],
+    "nativeScreenshotsInspected": true,
+    "publicScreenshots": "Original Peachy app/art only",
+    "source": "https://esotericsoftware.com/spine-graph#New-keys"
+  },
+  "shared": {
+    "mcpTools": 11,
+    "commandVariants": 45,
+    "slotAttachmentAndColorPending": true,
+    "exactTypedTwoKindKeys": true,
+    "commonClipboardOrigin": true,
+    "missingPasteNamesSkipped": true,
+    "acceptedPasteIdentityQuery": true,
+    "rawHiddenSlotPoseArrays": true,
+    "persistentByteKeys": true,
+    "viewingPreservesSampledFloats": true
+  },
+  "calibration": {
+    "originalCases": 16,
+    "nativeSplitSteps": 300,
+    "coordinates": "absolute f32 finite differences, independent derivation",
+    "initialMatchedParameters": 52,
+    "heldOutMatchedParameters": 52,
+    "initialInsertSeconds": 0.4,
+    "heldOutInsertSeconds": 0.6,
+    "heldOutIntervalOriginSeconds": 0.4,
+    "flatAllChannelStepIsImportOptimization": true
+  },
+  "focusedChecks": {
+    "engineSlot": 37,
+    "engineTimelineEarlier": 25,
+    "desktopSlot": 37,
+    "desktopGraph": 33,
+    "desktopClipboard": 15,
+    "desktopNumericEscape": 2,
+    "desktopViewsEarlier": 8,
+    "desktopLayoutEarlier": 1,
+    "mcpSchemas": 6,
+    "mcpStdio": 4,
+    "adapterSlotKeys": 3,
+    "filtersOverlap": true,
+    "format": true,
+    "workspaceClippyAllTargets": true,
+    "workspaceBuild": true,
+    "architecture": true
+  },
+  "nativePending": {
+    "passed": true,
+    "actualTypedAlpha": "128.9",
+    "encodedAlpha": 128,
+    "modalCancelRestoresWholeState": true,
+    "pendingSaveExclusion": true,
+    "otherRawColorChannelsUnchanged": true,
+    "pendingAttachmentSwap": true,
+    "globalKMixedOneUndoRedo": true,
+    "sourceSetupSkinsBonesUnchanged": true,
+    "animation": 2,
+    "slot": 8,
+    "time": 0.6000000238418579
+  },
+  "nativeGraph": {
+    "passed": true,
+    "freshProcessPersistence": true,
+    "nativeFieldEscapePreservesSlotKeyChannel": true,
+    "actualTangentDrag": true,
+    "oneUndoRestoresWholeDocument": true,
+    "redoRestoresWholeDocument": true,
+    "otherChannelsAndKeyBytesUnchangedByTangent": true,
+    "numericAbsoluteValuePercent": 80,
+    "graphKeyboardCopy": true,
+    "dopesheetKeyboardPasteDelete": true,
+    "pastedColorDoesNotAliasAttachmentKey": true,
+    "clipboardUndoRedo": true,
+    "savedDocumentMatches": true,
+    "imageCount": 10,
+    "evaluationError": null,
+    "reopenedFinal": true,
+    "freshProcessNoUndo": true,
+    "escapeCancelsHeldTangent": true,
+    "cancelledHeldPointerDoesNotRearm": true,
+    "actualPlayback": true,
+    "playbackDocumentUnchanged": true,
+    "finalGraph": "peachy-slot-graph-final.png",
+    "finalDopesheet": "peachy-slot-dopesheet-final.png"
+  },
+  "ownedNativeAndReferenceProcessesClosed": true,
+  "actualMcp": {
+    "passed": true,
+    "actualStdioMcp": true,
+    "tools": 11,
+    "commands": 45,
+    "newClip": "slot-authoring",
+    "readonlyMixedCopy": true,
+    "attachmentKeys": 2,
+    "colorKeys": 2,
+    "retimedColorExact": 0.30000001192092896,
+    "mixedClipboardAcrossClips": true,
+    "curvePreservingInsertion": true,
+    "curveChannelsPreserved": true,
+    "hiddenRgbRetained": true,
+    "rawSlotSamples": 81,
+    "atomicRejectedBatch": true,
+    "undoRedo": true,
+    "savedReopened": true,
+    "sourceFilesUnchanged": 15
+  },
+  "mcpRuntime": {
+    "physicsConstraints": 0,
+    "physicsValues": 0,
+    "physicsTimelines": 0,
+    "physicsFrames": 0,
+    "regionComparisons": 49032,
+    "maxRegionError": 3.0517578125e-05,
+    "meshComparisons": 0,
+    "weightedMeshComparisons": 0,
+    "maxMeshError": 0,
+    "uvComparisons": 0,
+    "maxUVError": 0,
+    "runtime": "Spine 4.3 external oracle",
+    "bones": 15,
+    "slots": 14,
+    "skins": [
+      "default",
+      "mint",
+      "peach"
+    ],
+    "clips": [
+      {
+        "name": "idle",
+        "nativeEnd": 2.5,
+        "runtimeEnd": 2.5,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default",
+          "mint",
+          "peach"
+        ],
+        "maxWorldError": 1.897810622608631e-05
+      },
+      {
+        "name": "slot-authoring",
+        "nativeEnd": 1.5,
+        "runtimeEnd": 1.5,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default",
+          "mint",
+          "peach"
+        ],
+        "maxWorldError": 1.3480708318525103e-05
+      },
+      {
+        "name": "wave",
+        "nativeEnd": 2.4000000953674316,
+        "runtimeEnd": 2.4000000953674316,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default",
+          "mint",
+          "peach"
+        ],
+        "maxWorldError": 2.6533745369761164e-05
+      }
+    ],
+    "tolerance": 0.001,
+    "maxWorldError": 2.6533745369761164e-05,
+    "comparisons": 42120,
+    "ikPoseComparisons": 0,
+    "maxIKMixError": 0,
+    "ikMixTolerance": 1e-06,
+    "drawOrderChecks": 468,
+    "imageChecks": 6129,
+    "colorComparisons": 24516
+  },
+  "nativeRuntime": {
+    "physicsConstraints": 0,
+    "physicsValues": 0,
+    "physicsTimelines": 0,
+    "physicsFrames": 0,
+    "regionComparisons": 49032,
+    "maxRegionError": 3.0517578125e-05,
+    "meshComparisons": 0,
+    "weightedMeshComparisons": 0,
+    "maxMeshError": 0,
+    "uvComparisons": 0,
+    "maxUVError": 0,
+    "runtime": "Spine 4.3 external oracle",
+    "bones": 15,
+    "slots": 14,
+    "skins": [
+      "default",
+      "mint",
+      "peach"
+    ],
+    "clips": [
+      {
+        "name": "idle",
+        "nativeEnd": 2.5,
+        "runtimeEnd": 2.5,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default",
+          "mint",
+          "peach"
+        ],
+        "maxWorldError": 1.897810622608631e-05
+      },
+      {
+        "name": "slot-authoring",
+        "nativeEnd": 1.5,
+        "runtimeEnd": 1.5,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default",
+          "mint",
+          "peach"
+        ],
+        "maxWorldError": 1.3480708318525103e-05
+      },
+      {
+        "name": "wave",
+        "nativeEnd": 2.4000000953674316,
+        "runtimeEnd": 2.4000000953674316,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default",
+          "mint",
+          "peach"
+        ],
+        "maxWorldError": 2.6533745369761164e-05
+      }
+    ],
+    "tolerance": 0.001,
+    "maxWorldError": 2.6533745369761164e-05,
+    "comparisons": 42120,
+    "ikPoseComparisons": 0,
+    "maxIKMixError": 0,
+    "ikMixTolerance": 1e-06,
+    "drawOrderChecks": 468,
+    "imageChecks": 6129,
+    "colorComparisons": 24516
+  },
+  "review": "slot-authoring.html",
+  "hostedCI": {
+    "registeredWorkflows": 0,
+    "status": "unresolved registration; no hosted pass",
+    "mainIntegrated": false
+  },
+  "limits": [
+    "Persistent keys encode RGBA bytes; pre-existing sampling can differ by one encoded byte at half-byte ties.",
+    "Extreme or adjacent-f32 time degeneracy uses an exact stable fallback outside native scan calibration.",
+    "Selected-slot authoring; full Color targets, separate RGB/alpha, dark tint, all-owner Graph and sliders remain.",
+    "Native editor default-attachment name override import can rename a placeholder and clear its timeline; unchanged by this slice.",
+    "No full Spine/pixel compatibility or live desktop MCP bridge is claimed."
+  ]
+}

@@ -55,7 +55,7 @@ const cli = process.env.PEACHY_CLI ?? resolve(root, 'target/debug/peachy-cli');
 const source = process.argv[5] ? resolve(process.argv[5]) : resolve(root, 'examples/peach-bot/peach-bot.peachy');
 const exportPath = process.argv[3] ? resolve(process.argv[3]) : resolve(root, '.local/peach-bot.json');
 const atlasPath = process.argv[4] ? resolve(process.argv[4]) : resolve(root, 'examples/peach-bot/peach-bot.atlas');
-if (!existsSync(exportPath)) execFileSync(cli, ['export', source, exportPath]);
+if (!existsSync(exportPath)) execFileSync(cli, ['export', source, exportPath, '--target', 'runtime43']);
 const atlas = new TextureAtlas(readFileSync(atlasPath, 'utf8'));
 for (const page of atlas.pages) {
   const imagePath=resolve(dirname(atlasPath),page.name);
@@ -138,7 +138,7 @@ for (const animation of data.animations) {
   const nativeEnd = sourceProject.format >= 3
     ? Math.max(keyEnd(native.tracks), keyEnd(native.ik_tracks), keyEnd(native.physics), resetEnd,
       // Every other keyed kind also extends the clip (as Animation::duration).
-      ...['inherit_tracks', 'deform_tracks', 'attachment_tracks', 'color_tracks', 'path_tracks'].map(k => keyEnd(native[k] ?? [])),
+      ...['inherit_tracks', 'deform_tracks', 'attachment_tracks', 'color_tracks', 'path_tracks', 'sequence_tracks', 'slider_tracks'].map(k => keyEnd(native[k] ?? [])),
       ...[native.events ?? [], native.draw_order ?? []].map(keys => keys.reduce((end, key) => Math.max(end, Math.fround(key.time)), 0)))
     : Math.fround(native.duration);
   assert.equal(animation.duration, nativeEnd, `${animation.name}: runtime end matches native end`);

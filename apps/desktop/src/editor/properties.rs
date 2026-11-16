@@ -3,7 +3,16 @@ use super::*;
 impl Editor {
     pub(super) fn inspector(&mut self, ui: &mut egui::Ui) {
         self.record_target("properties", ui.clip_rect());
-        let title = match self.selection {
+        if self.selection.len() > 1 {
+            ui.label(RichText::new(format!("{} Bones", self.selection.len())).strong());
+            ui.label("Use the transform toolbar to edit the selected bones together.");
+            for item in self.selection.members() {
+                ui.label(item.label(self.session.document()));
+            }
+            return;
+        }
+        let title = match self.selection.single().cloned() {
+            Some(TreeItem::DrawOrder | TreeItem::DrawOrderSlot { .. }) => "Draw order".into(),
             Some(TreeItem::Constraint(index)) => self
                 .session
                 .document()
@@ -16,7 +25,7 @@ impl Editor {
         };
         ui.horizontal(|ui| {
             let heading = ui.label(RichText::new(title).strong());
-            if matches!(self.selection, Some(TreeItem::Constraint(_))) {
+            if matches!(self.selection.single(), Some(TreeItem::Constraint(_))) {
                 self.record_target("ikHeader", heading.rect);
             }
             if let Some(
@@ -24,7 +33,7 @@ impl Editor {
                 | TreeItem::Slot(_)
                 | TreeItem::Animation(_)
                 | TreeItem::Constraint(_)),
-            ) = self.selection.clone()
+            ) = self.selection.single().cloned()
             {
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if let TreeItem::Animation(animation) = item {
@@ -56,7 +65,7 @@ impl Editor {
             }
         });
         ui.separator();
-        let Some(item) = self.selection.clone() else {
+        let Some(item) = self.selection.single().cloned() else {
             ui.label("Select an item in the Tree or viewport.");
             return;
         };
@@ -64,6 +73,7 @@ impl Editor {
             ui.label(RichText::new(item.label(self.session.document())).color(ACCENT));
         }
         match item {
+            TreeItem::DrawOrder | TreeItem::DrawOrderSlot { .. } => self.draw_order_properties(ui),
             TreeItem::Skeleton => {
                 let doc = self.session.document();
                 ui.label(format!(
@@ -111,7 +121,7 @@ impl Editor {
                                 path.vertex_count() / 3 - usize::from(!path.closed),
                                 if path.closed { " · closed" } else { "" }
                             ))
-                            .on_hover_text("Path constraints move bones along this curve. Editing paths is not supported yet.");
+                            .on_hover_text("Path constraints move bones along this curve. Editing path vertices is not supported yet.");
                         }
                         Attachment::Clipping(clip) => {
                             let end = clip.end.map_or("the last slot".to_owned(), |end| {
@@ -120,9 +130,9 @@ impl Editor {
                             ui.label(format!("Clipping · {} points", clip.vertex_count()));
                             ui.label(format!("Cuts slots drawn after this one, through {end}"))
                                 .on_hover_text(if clip.convex {
-                                    "Uses the polygon's convex hull. Editing clipping polygons is not supported yet."
+                                    "Uses the polygon's convex hull. Editing clipping polygon vertices is not supported yet."
                                 } else {
-                                    "Editing clipping polygons is not supported yet."
+                                    "Editing clipping polygon vertices is not supported yet."
                                 });
                         }
                         Attachment::Region(r) => {
@@ -149,6 +159,9 @@ impl Editor {
                     }
                 }
                 self.attachment_panel(ui);
+                if !self.setup_mode {
+                    self.deform_curve_properties(ui, &key);
+                }
                 if !self.setup_mode && !self.selected_mesh_is_weighted() {
                     ui.label(
                         RichText::new("Attachment transforms and vertices are edited in Setup.")
@@ -173,6 +186,9 @@ impl Editor {
                 }
             }
             TreeItem::Animation(animation) => self.animation_properties(ui, animation),
+            TreeItem::Constraint(index) if self.slider_constraint(index).is_some() => {
+                self.slider_properties(ui, index)
+            }
             TreeItem::Constraint(index) if self.physics_constraint(index).is_some() => {
                 self.physics_properties(ui, index)
             }
@@ -267,6 +283,8 @@ impl Editor {
             "Slot · Bone: {}",
             self.session.document().bones[s.bone].name
         ));
+        self.slot_color_properties(ui, slot);
+        let s = &self.session.document().slots[slot];
         let choices: BTreeSet<_> = self
             .session
             .document()
@@ -275,9 +293,16 @@ impl Editor {
             .filter_map(|skin| skin.get(&s.name))
             .flat_map(|entries| entries.keys().cloned())
             .collect();
-        let mut selected = s.attachment.clone();
+        let mut selected = match self.current_slot_pose(slot) {
+            Ok(pose) => pose.attachment,
+            Err(error) => {
+                ui.colored_label(ACCENT, error);
+                return;
+            }
+        };
         let before = selected.clone();
-        ui.add_enabled_ui(self.setup_mode, |ui| {
+        let enabled = self.slot_authoring_input_available(ui.ctx());
+        ui.add_enabled_ui(enabled, |ui| {
             let combo = egui::ComboBox::from_id_salt("slot-attachment")
                 .selected_text(selected.as_deref().unwrap_or("None"))
                 .show_ui(ui, |ui| {
@@ -289,29 +314,22 @@ impl Editor {
             self.record_target("slotAttachment", combo.response.rect);
         });
         if selected != before {
-            self.dispatch(Command::SetSlotAttachment {
-                slot,
-                attachment: selected,
-            });
+            self.edit_slot_attachment(slot, selected);
         }
-        if let Some((key, _)) = self
-            .session
-            .document()
-            .resolved_attachment(&self.skin, slot)
-        {
-            let key = key.clone();
+        ui.horizontal(|ui| {
+            self.slot_property_key_controls(
+                ui,
+                slot,
+                peachy_engine::SlotProperty::Attachment,
+                "slotAttachmentProperty",
+            )
+        });
+        if let Some(key) = self.shown_slot_attachment(slot) {
             let button = ui.button("Select attachment");
             self.record_target("selectSlotAttachment", button.rect);
             if button.clicked() {
                 self.select(TreeItem::Attachment(key));
             }
-        }
-        if !self.setup_mode {
-            ui.label(
-                RichText::new("Setup attachment only; attachment timelines are not implemented.")
-                    .small()
-                    .color(MUTED),
-            );
         }
     }
 

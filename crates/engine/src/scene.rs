@@ -2,7 +2,7 @@
 use crate::{
     Affine, AuthoredPose, IkPose, checked_pose_from_authored,
     mesh::{REGION_TRIANGLES, REGION_UVS, region_vertices},
-    mesh_world_vertices, sample_authored_pose,
+    mesh_world_vertices, sample_authored_pose_with_skin,
 };
 use peachy_document::{Attachment, AttachmentRef, Document, Transform};
 use serde::Serialize;
@@ -115,7 +115,7 @@ pub fn checked_evaluate_scene(
     if animation.is_some_and(|index| index >= doc.animations.len()) {
         return Err("Unknown animation".into());
     }
-    let mut authored = sample_authored_pose(doc, animation, time)?;
+    let mut authored = sample_authored_pose_with_skin(doc, animation, time, skin)?;
     if let Some((bone, transform)) = preview {
         *authored
             .locals
@@ -133,8 +133,21 @@ pub fn checked_scene_from_authored(
     skin: &str,
     authored: &AuthoredPose,
 ) -> Result<Scene, String> {
-    let authored = authored.clone().with_skin(doc, skin);
-    let pose = checked_pose_from_authored(doc, &authored)?;
+    if authored.skin != skin {
+        return Err("Authored pose skin must match the scene; sample in the intended skin before applying pending edits".into());
+    }
+    let pose = checked_pose_from_authored(doc, authored)?;
+    checked_scene_from_evaluated(doc, skin, pose)
+}
+
+/// Consume one already evaluated pose for geometry without sampling or solving
+/// again. The caller keeps the same validated document and evaluated skin.
+pub fn checked_scene_from_evaluated(
+    doc: &Document,
+    skin: &str,
+    pose: crate::EvaluatedPose,
+) -> Result<Scene, String> {
+    pose.check_scene_context(doc, skin)?;
     let scene = scene_from_evaluated(doc, skin, pose);
     for overlay in &scene.overlays {
         if !overlay.vertices.iter().flatten().all(|v| v.is_finite()) {
@@ -188,7 +201,7 @@ pub fn checked_setup_scene_from_locals(
     skin: &str,
     locals: Vec<Transform>,
 ) -> Result<Scene, String> {
-    let mut authored = sample_authored_pose(doc, None, 0.)?;
+    let mut authored = sample_authored_pose_with_skin(doc, None, 0., skin)?;
     authored.locals = locals;
     checked_scene_from_authored(doc, skin, &authored)
 }
@@ -198,13 +211,14 @@ fn scene_from_evaluated(doc: &Document, skin: &str, pose: crate::EvaluatedPose) 
         authored_locals: locals,
         applied_locals,
         world,
-        authored_ik: ik_poses,
+        applied_ik: ik_poses,
         active_bones,
         deforms,
         slot_attachments,
         slot_colors,
         draw_order,
         sequence_frames,
+        ..
     } = pose;
     let mut attachments = vec![];
     let mut overlays = vec![];

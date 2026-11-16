@@ -1,8 +1,22 @@
 //! Clipboard presentation coordinates the shared key commands and editor-session state.
-use super::dopesheet_selection::{KeyId, SelectionScope};
+use super::dopesheet_selection::SelectionScope;
 use super::icons::Icon;
 use super::*;
-use peachy_engine::{AnimationKeyClipboard, KeyOwner, copy_animation_keys};
+use peachy_engine::{AnimationKeyClipboard, pasted_animation_key_group, pasted_animation_keys};
+
+#[path = "timeline_group_clipboard.rs"]
+mod group;
+#[path = "timeline_leaf_clipboard.rs"]
+mod leaf;
+#[cfg(test)]
+#[path = "timeline_leaf_clipboard_tests.rs"]
+mod leaf_tests;
+pub(super) use leaf::LeafSourceReceipt;
+#[cfg(test)]
+#[path = "timeline_group_clipboard_tests.rs"]
+mod group_tests;
+use group::CopiedKeys;
+pub(super) use group::{GroupClipboard, PasteReceipt};
 
 fn clipboard_text(clipboard: &AnimationKeyClipboard) -> String {
     serde_json::json!({
@@ -21,34 +35,13 @@ pub(super) fn clipboard_len(clipboard: &AnimationKeyClipboard) -> usize {
     match clipboard {
         AnimationKeyClipboard::Bone { keys } => keys.len(),
         AnimationKeyClipboard::Ik { keys } => keys.len(),
-    }
-}
-
-fn pasted_keys(
-    clipboard: &AnimationKeyClipboard,
-    target: KeyOwner,
-    time: f32,
-) -> Result<Vec<KeyId>, String> {
-    match (clipboard, target) {
-        (AnimationKeyClipboard::Bone { keys }, KeyOwner::Bone { bone }) => Ok(keys
-            .iter()
-            .map(|key| KeyId::Bone {
-                bone,
-                property: key.property,
-                time: key.key.time + time,
-            })
-            .collect()),
-        (AnimationKeyClipboard::Ik { keys }, KeyOwner::Ik { constraint }) => Ok(keys
-            .iter()
-            .map(|key| KeyId::Ik {
-                constraint,
-                time: key.time + time,
-            })
-            .collect()),
-        _ => Err(
-            "Copied keys and target must have the same kind: bone transforms or IK constraint."
-                .into(),
-        ),
+        AnimationKeyClipboard::Slider { keys } => keys.len(),
+        AnimationKeyClipboard::Deform { keys, .. } => keys.len(),
+        AnimationKeyClipboard::DrawOrder { keys, .. } => keys.len(),
+        AnimationKeyClipboard::Slot {
+            attachment_keys,
+            color_keys,
+        } => attachment_keys.len() + color_keys.len(),
     }
 }
 
@@ -164,14 +157,20 @@ impl Editor {
     fn select_all_dopesheet_keys(&mut self) {
         self.cancel_gesture();
         self.reconcile_dopesheet_selection();
-        let animation = self.active_animation();
-        let owner = self.timeline_owner();
-        let scope = self.key_selection.select_all(
-            self.session.document(),
-            animation,
-            owner,
-            &dopesheet_selection::rows(owner),
-        );
+        if self.cycle_offset.enabled
+            && let Err(error) = self.cycle_offset_selectable()
+        {
+            self.status = error;
+            return;
+        }
+        let scope = match self.key_selection.select_all_shown() {
+            Ok(scope) => scope,
+            Err(error) => {
+                self.status = error;
+                return;
+            }
+        };
+        self.reconcile_cycle_offset_selection();
         let count = self.key_selection.len();
         self.status = match scope {
             SelectionScope::None => "No keys shown".into(),
@@ -182,8 +181,7 @@ impl Editor {
 
     fn clipboard_context_available(&self) -> bool {
         !self.setup_mode
-            && self.show_dopesheet
-            && self.timeline_owner().is_some()
+            && (self.dopesheet_visible() || self.graph_visible())
             && self
                 .session
                 .document()
@@ -193,26 +191,96 @@ impl Editor {
             && self.error.is_none()
             && self.rename.is_none()
             && self.duplicate_animation.is_none()
+            && self.export_dialog.is_none()
+            && !self.slot_color_dialog_open()
     }
 
     /// Read only committed keys. Pending pose edits never enter the clipboard.
-    fn selected_clipboard(&mut self) -> Option<AnimationKeyClipboard> {
+    fn selected_clipboard(&mut self) -> Option<CopiedKeys> {
+        if !self.clipboard_context_available() {
+            return None;
+        }
         self.cancel_gesture();
         self.reconcile_dopesheet_selection();
         if !self.clipboard_context_available() || self.key_selection.is_empty() {
             return None;
         }
-        match copy_animation_keys(
-            self.session.document(),
-            self.animation,
-            self.key_selection.keys(),
-        ) {
+        let keys = self.key_selection.keys();
+        let single_owner = keys.iter().all(|key| key.owner() == keys[0].owner());
+        let result = if single_owner {
+            LeafSourceReceipt::copy(&self.session, self.animation, keys).map(CopiedKeys::Single)
+        } else {
+            GroupClipboard::copy(&self.session, self.animation, keys).map(CopiedKeys::Group)
+        };
+        match result {
             Ok(clipboard) => Some(clipboard),
             Err(error) => {
                 self.error = Some(error);
                 None
             }
         }
+    }
+
+    fn store_copied_keys(&mut self, clipboard: CopiedKeys) {
+        self.paste_receipt = None;
+        match clipboard {
+            CopiedKeys::Single(copied) => {
+                self.timeline_clipboard = Some(copied.clipboard);
+                self.leaf_source = Some(copied.source);
+                self.group_clipboard = None;
+            }
+            CopiedKeys::Group(keys) => {
+                self.group_clipboard = Some(keys);
+                self.timeline_clipboard = None;
+                self.leaf_source = None;
+            }
+        }
+    }
+    pub(super) fn clear_timeline_clipboard(&mut self) {
+        self.timeline_clipboard = None;
+        self.leaf_source = None;
+        self.group_clipboard = None;
+        self.paste_receipt = None;
+    }
+    pub(super) fn timeline_clipboard_count(&self) -> usize {
+        self.group_clipboard.as_ref().map_or_else(
+            || self.timeline_clipboard.as_ref().map_or(0, clipboard_len),
+            GroupClipboard::len,
+        )
+    }
+    pub(super) fn timeline_clipboard_diagnostic(&self) -> serde_json::Value {
+        let mut diagnostic = if let Some(group) = &self.group_clipboard {
+            group.diagnostic()
+        } else {
+            self.timeline_clipboard.as_ref().map_or_else(|| serde_json::json!({"kind":"empty","keys":0,"entryCount":0}), |keys| {
+                self.leaf_source.as_ref().map_or_else(||serde_json::json!({"kind":"single","version":2,"keys":clipboard_len(keys),"entryCount":1}),|source|source.diagnostic(keys))
+            })
+        };
+        diagnostic["lastPaste"] = self
+            .paste_receipt
+            .as_ref()
+            .map(PasteReceipt::diagnostic)
+            .unwrap_or(serde_json::Value::Null);
+        diagnostic
+    }
+    fn record_timeline_paste(&mut self, accepted: &[peachy_engine::AnimationKey]) {
+        self.paste_receipt = Some(PasteReceipt::new(
+            self.animation,
+            self.time,
+            accepted,
+            self.key_selection.keys(),
+            self.session.document_generation(),
+        ));
+    }
+    fn matches_owned_clipboard(&self, text: &str) -> bool {
+        self.group_clipboard.as_ref().map_or_else(
+            || {
+                self.timeline_clipboard
+                    .as_ref()
+                    .is_some_and(|clipboard| matches_clipboard(text, clipboard))
+            },
+            |clipboard| text == clipboard.text(),
+        )
     }
 
     fn clipboard_status(&mut self, verb: &str, count: usize) {
@@ -229,9 +297,9 @@ impl Editor {
         let Some(clipboard) = self.selected_clipboard() else {
             return false;
         };
-        let count = clipboard_len(&clipboard);
-        ctx.copy_text(clipboard_text(&clipboard));
-        self.timeline_clipboard = Some(clipboard);
+        let count = clipboard.len();
+        ctx.copy_text(clipboard.text());
+        self.store_copied_keys(clipboard);
         self.clipboard_status("Copied", count);
         true
     }
@@ -247,16 +315,22 @@ impl Editor {
         if !self.dispatch(command) {
             return false;
         }
-        let count = clipboard_len(&clipboard);
+        let count = clipboard.len();
         // A failed delete keeps the previous clipboard as well as document/history.
-        ctx.copy_text(clipboard_text(&clipboard));
-        self.timeline_clipboard = Some(clipboard);
+        ctx.copy_text(clipboard.text());
+        self.store_copied_keys(clipboard);
         self.clipboard_status("Cut", count);
         true
     }
 
     pub(super) fn timeline_clipboard_shortcuts(&mut self, ctx: &egui::Context) {
-        let focused = self.dopesheet_has_focus(ctx) && ctx.input(|input| input.focused);
+        let focused = (self.dopesheet_has_focus(ctx)
+            || self.deform_graph_has_focus(ctx)
+            || self.slot_graph_has_focus(ctx)
+            || self.scalar_graph_has_focus(ctx)
+            || self.slider_graph_has_focus(ctx))
+            && ctx.input(|input| input.focused)
+            && self.clipboard_context_available();
         let actions = ctx.input_mut(|input| {
             take_timeline_actions(&mut input.events, focused, &mut self.timeline_input)
         });
@@ -271,13 +345,12 @@ impl Editor {
                     self.cut_dopesheet_keys(ctx);
                 }
                 TimelineAction::PasteText(text) => {
-                    if self
-                        .timeline_clipboard
-                        .as_ref()
-                        .is_some_and(|clipboard| matches_clipboard(&text, clipboard))
-                    {
+                    if self.matches_owned_clipboard(&text) {
                         self.paste_dopesheet_keys();
                     } else {
+                        if self.group_clipboard.take().is_some() {
+                            self.paste_receipt = None;
+                        }
                         self.status =
                             "Clipboard does not contain the keys copied in this project".into();
                     }
@@ -290,18 +363,35 @@ impl Editor {
     }
 
     pub(super) fn paste_dopesheet_keys(&mut self) -> bool {
+        if !self.clipboard_context_available() {
+            return false;
+        }
         self.cancel_gesture();
         self.reconcile_dopesheet_selection();
         if !self.clipboard_context_available() {
             return false;
         }
-        let (Some(target), Some(clipboard)) =
-            (self.timeline_owner(), self.timeline_clipboard.clone())
-        else {
+        if let Some(group) = self.group_clipboard.clone() {
+            return self.paste_key_group(group);
+        }
+        let Some(clipboard) = self.timeline_clipboard.clone() else {
             return false;
         };
+        let target = match self.leaf_paste_target(&clipboard) {
+            Ok(target) => target,
+            Err(error) => {
+                self.status = error;
+                return false;
+            }
+        };
         let time = self.time;
-        let selected = match pasted_keys(&clipboard, target, time) {
+        let accepted = match pasted_animation_keys(
+            self.session.document(),
+            self.animation,
+            target.clone(),
+            time,
+            &clipboard,
+        ) {
             Ok(keys) => keys,
             Err(error) => {
                 self.status = error;
@@ -317,10 +407,188 @@ impl Editor {
         }) {
             return false;
         }
-        let count = selected.len();
-        self.key_selection.replace(selected);
         self.reconcile_dopesheet_selection();
-        self.clipboard_status("Pasted", count);
+        self.record_timeline_paste(&accepted);
+        self.clipboard_status("Pasted", accepted.len());
+        true
+    }
+
+    fn leaf_paste_target(
+        &self,
+        clipboard: &AnimationKeyClipboard,
+    ) -> Result<peachy_engine::KeyOwner, String> {
+        if self.selection.len() > 1 {
+            return Err(
+                "Single-owner key paste to multiple Tree targets requires calibrated mapping"
+                    .into(),
+            );
+        }
+        if let Some(TreeItem::Attachment(attachment)) = self.selection.single()
+            && !self.attachment_editable(attachment)
+        {
+            return Err("The selected attachment is read-only in this skin.".into());
+        }
+        if matches!(clipboard, AnimationKeyClipboard::Bone { .. })
+            && let Some(target) = self.bone_leaf_pose_target()?
+        {
+            return Ok(target);
+        }
+        if matches!(clipboard, AnimationKeyClipboard::Slot { .. })
+            && let Some(
+                TreeItem::Slot(slot)
+                | TreeItem::DrawOrderSlot { slot }
+                | TreeItem::Placeholder { slot, .. },
+            ) = self.selection.single()
+        {
+            let doc = self.session.document();
+            let bone = doc
+                .slots
+                .get(*slot)
+                .ok_or("The selected slot no longer exists")?
+                .bone;
+            if !doc.activity(&self.skin).bones[bone] {
+                return Err("The selected item's parent bone is inactive in this skin.".into());
+            }
+            let target = peachy_engine::KeyOwner::Slot { slot: *slot };
+            if !self.timeline_owner_editable(&target) {
+                return Err("The selected slot is read-only in this skin.".into());
+            }
+            return Ok(target);
+        }
+        // Explicit typed targets retain their shared kind/layout validation.
+        if let Some(target) = self.timeline_owner() {
+            if !self.timeline_owner_editable(&target) {
+                return Err("The selected timeline owner is read-only in this skin.".into());
+            }
+            return Ok(target);
+        }
+        let target = self
+            .leaf_source
+            .as_ref()
+            .ok_or("Select a compatible item or copy these keys in this project first.")?
+            .target(clipboard)?;
+        if !self.timeline_owner_editable(&target) {
+            return Err("The original item for these keys is read-only in this skin.".into());
+        }
+        Ok(target)
+    }
+
+    fn bone_leaf_pose_target(&self) -> Result<Option<peachy_engine::KeyOwner>, String> {
+        let doc = self.session.document();
+        let slot = match self.selection.single() {
+            Some(TreeItem::Slot(slot) | TreeItem::DrawOrderSlot { slot }) => *slot,
+            Some(TreeItem::Attachment(attachment))
+                if matches!(doc.attachment(attachment), Some(Attachment::Region(_))) =>
+            {
+                doc.slots
+                    .iter()
+                    .position(|slot| slot.name == attachment.slot)
+                    .ok_or("The selected region's slot no longer exists")?
+            }
+            _ => return Ok(None),
+        };
+        let bone = doc
+            .slots
+            .get(slot)
+            .ok_or("The selected slot no longer exists")?
+            .bone;
+        if !doc.activity(&self.skin).bones[bone] {
+            return Err("The selected item's parent bone is inactive in this skin.".into());
+        }
+        Ok(Some(peachy_engine::KeyOwner::Bone { bone }))
+    }
+
+    fn group_paste_targets(
+        &self,
+        group: &GroupClipboard,
+    ) -> Result<Vec<peachy_engine::AnimationKeyGroupTarget>, String> {
+        let originals = group.targets()?;
+        let bones = self.selected_bones();
+        if bones.len() < 2
+            || originals
+                .iter()
+                .any(|mapping| !matches!(mapping.target, peachy_engine::KeyOwner::Bone { .. }))
+        {
+            return Ok(originals);
+        }
+        let active = self.session.document().activity(&self.skin);
+        if bones.iter().any(|bone| !active.bones[*bone]) {
+            return Err("A selected paste target bone is inactive in this skin.".into());
+        }
+        if originals.len() != bones.len() {
+            return Err("The selected bone count does not match this copied key group.".into());
+        }
+        let matching = originals
+            .iter()
+            .filter(|mapping| match mapping.target {
+                peachy_engine::KeyOwner::Bone { bone } => bones.contains(&bone),
+                _ => false,
+            })
+            .count();
+        if matching == originals.len() {
+            return Ok(originals);
+        }
+        if matching != 0 {
+            return Err(
+                "Partly overlapping source and target bone groups require native calibration."
+                    .into(),
+            );
+        }
+        if originals.len() != 2 {
+            return Err(
+                "Mapping more than two different target bones requires native calibration.".into(),
+            );
+        }
+        Ok(bones
+            .into_iter()
+            .enumerate()
+            .map(|(entry, bone)| peachy_engine::AnimationKeyGroupTarget {
+                entry,
+                target: peachy_engine::KeyOwner::Bone { bone },
+            })
+            .collect())
+    }
+
+    fn paste_key_group(&mut self, group: GroupClipboard) -> bool {
+        let targets = match self.group_paste_targets(&group) {
+            Ok(targets) => targets,
+            Err(error) => {
+                self.status = error;
+                return false;
+            }
+        };
+        if targets
+            .iter()
+            .any(|mapping| !self.timeline_owner_editable(&mapping.target))
+        {
+            self.status = "A copied key group's original owner is read-only in this skin.".into();
+            return false;
+        }
+        let accepted = match pasted_animation_key_group(
+            self.session.document(),
+            self.animation,
+            self.time,
+            &group.clipboard,
+            &targets,
+        ) {
+            Ok(keys) => keys,
+            Err(error) => {
+                self.status = error;
+                return false;
+            }
+        };
+        self.playing = false;
+        if !self.dispatch(Command::PasteAnimationKeyGroup {
+            animation: self.animation,
+            time: self.time,
+            clipboard: group.clipboard,
+            targets,
+        }) {
+            return false;
+        }
+        self.reconcile_dopesheet_selection();
+        self.record_timeline_paste(&accepted);
+        self.clipboard_status("Pasted", accepted.len());
         true
     }
 
@@ -357,10 +625,19 @@ impl Editor {
             ui.memory_mut(|memory| memory.request_focus(Self::dopesheet_id()));
         }
         let can_paste = context
-            && self
-                .timeline_clipboard
-                .as_ref()
-                .is_some_and(|c| clipboard_len(c) > 0);
+            && if let Some(group) = &self.group_clipboard {
+                group.len() > 0 && group.targets().is_ok()
+            } else {
+                (self.timeline_owner().is_some()
+                    || self
+                        .leaf_source
+                        .as_ref()
+                        .is_some_and(LeafSourceReceipt::has_owner))
+                    && self
+                        .timeline_clipboard
+                        .as_ref()
+                        .is_some_and(|keys| clipboard_len(keys) > 0)
+            };
         let paste = icons::toolbar_button(
             ui,
             Icon::Paste,
@@ -377,7 +654,10 @@ impl Editor {
 
 #[cfg(test)]
 mod tests {
-    use super::super::test_support::{editor_context, editor_fixture, select_rotation};
+    use super::super::dopesheet_selection::KeyId;
+    use super::super::test_support::{
+        editor_context, editor_fixture, select_rotation, workspace_frame,
+    };
     use super::*;
 
     #[test]
@@ -409,16 +689,133 @@ mod tests {
         let track = &editor.session.document().animations[0].ik_tracks[0];
         assert_eq!(track.keys.last().unwrap().curve, curve);
         assert_eq!(track.keys.last().unwrap().time, 2.);
+        assert!(editor.key_selection.is_empty());
         assert_eq!(
-            editor.key_selection.keys(),
-            &[KeyId::Ik {
+            editor.timeline_clipboard_diagnostic()["lastPaste"]["acceptedKeys"],
+            serde_json::json!([KeyId::Ik {
                 constraint: 1,
                 time: 2.
-            }]
+            }])
         );
         editor.undo();
         assert_eq!(editor.session.document(), &before);
         assert!(editor.key_selection.is_empty());
+    }
+
+    fn missing_attachment_paste_fixture(with_color: bool) -> (Editor, egui::Context, String) {
+        let mut editor = editor_fixture();
+        let mut document = editor.session.document().clone();
+        document.animations[0].attachment_tracks = vec![AttachmentTrack {
+            slot: 0,
+            keys: vec![AttachmentKey {
+                time: 0.75,
+                attachment: document.slots[0].attachment.clone(),
+            }],
+        }];
+        document.animations[0]
+            .color_tracks
+            .retain(|track| track.slot != 0);
+        editor.session = Session::new(document).unwrap();
+        editor.select(TreeItem::Slot(0));
+        editor.time = 0.75;
+        editor.reconcile_selection();
+        let clipboard = AnimationKeyClipboard::Slot {
+            attachment_keys: vec![AttachmentKey {
+                time: 0.,
+                attachment: Some("missing-other-slot-art".into()),
+            }],
+            color_keys: if with_color {
+                vec![ColorKey {
+                    time: 0.,
+                    color: [23, 61, 121, 201],
+                    curves: [Curve::Linear; 4],
+                }]
+            } else {
+                vec![]
+            },
+        };
+        let text = clipboard_text(&clipboard);
+        editor.timeline_clipboard = Some(clipboard);
+        let ctx = editor_context();
+        for _ in 0..3 {
+            workspace_frame(&mut editor, &ctx, vec![]);
+        }
+        ctx.memory_mut(|memory| memory.request_focus(Editor::dopesheet_id()));
+        (editor, ctx, text)
+    }
+
+    #[test]
+    fn native_slot_paste_skips_unknown_attachment_selection_and_delete_keeps_existing_key() {
+        let (mut editor, ctx, text) = missing_attachment_paste_fixture(true);
+        let original = editor.session.document().clone();
+        workspace_frame(&mut editor, &ctx, vec![egui::Event::Paste(text)]);
+        assert!(editor.key_selection.is_empty());
+        assert_eq!(
+            editor.timeline_clipboard_diagnostic()["lastPaste"]["acceptedKeys"],
+            serde_json::json!([KeyId::SlotColor {
+                slot: 0,
+                time: 0.75
+            }])
+        );
+        assert!(editor.status.starts_with("Pasted 1 key"));
+        assert_eq!(
+            editor.session.document().animations[0].attachment_tracks,
+            original.animations[0].attachment_tracks
+        );
+        assert_eq!(
+            editor.session.document().animations[0].color_tracks[0].keys[0].color,
+            [23, 61, 121, 201]
+        );
+        let pasted = editor.session.document().clone();
+        workspace_frame(&mut editor, &ctx, vec![delete_event(egui::Key::Delete)]);
+        assert_eq!(editor.session.document(), &pasted);
+        assert!(editor.key_selection.is_empty());
+        editor.undo();
+        assert_eq!(editor.session.document(), &original);
+    }
+
+    #[test]
+    fn native_all_skipped_slot_paste_preserves_document_history_and_valid_prior_selection() {
+        let (mut editor, ctx, text) = missing_attachment_paste_fixture(false);
+        editor
+            .session
+            .dispatch(Command::RenameAnimation {
+                animation: 0,
+                name: "redo sentinel".into(),
+            })
+            .unwrap();
+        editor.session.undo();
+        assert!(!editor.session.can_undo());
+        assert!(editor.session.can_redo());
+        editor.key_selection.replace(vec![KeyId::SlotAttachment {
+            slot: 0,
+            time: 0.75,
+        }]);
+        let original = editor.session.document().clone();
+        let pending = editor.session.pose_edits().clone();
+        workspace_frame(&mut editor, &ctx, vec![egui::Event::Paste(text)]);
+        assert_eq!(
+            editor.key_selection.keys(),
+            &[KeyId::SlotAttachment {
+                slot: 0,
+                time: 0.75
+            }]
+        );
+        assert!(editor.status.starts_with("Pasted 0 keys"));
+        assert_eq!(editor.session.document(), &original);
+        assert_eq!(editor.session.pose_edits(), &pending);
+        assert!(!editor.session.can_undo());
+        assert!(editor.session.can_redo());
+        workspace_frame(&mut editor, &ctx, vec![delete_event(egui::Key::Delete)]);
+        assert!(
+            editor.session.document().animations[0]
+                .attachment_tracks
+                .is_empty()
+        );
+        assert!(editor.session.can_undo());
+        assert!(!editor.session.can_redo());
+        editor.undo();
+        assert_eq!(editor.session.document(), &original);
     }
 
     fn clipboard() -> AnimationKeyClipboard {
@@ -839,7 +1236,7 @@ mod tests {
             property: Property::X,
             time: 0.,
         };
-        editor.key_selection.replace(vec![selected]);
+        editor.key_selection.replace(vec![selected.clone()]);
         let geometry = super::super::key_drag::ChartGeometry {
             start: 0.,
             width: 240.,

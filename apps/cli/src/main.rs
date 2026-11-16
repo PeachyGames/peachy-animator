@@ -11,7 +11,7 @@ fn main() {
 
 fn run() -> Result<(), String> {
     let args: Vec<_> = env::args().skip(1).collect();
-    let usage = "Peachy Animator CLI\n  validate PROJECT.peachy\n  inspect SPINE.json\n  import SPINE.json OUTPUT.peachy\n  export PROJECT.peachy OUTPUT.json\n  bundle PROJECT.peachy PARENT_FOLDER\n  pose PROJECT.peachy ANIMATION SECONDS [SKIN]\n  apply PROJECT.peachy COMMANDS.json OUTPUT.peachy\n\nAll mutation commands write a new output. Artist source files are never edited.";
+    let usage = "Peachy Animator CLI\n  validate PROJECT.peachy\n  inspect SPINE.json\n  import SPINE.json OUTPUT.peachy\n  export PROJECT.peachy OUTPUT.json [--target spine-editor43|runtime43]\n  bundle PROJECT.peachy PARENT_FOLDER [--target spine-editor43|runtime43]\n  pose PROJECT.peachy ANIMATION SECONDS [SKIN]\n  apply PROJECT.peachy COMMANDS.json OUTPUT.peachy\n\nExport defaults to Spine Editor naming validation. runtime43 preserves independent attachment names/placeholders for runtime consumers.\nAll mutation commands write a new output. Artist source files are never edited.";
     if args.is_empty() || args[0] == "--help" {
         println!("{usage}");
         return Ok(());
@@ -48,18 +48,21 @@ fn run() -> Result<(), String> {
         "export" => {
             let doc = peachy_io::decode_project(&contents)?;
             let output = args.get(2).ok_or(usage)?;
-            peachy_io::export_json(Path::new(output), &doc)?;
+            let target = export_target(&args[3..])?;
+            peachy_io::export_json_for(Path::new(output), &doc, target)?;
         }
         "bundle" => {
             let doc = peachy_io::decode_project(&contents)?;
             let parent = Path::new(args.get(2).ok_or(usage)?);
-            let folder = peachy_io::export_bundle(
+            let target = export_target(&args[3..])?;
+            let folder = peachy_io::export_bundle_for(
                 parent,
                 &doc,
                 Path::new(input)
                     .parent()
                     .filter(|p| !p.as_os_str().is_empty())
                     .unwrap_or_else(|| Path::new(".")),
+                target,
             )?;
             println!("{}", folder.display());
         }
@@ -99,4 +102,16 @@ fn run() -> Result<(), String> {
         _ => return Err(usage.into()),
     }
     Ok(())
+}
+
+fn export_target(args: &[String]) -> Result<peachy_io::ExportTarget, String> {
+    match args {
+        [] => Ok(peachy_io::ExportTarget::SpineEditor43),
+        [flag, target] if flag == "--target" => match target.as_str() {
+            "spine-editor43" => Ok(peachy_io::ExportTarget::SpineEditor43),
+            "runtime43" => Ok(peachy_io::ExportTarget::Runtime43),
+            _ => Err("Export target must be spine-editor43 or runtime43".into()),
+        },
+        _ => Err("Expected optional --target spine-editor43|runtime43".into()),
+    }
 }

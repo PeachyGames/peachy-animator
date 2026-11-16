@@ -137,12 +137,12 @@ mod tests {
 
     fn editor() -> Editor {
         let mut editor = editor_fixture();
-        let doc: Document = serde_json::from_str(include_str!(
+        let doc: Document = peachy_io::decode_project(include_str!(
             "../../../../examples/peach-bot/path-bot.peachy"
         ))
         .unwrap();
         editor.session = Session::new(doc).unwrap();
-        editor.selection = None;
+        editor.selection = Default::default();
         editor.show_bones = false;
         editor.fit = true;
         editor.capture = Some(std::env::temp_dir().join("peachy-overlay-test.png"));
@@ -181,9 +181,12 @@ mod tests {
         }
         assert_eq!(
             target,
-            format!("overlay:{}", editor.selection.as_ref().unwrap().key())
+            format!("overlay:{}", editor.selection.single().unwrap().key())
         );
-        assert!(matches!(editor.selection, Some(TreeItem::Attachment(_))));
+        assert!(matches!(
+            editor.selection.single(),
+            Some(TreeItem::Attachment(_))
+        ));
         assert!(editor.selected_bone().is_none());
         assert!(!editor.transform_tool_editable(Tool::Move));
         workspace_frame(
@@ -210,7 +213,7 @@ mod tests {
                 modifiers: egui::Modifiers::NONE,
             }],
         );
-        assert!(editor.selection.is_none());
+        assert!(editor.selection.is_empty());
     }
 
     #[test]
@@ -224,6 +227,7 @@ mod tests {
         }
         editor.session = Session::new(doc).unwrap();
         let ctx = editor_context();
+        editor.session.set_skin(&editor.skin);
         assert!(editor.scene_for_view().unwrap().attachments.is_empty());
         for _ in 0..3 {
             workspace_frame(&mut editor, &ctx, vec![]);

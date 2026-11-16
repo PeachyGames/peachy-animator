@@ -29,6 +29,19 @@ pub fn load(path: &Path) -> Result<Document, String> {
 pub fn decode_project(text: &str) -> Result<Document, String> {
     let mut value: serde_json::Value = serde_json::from_str(text).map_err(|e| e.to_string())?;
     let original_format = value["format"].as_u64();
+    if matches!(original_format, Some(1..=22))
+        && (value["constraints"].as_array().is_some_and(|constraints| {
+            constraints
+                .iter()
+                .any(|constraint| constraint["type"] == "slider")
+        }) || value["animations"].as_array().is_some_and(|animations| {
+            animations
+                .iter()
+                .any(|animation| animation.get("slider_tracks").is_some())
+        }))
+    {
+        return Err("Legacy project formats cannot contain Slider constraints or tracks".into());
+    }
     if matches!(original_format, Some(1..=21))
         && (value["slots"]
             .as_array()
@@ -390,6 +403,19 @@ pub fn decode_project(text: &str) -> Result<Document, String> {
         }
         value["format"] = 22.into();
     }
+    // v22→v23 adds independent Slider Time/Mix track lists.
+    if value["format"].as_u64() == Some(22) {
+        for animation in value["animations"]
+            .as_array_mut()
+            .ok_or("Legacy animations must be an array")?
+        {
+            animation
+                .as_object_mut()
+                .ok_or("Legacy animation must be an object")?
+                .insert("slider_tracks".into(), serde_json::json!([]));
+        }
+        value["format"] = 23.into();
+    }
     let mut doc: Document = serde_json::from_value(value).map_err(|e| e.to_string())?;
     // Wrapping vertices preserves their values and all surrounding fields. Decode
     // the strict schema and validate every legacy field before adding duration holds.
@@ -686,9 +712,15 @@ pub fn create_project(path: &Path, doc: &Document) -> Result<(), String> {
     )
 }
 
+pub use peachy_spine::ExportTarget;
+
 pub fn export_json(path: &Path, doc: &Document) -> Result<(), String> {
+    export_json_for(path, doc, ExportTarget::SpineEditor43)
+}
+
+pub fn export_json_for(path: &Path, doc: &Document, target: ExportTarget) -> Result<(), String> {
     require_extension(path, "json")?;
-    let value = peachy_spine::export_json(doc)?;
+    let value = peachy_spine::export_json_for(doc, target)?;
     write_new(
         path,
         &serde_json::to_vec_pretty(&value).map_err(|e| e.to_string())?,
@@ -802,7 +834,17 @@ pub fn save(path: &Path, doc: &Document, asset_root: &Path) -> Result<(), String
 }
 
 pub fn export_bundle(parent: &Path, doc: &Document, asset_root: &Path) -> Result<PathBuf, String> {
-    let value = peachy_spine::export_json(doc)?;
+    export_bundle_for(parent, doc, asset_root, ExportTarget::SpineEditor43)
+}
+
+pub fn export_bundle_for(
+    parent: &Path,
+    doc: &Document,
+    asset_root: &Path,
+    target: ExportTarget,
+) -> Result<PathBuf, String> {
+    const MAX_SIDE: u32 = 4096;
+    let value = peachy_spine::export_json_for(doc, target)?;
     let mut regions = vec![];
     let mut x = 2;
     let mut y = 2;
@@ -812,16 +854,21 @@ pub fn export_bundle(parent: &Path, doc: &Document, asset_root: &Path) -> Result
         let image = image::open(asset_root.join("images").join(format!("{path}.png")))
             .map_err(|e| format!("Image {path}: {e}"))?
             .into_rgba8();
-        if image.width() > 2044 || image.height() > 2044 {
-            return Err("Slice 1 atlas pages support images up to 2044 pixels".into());
+        if image.width() > MAX_SIDE - 4 || image.height() > MAX_SIDE - 4 {
+            return Err(format!(
+                "Image {path} exceeds the single-page atlas image limit of {} pixels per side",
+                MAX_SIDE - 4
+            ));
         }
-        if x + image.width() + 2 > 2048 {
+        if x + image.width() + 2 > MAX_SIDE {
             x = 2;
             y += row + 4;
             row = 0;
         }
-        if y + image.height() + 2 > 2048 {
-            return Err("Slice 1 supports one 2048×2048 atlas page".into());
+        if y + image.height() + 2 > MAX_SIDE {
+            return Err(format!(
+                "Images do not fit one {MAX_SIDE}×{MAX_SIDE} atlas page"
+            ));
         }
         used_width = used_width.max(x + image.width() + 2);
         row = row.max(image.height());
@@ -923,6 +970,7 @@ mod tests {
                 "draw_order",
                 "path_tracks",
                 "sequence_tracks",
+                "slider_tracks",
             ] {
                 assert_eq!(
                     animation.as_object_mut().unwrap().remove(field),
@@ -992,6 +1040,51 @@ mod tests {
         assert!(export.join("character.png").exists());
         assert!(export.join("character.atlas").exists());
         assert!(export.join("character.json").exists());
+        fs::remove_dir_all(folder).unwrap();
+    }
+
+    #[test]
+    fn bundle_preserves_large_source_images_and_refuses_the_real_page_limit() {
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../examples/peach-bot");
+        let mut doc = load(&root.join("peach-bot.peachy")).unwrap();
+        for attachment in doc
+            .skins
+            .values_mut()
+            .flat_map(|s| s.values_mut())
+            .flat_map(|s| s.values_mut())
+        {
+            let peachy_document::Attachment::Region(region) = attachment else {
+                panic!("Original fixture has regions")
+            };
+            region.path = "wide".into();
+        }
+        let folder = std::env::temp_dir().join(format!("peachy-large-bundle-{}", stamp()));
+        fs::create_dir_all(folder.join("images")).unwrap();
+        let path = folder.join("images/wide.png");
+        let image = image::RgbaImage::from_fn(2059, 2, |x, y| {
+            image::Rgba([(x % 256) as u8, y as u8, 125, 255])
+        });
+        image.save(&path).unwrap();
+        let original = fs::read(&path).unwrap();
+        let export = export_bundle(&folder, &doc, &folder).unwrap();
+        let atlas = image::open(export.join("character.png"))
+            .unwrap()
+            .into_rgba8();
+        assert_eq!(atlas.width(), 4096);
+        for x in [0, 1024, 2058] {
+            assert_eq!(atlas.get_pixel(x + 2, 2), image.get_pixel(x, 0));
+        }
+        assert_eq!(fs::read(&path).unwrap(), original);
+        let atlas_text = fs::read_to_string(export.join("character.atlas")).unwrap();
+        assert!(atlas_text.contains("bounds: 2,2,2059,2"));
+        image::RgbaImage::new(4093, 1).save(&path).unwrap();
+        let entries = fs::read_dir(&folder).unwrap().count();
+        assert!(
+            export_bundle(&folder, &doc, &folder)
+                .unwrap_err()
+                .contains("4092")
+        );
+        assert_eq!(fs::read_dir(&folder).unwrap().count(), entries);
         fs::remove_dir_all(folder).unwrap();
     }
 }

@@ -82,13 +82,66 @@ impl SequenceKey {
     /// by floor(elapsed / delay + 1e-5); once clamps, loop wraps, pingpong
     /// reflects over 2·(count − 1); reverse modes map f to count − 1 − f.
     pub fn frame(&self, time: f32, count: u32) -> u32 {
-        let steps = if self.delay > 0.0 {
-            ((f64::from(time) - f64::from(self.time)) / f64::from(self.delay) + 1e-5)
+        self.frame_at_time(f64::from(time), count)
+    }
+
+    /// The same frame rule for a derived reference time between stored f32
+    /// timestamps. Existing f32 callers retain their exact widened input.
+    pub fn frame_at_time(&self, time: f64, count: u32) -> u32 {
+        self.frame_from_steps(self.steps(time) as u64, count)
+    }
+
+    /// Checked engine boundary for effective reference times. Advancing frame
+    /// phase is limited to the measured nonnegative signed-32 counter domain.
+    /// The external runtime has wrap/sentinel behavior beyond it; no guessed
+    /// wrap or fallback is invented here. Hold needs no phase arithmetic.
+    pub fn frame_at_time_checked(&self, time: f64, count: u32) -> Result<u32, String> {
+        if !time.is_finite()
+            || !self.time.is_finite()
+            || !self.delay.is_finite()
+            || self.delay < 0.
+            || count == 0
+            || self.index >= count
+        {
+            return Err(
+                "Sequence sampling needs finite times, a nonnegative delay and a valid frame range"
+                    .into(),
+            );
+        }
+        if self.mode == SequenceMode::Hold {
+            return Ok(self.index);
+        }
+        const MAX_CHECKED_PHASE: u64 = i32::MAX as u64;
+        let steps = self.steps(time);
+        if !steps.is_finite() || steps > MAX_CHECKED_PHASE as f64 {
+            return Err(
+                "Sequence advancing frame phase exceeds the checked nonnegative counter range"
+                    .into(),
+            );
+        }
+        let steps = steps as u64;
+        if u64::from(self.index)
+            .checked_add(steps)
+            .is_none_or(|at| at > MAX_CHECKED_PHASE)
+        {
+            return Err(
+                "Sequence index plus steps exceeds the checked nonnegative counter range".into(),
+            );
+        }
+        Ok(self.frame_from_steps(steps, count))
+    }
+
+    fn steps(&self, time: f64) -> f64 {
+        if self.delay > 0.0 {
+            ((time - f64::from(self.time)) / f64::from(self.delay) + 1e-5)
                 .floor()
-                .max(0.0) as u64
+                .max(0.0)
         } else {
-            0
-        };
+            0.
+        }
+    }
+
+    fn frame_from_steps(&self, steps: u64, count: u32) -> u32 {
         let count = u64::from(count.max(1));
         let last = count - 1;
         let at = u64::from(self.index) + steps;

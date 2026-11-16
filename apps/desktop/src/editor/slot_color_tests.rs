@@ -82,7 +82,7 @@ fn begin_picker(editor: &mut Editor, ctx: &egui::Context) -> Pos2 {
 }
 fn pending_redo(editor: &mut Editor) {
     editor.setup_mode = false;
-    editor.selection = Some(TreeItem::Bone(8));
+    editor.selection = Some(TreeItem::Bone(8)).into();
     let mut pose = editor.selected_transform().unwrap();
     pose.rotation += 13.;
     editor.edit_transform(pose, &[Property::Rotation]);
@@ -95,7 +95,7 @@ fn pending_redo(editor: &mut Editor) {
         .unwrap();
     editor.session.undo();
     editor.setup_mode = true;
-    editor.selection = Some(TreeItem::Slot(0));
+    editor.selection = Some(TreeItem::Slot(0)).into();
     assert!(editor.session.can_redo());
     assert!(!editor.session.pose_edits().is_empty());
 }
@@ -218,7 +218,7 @@ fn focus_roundtrip_invalid_hex_and_cancel_never_rewrite_source_bytes_or_redo() {
 }
 
 #[test]
-fn typed_slot_and_attachment_own_slot_are_the_only_targets_and_animate_is_read_only() {
+fn typed_slot_and_attachment_own_slot_are_the_only_targets_and_animate_color_is_pending() {
     let (mut editor, ctx) = fixture([255; 4]);
     let key = editor
         .session
@@ -245,8 +245,316 @@ fn typed_slot_and_attachment_own_slot_are_the_only_targets_and_animate_is_read_o
         pointer(&mut editor, &ctx, p, pressed);
     }
     assert_eq!(editor.session.document(), &doc);
+    assert!(!editor.session.pose_edits().is_empty());
     assert!(!editor.slot_color_edit_active());
     assert!(!editor.slot_color_diagnostic()["setup"].as_bool().unwrap());
+}
+
+#[test]
+fn animate_fractional_sampled_color_inspection_and_unchanged_hex_preserve_redo_and_pending() {
+    let (mut editor, ctx) = fixture([255; 4]);
+    let mut doc = editor.session.document().clone();
+    doc.animations[0].color_tracks = vec![ColorTrack {
+        slot: 0,
+        keys: vec![
+            ColorKey {
+                time: 0.,
+                color: [17, 81, 159, 111],
+                curves: [Curve::Linear; 4],
+            },
+            ColorKey {
+                time: 1.,
+                color: [180, 34, 211, 6],
+                curves: [Curve::Linear; 4],
+            },
+        ],
+    }];
+    editor.session = Session::new(doc).unwrap();
+    editor.set_setup_mode(false);
+    editor.time = 0.42;
+    editor
+        .session
+        .dispatch(Command::RenameAnimation {
+            animation: 0,
+            name: "redo sentinel".into(),
+        })
+        .unwrap();
+    editor.session.undo();
+    let original = editor.session.document().clone();
+    let raw = editor.current_slot_pose(0).unwrap().color;
+    assert!(raw.iter().any(|channel| (channel * 255.).fract() != 0.));
+    let pending = editor.session.pose_edits().clone();
+    settle(&mut editor, &ctx);
+    let displayed = editor.slot_color.hex.clone();
+    enter_hex(&mut editor, &ctx, &displayed, egui::Key::Enter);
+    assert_eq!(editor.session.document(), &original);
+    assert_eq!(editor.session.pose_edits(), &pending);
+    assert_eq!(editor.current_slot_pose(0).unwrap().color, raw);
+    assert!(editor.session.can_redo());
+    assert!(!editor.session.can_undo());
+}
+
+#[test]
+fn animate_alpha_gesture_preserves_sampled_rgb_and_escape_restores_pending_redo() {
+    let (mut editor, ctx) = fixture([11, 83, 197, 151]);
+    editor.set_setup_mode(false);
+    editor
+        .session
+        .edit_slot_pose(
+            0,
+            editor.weights_edit_target(),
+            &[peachy_engine::SlotPoseEdit::Color {
+                color: [0.12345, 0.34567, 0.56789, 0.67891],
+            }],
+            false,
+        )
+        .unwrap();
+    editor
+        .session
+        .dispatch(Command::RenameAnimation {
+            animation: 0,
+            name: "redo sentinel".into(),
+        })
+        .unwrap();
+    editor.session.undo();
+    settle(&mut editor, &ctx);
+    let original = editor.session.document().clone();
+    let raw = editor.current_slot_pose(0).unwrap().color;
+    let pending = editor.session.pose_edits().clone();
+    let p = point(&editor, "slotColorAlpha", 0.23, 0.5);
+    pointer(&mut editor, &ctx, p, true);
+    let changed = editor.current_slot_pose(0).unwrap().color;
+    assert_eq!(changed[..3], raw[..3]);
+    assert_ne!(changed[3], raw[3]);
+    assert_eq!(editor.session.document(), &original);
+    key(&mut editor, &ctx, egui::Key::Escape, egui::Modifiers::NONE);
+    assert_eq!(editor.current_slot_pose(0).unwrap().color, raw);
+    assert_eq!(editor.session.pose_edits(), &pending);
+    assert!(editor.session.can_redo());
+    workspace_frame(
+        &mut editor,
+        &ctx,
+        vec![egui::Event::PointerMoved(p + vec2(40., 0.))],
+    );
+    assert_eq!(editor.current_slot_pose(0).unwrap().color, raw);
+    pointer(&mut editor, &ctx, p, false);
+}
+
+fn dialog_value(editor: &mut Editor, ctx: &egui::Context, channel: usize, text: &str) {
+    click(editor, ctx, &format!("slotColorDialogRGBA:{channel}"));
+    key(editor, ctx, egui::Key::A, egui::Modifiers::COMMAND);
+    workspace_frame(editor, ctx, vec![egui::Event::Text(text.into())]);
+    key(editor, ctx, egui::Key::Tab, egui::Modifiers::NONE);
+    settle(editor, ctx);
+}
+
+#[test]
+fn slot_color_properties_dialog_integer_fields_truncate_and_ok_is_one_history_step() {
+    let (mut editor, ctx) = fixture([11, 83, 197, 151]);
+    let original = editor.session.document().clone();
+    click(&mut editor, &ctx, "slotColorButton");
+    assert!(editor.slot_color_dialog_open());
+    dialog_value(&mut editor, &ctx, 1, "128.9");
+    assert_eq!(bytes(&editor, 0), [11, 128, 197, 151]);
+    dialog_value(&mut editor, &ctx, 3, "207");
+    assert_eq!(bytes(&editor, 0), [11, 128, 197, 207]);
+    click(&mut editor, &ctx, "slotColorDialogOK");
+    assert!(!editor.slot_color_dialog_open());
+    let accepted = editor.session.document().clone();
+    editor.undo();
+    assert_eq!(editor.session.document(), &original);
+    assert!(!editor.session.can_undo());
+    editor.redo();
+    assert_eq!(editor.session.document(), &accepted);
+    assert!(editor.slot_color_visible());
+}
+
+#[test]
+fn slot_color_properties_dialog_cancel_rolls_back_all_previews_pending_and_redo() {
+    let (mut editor, ctx) = fixture([11, 83, 197, 151]);
+    pending_redo(&mut editor);
+    settle(&mut editor, &ctx);
+    let original = editor.session.document().clone();
+    let pending = editor.session.pose_edits().clone();
+    click(&mut editor, &ctx, "slotColorButton");
+    dialog_value(&mut editor, &ctx, 0, "44");
+    dialog_value(&mut editor, &ctx, 2, "188");
+    assert_ne!(editor.session.document(), &original);
+    click(&mut editor, &ctx, "slotColorDialogCancel");
+    assert_eq!(editor.session.document(), &original);
+    assert_eq!(editor.session.pose_edits(), &pending);
+    assert!(editor.session.can_redo());
+    assert!(!editor.slot_color_edit_active());
+}
+
+#[test]
+fn slot_color_properties_dialog_animate_pending_and_view_only_ok_preserve_raw_channels() {
+    let (mut editor, ctx) = fixture([11, 83, 197, 151]);
+    editor.set_setup_mode(false);
+    editor
+        .session
+        .edit_slot_pose(
+            0,
+            editor.weights_edit_target(),
+            &[peachy_engine::SlotPoseEdit::Color {
+                color: [0.12345, 0.34567, 0.56789, 0.67891],
+            }],
+            false,
+        )
+        .unwrap();
+    editor
+        .session
+        .dispatch(Command::RenameAnimation {
+            animation: 0,
+            name: "redo sentinel".into(),
+        })
+        .unwrap();
+    editor.session.undo();
+    settle(&mut editor, &ctx);
+    let original = editor.session.document().clone();
+    let raw = editor.current_slot_pose(0).unwrap().color;
+    let pending = editor.session.pose_edits().clone();
+    click(&mut editor, &ctx, "slotColorButton");
+    click(&mut editor, &ctx, "slotColorDialogOK");
+    assert_eq!(editor.session.document(), &original);
+    assert_eq!(editor.current_slot_pose(0).unwrap().color, raw);
+    assert_eq!(editor.session.pose_edits(), &pending);
+    assert!(editor.session.can_redo());
+    click(&mut editor, &ctx, "slotColorButton");
+    dialog_value(&mut editor, &ctx, 3, "77");
+    click(&mut editor, &ctx, "slotColorDialogOK");
+    let accepted = editor.current_slot_pose(0).unwrap().color;
+    assert_eq!(accepted[..3], raw[..3]);
+    assert_eq!(accepted[3], 77. / 255.);
+    assert_eq!(editor.session.document(), &original);
+    editor.undo();
+    assert_eq!(editor.current_slot_pose(0).unwrap().color, raw);
+    assert_eq!(editor.session.pose_edits(), &pending);
+}
+
+#[test]
+fn slot_color_properties_dialog_focus_loss_and_history_cancel_without_held_reentry() {
+    for cancel in ["escape", "history", "focus", "skin", "mode", "views"] {
+        let (mut editor, ctx) = fixture([11, 83, 197, 151]);
+        let original = editor.session.document().clone();
+        click(&mut editor, &ctx, "slotColorButton");
+        dialog_value(&mut editor, &ctx, 1, "128");
+        let p = point(&editor, "slotColorDialogAlpha", 0.5, 0.7);
+        pointer(&mut editor, &ctx, p, true);
+        assert_ne!(editor.session.document(), &original);
+        match cancel {
+            "escape" => key(&mut editor, &ctx, egui::Key::Escape, egui::Modifiers::NONE),
+            "history" => editor.undo(),
+            "skin" => editor.activate_skin("mint".into()),
+            "mode" => editor.set_setup_mode(false),
+            "views" => editor.toggle_views(),
+            _ => {
+                let mut output = ctx.run_ui(
+                    egui::RawInput {
+                        screen_rect: Some(egui::Rect::from_min_size(Pos2::ZERO, vec2(1500., 960.))),
+                        focused: false,
+                        ..Default::default()
+                    },
+                    |ui| editor.workspace_ui(ui),
+                );
+                output.textures_delta.clear();
+            }
+        }
+        assert!(!editor.slot_color_dialog_open(), "{cancel}");
+        assert_eq!(editor.session.document(), &original, "{cancel}");
+        workspace_frame(
+            &mut editor,
+            &ctx,
+            vec![egui::Event::PointerMoved(p + vec2(30., 30.))],
+        );
+        assert_eq!(
+            editor.session.document(),
+            &original,
+            "{cancel} allowed held reentry"
+        );
+        pointer(&mut editor, &ctx, p, false);
+    }
+}
+
+#[test]
+fn slot_color_properties_dialog_all_controls_fit_the_minimum_native_workspace() {
+    let (mut editor, ctx) = fixture([11, 83, 197, 0]);
+    click(&mut editor, &ctx, "slotColorButton");
+    for _ in 0..3 {
+        let mut output = ctx.run_ui(
+            egui::RawInput {
+                screen_rect: Some(egui::Rect::from_min_size(Pos2::ZERO, vec2(1120., 740.))),
+                focused: true,
+                ..Default::default()
+            },
+            |ui| editor.workspace_ui(ui),
+        );
+        output.textures_delta.clear();
+    }
+    let bounds = egui::Rect::from_min_size(Pos2::ZERO, vec2(1120., 740.));
+    let [l, t, r, b] = editor.capture_targets["slotColorDialog"];
+    let dialog = egui::Rect::from_min_max(pos2(l, t), pos2(r, b));
+    assert!(bounds.contains_rect(dialog), "{dialog:?}");
+    for name in [
+        "slotColorDialogSV",
+        "slotColorDialogAlpha",
+        "slotColorDialogHue",
+        "slotColorDialogRGBA:0",
+        "slotColorDialogRGBA:3",
+        "slotColorDialogHSB:2",
+        "slotColorHex",
+        "slotColorDialogOK",
+        "slotColorDialogCancel",
+    ] {
+        let [l, t, r, b] = editor.capture_targets[name];
+        assert!(
+            dialog.contains_rect(egui::Rect::from_min_max(pos2(l, t), pos2(r, b))),
+            "{name}"
+        );
+    }
+    assert_eq!(
+        editor.current_slot_pose(0).unwrap().color,
+        [11., 83., 197., 0.].map(|value| value / 255.)
+    );
+}
+
+#[test]
+fn slot_color_properties_dialog_autokey_and_global_k_during_picker_each_commit_once() {
+    let (mut editor, ctx) = fixture([11, 83, 197, 151]);
+    editor.set_setup_mode(false);
+    editor.time = 0.5;
+    editor.auto_key = true;
+    settle(&mut editor, &ctx);
+    let original = editor.session.document().clone();
+    click(&mut editor, &ctx, "slotColorButton");
+    dialog_value(&mut editor, &ctx, 0, "44");
+    dialog_value(&mut editor, &ctx, 3, "207");
+    click(&mut editor, &ctx, "slotColorDialogOK");
+    let accepted = editor.session.document().clone();
+    assert_eq!(accepted.slots, original.slots);
+    assert_eq!(accepted.animations[0].color_tracks[0].keys[0].time, 0.5);
+    assert_eq!(
+        accepted.animations[0].color_tracks[0].keys[0].color,
+        [44, 83, 197, 207]
+    );
+    editor.undo();
+    assert_eq!(editor.session.document(), &original);
+    assert!(!editor.session.can_undo());
+    editor.auto_key = false;
+    settle(&mut editor, &ctx);
+    let p = point(&editor, "slotColorAlpha", 0.3, 0.5);
+    pointer(&mut editor, &ctx, p, true);
+    assert_eq!(editor.session.document(), &original);
+    assert!(!editor.session.pose_edits().is_empty());
+    key(&mut editor, &ctx, egui::Key::K, egui::Modifiers::NONE);
+    let keyed = editor.session.document().clone();
+    assert_ne!(keyed, original);
+    assert!(editor.session.pose_edits().is_empty());
+    assert!(!editor.slot_color_edit_active());
+    pointer(&mut editor, &ctx, p, false);
+    editor.undo();
+    assert_eq!(editor.session.document(), &original);
+    assert!(!editor.session.can_undo());
 }
 
 #[test]

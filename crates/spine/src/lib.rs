@@ -9,6 +9,7 @@ mod ik_timelines;
 mod linked_mesh;
 mod path;
 mod sequence;
+mod slider;
 mod slot_keys;
 use attachments::{inspect_attachment, read_attachment, write_attachment};
 use peachy_document::*;
@@ -17,6 +18,15 @@ use serde_json::{Value, json};
 use std::collections::{BTreeMap, BTreeSet};
 
 pub const TARGET_VERSION: &str = "4.3.26";
+
+/// Runtime JSON preserves independent attachment names and lookup placeholders.
+/// The editor target additionally refuses known destructive import cases.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum ExportTarget {
+    #[default]
+    SpineEditor43,
+    Runtime43,
+}
 
 fn timeline_properties(name: &str) -> Option<&'static [(Property, &'static str)]> {
     match name {
@@ -158,6 +168,7 @@ pub fn inspect(value: &Value) -> Inspection {
                 "transform",
                 "path",
                 "physics",
+                "slider",
                 "color",
             ],
             "Skin",
@@ -168,7 +179,7 @@ pub fn inspect(value: &Value) -> Inspection {
         if nonempty(&skin["constraints"]) {
             unsupported.push(format!("Skin {}: constraints", skin["name"]));
         }
-        for field in ["bones", "ik", "transform", "physics", "path"] {
+        for field in ["bones", "ik", "transform", "physics", "path", "slider"] {
             if skin.get(field).is_some_and(|v| {
                 !v.as_array()
                     .is_some_and(|items| items.iter().all(Value::is_string))
@@ -209,6 +220,7 @@ pub fn inspect(value: &Value) -> Inspection {
                             | "events"
                             | "drawOrder"
                             | "path"
+                            | "slider"
                     ) && nonempty(contents)
                     {
                         unsupported.push(format!("Animation {name}: {field} timelines"));
@@ -421,6 +433,7 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
         .filter(|(_, constraint)| constraint.as_path().is_some())
         .map(|(index, constraint)| (constraint.name().to_owned(), index))
         .collect();
+    let slider_indices = slider::indices(&constraints);
     let mut animations = vec![];
     if let Some(entries) = value["animations"].as_object() {
         for (name, animation) in entries {
@@ -488,6 +501,7 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
                 draw_order: draw_order::read(name, animation, &slot_indices)?,
                 path_tracks: path::read_timelines(name, animation, &path_indices)?,
                 sequence_tracks: sequence::read_tracks(name, animation, &skins)?,
+                slider_tracks: slider::read_timelines(name, animation, &slider_indices)?,
             });
         }
     }
@@ -516,9 +530,16 @@ fn read_document(value: &Value, name: &str) -> Result<Document, String> {
 }
 
 pub fn export_json(doc: &Document) -> Result<Value, String> {
+    export_json_for(doc, ExportTarget::SpineEditor43)
+}
+
+pub fn export_json_for(doc: &Document, target: ExportTarget) -> Result<Value, String> {
     doc.validate()?;
     constraints::validate_source(doc)?;
-    validate_export_names(doc)?;
+    if target == ExportTarget::SpineEditor43 {
+        validate_export_names(doc)?;
+        validate_export_weight_orders(doc)?;
+    }
     let bones: Vec<_> = doc
         .bones
         .iter()
@@ -583,7 +604,7 @@ pub fn export_json(doc: &Document) -> Result<Value, String> {
                             .collect::<Vec<_>>()
                     );
                 }
-                for field in ["ik", "transform", "physics", "path"] {
+                for field in ["ik", "transform", "physics", "path", "slider"] {
                     let names: Vec<_> = members
                         .constraints
                         .iter()
@@ -647,6 +668,10 @@ pub fn export_json(doc: &Document) -> Result<Value, String> {
         let physics = constraints::write_physics_timelines(doc, animation)?;
         if !physics.as_object().is_some_and(serde_json::Map::is_empty) {
             animations[&animation.name]["physics"] = physics;
+        }
+        let sliders = slider::write_timelines(doc, animation)?;
+        if !sliders.as_object().is_some_and(serde_json::Map::is_empty) {
+            animations[&animation.name]["slider"] = sliders;
         }
         if !animation.path_tracks.is_empty() {
             animations[&animation.name]["path"] = path::write_timelines(doc, animation)?;
@@ -721,7 +746,7 @@ pub(crate) fn read_hex_color(entry: &Value, what: &str) -> Result<[u8; 4], Strin
 }
 
 /// Skin-required bones (`skin: true`), constraints (`skin: true`) and the named
-/// skins' `bones`/`ik`/`transform`/`physics` lists.
+/// skins' per-kind constraint lists, including observed 4.3 Slider membership.
 fn read_skin_scope(
     value: &Value,
     bones: &BTreeMap<String, usize>,
@@ -749,7 +774,7 @@ fn read_skin_scope(
                     .ok_or_else(|| format!("Skin {name}: unknown bone {bone}"))?,
             );
         }
-        for field in ["ik", "transform", "physics", "path"] {
+        for field in ["ik", "transform", "physics", "path", "slider"] {
             for listed in array(&skin[field]) {
                 let wanted = listed.as_str().unwrap_or_default();
                 let index = constraints
@@ -775,6 +800,7 @@ fn constraint_kind(constraint: &Constraint) -> &'static str {
         Constraint::Transform(_) => "transform",
         Constraint::Physics(_) => "physics",
         Constraint::Path(_) => "path",
+        Constraint::Slider(_) => "slider",
     }
 }
 
@@ -812,7 +838,7 @@ pub(crate) fn read_keys(
                 }
                 let delta = next_value - value;
                 if delta.abs() < 1e-8 {
-                    flat_curve(time, next_time, value, [h[0], h[1], h[2], h[3]])?
+                    retained_flat_curve(time, next_time, value, [h[0], h[1], h[2], h[3]])?
                 } else {
                     Curve::Bezier([
                         normalized_control(time, next_time, h[0])?,
@@ -870,17 +896,14 @@ fn checked_curve_coordinate(value: f64, context: &str) -> Result<f32, String> {
     Ok(native)
 }
 
-/// A curve between equal values: linear when its value handles sit on the
-/// value, otherwise an offset Bezier (normalized time, absolute value offsets).
-pub(crate) fn flat_curve(
+/// Keep an explicitly authored flat Bezier's time handles and even tiny value
+/// offsets. Scalar/slot curve editing needs this source information.
+pub(crate) fn retained_flat_curve(
     time: f32,
     next_time: f32,
     value: f32,
     handles: [f32; 4],
 ) -> Result<Curve, String> {
-    if (handles[1] - value).abs() <= 1e-5 && (handles[3] - value).abs() <= 1e-5 {
-        return Ok(Curve::Linear);
-    }
     let offset = |handle: f32| {
         let offset = handle - value;
         if offset.is_finite() {
@@ -952,9 +975,23 @@ fn array(value: &Value) -> &[Value] {
 
 /// Spine Editor interchange restrictions belong to this adapter, not our model.
 /// Installed 4.3.26 imports reused attachment names across skins, slots and the
-/// default skin (November 9 probes; shipped game exports reuse them), so only the
-/// observed named-skin/default placeholder collision is refused.
+/// default skin (November 9 probes; shipped game exports reuse them). November
+/// 14 original probes also confirmed that default-skin name overrides rename
+/// placeholders and clear Setup/slot keys; named-skin overrides preserve them.
 fn validate_export_names(doc: &Document) -> Result<(), String> {
+    if let Some(skin) = doc.skins.get("default") {
+        for (slot, attachments) in skin {
+            for (placeholder, attachment) in attachments {
+                if let Some(name) = attachment.name()
+                    && name != placeholder
+                {
+                    return Err(format!(
+                        "Spine Editor export: attachment default/{slot}/{placeholder} has explicit name {name:?} different from placeholder {placeholder:?}; export as Runtime43 to preserve both identities"
+                    ));
+                }
+            }
+        }
+    }
     for (skin_name, skin) in &doc.skins {
         for (slot, attachments) in skin {
             for placeholder in attachments.keys() {
@@ -967,6 +1004,76 @@ fn validate_export_names(doc: &Document) -> Result<(), String> {
                 {
                     return Err(format!(
                         "Spine Editor export: skin placeholder {slot}/{placeholder} collides with a direct default attachment"
+                    ));
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Installed 4.3.26 rejects meshes whose vertex binding lists require cyclic
+/// bone precedence (original November 15 AB/BA control). Consistent nonnumeric
+/// orders import successfully. This is an Editor consumer restriction: inspect
+/// first occurrences only, without sorting, merging or rewriting native data.
+fn validate_export_weight_orders(doc: &Document) -> Result<(), String> {
+    for (skin_name, skin) in &doc.skins {
+        for (slot, attachments) in skin {
+            for (placeholder, attachment) in attachments {
+                let Attachment::Mesh(mesh) = attachment else {
+                    continue;
+                };
+                let MeshVertices::Weighted { influences } = &mesh.vertices else {
+                    continue;
+                };
+                let mut successors = BTreeMap::<usize, BTreeSet<usize>>::new();
+                let mut incoming = BTreeMap::<usize, usize>::new();
+                for vertex in influences {
+                    let mut seen = BTreeSet::new();
+                    let mut previous = None;
+                    for influence in vertex {
+                        if !seen.insert(influence.bone) {
+                            continue;
+                        }
+                        incoming.entry(influence.bone).or_default();
+                        if let Some(before) = previous
+                            && successors.entry(before).or_default().insert(influence.bone)
+                        {
+                            *incoming.entry(influence.bone).or_default() += 1;
+                        }
+                        previous = Some(influence.bone);
+                    }
+                }
+                // Iterative topological validation also handles long sparse
+                // binding chains without recursion or a numeric order policy.
+                let mut ready = incoming
+                    .iter()
+                    .filter_map(|(&bone, &count)| (count == 0).then_some(bone))
+                    .collect::<Vec<_>>();
+                let mut visited = 0;
+                while let Some(bone) = ready.pop() {
+                    visited += 1;
+                    if let Some(next) = successors.get(&bone) {
+                        for after in next {
+                            let count = incoming
+                                .get_mut(after)
+                                .expect("Each successor is a binding bone");
+                            *count -= 1;
+                            if *count == 0 {
+                                ready.push(*after);
+                            }
+                        }
+                    }
+                }
+                if visited != incoming.len() {
+                    let unresolved = incoming
+                        .iter()
+                        .filter_map(|(&bone, &count)| {
+                            (count != 0).then_some(doc.bones[bone].name.as_str())
+                        })
+                        .collect::<Vec<_>>();
+                    return Err(format!(
+                        "Spine Editor export: attachment {skin_name}/{slot}/{placeholder} has contradictory per-vertex bone order; a precedence cycle prevents ordering {unresolved:?}. Export as Runtime43 to preserve the raw influence arrays"
                     ));
                 }
             }
@@ -1185,7 +1292,8 @@ fn inspect_numbers(value: &Value, fields: &[&str], context: &str, issues: &mut V
 mod tests {
     use super::*;
     fn mesh_fixture() -> Document {
-        serde_json::from_str(include_str!("../../../examples/peach-bot/mesh-bot.peachy")).unwrap()
+        crate::native_fixture::decode(include_str!("../../../examples/peach-bot/mesh-bot.peachy"))
+            .unwrap()
     }
     #[test]
     fn unweighted_meshes_roundtrip_topology_uvs_edges_and_image_metadata() {
@@ -1430,3 +1538,7 @@ mod tests {
         assert_eq!(import_json(&output, "test").unwrap().skins, doc.skins);
     }
 }
+
+#[cfg(test)]
+#[path = "../../document/test_support/native_fixture.rs"]
+mod native_fixture;

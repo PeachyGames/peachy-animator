@@ -173,7 +173,7 @@ fn unknown_kinds_invalid_references_chains_targets_and_settings_are_atomic_impor
     for (extra, reason) in [
         (
             json!({"type":"slider","name":"unsupported"}),
-            "slider constraints are unsupported",
+            "Slider unsupported: animation must be a name",
         ),
         (
             json!({"type":"path","name":"incomplete","bones":[]}),

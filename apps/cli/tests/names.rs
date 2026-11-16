@@ -4,7 +4,8 @@ use peachy_engine::{Command, apply_command};
 #[test]
 fn renamed_bone_and_slot_references_survive_spine_json_roundtrip() {
     let before: Document =
-        serde_json::from_str(include_str!("../../../examples/peach-bot/mesh-bot.peachy")).unwrap();
+        peachy_io::decode_project(include_str!("../../../examples/peach-bot/mesh-bot.peachy"))
+            .unwrap();
     let slot = before.slots.iter().position(|s| s.name == "head").unwrap();
     let bone = before.slots[slot].bone;
     let commands: Vec<Command> = serde_json::from_value(serde_json::json!([

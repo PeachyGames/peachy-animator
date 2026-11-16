@@ -47,7 +47,7 @@ impl Editor {
         Some(ik)
     }
     pub(super) fn selected_ik(&self) -> Option<usize> {
-        match self.selection {
+        match self.selection.single().cloned() {
             Some(TreeItem::Constraint(index)) => Some(index),
             _ => None,
         }
@@ -678,6 +678,7 @@ mod tests {
             draw_order: vec![],
             path_tracks: vec![],
             sequence_tracks: vec![],
+            slider_tracks: vec![],
         }];
         document.constraints = vec![Constraint::Ik(IkConstraint {
             name: "arm IK".into(),
@@ -692,7 +693,7 @@ mod tests {
         editor.session = Session::new(document).unwrap();
         editor.skin = "default".into();
         editor.tree = TreeState::for_document(editor.session.document(), &editor.skin);
-        editor.selection = Some(TreeItem::Bone(1));
+        editor.selection = Some(TreeItem::Bone(1)).into();
         editor.setup_mode = setup;
         editor.auto_key = false;
         editor.time = 0.;
@@ -870,7 +871,7 @@ mod tests {
         let (mut editor, attachment) = mesh_editor(true);
         install_ik(&mut editor, false, 0.);
         editor.weights.select_mesh(attachment);
-        editor.weights.vertex = Some(0);
+        editor.weights.vertices = vec![0];
         editor.weights.bone = Some(0);
         editor.set_tool(Tool::Weights);
         editor.show_weights = true;
@@ -1302,7 +1303,7 @@ mod tests {
         let (mut editor, attachment) = mesh_editor(true);
         install_ik(&mut editor, false, 0.);
         editor.weights.select_mesh(attachment);
-        editor.weights.vertex = Some(0);
+        editor.weights.vertices = vec![0];
         editor.weights.bone = Some(0);
         editor.set_tool(Tool::Weights);
         let original = editor.session.document().clone();

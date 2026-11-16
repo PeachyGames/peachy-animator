@@ -1,5 +1,14 @@
 # Peachy Animator
 
+Current Cycle Offset checkpoint: native v23 /64 commands /25 MCP tools. Bounded
+native controls, exact requested-key mappings, generated-seam filtering and reset
+are accepted on Desktop dc60e423…b2998, including the fast release repair.
+UI15/engine16/MCP6unit2stdio and final local checks pass. Actual15-request blank
+MCP replay matches native Document/live pose/saved68126 bytes; that native result
+passes364 runtime poses. See [review](docs/evidence/cycle-offset-ui.html),
+[scope](docs/slices/cycle-offset.md) and [evidence](docs/evidence/cycle-offset-ui.json).
+Broader Offset domains, complete UI parity and live desktop MCP remain open.
+
 Starting a new session on Spine parity? Read [docs/NEXT-RUN.md](docs/NEXT-RUN.md) first: current
 state, verification workflow, pitfalls and the prioritized next tasks.
 
@@ -31,7 +40,7 @@ Artist assets in the sibling `spine-files-2` project are private local compatibi
 
 ## Verification
 
-Run `cargo fmt --all -- --check`, `cargo test --workspace`, `cargo clippy --workspace --all-targets -- -D warnings`, and `cargo build --workspace`. Verify interpolation, command atomicity/undo, round trips and external runtime compatibility. The sibling game's Vitest prohibition applies to the game; this project uses Rust's built-in test runner.
+Run `cargo fmt --all -- --check`, focused Rust test filters with `-j2 -- --test-threads=2`, `cargo clippy --workspace --all-targets -j2 -- -D warnings`, and `cargo build --workspace -j2`. Do not run the full workspace test suite. Verify affected interpolation, command atomicity/undo, round trips and external runtime compatibility. The sibling game's Vitest prohibition applies to the game; this project uses Rust's built-in test runner.
 Run `python3 scripts/check-architecture.py` too. Its allowlist checks real Cargo dependencies; update the rules explicitly when deliberately changing the layers. It does not prove arbitrary standard-library I/O cannot be introduced, so review core functions for side effects as well.
 
 `apply_command(&Document, Command)` is the pure editing boundary. `Session` wraps it with in-memory history; pointer gestures use begin/commit/cancel transactions. Native documents and commands reject unknown fields. Export-target restrictions belong to the adapter, not native document validation. Reconcile transient editor selections after history/document changes. Introduce stable entity IDs before deletion/reparenting.
@@ -68,13 +77,26 @@ chain bones must inherit normally. See docs/slices/inherit-modes.md.
 
 Native v11 adds `Constraint::Transform` with complete 4.3 data; only the
 `TransformConstraint::supported_subset` (world; identity Rotate; X/Y with
-offsets, scale, clamp) evaluates.
+offsets, scale, clamp; one X→Rotate writer) evaluates.
 Constraints run in list order inside `ik_solver::apply`; transform results are
 written back as applied locals (`transform_constraint::local_from_world`). IK
 chain ancestors may be transformed; constrained IK bones still need unit axes.
 
-Native v12 adds `Document.skin_scope`. Evaluate through `AuthoredPose::with_skin`
-(Session holds the active skin as view state; the shell syncs it every frame).
+World X→Rotate maps the source frame's offset point X into degrees, then clamps
+and mixes with the measured single angular correction. Its exact negative
+half-turn and multiplication association differ from the preserved identity
+Rotate path. A private wide FK diagnostic reconstructs already applied locals;
+it never solves constraints again or replaces published f32 poses. Conflicting
+native/runtime wrap branches fail explicitly. Range controls use the shared
+`edited_transform_mapping_range` helper and `EditTransformMappingRange` command;
+raw-derived SourceMax is undefined at zero scale. Never invent or normalize it
+on query/focus. Equal endpoint edits repair Max to Min+100 in the measured scope;
+reversed endpoints stay reversed. See docs/slices/transform-mapping-authoring.md.
+
+Native v12 adds `Document.skin_scope`. Sample with
+`sample_authored_pose_with_skin` before overlaying pending edits (Session holds
+the active skin as view state; the shell syncs it every frame). `with_skin`
+sets capsule context/activity only; it cannot undo already sampled host keys.
 Inactive constraints never run; inactive bones' slots are not drawn.
 
 Native v13 adds `Animation.deform_tracks` with dense offsets (per vertex, or per
@@ -84,6 +106,73 @@ via `deformed_mesh_world_vertices`. Keep slot renames updating deform refs.
 Native v22 adds `SequenceDef` (regions/meshes), `Animation.sequence_tracks` and
 `Slot.blend`. Draws carry the frame image and blend; `Document::image_paths`
 lists every frame.
+
+Native v23 adds strict Slider constraints and required `Animation.slider_tracks`.
+The v22 decoder inserts empty lists in memory; keep historical public fixtures'
+bytes unchanged. The verified manual checkpoint has 58 commands /14 MCP tools;
+the preceding source/creation checkpoint used 63/17. Actual MCP/source geometry checks
+and bounded native creation/source checks pass. Native held-range Source Min
+10→13, Escape restoration of document/redo, continued-held blocking, release
+and fresh-gesture one-step Undo/Redo also pass on the final wire-hardened build. Slider
+Time/Mix authoring shares Session pending/history and typed timeline/curve
+operations. One ordered
+`AppliedState` holds effective bones, inheritance, constraints and slot domains;
+consume its checked `EvaluatedPose` for geometry without a second solve. Host
+tracks skip inactive slots/Sliders before pending overlays. Derived Time never
+replaces authored query values. Semantic creation prepends with explicit identity
+effects; raw Add still appends. Remembered source-range preferences stay outside Document;
+genuine Setup Mix capture uses own-turn sampled Time, not a final-source re-solve.
+Creation/source workflows use explicit identity effects and shared Session view
+preferences; never serialize the process cache or infer lossless Editor roundtrip
+from sampled geometry. Keep strict wire regressions and the stated native limits.
+Source-range payloads require objects, source-property payloads require strings;
+keep the final actual-MCP rejection/Undo evidence separate from historical runs.
+See
+`docs/slices/slider-constraints.md` for calibrated domains and precision refusals.
+
+The earlier `b45d18d` multi-owner timing checkpoint retains v23 and 63 commands, with
+18 MCP tools. `get_animation_keys` requires explicit typed owners; an empty list
+means inventory only, never all keys. It returns authored exact identities and
+explicit unsupported-timeline metadata without skin/visibility filtering, solving
+or changing Session state. Bounded all-owner Dopesheet rows and ordinary mixed
+retiming use that shared inventory; bounded two-bone scalar native acceptance
+passes selection/move/history, cancellation, Graph ownership, minimum layout and
+exact Save/reopen. Native cancellation starts with empty pending edits; nonempty
+pending preservation has headless coverage only. Mixed-owner Copy refuses
+explicitly without changing document/selection/redo/internal clipboard.
+That checkpoint left group clipboard separate from mixed-key moves.
+
+Current grouped clipboard uses v23 unchanged and 64 commands/19 MCP tools.
+`copy_animation_key_group` returns portable entries plus separate `sourceOwners`;
+every entry shares one global time origin and may start nonzero. New raw
+`PasteAnimationKeyGroup` requires a complete explicit entry-to-target map with
+unique canonical targets and strict object-only nested decoding. Existing leaf
+commands/v2 clipboard wire stay unchanged; the editor-local group envelope is v3.
+Source-owner bindings stay outside portable data. Preserve original key selection
+after paste; accepted incoming IDs are diagnostics, not automatic selection.
+Actual MCP run02 passes 57 requests and separate other-target/cross-animation
+exports pass 208 runtime poses at 0.001; these do not accept native interaction.
+Final checks05/06 and bounded native acceptance pass, including grouped/leaf-v2
+selection/Cut, minimum-window and actual Save/fresh reopen on unchanged Desktop87ee.
+Fresh typed Document equality is exact with empty history/clipboard and one image;
+raw JSON decimal spelling is not a byte-equality contract. The earlier `da1a1da`
+code push was partial at the user's request; its two native gates are now closed.
+All owned processes are closed. See the [native result](examples/peach-bot/group-clipboard-native-result.peachy).
+General Tree target multi-selection, Shift/Offset, Lock/Sync and unsupported
+families remain. See docs/slices/grouped-clipboard.md.
+
+The later leaf-routing checkpoint keeps v23 and 64/19 unchanged. Capture the
+canonical single-owner source receipt separately from unchanged v2 portable data;
+no-owner/Animation fallback uses that receipt, while explicit Bone and active
+Slot/DrawOrderSlot/true Region parent-Bone targets override it. Preserve remap/
+tombstone and Open/New reset guards; OS text alone cannot revive a receipt.
+Checks04 and bounded five-case native acceptance pass on Desktop5825. Native
+Undo, final Save byte equality to MCP5d432 and exact fresh typed reopen with empty
+history/clipboard/one image pass; MCP/headless UndoRedo remains separate evidence.
+All owned processes are closed. Visible Animate Slot scope remains global
+DrawOrder; broader Slot/Region controls and Region row/header styling remain open.
+Inactive/pending/constraint-remap behavior has headless coverage, not new native
+acceptance. See docs/slices/leaf-clipboard.md and docs/evidence/leaf-clipboard.json.
 
 Native v21 adds `IkConstraint.stretch`. IK bones may have equal-magnitude
 scale (mirrored first bone allowed); see docs/slices/ik-scale-stretch.md for the
@@ -117,6 +206,15 @@ Data sliders must use `SliderClamping::Edits` so viewing never rewrites data.
 
 Native v16 adds `Animation.draw_order` (Spine offsets as written; scenes draw
 in `EvaluatedPose.draw_order`, never slot-list order, in Animate).
+Global Animate authoring uses `Session::edit_draw_order` / fixed-baseline
+previews and explicit `key_draw_order`; pending order stays outside saved data.
+`SetDrawOrderKey` preserves raw entries, while `SetDrawOrder` encodes a complete
+permutation with our independent LIS algorithm. Same-order replacement preserves
+the old raw key. Never reorder `Document.slots` for Animate edits. The strict
+global owner is `KeyOwner::DrawOrder {}` (empty struct, not a serde unit variant);
+its clipboard requires the identical ordered slot-name layout. Tree slots show
+front first, with explicit stable widget IDs; engine arrays run back to front.
+See docs/slices/draw-order-authoring.md for the calibrated pending/history limits.
 
 Native v15 adds `Document.events`, `Document.reference_scale` and
 `Animation.events` (data only; key overrides stay `Option`). Constraint names
@@ -130,7 +228,7 @@ IK evaluation uses one checked engine solve. `EvaluatedPose` distinguishes autho
 locals, applied locals and world transforms; `Session::local_pose` stays authored.
 Rendering, picking, bounds and tools use the evaluated frame. The old evaluation
 names are fallible aliases; `world_pose` is explicitly forward kinematics only.
-Binding captures applied locals once and reconstructs FK, never applying IK twice.
+Binding captures applied locals and sampled inheritance modes once and reconstructs checked FK, never applying IK twice.
 Viewport deltas use `drag_transform_in_frame` and update authored values without
 baking solved transforms. Preserve raw Setup rotation winding on directly constrained
 bones, including zero Mix. Native6 Mix is [0,1]; unsupported chains/poses fail explicitly
@@ -160,9 +258,26 @@ the selected vertex, sparse missing targets, existing-global-bone Add and a
 sole-positive reduction without recipients; these are bounded policies, not
 observations of every Spine edge case. Do not silently normalize imports, key or
 discard pending poses, merge bindings or rebuild geometry in the UI. Brush editing,
-locks, multiple selected vertices/bones and Update need separate commands/gates.
+locks, multiple selected bones and Update need separate commands/gates.
 Add stable vertex identity before removal/reindexing or cross-topology animation
 references, and remap all influences before any future bone reordering/deletion.
+
+`EditMeshBoneWeights` is the semantic multi-vertex Direct operation: absolute
+assignments skip sole-positive vertices without recipients, while ordered relative
+steps incrementally clamp chosen values against frozen recipient ratios. The raw
+single-vertex setter keeps its stricter policy. Shared `mesh_bone_weights` reports
+uniform/mixed raw values without averaging; globally bound missing influences
+read zero. A positive semantic edit inserts a missing entry at `[0,0]` in consistent mesh
+binding order, matching
+observed native Setup/Animate behavior; existing zero positions stay unchanged.
+Sparse insertion with keyed/pending Deform layout is rejected until remapping
+exists. Session prepared previews reuse command validation, linked propagation,
+layout guards and pending reconciliation, with one captured FK per gesture.
+Capture both applied locals and `MeshBindPose.inherits`; legacy omitted modes
+retain Setup reconstruction, while supplied null/invalid arrays are rejected.
+See docs/slices/weight-multivertex.md. Keep sorted transient Weights selection
+separate from the Mesh tool's vertex selection and soft-transform state.
+
 
 Track concrete Spine behavior and gaps in `docs/PARITY.md`. Check new geometry against the external runtime and exported data against the installed editor using original fixtures before claiming parity for a feature.
 
@@ -190,7 +305,7 @@ mode after time scrubbing captures the live pose only on the concrete target cli
 Opening another document resets the context. Keep genuine Weights tool history
 separate from temporary Mesh inspection's return-tool tracking.
 
-Direct previews freeze the explicit mesh/vertex/bone, mode/clip/actual time and one
+Direct previews freeze the explicit mesh/vertex-set/bone, mode/clip/actual time and one
 pose snapshot, then use Session's fixed transaction baseline. Completion is one
 undo step after frame actions and pointer release. Escape, application focus loss,
 tool/context/history/Open/Save/Export/view-hide actions cancel before continuing;
@@ -230,3 +345,6 @@ Native acceptance must verify actual typed values and resulting document state.
 Requested focus, highlighted text and a synthesized key event alone do not prove
 input reached a field. Keep native OS input confined to the verified task-owned
 foreground window, preserve other applications and remove temporary diagnostics.
+Before each mouse event, also verify that the owned window is topmost at the
+target point. Record original bounds from a settled editor capture rather than
+a transient startup frame, and serialize foreground checks with other GUI tasks.

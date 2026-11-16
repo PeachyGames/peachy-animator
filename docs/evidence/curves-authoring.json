@@ -1,0 +1,215 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-14",
+  "sourceBaseline": "0326fc396d208c086b177c2647e001aeaa8f75f3",
+  "nativeFormat": 22,
+  "mcpCommands": 49,
+  "mcpTools": 11,
+  "fullSpineParity": false,
+  "reference": {
+    "installedVersion": "4.3.26",
+    "originalDataOnly": true,
+    "resetMatrixCases": 16,
+    "normalLiveDirections": 2,
+    "resetAbsoluteTolerance": 2e-05,
+    "normalLiveAbsoluteTolerance": 0.0002,
+    "singleFinalPreviousInterval": true,
+    "multiFinalNoOp": true,
+    "flatRelativePlotBlankWithRawExcursionsRetained": true,
+    "matchCopiesOnlyChosenHandle": true
+  },
+  "checks": {
+    "maxCargoWorkers": 2,
+    "maxTestThreads": 2,
+    "engineCurveFilter": 33,
+    "sharedActionsIncluded": 8,
+    "desktopCurveFilter": 47,
+    "adapterCurveRanges": 3,
+    "mcpSchema": 8,
+    "actualStdioCurveWorkflows": 6,
+    "filtersOverlap": true,
+    "fullSuiteRun": false,
+    "format": true,
+    "workspaceAllTargetsClippy": true,
+    "workspaceBuild": true,
+    "finalDesktopIconBuild": true,
+    "architectureCrates": 7,
+    "hostedCiPassed": false,
+    "mainIntegrationRequiresHostedCi": true
+  },
+  "native": {
+    "actualOsInput": true,
+    "clientSize": [
+      1500,
+      960
+    ],
+    "dragOneUndoRedo": true,
+    "observedHeldPreviewEscape": true,
+    "numericEscapePreservesSelection": true,
+    "repeatedBezierReset": true,
+    "singleFinalPreviousInterval": true,
+    "multiFinalDisabledPreservesRedo": true,
+    "typedPendingRotation": 13.5,
+    "typedGraphHandleValue": 6.5,
+    "normalLiveKeepsPendingPose": true,
+    "saveExcludesPendingPose": true,
+    "freshProcessExactDocument": true,
+    "imagesLoaded": 10,
+    "playbackTimes": [
+      0.2652583420276642,
+      0.5071751475334167
+    ],
+    "allOwnedProcessesClosed": true,
+    "originalSourceHashesUnchanged": 11
+  },
+  "actualMcp": {
+    "actualStdioMcp": true,
+    "importedFinishedRig": false,
+    "rootOnlyCreation": true,
+    "commandVariants": 49,
+    "tools": 11,
+    "requestCount": 168,
+    "acceptedCommands": 23,
+    "sampleCount": 121,
+    "matchedOnlyDraggedHandle": true,
+    "singleTerminalRedirect": true,
+    "multiTerminalNoOpPreservesRedo": true,
+    "rawExactSetter": true,
+    "alphaOnlyCurveEditPreservesRgb": true,
+    "undoRedo": true,
+    "saveReopenExact": true,
+    "originalImagesUnchanged": true,
+    "serverExitCode": 0
+  },
+  "externalRuntime": {
+    "nativeAuthored": {
+      "physicsConstraints": 0,
+      "physicsValues": 0,
+      "physicsTimelines": 0,
+      "physicsFrames": 0,
+      "regionComparisons": 43680,
+      "maxRegionError": 1.52587890625e-05,
+      "meshComparisons": 7800,
+      "weightedMeshComparisons": 4680,
+      "maxMeshError": 3.0517578125e-05,
+      "uvComparisons": 15600,
+      "maxUVError": 0,
+      "runtime": "Spine 4.3 external oracle",
+      "bones": 15,
+      "slots": 14,
+      "skins": [
+        "default",
+        "mint",
+        "peach"
+      ],
+      "clips": [
+        {
+          "name": "0-scalar",
+          "nativeEnd": 1,
+          "runtimeEnd": 1,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 2.281433199868843e-05
+        },
+        {
+          "name": "1-color",
+          "nativeEnd": 1,
+          "runtimeEnd": 1,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 1.3480708318525103e-05
+        },
+        {
+          "name": "2-deform",
+          "nativeEnd": 1,
+          "runtimeEnd": 1,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default",
+            "mint",
+            "peach"
+          ],
+          "maxWorldError": 1.3480708318525103e-05
+        }
+      ],
+      "tolerance": 0.001,
+      "maxWorldError": 2.281433199868843e-05,
+      "comparisons": 42120,
+      "ikPoseComparisons": 0,
+      "maxIKMixError": 0,
+      "ikMixTolerance": 1e-06,
+      "drawOrderChecks": 468,
+      "imageChecks": 6240,
+      "colorComparisons": 24960
+    },
+    "mcpAuthored": {
+      "physicsConstraints": 0,
+      "physicsValues": 0,
+      "physicsTimelines": 0,
+      "physicsFrames": 0,
+      "regionComparisons": 320,
+      "maxRegionError": 7.62939453125e-06,
+      "meshComparisons": 0,
+      "weightedMeshComparisons": 0,
+      "maxMeshError": 0,
+      "uvComparisons": 0,
+      "maxUVError": 0,
+      "runtime": "Spine 4.3 external oracle",
+      "bones": 1,
+      "slots": 1,
+      "skins": [
+        "default"
+      ],
+      "clips": [
+        {
+          "name": "curve-study",
+          "nativeEnd": 1,
+          "runtimeEnd": 1,
+          "samplesPerSkin": 52,
+          "skins": [
+            "default"
+          ],
+          "maxWorldError": 1.6209008326661944e-06
+        }
+      ],
+      "tolerance": 0.001,
+      "maxWorldError": 1.6209008326661944e-06,
+      "comparisons": 312,
+      "ikPoseComparisons": 0,
+      "maxIKMixError": 0,
+      "ikMixTolerance": 1e-06,
+      "drawOrderChecks": 52,
+      "imageChecks": 40,
+      "colorComparisons": 160
+    }
+  },
+  "limits": [
+    "Stored user preset management and Last chosen are not implemented.",
+    "Separate-off adjacent selected intervals and Custom with Bezier neighbors fail explicitly.",
+    "Separate-off live vertical/outside-time, flat-linked and extreme coupling remain uncalibrated.",
+    "Matched flat destinations and combined native property groups remain open.",
+    "All-owner Graph, exact styling and arbitrary docking remain open.",
+    "MCP and Desktop have independent sessions sharing engine actions; no live GUI bridge is claimed."
+  ],
+  "canonicalLab": {
+    "path": "examples/peach-bot/curves-bot.peachy",
+    "sha256": "725a2222b6185144bb7940e1349e9b3d07c12faa98c3fbfb37e12165b321c31c",
+    "sameBytesAsRuntimeCheckedNativeProject": true,
+    "referencedOriginalImagesVerified": 10
+  },
+  "lifecycle": {
+    "taskOwnedTemporaryFilesRetired": 374,
+    "allOwnedEditorsClosed": true,
+    "retainedReviewArtifacts": "Original inputs, native outputs, selected captures/witnesses, authored bundles and actual MCP requests until review/CI evidence is superseded",
+    "sharedCargoOutput": "Retained for active continuing parity work",
+    "fullRepositoryCopiesCreated": 0
+  }
+}

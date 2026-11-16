@@ -1,8 +1,29 @@
 use crate::{
-    AnimationKey, AnimationKeyClipboard, KeyClipboard, KeyOwner, MeshBindPose, TimelineKey,
+    AnimationKey, AnimationKeyClipboard, AnimationKeyGroupClipboard, AnimationKeyGroupTarget,
+    CurvePreset, CurveSelection, KeyClipboard, KeyOwner, MeshBindPose, MeshWeightEdit,
+    MeshWeightSelection, SliderMappingRangeField, SliderPoseEdit, SliderSourceRange, TimelineKey,
+    TransformMappingRangeField,
 };
 use peachy_document::*;
 use serde::{Deserialize, Serialize};
+
+fn required_source_bone<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> Result<Option<usize>, D::Error> {
+    Option::<usize>::deserialize(deserializer)
+}
+
+fn source_property<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> Result<TransformProperty, D::Error> {
+    let value = String::deserialize(deserializer)?;
+    TransformProperty::from_spine_name(&value).ok_or_else(|| {
+        serde::de::Error::unknown_variant(
+            &value,
+            &["rotate", "x", "y", "scaleX", "scaleY", "shearY"],
+        )
+    })
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(tag = "command", rename_all = "camelCase", deny_unknown_fields)]
@@ -23,6 +44,66 @@ pub enum Command {
         constraint: usize,
         value: TransformConstraint,
     },
+    AddSliderConstraint {
+        constraint: SliderConstraint,
+    },
+    /// Native animation-menu creation: default manual Slider, prepended.
+    CreateSliderConstraint {
+        animation: usize,
+    },
+    SetSliderConstraint {
+        constraint: usize,
+        value: SliderConstraint,
+    },
+    SetSliderSetupPose {
+        constraint: usize,
+        edits: Vec<SliderPoseEdit>,
+        skin: String,
+    },
+    SetSliderSource {
+        constraint: usize,
+        #[serde(deserialize_with = "required_source_bone")]
+        bone: Option<usize>,
+    },
+    SetSliderSourceProperty {
+        constraint: usize,
+        #[serde(deserialize_with = "source_property")]
+        property: TransformProperty,
+        source_range: SliderSourceRange,
+    },
+    SetSliderKey {
+        animation: usize,
+        constraint: usize,
+        property: SliderProperty,
+        key: Keyframe,
+    },
+    /// Semantic key insertion: preserve an existing curve or split its interval.
+    InsertSliderKey {
+        animation: usize,
+        constraint: usize,
+        property: SliderProperty,
+        time: f32,
+        value: f32,
+    },
+    SetSliderCurve {
+        animation: usize,
+        constraint: usize,
+        property: SliderProperty,
+        time: f32,
+        curve: Curve,
+    },
+    EditTransformMappingRange {
+        constraint: usize,
+        from: TransformProperty,
+        to: TransformProperty,
+        field: TransformMappingRangeField,
+        value: f64,
+    },
+    EditSliderMappingRange {
+        constraint: usize,
+        field: SliderMappingRangeField,
+        value: f64,
+    },
     SetPathConstraint {
         constraint: usize,
         value: peachy_document::PathConstraint,
@@ -41,10 +122,34 @@ pub enum Command {
         constraint: usize,
         key: IkKeyframe,
     },
+    /// Preserve Mix, bend and exact identity while replacing its typed curve.
+    SetIkCurve {
+        animation: usize,
+        constraint: usize,
+        time: f32,
+        curve: IkCurve,
+    },
     DeleteIkKey {
         animation: usize,
         constraint: usize,
         time: f32,
+    },
+    SetDeformKey {
+        animation: usize,
+        attachment: AttachmentRef,
+        key: DeformKey,
+    },
+    DeleteDeformKey {
+        animation: usize,
+        attachment: AttachmentRef,
+        time: f32,
+    },
+    /// Change only the outgoing interpolation of one exact deform key.
+    SetDeformCurve {
+        animation: usize,
+        attachment: AttachmentRef,
+        time: f32,
+        curve: Curve,
     },
     MoveAnimationKeys {
         animation: usize,
@@ -61,6 +166,12 @@ pub enum Command {
         target: KeyOwner,
         time: f32,
         clipboard: AnimationKeyClipboard,
+    },
+    PasteAnimationKeyGroup {
+        animation: usize,
+        time: f32,
+        clipboard: AnimationKeyGroupClipboard,
+        targets: Vec<AnimationKeyGroupTarget>,
     },
     SetPose {
         bone: usize,
@@ -101,11 +212,68 @@ pub enum Command {
         slot: usize,
         color: [u8; 4],
     },
+    SetSlotAttachmentKey {
+        animation: usize,
+        slot: usize,
+        key: AttachmentKey,
+    },
+    SetSlotColorKey {
+        animation: usize,
+        slot: usize,
+        key: ColorKey,
+    },
+    /// Exact raw offset payload; imported encodings remain first-class data.
+    SetDrawOrderKey {
+        animation: usize,
+        key: DrawOrderKey,
+    },
+    /// Complete back-to-front permutation, encoded with a minimal offset list.
+    SetDrawOrder {
+        animation: usize,
+        time: f32,
+        order: Vec<usize>,
+    },
+    SetSlotColorCurves {
+        animation: usize,
+        slot: usize,
+        time: f32,
+        curves: [Curve; 4],
+    },
+    /// Insert an authored color while preserving adjacent curve geometry.
+    InsertSlotColorKey {
+        animation: usize,
+        slot: usize,
+        time: f32,
+        color: [f32; 4],
+    },
     SetKey {
         animation: usize,
         bone: usize,
         property: Property,
         key: Keyframe,
+    },
+    /// Change only the outgoing curve of one exact existing scalar key.
+    SetKeyCurve {
+        animation: usize,
+        bone: usize,
+        property: Property,
+        time: f32,
+        curve: Curve,
+    },
+    ApplyCurvePreset {
+        animation: usize,
+        selection: Vec<CurveSelection>,
+        preset: CurvePreset,
+        separate: bool,
+    },
+    EditCurveHandle {
+        animation: usize,
+        selection: Vec<CurveSelection>,
+        primary: CurveSelection,
+        handle: usize,
+        point: [f64; 2],
+        match_curves: bool,
+        separate: bool,
     },
     DeleteKey {
         animation: usize,
@@ -127,6 +295,15 @@ pub enum Command {
     },
     AddBone {
         bone: Bone,
+    },
+    /// Append an empty slot. Add its artwork explicitly before activating it.
+    AddSlot {
+        slot: Slot,
+    },
+    /// Insert new region/mesh artwork in an existing skin and slot. Never replaces.
+    AddAttachment {
+        attachment: AttachmentRef,
+        value: Attachment,
     },
     AddAnimation {
         name: String,
@@ -173,6 +350,13 @@ pub enum Command {
         weight: f32,
         pose: MeshBindPose,
     },
+    EditMeshBoneWeights {
+        attachment: AttachmentRef,
+        vertices: Vec<usize>,
+        bone: usize,
+        edit: MeshWeightEdit,
+        pose: MeshBindPose,
+    },
     Batch {
         commands: Vec<Command>,
     },
@@ -205,17 +389,114 @@ impl<'de> Deserialize<'de> for EditTarget {
 
 /// Pure document transition. Neither the input nor history changes on failure.
 pub fn apply_command(document: &Document, command: Command) -> Result<Document, String> {
+    Ok(apply_command_with_effects(document, command)?.document)
+}
+
+#[derive(Clone, Debug)]
+pub struct CommandOutcome {
+    pub document: Document,
+    pub effects: crate::EditEffects,
+    pub(crate) pose_operations: Vec<crate::constraint_effects::PoseOperation>,
+    pub(crate) source_operations: Vec<crate::slider_source::SourceViewOperation>,
+}
+
+#[derive(Default)]
+struct CommandTrace {
+    pose: Vec<crate::constraint_effects::PoseOperation>,
+    source: Vec<crate::slider_source::SourceViewOperation>,
+}
+fn inserted(
+    effects: &mut crate::EditEffects,
+    trace: &mut CommandTrace,
+    before: usize,
+    at: usize,
+) -> Result<(), String> {
+    let insertion = crate::EditEffects::insertion(before, at)?;
+    *effects = effects.then(&insertion)?;
+    trace
+        .pose
+        .push(crate::constraint_effects::PoseOperation::Remap(
+            insertion.clone(),
+        ));
+    trace
+        .source
+        .push(crate::slider_source::SourceViewOperation::Remap(insertion));
+    Ok(())
+}
+fn source_changed(
+    trace: &mut CommandTrace,
+    constraint: usize,
+    change: crate::slider_source::SourceChange,
+) {
+    use crate::slider_source::SourceViewOperation;
+    trace.source.push(SourceViewOperation::Focus {
+        constraint,
+        memo: change.before,
+    });
+    if let Some(before) = change.before {
+        trace.source.push(SourceViewOperation::Remember(before));
+    }
+    if let Some(after) = change.after {
+        trace.source.push(SourceViewOperation::Remember(after));
+    }
+    trace.source.push(SourceViewOperation::Observe {
+        constraint,
+        memo: change.after,
+    });
+    if change.assigned {
+        trace
+            .pose
+            .push(crate::constraint_effects::PoseOperation::ClearSliderTime { constraint });
+    }
+}
+
+pub fn apply_command_with_effects(
+    document: &Document,
+    command: Command,
+) -> Result<CommandOutcome, String> {
+    let mut effects = crate::EditEffects::default();
+    let mut trace = CommandTrace::default();
+    let document = apply_prepared(document, |candidate| {
+        apply(candidate, command, &mut effects, &mut trace)
+    })?;
+    Ok(CommandOutcome {
+        document,
+        effects,
+        pose_operations: trace.pose,
+        source_operations: trace.source,
+    })
+}
+
+/// Prepared previews share command validation and transition guards.
+pub(crate) fn apply_prepared(
+    document: &Document,
+    edit: impl FnOnce(&mut Document) -> Result<(), String>,
+) -> Result<Document, String> {
     document.validate()?;
     let mut candidate = document.clone();
-    apply(&mut candidate, command)?;
+    edit(&mut candidate)?;
     // Linked meshes follow source geometry edits; editing one alone is refused
     // by validation.
     candidate.propagate_linked_geometry(document);
+    for animation in &document.animations {
+        for track in &animation.deform_tracks {
+            crate::deform_authoring::check_layout_transition(
+                document,
+                &candidate,
+                &track.attachment,
+            )?;
+        }
+    }
     candidate.validate()?;
     Ok(candidate)
 }
 
-fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
+fn apply(
+    doc: &mut Document,
+    command: Command,
+    effects: &mut crate::EditEffects,
+    trace: &mut CommandTrace,
+) -> Result<(), String> {
     match command {
         Command::SetPose {
             bone,
@@ -267,7 +548,7 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
                         })
                         .collect();
                     for command in commands? {
-                        apply(doc, command)?;
+                        apply(doc, command, effects, trace)?;
                     }
                 }
             }
@@ -306,6 +587,46 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
         }
         Command::SetSlotColor { slot, color } => {
             doc.slots.get_mut(slot).ok_or("Unknown slot")?.color = color;
+        }
+        Command::SetSlotAttachmentKey {
+            animation,
+            slot,
+            key,
+        } => {
+            crate::slot_authoring::set_attachment_key(doc, animation, slot, key)?;
+        }
+        Command::SetSlotColorKey {
+            animation,
+            slot,
+            key,
+        } => {
+            crate::slot_authoring::set_color_key(doc, animation, slot, key)?;
+        }
+        Command::SetDrawOrderKey { animation, key } => {
+            crate::draw_order_authoring::set_key(doc, animation, key)?;
+        }
+        Command::SetDrawOrder {
+            animation,
+            time,
+            order,
+        } => {
+            crate::draw_order_authoring::set_order(doc, animation, time, &order)?;
+        }
+        Command::SetSlotColorCurves {
+            animation,
+            slot,
+            time,
+            curves,
+        } => {
+            crate::slot_authoring::set_color_curves(doc, animation, slot, time, curves)?;
+        }
+        Command::InsertSlotColorKey {
+            animation,
+            slot,
+            time,
+            color,
+        } => {
+            crate::slot_authoring::insert_color_pose(doc, animation, slot, time, color)?;
         }
         Command::ConvertRegionToMesh { attachment } => {
             let value = doc
@@ -371,7 +692,139 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
                 &pose,
             )?;
         }
-        Command::AddIkConstraint { constraint } => doc.constraints.push(Constraint::Ik(constraint)),
+        Command::EditMeshBoneWeights {
+            attachment,
+            vertices,
+            bone,
+            edit,
+            pose,
+        } => {
+            crate::mesh_weights::edit_weights(
+                doc,
+                MeshWeightSelection {
+                    attachment,
+                    vertices,
+                    bone,
+                },
+                edit,
+                pose,
+            )?;
+        }
+        Command::AddIkConstraint { constraint } => {
+            let before = doc.constraints.len();
+            doc.constraints.push(Constraint::Ik(constraint));
+            inserted(effects, trace, before, before)?;
+        }
+        Command::AddSliderConstraint { constraint } => {
+            let before = doc.constraints.len();
+            doc.constraints.push(Constraint::Slider(constraint));
+            inserted(effects, trace, before, before)?;
+        }
+        Command::CreateSliderConstraint { animation } => {
+            let before = doc.constraints.len();
+            crate::slider_creation::create(doc, animation)?;
+            inserted(effects, trace, before, 0)?;
+        }
+        Command::SetSliderConstraint { constraint, value } => {
+            let Some(slot @ Constraint::Slider(_)) = doc.constraints.get_mut(constraint) else {
+                return Err("Unknown Slider constraint".into());
+            };
+            *slot = Constraint::Slider(value);
+            trace
+                .source
+                .push(crate::slider_source::SourceViewOperation::Observe {
+                    constraint,
+                    memo: doc.constraints[constraint]
+                        .as_slider()
+                        .and_then(crate::slider_source::memo),
+                });
+        }
+        Command::SetSliderSetupPose {
+            constraint,
+            edits,
+            skin,
+        } => {
+            crate::slider_setup::set_pose(doc, constraint, &edits, &skin)?;
+        }
+        Command::SetSliderSource { constraint, bone } => {
+            if let Some(change) = crate::slider_source::set_source(doc, constraint, bone)? {
+                source_changed(trace, constraint, change);
+            }
+        }
+        Command::SetSliderSourceProperty {
+            constraint,
+            property,
+            source_range,
+        } => {
+            if let Some(change) =
+                crate::slider_source::set_property(doc, constraint, property, source_range)?
+            {
+                source_changed(trace, constraint, change);
+            }
+        }
+        Command::SetSliderKey {
+            animation,
+            constraint,
+            property,
+            key,
+        } => {
+            if doc
+                .constraints
+                .get(constraint)
+                .and_then(Constraint::as_slider)
+                .is_none()
+            {
+                return Err("Unknown Slider constraint".into());
+            }
+            crate::slider_authoring::validate_key(key)?;
+            let clip = doc
+                .animations
+                .get_mut(animation)
+                .ok_or("Unknown animation")?;
+            crate::slider_authoring::insert_key(clip, constraint, property, key);
+        }
+        Command::InsertSliderKey {
+            animation,
+            constraint,
+            property,
+            time,
+            value,
+        } => {
+            crate::slider_authoring::insert_pose(
+                doc, animation, constraint, property, time, value,
+            )?;
+        }
+        Command::SetSliderCurve {
+            animation,
+            constraint,
+            property,
+            time,
+            curve,
+        } => {
+            if !time.is_finite() || time < 0. || !curve.handles_valid() {
+                return Err(
+                    "Slider curve needs a nonnegative finite host time and finite handles".into(),
+                );
+            }
+            if doc
+                .constraints
+                .get(constraint)
+                .and_then(Constraint::as_slider)
+                .is_none()
+            {
+                return Err("Unknown Slider constraint".into());
+            }
+            let key = doc
+                .animations
+                .get_mut(animation)
+                .ok_or("Unknown animation")?
+                .slider_tracks
+                .iter_mut()
+                .find(|track| track.constraint == constraint && track.property == property)
+                .and_then(|track| track.keys.iter_mut().find(|key| key.time == time))
+                .ok_or("Unknown exact Slider key")?;
+            key.curve = curve;
+        }
         Command::SetIkConstraint { constraint, value } => {
             let Some(slot @ Constraint::Ik(_)) = doc.constraints.get_mut(constraint) else {
                 return Err("Unknown IK constraint".into());
@@ -379,13 +832,56 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
             *slot = Constraint::Ik(value);
         }
         Command::AddTransformConstraint { constraint } => {
-            doc.constraints.push(Constraint::Transform(constraint))
+            let before = doc.constraints.len();
+            doc.constraints.push(Constraint::Transform(constraint));
+            inserted(effects, trace, before, before)?;
         }
         Command::SetTransformConstraint { constraint, value } => {
             let Some(slot @ Constraint::Transform(_)) = doc.constraints.get_mut(constraint) else {
                 return Err("Unknown transform constraint".into());
             };
             *slot = Constraint::Transform(value);
+        }
+        Command::EditTransformMappingRange {
+            constraint,
+            from,
+            to,
+            field,
+            value,
+        } => {
+            let current = doc
+                .constraints
+                .get(constraint)
+                .and_then(Constraint::as_transform)
+                .ok_or("Unknown transform constraint")?;
+            let next = crate::edited_transform_mapping_range(current, from, to, field, value)?;
+            doc.constraints[constraint] = Constraint::Transform(next);
+        }
+        Command::EditSliderMappingRange {
+            constraint,
+            field,
+            value,
+        } => {
+            let current = doc
+                .constraints
+                .get(constraint)
+                .and_then(Constraint::as_slider)
+                .ok_or("Unknown Slider constraint")?;
+            let duration = doc
+                .animations
+                .get(current.animation)
+                .ok_or("Unknown Slider reference animation")?
+                .duration();
+            let next = crate::edited_slider_mapping_range(current, duration, field, value)?;
+            doc.constraints[constraint] = Constraint::Slider(next);
+            trace
+                .source
+                .push(crate::slider_source::SourceViewOperation::Observe {
+                    constraint,
+                    memo: doc.constraints[constraint]
+                        .as_slider()
+                        .and_then(crate::slider_source::memo),
+                });
         }
         Command::SetPathConstraint { constraint, value } => {
             let Some(slot @ Constraint::Path(_)) = doc.constraints.get_mut(constraint) else {
@@ -394,7 +890,9 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
             *slot = Constraint::Path(value);
         }
         Command::AddPhysicsConstraint { constraint } => {
-            doc.constraints.push(Constraint::Physics(constraint))
+            let before = doc.constraints.len();
+            doc.constraints.push(Constraint::Physics(constraint));
+            inserted(effects, trace, before, before)?;
         }
         Command::SetPhysicsConstraint { constraint, value } => {
             let Some(slot @ Constraint::Physics(_)) = doc.constraints.get_mut(constraint) else {
@@ -403,6 +901,45 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
             *slot = Constraint::Physics(value);
         }
         Command::AddBone { bone } => doc.bones.push(bone),
+        Command::AddSlot { slot } => {
+            if slot.name.trim().is_empty()
+                || doc.slots.iter().any(|existing| existing.name == slot.name)
+                || slot.bone >= doc.bones.len()
+            {
+                return Err("New slot needs a unique nonempty name and an existing bone".into());
+            }
+            if slot.attachment.is_some() {
+                return Err(
+                    "New slot must be empty; add artwork then use SetSlotAttachment".into(),
+                );
+            }
+            doc.slots.push(slot);
+        }
+        Command::AddAttachment { attachment, value } => {
+            if !matches!(value, Attachment::Region(_) | Attachment::Mesh(_)) {
+                return Err(
+                    "Attachment creation currently supports regions and meshes only".into(),
+                );
+            }
+            if !doc.slots.iter().any(|slot| slot.name == attachment.slot) {
+                return Err("New attachment needs an existing slot".into());
+            }
+            if attachment.placeholder.trim().is_empty() {
+                return Err("New attachment placeholder must be nonempty".into());
+            }
+            value.validate()?;
+            let skin = doc
+                .skins
+                .get_mut(&attachment.skin)
+                .ok_or("New attachment needs an existing skin")?;
+            let entries = skin.entry(attachment.slot).or_default();
+            if entries.contains_key(&attachment.placeholder) {
+                return Err(
+                    "Attachment placeholder is occupied; creation never overwrites artwork".into(),
+                );
+            }
+            entries.insert(attachment.placeholder, value);
+        }
         Command::AddAnimation { name, duration } => {
             if !duration.is_finite() || duration < 0.0 {
                 return Err("Animation duration must be finite and nonnegative".into());
@@ -436,6 +973,69 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
                 .clone();
             duplicate.name = name;
             doc.animations.push(duplicate);
+        }
+        Command::ApplyCurvePreset {
+            animation,
+            selection,
+            preset,
+            separate,
+        } => {
+            let commands = crate::curve_editing::preset_commands(
+                doc, animation, &selection, preset, separate,
+            )?;
+            for command in commands {
+                apply(doc, command, effects, trace)?;
+            }
+        }
+        Command::EditCurveHandle {
+            animation,
+            selection,
+            primary,
+            handle,
+            point,
+            match_curves,
+            separate,
+        } => {
+            let commands = crate::curve_editing::handle_commands(
+                doc,
+                crate::curve_editing::HandleRequest {
+                    animation,
+                    selection: &selection,
+                    primary: &primary,
+                    handle,
+                    point,
+                    match_curves,
+                    separate,
+                },
+            )?;
+            for command in commands {
+                apply(doc, command, effects, trace)?;
+            }
+        }
+        Command::SetKeyCurve {
+            animation,
+            bone,
+            property,
+            time,
+            curve,
+        } => {
+            if !time.is_finite() || time < 0. {
+                return Err("Key time must be finite and nonnegative".into());
+            }
+            if !curve.handles_valid() {
+                return Err("Scalar curve handles must be finite".into());
+            }
+            doc.bones.get(bone).ok_or("Unknown bone")?;
+            let key = doc
+                .animations
+                .get_mut(animation)
+                .ok_or("Unknown animation")?
+                .tracks
+                .iter_mut()
+                .find(|track| track.bone == bone && track.property == property)
+                .and_then(|track| track.keys.iter_mut().find(|key| key.time == time))
+                .ok_or("Unknown exact scalar key")?;
+            key.curve = curve;
         }
         Command::SetKey {
             animation,
@@ -472,6 +1072,35 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
                 keys.push(key);
             }
             keys.sort_by(|a, b| a.time.total_cmp(&b.time));
+        }
+        Command::SetIkCurve {
+            animation,
+            constraint,
+            time,
+            curve,
+        } => {
+            if !time.is_finite() || time < 0. {
+                return Err("Key time must be finite and nonnegative".into());
+            }
+            curve.validate()?;
+            if doc
+                .constraints
+                .get(constraint)
+                .and_then(Constraint::as_ik)
+                .is_none()
+            {
+                return Err("Unknown IK constraint".into());
+            }
+            let key = doc
+                .animations
+                .get_mut(animation)
+                .ok_or("Unknown animation")?
+                .ik_tracks
+                .iter_mut()
+                .find(|track| track.constraint == constraint)
+                .and_then(|track| track.keys.iter_mut().find(|key| key.time == time))
+                .ok_or("Unknown exact IK key")?;
+            key.curve = curve;
         }
         Command::SetIkKey {
             animation,
@@ -534,6 +1163,28 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
             }
             clip.ik_tracks.retain(|t| !t.keys.is_empty());
         }
+        Command::SetDeformKey {
+            animation,
+            attachment,
+            key,
+        } => {
+            crate::deform_authoring::set_key(doc, animation, &attachment, key)?;
+        }
+        Command::DeleteDeformKey {
+            animation,
+            attachment,
+            time,
+        } => {
+            crate::deform_authoring::delete_key(doc, animation, &attachment, time)?;
+        }
+        Command::SetDeformCurve {
+            animation,
+            attachment,
+            time,
+            curve,
+        } => {
+            crate::timeline::set_deform_curve(doc, animation, &attachment, time, curve)?;
+        }
         Command::MoveAnimationKeys {
             animation,
             keys,
@@ -549,6 +1200,14 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
             time,
             clipboard,
         } => crate::timeline::paste_animation_keys(doc, animation, target, time, &clipboard)?,
+        Command::PasteAnimationKeyGroup {
+            animation,
+            time,
+            clipboard,
+            targets,
+        } => {
+            crate::timeline::paste_animation_key_group(doc, animation, time, &clipboard, &targets)?
+        }
         Command::DeleteKey {
             animation,
             bone,
@@ -595,7 +1254,7 @@ fn apply(doc: &mut Document, command: Command) -> Result<(), String> {
         }
         Command::Batch { commands } => {
             for command in commands {
-                apply(doc, command)?;
+                apply(doc, command, effects, trace)?;
             }
         }
     }
@@ -622,6 +1281,14 @@ pub fn ik_keyframe_at(keys: &[IkKeyframe], time: f32) -> Result<Option<IkKeyfram
     key_index_by_time(keys, time, |key| key.time).map(|index| index.map(|index| keys[index]))
 }
 
+/// Exact imported deform-key identities take priority over nearby cursor times.
+pub fn deform_keyframe_at(keys: &[DeformKey], time: f32) -> Result<Option<&DeformKey>, String> {
+    if !time.is_finite() || time < 0. {
+        return Err("Key time must be finite and nonnegative".into());
+    }
+    key_index_by_time(keys, time, |key| key.time).map(|index| index.map(|index| &keys[index]))
+}
+
 pub(crate) fn snapped_time(fps: u32, time: f32) -> Result<f32, String> {
     if !time.is_finite() || time < 0. {
         return Err("Key time must be finite and nonnegative".into());
@@ -629,7 +1296,7 @@ pub(crate) fn snapped_time(fps: u32, time: f32) -> Result<f32, String> {
     Ok(((f64::from(time) * f64::from(fps)).round() / f64::from(fps)) as f32)
 }
 
-fn key_index_by_time<T>(
+pub(crate) fn key_index_by_time<T>(
     keys: &[T],
     time: f32,
     read: fn(&T) -> f32,

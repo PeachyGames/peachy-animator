@@ -1,5 +1,251 @@
 # Peachy Animator
 
+The current **bounded cycle Offset native/MCP checkpoint is verified**: native **v23 /64
+commands /25 MCP tools**. `offset_animation_keys` uses exact key seeds to offset
+whole closed Bone/property tracks; `reset_cycle_offset_memory` explicitly clears
+its transient cache. The same affected set preserves originals, shrinking keeps
+survivors, and adding a track rebases all selected current tracks after stale
+validation. Native Desktop `dc60e423…b2998` passes fast Offset/retime release,
+mapped seed selection, held cancellation, pending Save exclusion, reset, loop
+bounds, minimum footer controls and exact fresh reopen. A separate 15-request MCP
+replay constructs the 97-command lab from blank and reproduces the native whole
+Document, pending authored/applied/world pose and byte-identical Save. That
+[native result](examples/peach-bot/cycle-offset-native-result.peachy) passes 364
+external-runtime poses at unchanged 0.001 tolerance. All owned processes are closed.
+Shift/ripple, other timeline families, outside-loop tracks, broader selection/
+history rules and the live desktop bridge remain open.
+
+The earlier 276-request foundation study and its `0316` authored result, and the
+32-request `050f` receipt/reset study, remain separate proofs.
+Try the original [baseline](examples/peach-bot/cycle-offset-bot.peachy),
+[authored result](examples/peach-bot/cycle-offset-authored-bot.peachy) and
+[97-command recipe](examples/peach-bot/cycle-offset-authoring-commands.json).
+See the [bounded slice](docs/slices/cycle-offset.md),
+[MCP contract](docs/MCP.md#closed-bone-track-cycle-offset) and
+[native review](docs/evidence/cycle-offset-ui.html) /
+[scalar evidence](docs/evidence/cycle-offset-ui.json).
+
+The earlier **bounded adaptive workspace follow-up** passes native input on
+Desktop `d1fc05d9…14e8`, with native v23 /64 commands /23 MCP tools unchanged.
+At 1120×740, the tested Dopesheet/Timeline layout retains a 206-pixel canvas and
+four complete Tree Bone rows; adding Playback leaves a 293.71875-pixel canvas.
+Actual pixel-wheel input reaches the last Shear Y key and recovers the first X
+key without changing document, pending pose, redo or selection. Re-expanding to
+1500×960 restores the default pane heights exactly. The original native result
+is byte-exact after Undo and all owned GUI processes are closed. See the
+[before/after review](docs/evidence/minimum-workspace.html) and
+[scalar evidence](docs/evidence/minimum-workspace.json). Full stacked-Graph
+minimum layout, group Properties beyond membership and cross-restart layout
+preferences remain open. This UI follow-up adds no new MCP or runtime proof.
+
+The preceding **bounded multi-Bone native checkpoint** adds ordered selection, atomic
+authored-pose edits and shared Local/Parent/World translation. Native v23 and
+64 commands stay unchanged; **23 MCP tools** include explicit pose editing,
+keying and semantic `transform_bones`. An actual blank-root/one-original-PNG run
+passes **104 requests**, 57 construction commands, 21 pose queries, four atomic
+negative cases, pending/history, Auto Key and exact Save/reopen. Final combined
+source checks and **bounded native acceptance pass** on Desktop `1558c256…5763`.
+Actual input verifies Tree/viewport selection, all three translation axes,
+ancestor filtering, Parent numeric assignment, pending/keying/history and held
+Escape/block/release. Its historical 1120×740 acceptance covered toolbar controls;
+the tiny Tree and clipped rig motivated the adaptive follow-up above. Edited
+Save/fresh reopen is exact with empty history/pending/clipboard
+and one PNG. Separate MCP readbacks use 36 requests/14 poses, including exact
+Setup and 0.5-second authored/applied/world witnesses. All owned processes are closed.
+
+Try the [original seven-Bone/three-clip lab](examples/peach-bot/multi-bone-bot.peachy),
+its [57-command construction recipe](examples/peach-bot/multi-bone-authoring-commands.json),
+the [MCP-authored result](examples/peach-bot/multi-bone-authored-bot.peachy) and
+[native saved result](examples/peach-bot/multi-bone-native-result.peachy).
+See the [checkpoint evidence](docs/evidence/multi-bone-authoring.json) and
+[shared MCP contract](docs/MCP.md#semantic-bone-translation--codemcp-checkpoint).
+Group Rotate/Scale/Shear, non-Parent numeric operations, group numeric dragging,
+Shift/ripple, broader cycle Offset, Graph/clipboard workflows and a live GUI bridge
+remain open, as do complete group Properties workflows. The MCP-authored result
+passes 156 external-runtime poses at 0.001; that result differs from the native
+save, which has no fresh runtime comparison. Full parity remains incomplete and
+the goal active. Hosted CI has not passed.
+
+The preceding accepted compound Dopesheet checkpoint groups a selected Bone, Slot or Region's direct Bone/Slot
+tracks together, retains Bone context on Draw order selection and hides unkeyed
+channels. Native input on Desktop14b verifies 12-key mixed retiming, exact
+Undo/Redo, held cancellation, explicit Slot-color paste and all 12 timeline targets
+at 1120×740. Edited Save/fresh reopen matches the complete MCP document with empty
+history/clipboard and one image. The original blank-root **44-request MCP** study
+and a separate **10-request native-save readback** pass. See the
+[before/after review](docs/evidence/compound-dopesheet.html) and
+[scalar evidence](docs/evidence/compound-dopesheet.json).
+
+Try the [original lab](examples/peach-bot/compound-dopesheet-bot.peachy), its
+[43-command construction recipe](examples/peach-bot/compound-dopesheet-authoring-commands.json),
+the [one-command mixed move](examples/peach-bot/compound-dopesheet-move-commands.json)
+and the [native saved result](examples/peach-bot/compound-dopesheet-native-result.peachy).
+That checkpoint used native v23, **64 commands /19 tools**. Compound Graph/Deform
+hierarchy, general Tree multi-selection, full visible Slot/Region properties and
+pose controls, Shift/Offset and
+Lock/Sync remain open; the minimum claim covers timeline targets, not every Tree row.
+
+The preceding **64 commands /19 tools**, native v23 checkpoint verifies leaf clipboard
+owner routing through five native cases: no-owner source fallback, explicit Bone,
+cross-animation, visible Animate Slot and true Region parent Bone. Each native
+typed document matches the actual **71-request** MCP case; the final native Save
+is byte-identical to the [Leaf Clipboard Lab](examples/peach-bot/leaf-clipboard-bot.peachy).
+Fresh reopen is exact with empty history/clipboard and one image. Native Undo and
+MCP/headless Undo/Redo pass; all owned processes are closed. See [scope](docs/slices/leaf-clipboard.md),
+[review](docs/evidence/leaf-clipboard.html) and [scalar evidence](docs/evidence/leaf-clipboard.json).
+At that leaf checkpoint, visible Slot scope was still global DrawOrder. Full Slot/Region controls,
+Region row/header styling, general Tree mapping, Shift/Offset and Lock/Sync remain open.
+
+The preceding grouped checkpoint provides **64 commands / 19 tools**, native v23
+unchanged. Grouped clipboard copy/paste now shares one earliest-key origin and
+explicit entry-to-target mappings through the engine and MCP. The actual blank-
+root/one-PNG run02 passes **57 requests**, nine negative atomic cases, history/
+reopen and 12 pose queries. Separate other-target/cross-animation exports pass
+**208 runtime poses** at 0.001; region error is at most 1.52587890625e−5.
+**Bounded native acceptance now passes**, including minimum 1120×740, actual Save
+and fresh-process exact typed-document recovery with empty history/clipboard and
+one image. All owned processes are closed. The earlier `da1a1da` code push left
+those two gates pending at the user's request; this follow-up closes them on the
+same binary. The [native result](examples/peach-bot/group-clipboard-native-result.peachy)
+pastes in clip 0; the MCP lab pastes in clip 1. Raw JSON byte equality is not claimed.
+See [scope](docs/slices/grouped-clipboard.md),
+[review](docs/evidence/grouped-clipboard.html) and
+[scalar evidence](docs/evidence/grouped-clipboard.json). General Tree target
+multi-selection, Shift/Offset and Lock/Sync remain open. The later leaf checkpoint
+above closes the bounded no-Tree source fallback gap.
+
+The earlier ordinary multi-owner checkpoint used **63 commands / 18 tools**, with
+**native v23 unchanged**. `get_animation_keys` exposes exact authored owner/key
+inventory for shared mixed-owner retiming. Bounded all-owner Dopesheet rows and
+ordinary group movement pass **bounded native acceptance**. The original
+two-bone replay verifies selection, move/history, held Escape, Graph ownership,
+minimum layout and exact Save/reopen. Group clipboard, Shift/Offset, Lock/Sync and general Tree
+multi-selection remain separate gaps.
+
+The actual MCP study starts from a blank root and one original PNG: **41 requests,
+25 authoring commands**, exact mixed move/Undo/Redo and Save/reopen. Open the
+[original Multi-owner Lab](examples/peach-bot/multi-owner-bot.peachy) or inspect its
+[25-command recipe](examples/peach-bot/multi-owner-authoring-commands.json).
+Baseline and moved exports each pass **104 runtime poses** at 0.001. See the
+[scope](docs/slices/multi-owner-timeline.md),
+[review](docs/evidence/multi-owner-timeline.html) and
+[scalar evidence](docs/evidence/multi-owner-timeline.json) for scope and remaining gates.
+
+The preceding Slider source checkpoint used **63 commands / 17 tools** and added
+semantic creation, bone-source assignment/clear, explicit property-range snapshots and own-turn
+evaluation queries. In Setup, select an animation in the Tree and use
+**New → Slider**; creation prepends and returns shared constraint-index effects.
+
+Native creation/Undo/Redo, manual Frame 45 → source-bone assignment with Time-only
+key removal, ScaleX → Rotate → ScaleX, and all four range fields pass. Tested
+edits include reversed source 8..1 and target Frames 30..90. Local/clear preserves
+the manual baseline; changing Mix to 25% captures the observed 1.5-second
+fallback. Open retains the remembered ScaleX range, and Save cancels an owned
+draft while preserving accepted data. At 1120×740, the four endpoints remain
+reachable and an endpoint edit/Undo passes. Final Fit/reopen has one image and
+empty history; the public project stays unchanged. A separate native held-range
+check changes Source Min **10→13**, then Escape restores the exact document and
+redo while the pointer remains held. Continued movement stays blocked until
+release; a fresh drag commits with exact one-step Undo/Redo. See the paired
+[changed preview](docs/evidence/slider-range-drag.png) and
+[Escape restoration](docs/evidence/slider-range-escape.png).
+
+The actual **141-request / 15-pose-query** MCP workflow produces the original
+[Slider Source Lab](examples/peach-bot/slider-source-bot.peachy).
+External runtime and installed-editor returned geometry each pass **104 poses**
+at the unchanged **0.001** tolerance. Strict installed authored equality is
+**false**: hidden manual Time is lost, and curve/range representations and the
+project name change. This is not lossless interchange or full Slider parity.
+Focused checks pass: **63 engine, 33 desktop, 16 schema and 6 stdio** cases, plus
+formatting, all-target Clippy, workspace build and the seven-crate architecture
+check. See the [source controls](docs/evidence/slider-source-editor.png) and
+[minimum layout](docs/evidence/slider-source-minimum.png).
+
+The earlier manual Slider checkpoint used **58 commands / 14 tools**: Frame/Mix,
+pending poses, Auto Key/K, typed timelines and Graph shared the engine and MCP.
+Its actual 84-request MCP run creates the original
+[Slider Lab](examples/peach-bot/slider-bot.peachy) from one PNG and a blank project.
+Native editing/history/cancellation, minimum layout and fresh public reopening
+pass; 104 exported poses match the external runtime at 0.001. Installed-editor
+geometry also passes, with lossy authored curve conversion. That retained lab and
+its evidence describe the 58/14 checkpoint. Physics/events through Slider,
+extreme precision and broader authoring acceptance remain open; see the
+[Slider contract](docs/slices/slider-constraints.md) and
+[review gallery](docs/evidence/slider-constraints.html).
+
+The earlier feature checkpoints below retain their recorded version/counts.
+
+World X→Rotate transform mapping now has shared Min/Max commands and exact
+readback through MCP: **53 commands / 13 tools**, with native v22 unchanged.
+The original six-bone rig is recreated through 122 actual stdio requests, passes
+52 runtime poses and returns unchanged geometry and authored data through
+installed Spine 4.3.26. Actual native input, cancellation/history, minimum layout
+and fresh reopen/playback pass. Native and MCP save byte-identical data; see
+[the review gallery](docs/evidence/transform-mapping.html),
+[measured scope](docs/slices/transform-mapping-authoring.md) and
+[original Mapping Lab](examples/peach-bot/transform-mapping-bot.peachy).
+Local/additive modes, other cross mappings and transform timelines remain open.
+
+Multi-vertex Direct weights now supports additive/marquee selection, mixed-value
+display, exact assignment and cumulative viewport gestures in a dedicated Weights
+pane. MCP shares the engine command and raw uniform/mixed query: **53 commands /
+13 tools**, with native v22 unchanged. Native and MCP authoring save the same
+original project; fresh native reopen/playback, external runtime and installed
+4.3.26 interchange pass. See the [review gallery](docs/evidence/weight-multivertex.html),
+[measured contract](docs/slices/weight-multivertex.md) and
+[Multi-vertex Weights Lab](examples/peach-bot/multi-weights-bot.peachy).
+Auto/Smooth/brush tools, locks, Update and multiple selected bones remain open.
+
+Global Animate draw order now supports Tree movement/dragging, Reset, pending
+poses, Auto Key/K and typed Dopesheet clipboard/retiming. MCP uses the same engine
+for raw/semantic order keys and typed timeline operations. There are 53 strict
+commands / 13 tools; native v22 is unchanged.
+See the [measured scope](docs/slices/draw-order-authoring.md) and open
+[the original Draw Order Authoring Lab](examples/peach-bot/draw-order-authoring-bot.peachy).
+Native input, fresh-process reopen, both authored runtime checks and installed
+4.3.26 interchange pass. See the [review gallery](docs/evidence/draw-order-authoring.html).
+
+Curves now has a separate relative-transition view, fitted handles, Match/Separate
+controls and shared Dopesheet selection. Scalar Graph adds tangent and numeric
+editing. Exact scalar/IK curve setters and shared preset/handle actions are also
+available through MCP: 53 strict commands / 13 tools, with native v22 unchanged.
+Native input, persistence and both authored runtime comparisons pass. Preset
+library/default preferences and uncalibrated coupling cases remain explicit gaps.
+See the [review gallery](docs/evidence/curves-authoring.html) and
+[measured contract](docs/slices/curves-authoring.md).
+Open [the original three-clip Curves Lab](examples/peach-bot/curves-bot.peachy)
+to inspect the saved scalar, RGBA and weighted Deform transitions.
+
+Slot attachment swaps and RGBA fades now support Animate editing, pending poses,
+Auto Key and K through the same engine and MCP. Native Properties opens a Color
+dialog; typed Attach/RGBA rows and a four-channel Graph provide key, clipboard
+and curve editing. New color keys subdivide existing curves using independently
+calibrated Spine behavior. See the [review gallery](docs/evidence/slot-authoring.html)
+and [slot contract](docs/slices/slot-authoring.md). MCP exposes 53 strict commands
+and raw slot poses, including hidden slots; native format remains v22.
+
+Export now offers explicit Spine Editor 4.3 and Runtime 4.3 targets in the native
+app, CLI and MCP. Editor export rejects unsafe default attachment names before
+writing and contradictory per-vertex bone ordering; runtime export preserves raw
+influence arrays, independent names and placeholder references.
+See [the export contract](docs/slices/export-targets.md).
+
+Deform keys now have named Dopesheet rows, exact retiming and clipboard editing,
+and a frame-based Graph with 0–100% transitions and editable tangents. Graph and
+Dopesheet share bottom tabs beneath the Tree. MCP exposes the same typed key
+operations, a read-only `copy_animation_keys` tool, and `setDeformCurve`.
+See [the Deform timeline contract](docs/slices/deform-timeline.md) and
+[the current Spine update audit](docs/slices/spine-blog-audit-20261114.md).
+
+Animate mesh vertices now supports weighted/unweighted single-vertex dragging and
+nudging, Auto Key, pending poses, K, explicit Deform key/delete and undo. See the
+[authoring contract](docs/slices/deform-authoring.md) and
+[native screenshot](docs/deform-authoring-editor.png). The original
+`examples/peach-bot/deform-authoring-bot.peachy` lab and its adjacent command JSON
+exercise weighted and unweighted deform-key creation through the CLI.
+Large loose images load at original resolution within the actual GPU limit;
+oversized images report an error. Freeform meshes and brush weights remain pending.
+
 This branch adds animated IK (keyed Mix/Positive) on native9 projects. See the
 [review checkpoint](docs/IK_ANIMATION_REVIEW.md) for controls, verification and
 the remaining raw-curve import precision issue. Interactive review is still pending.
@@ -7,7 +253,7 @@ the remaining raw-curve import precision issue. Interactive review is still pend
 A native 2D skeletal animation editor from Team Peachy, with an independent Rust
 core and Spine-compatible exports. The current slices include Spine-style naming,
 Dopesheet selection/retiming/clipboard actions, key-derived animation duration, and
-weighted mesh import, bone-driven preview, binding, single-vertex Direct weights,
+weighted mesh import, bone-driven preview, binding, multi-vertex Direct weights,
 bone shear authoring, and bounded one-/two-bone inverse kinematics (IK).
 This is still a bounded subset of Spine.
 
@@ -189,12 +435,21 @@ Click Dopesheet keys to select them, **Cmd/Ctrl-click** to toggle several, then
 press **Delete** while the canvas has focus or click its Delete icon. Double-click
 a key to delete it. Drag selected keys to retime them together; **Shift** disables
 frame snapping and **Cmd/Ctrl+Shift-drag** duplicates them. **Cmd/Ctrl+C/X/V**
-copies/cuts/pastes focused Dopesheet keys. Paste targets the selected bone at the
-playhead, retaining relative timing and curves. The matching toolbar icons share
-these actions. **Cmd/Ctrl+A** expands selection to its rows, then all shown keys;
+copies/cuts/pastes focused Dopesheet keys. Bone leaf paste uses an explicit Bone
+or an active Slot/Region's parent Bone; without a target it uses its owned source
+receipt. It pastes at the playhead, retaining relative timing and curves. The
+matching toolbar icons share these actions. **Cmd/Ctrl+A** expands selection to its rows, then all shown keys;
 with no selection it selects all shown keys immediately. Click a property row label
 to select its Rotate/Translate/Scale tool. Escape cancels a live drag; each
 committed edit is one undo step.
+
+The bounded all-owner continuation shows represented keyed owners together when
+no editable Tree owner is selected. Ordinary typed-key moves can cross owners;
+leaf portable wire remains unchanged, with session-owned fallback receipts.
+Grouped copy/paste has bounded native minimum/persistence acceptance.
+Shift currently bypasses snapping; Spine-style Shift ripple remains open. The
+bounded cycle Offset controls above use a reserved footer for Offset and explicit
+Loop Start/End, with shared whole-track and requested-key mapping semantics.
 
 The workspace follows Spine’s default arrangement: viewport left, Tree and item
 properties right, transform controls below the viewport, and Dopesheet below those
@@ -221,9 +476,11 @@ seek, zoom/pan, Loop, Volume and Mute. Playback uses native macOS output; other
 platforms support waveform inspection. Audio events, synchronization and export
 remain pending; audition data does not become part of the project.
 
-**Views → Graph** shows the selected bone's keyed transform values and edits them
-with vertical key dragging. Exact-key selection preserves close native times;
-timing and curves stay fixed. Tangents, retiming and multiple curves remain pending.
+**Views → Graph** shares bottom tabs with Dopesheet. For a selected bone it
+shows keyed transform values with vertical key editing. A selected Deform
+attachment shows all its transitions on a frame axis with 0–100% progress,
+exact-key selection, curve presets, numeric handles and tangent dragging.
+Multiple-owner/mixed Graph curves and general docking remain pending.
 
 **Views → Preview** plays a keyed animation and skin on an independent clock while
 you edit Setup or another pose. It has its own transport, speed, pan/zoom and Fit;
@@ -352,6 +609,8 @@ supported controls can edit it. Inactive skin attachments remain inspectable.
 
 - Hierarchical bones with position, rotation and nonuniform scale.
 - Layered region attachments, draw order, skins and default-skin fallback.
+- Global Animate draw-order movement, drag placement, pending poses and Auto Key/K,
+  with exact global keys and typed Dopesheet copy/paste/retime/delete.
 - A typed Tree for bones, slots, skin placeholders, attachments, skins and animations,
   with search, type filters, branch controls, temporary visibility and contextual properties.
 - Shared commands for bone length, region setup transforms and a slot’s setup attachment.
@@ -427,11 +686,63 @@ cargo build -p peachy-mcp --locked
 ./target/debug/peachy-mcp --root /absolute/path/to/animation-workspace
 ```
 
-It communicates over stdio and exposes project inspection, validated command
-batches, undo/redo, pose evaluation and new-output saves/exports through the same
-engine as the desktop. Each server owns an independent session; it does not
+It communicates over stdio and exposes **64 commands / 19 tools** for project
+inspection, exact owner/key inventory, validated command batches, typed key copying, undo/redo, pose
+evaluation and new-output saves/exports through the same engine as the desktop.
+Each server owns an independent session; it does not
 control an existing editor window. See [MCP setup, tools and limits](docs/MCP.md)
 for client configuration and a complete workflow.
+
+Slider creation and source editing use distinct shared operations:
+
+- `createSliderConstraint` takes an animation index, chooses the native automatic
+  name/defaults and **prepends**. Raw `addSliderConstraint` still appends a complete
+  payload. Successful edits and history responses return
+  `effects.constraintIndices.oldToNew` and `newLen`; an undone creation maps its
+  removed index to `null`. Remap retained constraint/key references and read
+  `get_document` again. Within a command batch, indices address each successive
+  candidate.
+- `setSliderSource` requires `bone`, even when clearing it with `null`. A genuine
+  assignment removes that Slider's Time tracks and pending Time while preserving
+  Mix. `setSliderSourceProperty` requires the six-choice property and an explicit
+  `source_range` snapshot. Complete raw `setSliderConstraint` remains separate
+  from these transitions.
+- `setSliderSetupPose` edits Setup Time/Mix semantically. A genuine bound Mix
+  change captures the prior own-turn sampled Time when available; an exact no-op
+  or unavailable sample preserves the hidden baseline.
+
+Example flat command payloads, sent inside revision-checked `apply_commands`:
+
+```json
+{"command":"setSliderSource","constraint":0,"bone":null}
+```
+
+```json
+{"command":"setSliderSourceProperty","constraint":0,"property":"scaleX","source_range":{"min":1,"max":2}}
+```
+
+Use `get_slider_source_choices` to obtain the contextual range and complete
+command snapshot rather than assuming those example endpoints. The source
+properties are `rotate`, `x`, `y`, `scaleX`, `scaleY` and `shearY`.
+
+| Read-only Slider tool | Contract |
+| --- | --- |
+| `get_slider_mapping` | Raw-derived source and target endpoints. Target values are referenced seconds, not Frames; undefined SourceMax is `null`. No solving, repair or authored-Time change. |
+| `get_slider_evaluation` | One Slider's own ordered turn: incoming/applied settings, `sampleTime` and eligibility. A missing sample is `null`, including zero incoming Mix. Later constraints can change final effective settings without changing this snapshot. |
+| `get_slider_source_choices` | Six contextual source-range choices and explicit property commands, without focusing, remembering a range, solving or changing document/history/revision. |
+
+These queries require the current revision and exact constraint index. Evaluation
+also accepts a host animation name, nonnegative host seconds and skin. The
+existing `get_slider_pose` remains an **authored** Time/Mix query;
+`evaluate_pose` exposes authored/final applied arrays and own-turn evaluations
+from the same checked solve. Use `editSliderMappingRange` for endpoint edits;
+its target values also use referenced seconds.
+
+Source-range preferences belong to the server/editor process, outside the native
+document and undo history. They survive successful Open and new headless projects
+within that process; canceled/failed Open leaves them unchanged. A fresh process
+starts with defaults. Reading choices or saving a project does not store those
+preferences in `.peachy` data.
 
 The design follows PhotoCraft's engine-first, command-driven architecture:
 serializable documents, an independent animation engine, format adapters, and thin

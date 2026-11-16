@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Curves and scalar Graph — Peachy Animator</title>
+<style>:root{color-scheme:dark;font:16px/1.5 system-ui;background:#202226;color:#e9eaec}body{max-width:1500px;margin:auto;padding:24px}h1{font-size:1.7rem}h2{font-size:1.2rem}a{color:#a5d7fa}input{font:inherit;padding:10px;width:min(90%,650px);background:#30343b;color:inherit;border:1px solid #7b818e;border-radius:5px}article{border:1px solid #515865;border-radius:8px;margin:24px 0;padding:16px}.pair{display:grid;grid-template-columns:1fr 1fr;gap:16px}figure{margin:0}img{width:100%;height:auto;display:block}figcaption{padding:8px 0;color:#d3d5d9}table{border-collapse:collapse;width:100%}td,th{text-align:left;vertical-align:top;border-bottom:1px solid #515865;padding:8px}@media(max-width:900px){.pair{grid-template-columns:1fr}}</style>
+<h1>Curves and scalar interpolation authoring</h1>
+<p>November 14, 2026 · Actual native captures and original Peach Bot art. Select an image for its full-size PNG. Reference captures from installed Spine 4.3.26 stay private; their measured before/after data is recorded below.</p>
+<p><a href="../slices/curves-authoring.md">Measured contract</a> · <a href="curves-authoring.json">Scalar evidence</a> · <a href="../MCP.md">49-command MCP usage</a> · <a href="../slices/spine-blog-audit-20261114.md">Current blog backlog</a></p>
+<label for="search">Filter evidence</label><br><input id="search" type="search" placeholder="Try native, reset, final, pending, MCP, runtime, limits…">
+<article data-search="before after layout native graph curves fitting selection">
+<h2>Before and after · Separate Curves pane and scalar tangents</h2>
+<p>Inspection: actual native windows, final after capture at 1500×960 client size. Curves sits between viewport and Tree above the full-width animation dock. Relative handles fit outside 0–1, with the scale frozen during a drag; Scalar Graph edits actual values and shares exact Dopesheet selection.</p>
+<div class="pair"><figure><a href="slot-authoring-graph.png"><img src="slot-authoring-graph.png" alt="Earlier native RGBA Graph before the separate Curves and scalar tangent continuation" loading="lazy"></a><figcaption>Earlier accepted RGBA Graph. Curves and scalar tangents were still gaps.</figcaption></figure><figure><a href="curves-authoring-editor.png"><img src="curves-authoring-editor.png" alt="Current native Curves pane with fitted primary handles and Scalar Graph value 6.5" loading="lazy"></a><figcaption>Final source: fitted Curves, exact scalar Graph handles and actual numeric value 6.5. Preset management controls are disabled.</figcaption></figure></div></article>
+<article data-search="reference spine reset separate match before after terminal flat">
+<h2>Installed reference · Measured curve behavior</h2>
+<p>Inspection: original-data input, guarded native mouse actions, Save and installed CLI JSON exports; independent before/after comparisons. No proprietary implementation was inspected.</p>
+<table><thead><tr><th>Case</th><th>Before</th><th>Observed result</th></tr></thead><tbody>
+<tr><td>Re-click Bezier</td><td>0→30 over 0–0.5 s; controls[0.1, 21, 0.4, 9].</td><td>Controls[0.16666667, 0, 0.3333333, 30]. Values/times and every other curve unchanged.</td></tr>
+<tr><td>Single final key</td><td>Select only the 1 s Rotate key.</td><td>Edits the preceding 0.5–1 s interval; terminal metadata stays intact. Multiple final keys instead disable editing.</td></tr>
+<tr><td>Separate-off reset</td><td>Twelve middle-key cases plus four incoming cases: unequal durations, flat values, extreme angles and Linear/Stepped neighbors.</td><td>Matches explicit outer Bezier angles; ray-shortens within the handle endpoint±absolute value span. Flat excursions survive, with a blank relative plot.</td></tr>
+<tr><td>Normal live Separate-off</td><td>One handle moved at a fixed key.</td><td>Adjusts its adjoining tangent; reset preserves outer curves while live editing can change them. Raw neighboring time coordinates are retained within the documented native comparison tolerance.</td></tr>
+<tr><td>Match</td><td>Selected curves have different durations/value spans.</td><td>Copies only the moved handle's relative position; each other handle stays unchanged.</td></tr>
+</tbody></table></article>
+<article data-search="native terminal disabled redo multiple final">
+<h2>Multiple final keys · No effective transition</h2>
+<p>Inspection: final native source, actual modifier selection of two final scalar keys. Curves is blank and its type buttons are disabled. Earlier acceptance verified clicking disabled Bezier preserves the document and redo branch.</p>
+<figure><a href="curves-authoring-terminals.png"><img src="curves-authoring-terminals.png" alt="Two final scalar keys selected with blank Curves and disabled interpolation buttons" loading="lazy"></a><figcaption>Exact typed final selections remain distinct; no unused terminal curve is silently rewritten.</figcaption></figure></article>
+<article data-search="native typing numeric pending escape save reopen history">
+<h2>Actual authoring, cancellation and persistence</h2>
+<p>Inspection: actual OS input plus read-only native snapshots of document/pose/history. An observed held preview cancels with Escape and preserves selection. Numeric 17 is canceled back to 6.5. Pending rotation 13.5 survives numeric and normal live edits at one fixed time, stays outside Save, and is absent after fresh-process reopen. The saved document is exactly recovered, ten images load and playback advances without evaluation errors. Timeline movement intentionally clears pending poses.</p></article>
+<article data-search="mcp runtime tests verification atomic fresh cutout">
+<h2>MCP and external runtime</h2>
+<table><thead><tr><th>Level</th><th>Verified</th><th>Limit</th></tr></thead><tbody>
+<tr><td>Engine/UI</td><td>33 engine curve checks (including 8 actions), 47 desktop checks, 3 adapter cases; format, all-target Clippy, build and 7-crate architecture pass.</td><td>Two workers; overlapping focused filters, not a full-suite or hosted CI pass.</td></tr>
+<tr><td>Actual MCP</td><td>49 strict commands/11 tools; fresh root-only creation from one cutout, 168 requests, 23 accepted commands, 121 retained samples. Atomic failures, raw setters, Match, final-key handling, history and Save/reopen/export pass. Six stdio curve workflows pass.</td><td>Independent server Session shares engine actions with Desktop; no live GUI bridge or preset store is claimed.</td></tr>
+<tr><td>Native-authored runtime</td><td>All 3 clips × 3 skins, 468 poses: 42,120 world, 43,680 region, 7,800 mesh, 15,600 UV and 24,960 color values pass. Mesh error ≤ 0.00003052; UV error 0.</td><td>External separately licensed runtime, public API only; finite samples at existing 0.001 geometry tolerance.</td></tr>
+<tr><td>MCP-authored runtime</td><td>312 world, 320 region and 160 color values pass. Original inputs unchanged in both workflows.</td><td>Bounded original fixtures, not all Spine projects.</td></tr>
+</tbody></table></article>
+<article data-search="limits parity backlog preset last chosen grouping ci cleanup">
+<h2>Remaining scope and lifecycle</h2>
+<p>Stored preset management/Last chosen, grouped native properties, matched flat destinations, adjacent selected Separate-off intervals and extreme/vertical/outside-time/flat-linked live coupling remain open. Unsupported coupled actions fail atomically; Separate-on permits independent finite edits. All-owner Graph, detailed styling and arbitrary docking remain. Current Views coverage is 16 of 17; Problems and broader Color are still gaps.</p>
+<p>Owned reference/native processes are closed. Final projects/reports remain private until review; temporary helpers and raw captures retire at the checkpoint. Shared Cargo output remains required by ongoing parity work. Required hosted CI continues to gate main integration. The next prepared blog-linked slice is global Animate draw-order authoring.</p></article>
+<script>document.querySelector('#search').addEventListener('input',event=>{const words=event.target.value.toLowerCase().trim().split(/\s+/);for(const article of document.querySelectorAll('article')){const text=(article.dataset.search+' '+article.textContent).toLowerCase();article.hidden=!words.every(word=>text.includes(word));}});</script>
+</html>

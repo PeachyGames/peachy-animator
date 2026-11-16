@@ -1,0 +1,185 @@
+{
+  "date": "2026-11-16",
+  "status": "bounded adaptive workspace native/source checks verified; broader layout parity open",
+  "owner": "Peachy Animator adaptive workspace continuation",
+  "purpose": "Distinct UI layout/scroll/recovery checkpoint using the unchanged original multi-Bone native result",
+  "nativeFormat": 23,
+  "commands": 64,
+  "tools": 23,
+  "fullSpineParity": false,
+  "goalActive": true,
+  "nativeAccepted": true,
+  "desktopSha256": "d1fc05d94a66032d50e262b566caa2046419a5702628a9b368b640ed394c14e8",
+  "fixture": {
+    "source": "examples/peach-bot/multi-bone-native-result.peachy",
+    "sourceSha256": "14f2e7039d5c90967f37fddd9d1233cac2537c4219c36b47f15313ecd9f513a2",
+    "sourceRestoredByteExactly": true,
+    "newAuthoredDataFixtureCreated": false,
+    "uniqueOriginalImages": 1,
+    "containsArtistData": false
+  },
+  "sharedLayoutScope": {
+    "adaptiveAnimationPropertiesAndAuxiliaryHeightBudgets": true,
+    "twoBoneKeyedDopesheetPropertyChannels": 14,
+    "allSevenPropertiesPerBone": true,
+    "viewportBudgetMeasuredNotAllStackedViewsGuaranteed": true,
+    "customDividerPreferredHeights": "source real-event coverage only; no new native custom-preference claim",
+    "nativeWideRecoveryScope": "default pane heights after closing Playback and re-expanding"
+  },
+  "nativeChecks": {
+    "minimumInnerSize": [
+      1120,
+      740
+    ],
+    "cases": [
+      {
+        "views": "Dopesheet+Timeline",
+        "canvasHeight": 206.0,
+        "fullTreeBoneRows": [
+          0,
+          3,
+          4,
+          5
+        ]
+      },
+      {
+        "views": "Dopesheet+Timeline+Playback",
+        "canvasHeight": 293.71875,
+        "fullTreeBoneRows": [
+          0,
+          3,
+          4,
+          5
+        ]
+      }
+    ],
+    "lastKeyReachedByActualPixelWheel": {
+      "bone": 4,
+      "property": "shearY",
+      "keyRect": [
+        666.5,
+        674.015625,
+        675.5,
+        683.015625
+      ],
+      "rowsClip": [
+        6.0,
+        667.71875,
+        1114.0,
+        691.6875
+      ]
+    },
+    "firstKeyRecoveredByActualPixelWheel": {
+      "bone": 2,
+      "property": "x"
+    },
+    "documentPendingRedoSelectionExactAcrossLayoutAndScroll": true,
+    "pendingSurvivedForegroundYield": true,
+    "keyingAndNudgeProbesUndoneToExactSource": true,
+    "wideInnerSize": [
+      1500,
+      960
+    ],
+    "wideDefaultPaneHeightDeltas": {
+      "tree": 0.0,
+      "properties": 0.0,
+      "animationViews": 0.0
+    },
+    "customDividerPreferredHeightsMeasuredNatively": false,
+    "allOwnedGuiProcessesClosed": true
+  },
+  "sourceChecks": {
+    "passed": true,
+    "workers": 2,
+    "fullSuite": false,
+    "filtersOverlap": true,
+    "workspaceFilter": 16,
+    "layoutTests": 5,
+    "dopesheetFilter": 42,
+    "multiBoneFilter": 14,
+    "graphFilter": 47,
+    "curvesFilter": 52,
+    "dividerFilter": {
+      "matchedTests": 0,
+      "providesTestEvidence": false
+    },
+    "formatCheck": true,
+    "clippyWorkspaceAllTargets": true,
+    "workspaceBuild": true,
+    "architectureCrates": 7,
+    "uiSourceHashes": {
+      "apps/desktop/src/editor/mod.rs": "7ab53f13132b461f6321c56845ff9b8d023412d828183416f419586101082c3d",
+      "apps/desktop/src/editor/workspace.rs": "c48eb69f01853a5540f81beaf3319a45b2d69f92886828ea4dfdb321fdedf28d",
+      "apps/desktop/src/editor/layout.rs": "cf5bf4817cabd526a41e627843ad2ab2aed61332ffcbd1fc492cda5879f2be96",
+      "apps/desktop/src/editor/dopesheet.rs": "179fe89f3215c44d7ff26249213a25d7d39320a49fdf05fa05a313c4353d4f89"
+    },
+    "sourcesUnchangedDuringChecks": true,
+    "reportHashes": {
+      "checks03": "d124cf7d0c0b0d9c3891517f8131a93871093eb4f37463e34fe13865a9ded9b2",
+      "checks04": "e061e7b277cfb462ea38f1eab213ba91dcc25d84ca51a75f6e561e857a7ac800",
+      "native": "a7ff3fdabb0b5a2b6bf4ac17f7a24f72f9d6527d29031933878ef8cb77c2ac84"
+    }
+  },
+  "verificationLimits": {
+    "freshMcpRun": false,
+    "freshExternalRuntimeRun": false,
+    "freshInstalledSpineInterchange": false,
+    "previousMcpAuthoredRuntimeScope": "156 poses on authored f3bdde6a84502bfc0b6b51e4e18a0a542bb7ae9eceea3363621e65057d410983; retained in multi-bone-authoring evidence",
+    "earlierNativeDesktopScope": "1558c25671dde653965f221dcaab7c9bb41b1ff973f91dfe571787faa00e5763 multi-Bone authoring acceptance remains historical and valid",
+    "pendingUndoPolicyChanged": false,
+    "semanticCycleOffsetAccepted": false,
+    "browserRenderingClaimed": false,
+    "hostedCiPassed": false
+  },
+  "remainingLimits": [
+    "Full stacked Graph minimum-size layout",
+    "Complete group Properties beyond membership",
+    "Broader docking and native custom divider-preference recovery",
+    "Group Rotate/Scale/Shear, cycle Offset and remaining tutorial authoring workflows"
+  ],
+  "review": {
+    "gallery": "docs/evidence/minimum-workspace.html",
+    "licensedSpineScreenshotsPublished": false,
+    "images": [
+      {
+        "stage": "before",
+        "path": "docs/evidence/minimum-workspace/before.png",
+        "sha256": "0bd2056474c49217084f1718f0ab502ffbea36b6dd9a34f90d9ec8d1325e827e",
+        "width": 1120,
+        "height": 772,
+        "originalUnscaledPeachyCapture": true,
+        "desktopScope": "historical1558"
+      },
+      {
+        "stage": "after",
+        "path": "docs/evidence/minimum-workspace/after.png",
+        "sha256": "98f0b3a8450127e8fb8594627089878b124e0451fdbd0b577669c64c4e12695c",
+        "width": 1120,
+        "height": 772,
+        "originalUnscaledPeachyCapture": true,
+        "desktopScope": "adaptiveWorkspaceD1fc"
+      },
+      {
+        "stage": "playback",
+        "path": "docs/evidence/minimum-workspace/playback.png",
+        "sha256": "f49087c3e2362a866381519d02099b73b63adcfdb6188353d24e374cdfce900e",
+        "width": 1120,
+        "height": 772,
+        "originalUnscaledPeachyCapture": true,
+        "desktopScope": "adaptiveWorkspaceD1fc"
+      }
+    ],
+    "comparisonLimits": "Camera/manual Fit and pending/key states differ; no automatic Fit or pixel equality claim"
+  },
+  "retention": "Original public checkpoint evidence; private task-owned disposable outputs retire after verified integration, selected scalar/native witnesses retained for active PR review until integration or supersession",
+  "supplementalSourceCheck": {
+    "passed": true,
+    "context": "Four accepted UI paths plus four uncommitted engine Offset foundation paths; excluded from the UI-only integration",
+    "paneResizeTests": 5,
+    "engineCycleOffsetFoundationTests": 8,
+    "sourcesUnchangedDuringChecks": true,
+    "reportSha256": "55e2b4abf56c81d188b13099bacc4daee886a1a6de1fba4ea9ca544bb62fad20",
+    "nativeBinaryRebuiltForThisCheck": false,
+    "offsetUiOrMcpAcceptance": false
+  }
+}

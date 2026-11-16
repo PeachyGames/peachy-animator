@@ -40,6 +40,7 @@ fn rig() -> Document {
             draw_order: vec![],
             path_tracks: vec![],
             sequence_tracks: vec![],
+            slider_tracks: vec![],
         }],
         skin_scope: Default::default(),
         events: vec![],
@@ -1084,6 +1085,7 @@ fn shear_clipboard_and_retiming_keep_scalar_identity_curves_fractional_neighbors
         draw_order: vec![],
         path_tracks: vec![],
         sequence_tracks: vec![],
+        slider_tracks: vec![],
     });
     let keys = vec![
         TimelineKey {

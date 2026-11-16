@@ -7,6 +7,7 @@ const SIZE: f32 = 16.0;
 
 #[derive(Clone, Copy)]
 pub(super) enum Icon {
+    New,
     Open,
     Save,
     Undo,
@@ -32,6 +33,7 @@ pub(super) enum Icon {
     Audio,
     Ghosting,
     Graph,
+    Curves,
     MeshTools,
     Skins,
     SlotColor,
@@ -43,6 +45,7 @@ pub(super) enum Icon {
     IkConstraint,
     PhysicsConstraint,
     TransformConstraint,
+    SliderConstraint,
     ChooseBone,
     Bone,
     TargetBone,
@@ -292,6 +295,10 @@ fn paint(ui: &Ui, rect: Rect, icon: Icon, response: &Response) {
             line(&[[5., 8.], [11., 8.]], ink);
             line(&[[5., 11.], [11., 11.]], ink);
         }
+        Icon::New => {
+            line(&[[8., 2.], [8., 14.]], ink);
+            line(&[[2., 8.], [14., 8.]], ink);
+        }
         Icon::Delete => {
             painter.circle_stroke(p(8., 8.), 6. * rect.width() / SIZE, stroke(ink));
             line(&[[5.5, 5.5], [10.5, 10.5]], ink);
@@ -315,6 +322,7 @@ fn paint(ui: &Ui, rect: Rect, icon: Icon, response: &Response) {
         Icon::IkConstraint => draw_ik(&painter, rect, ink),
         Icon::PhysicsConstraint => draw_physics(&painter, rect, ink),
         Icon::TransformConstraint => draw_transform(&painter, rect, ink),
+        Icon::SliderConstraint => draw_slider(&painter, rect, ink),
         Icon::Bone => draw_bone(&painter, rect, ink),
         Icon::TargetBone => {
             painter.circle_stroke(p(8., 8.), 4. * rect.width() / SIZE, stroke(warm));
@@ -386,6 +394,18 @@ fn paint(ui: &Ui, rect: Rect, icon: Icon, response: &Response) {
                 green,
                 Stroke::NONE,
             ));
+        }
+        Icon::Curves => {
+            box_at([1., 1.], [15., 15.], ink);
+            line(&[[2., 13.], [6., 13.]], blue);
+            line(&[[10., 3.], [14., 3.]], blue);
+            let points = (0..=16)
+                .map(|index| {
+                    let t = index as f32 / 16.;
+                    p(2. + 12. * t, 13. - 10. * t * t * (3. - 2. * t))
+                })
+                .collect();
+            painter.add(Shape::line(points, stroke(blue)));
         }
         Icon::Graph => {
             line(&[[2., 2.], [2., 14.], [15., 14.]], ink);
@@ -605,4 +625,21 @@ pub(super) fn draw_bone(painter: &egui::Painter, rect: Rect, color: Color32) {
     for point in [a, b] {
         painter.circle_filled(point, rect.width() * 0.16, color);
     }
+}
+
+/// Independent rail and handle cue for a Slider constraint.
+pub(super) fn draw_slider(painter: &egui::Painter, rect: Rect, color: Color32) {
+    let rail = Rect::from_min_max(
+        rect.min + rect.size() * vec2(0.08, 0.4),
+        rect.min + rect.size() * vec2(0.92, 0.6),
+    );
+    painter.line_segment(
+        [rail.left_center(), rail.right_center()],
+        Stroke::new(1., color),
+    );
+    let handle = Rect::from_center_size(
+        rect.min + rect.size() * vec2(0.62, 0.5),
+        rect.size() * vec2(0.22, 0.7),
+    );
+    painter.rect_stroke(handle, 1., Stroke::new(1., color), egui::StrokeKind::Inside);
 }

@@ -1,0 +1,261 @@
+{
+  "date": "2026-11-15",
+  "status": "bounded native authoring acceptance complete; remaining parity limits explicit",
+  "formatVersion": 23,
+  "commands": 64,
+  "tools": 19,
+  "independentImplementation": true,
+  "fixture": {
+    "project": "examples/peach-bot/compound-dopesheet-bot.peachy",
+    "sha256": "2aebcfd82effac00880921c45a1cccaf78f5f4524c7272cb275fc44dae99a2d5",
+    "constructionRecipe": "examples/peach-bot/compound-dopesheet-authoring-commands.json",
+    "constructionCommands": 43,
+    "nativeResult": "examples/peach-bot/compound-dopesheet-native-result.peachy",
+    "nativeResultSha256": "06d53f2ec4827902e39886a194333073244acf3e3aedc735261bf8fb3b6f07a5",
+    "mixedMoveRecipe": "examples/peach-bot/compound-dopesheet-move-commands.json",
+    "mixedMoveRecipeSha256": "a2558372695773634005b24b5af38749df5f250e80ba4d7014d3435b3a64eb1f",
+    "mixedMoveCommands": 1,
+    "finishedRigImported": false,
+    "bones": 6,
+    "slots": 4,
+    "clips": 2,
+    "uniqueOriginalImages": 1,
+    "imageSha256": "6e8f281942e95b5a77774e683622dac99ea2aef706c99f3627dad968d6c2120f"
+  },
+  "sourceChecks": {
+    "passed": true,
+    "dopesheet": 41,
+    "clipboard": 45,
+    "graph": 47,
+    "curves": 52,
+    "keyDrag": 4,
+    "filtersOverlap": true,
+    "newCompoundTests": 7,
+    "newScopeTests": 5,
+    "formatCheck": true,
+    "clippyWorkspaceAllTargets": true,
+    "workspaceBuild": true,
+    "architectureCrates": 7,
+    "binaries": {
+      "peachy-animator": "14b0575fff64d33f621954f09af426daa7010fcb4d88d1c634d64f4c87a068d4",
+      "peachy-mcp": "0f659abb43c80d6dd4c502c35e91284848a9851947e13c682afdef290879d112",
+      "peachy-cli": "a414e845f0500c562e4ffaa579da64df8ca6a3e6379a6a2127aa7d9c6c618ab6"
+    }
+  },
+  "mcp": {
+    "passed": true,
+    "actualRequests": 44,
+    "actualStdio": true,
+    "fromBlankRoot": true,
+    "compoundKeys": 12,
+    "copyReadOnly": true,
+    "mixedRetimeUndoRedoExact": true,
+    "explicitSlotColorPasteUndoRedoExact": true,
+    "negativeAtomicCases": 1,
+    "poseSamples": 12,
+    "saveReopenExact": true,
+    "emptyReopenHistory": true,
+    "childClosed": true,
+    "liveGuiBridge": false
+  },
+  "nativeSaveMcpReadback": {
+    "passed": true,
+    "actualStdio": true,
+    "actualRequests": 10,
+    "separateFromConstructionStudy": true,
+    "sourceSha256": "06d53f2ec4827902e39886a194333073244acf3e3aedc735261bf8fb3b6f07a5",
+    "binarySha256": "0f659abb43c80d6dd4c502c35e91284848a9851947e13c682afdef290879d112",
+    "fullNativeSaveDocumentMatchesMcpMoved": true,
+    "historyEmpty": true,
+    "poseSamples": 6,
+    "sampleTimesSeconds": [
+      0,
+      0.4166666567325592,
+      0.4166666865348816,
+      0.7499999403953552,
+      0.75,
+      1
+    ],
+    "exactLeftAndAtMovedAttachmentBoundaries": true,
+    "sourceUnchanged": true,
+    "childClosed": true,
+    "liveGuiBridge": false
+  },
+  "installedReference": {
+    "version": "4.3.26",
+    "originalThreeSlotAndFourSlotControls": true,
+    "boneSlotAndRegionDirectFamilyUnion": true,
+    "unrelatedAndDescendantKeysExcluded": true,
+    "globalDrawOrderRetained": true,
+    "unkeyedSelectedBoneHeaderRetained": true,
+    "unkeyedChannelsHidden": true,
+    "clearReturnsAll": true,
+    "slotRows": "All RGBA sorted by Slot name, then all Attachment rows sorted by Slot name",
+    "treeSlotOrderDistinct": true,
+    "explicitSlotColorPasteAtFrame": 50,
+    "pasteAndUndoVisualEvidence": true,
+    "pasteExactExportReadbackPassed": true,
+    "exportCliExitCode": 0,
+    "pasteColor": "ff0000ff",
+    "pasteSourceSlot": "follower_bar",
+    "pasteTargetSlot": "driver_marker",
+    "oldTargetFramesRetained": [
+      6,
+      26
+    ],
+    "nominalAnimationReview": {
+      "clipboardKeysBefore": 16,
+      "clipboardKeysAfter": 17,
+      "offsetKeysBeforeAndAfter": 8,
+      "retimeKeysBeforeAndAfter": 8,
+      "onlyNewNominalKey": "driver_marker RGBA at frame 50",
+      "otherRawChanges": "omitted defaults, skeleton metadata and writer float rounding",
+      "strictJsonEquality": false,
+      "mcpDrawOrderEquivalentButRawOffsetsDiffer": true
+    },
+    "referenceUndoEvidence": "visual capture; Peachy native complete-Document Undo/Redo verified separately",
+    "allOwnedReferenceProcessesClosed": true
+  },
+  "acceptedNative": {
+    "accepted": true,
+    "passed": true,
+    "desktopSha256": "14b0575fff64d33f621954f09af426daa7010fcb4d88d1c634d64f4c87a068d4",
+    "beforeDesktopSha256": "7edd697b394f786554d0868e45fdae314e225566a5939464076b798914450ba1",
+    "sameFixtureBeforeCaptured": true,
+    "beforeVisibleSelection": {
+      "type": "drawOrderSlot",
+      "slot": 2
+    },
+    "beforeDocumentMatchesMcpBaseline": true,
+    "beforeShowsGlobalOnly": true,
+    "slotAndTrueRegionShowParentBoneSiblingSlotsAndGlobal": true,
+    "globalTreeRootRetainsPrecedingBonePresentation": true,
+    "typedOwnerIdentitiesPreserved": true,
+    "pendingStartsEmpty": true,
+    "originalImageCount": 1,
+    "mixedRetime": {
+      "selectedKeys": 12,
+      "deltaFrames": 5,
+      "storedDeltaSeconds": 0.0833333358168602,
+      "globalAnchorFrame": 15,
+      "matchesCompleteMcpMovedDocument": true,
+      "onlyTimestampDifferences": 12,
+      "valuesCurvesAndRawOffsetsPreserved": true,
+      "unrelatedDriverDataUnchanged": true
+    },
+    "historyAndCancellation": {
+      "mixedUndoRedoExact": true,
+      "explicitSlotColorPasteUndoRedoExact": true,
+      "heldEscapeRestoresCompleteBaseline": true,
+      "restoredSelectedKeyCount": 12,
+      "restoredExactPrimary": true,
+      "realRedoPreserved": true,
+      "continuedHeldInputBlockedUntilRelease": true,
+      "cancelSourceCapture": "editor-1794799739461212000.json"
+    },
+    "minimum": {
+      "innerSize": [
+        1120,
+        740
+      ],
+      "keyTargetsInsideRowsClip": 12,
+      "allTargetsFull9By9": true,
+      "originalImageLoaded": true,
+      "scope": "Timeline key targets only; not every Tree row or arbitrary pane layout"
+    },
+    "persistence": {
+      "nativeEditedSaveMatchesCompleteMcpMovedDocument": true,
+      "savedSha256": "06d53f2ec4827902e39886a194333073244acf3e3aedc735261bf8fb3b6f07a5",
+      "saveSourceCapture": "editor-1794799749363911000.json",
+      "freshProcessReopenExact": true,
+      "freshUndoRedoEmpty": true,
+      "freshClipboardEmpty": true,
+      "freshDirtyFalse": true
+    },
+    "allOwnedDesktopProcessesClosed": true,
+    "gallery": "docs/evidence/compound-dopesheet.html",
+    "galleryCaptures": 6,
+    "galleryVisuallyInspectedByRoot": true,
+    "captures": {
+      "before": {
+        "path": "docs/evidence/compound-dopesheet-before.png",
+        "sha256": "e51e479c1fff3e47a5a0da3170b27a7a190f68795e21d117fa9aefd02903a150",
+        "size": [
+          1500,
+          946
+        ],
+        "sourceCapture": "editor-1794794838990353000.json"
+      },
+      "slot": {
+        "path": "docs/evidence/compound-dopesheet-slot.png",
+        "sha256": "421dfbccb892540eaf75c5a483d9a1fb8bb6124ceed37e9387016cba16b39689",
+        "size": [
+          1500,
+          946
+        ],
+        "sourceCapture": "editor-1794797974088730000.json"
+      },
+      "region": {
+        "path": "docs/evidence/compound-dopesheet-region.png",
+        "sha256": "762244fbab63c6592eccb6fca3fc8c34c4a6177ee7b89ca205f4eb3477518b96",
+        "size": [
+          1500,
+          946
+        ],
+        "sourceCapture": "editor-1794798471881904000.json"
+      },
+      "moved": {
+        "path": "docs/evidence/compound-dopesheet-moved.png",
+        "sha256": "f38f97968bdad88903086b10e9a8bae6a639ef1c5b3741db8e3ccd109259f6a9",
+        "size": [
+          1500,
+          946
+        ],
+        "sourceCapture": "editor-1794799728258231000.json"
+      },
+      "minimum": {
+        "path": "docs/evidence/compound-dopesheet-minimum.png",
+        "sha256": "fb0ff3b2f0c7a7e027ee28acb754e66b07ad6f03cbe9153e08dc49d4ad57aa2e",
+        "size": [
+          1120,
+          740
+        ],
+        "sourceCapture": "editor-1794799741481775000.json"
+      },
+      "reopened": {
+        "path": "docs/evidence/compound-dopesheet-reopened.png",
+        "sha256": "612063249df25287f92f7869fd198b90b52eddb2c910e4a2f8ff437c937a2132",
+        "size": [
+          1500,
+          946
+        ],
+        "sourceCapture": "editor-1794799759386520000.json"
+      }
+    },
+    "extraSlotPasteCapture": {
+      "path": "docs/evidence/compound-dopesheet-slot-paste.png",
+      "sha256": "7806811b785ef086e31414bab59dc381849637fd71f4d43b9217ee7ab621d83a",
+      "size": [
+        1500,
+        946
+      ],
+      "sourceCapture": "editor-1794798481844374000.json",
+      "selection": {
+        "slot": 0,
+        "type": "drawOrderSlot"
+      },
+      "frame": 50,
+      "completeDocumentMatchesMcpCase": true,
+      "visuallyInspectedByRoot": true
+    }
+  },
+  "limits": [
+    "Installed Graph shows compound curves together; Peachy Graph remains bounded to exact typed owners.",
+    "General Tree multi-selection, mixed Deform compound hierarchy, Sync/Lock/filter modes, Shift/ripple and cyclic Offset remain open.",
+    "Full visible Slot/Region properties, parent-Bone pose controls and exact row/header styling remain open.",
+    "Nonempty pending/inactive/remap coverage is headless, not new native acceptance.",
+    "Required hosted CI remains unavailable; draft PR only.",
+    "This checkpoint does not establish full Spine compatibility.",
+    "At 1120x740 the default Tree pane is short; all 12 timeline hit targets pass, while broader Tree/pane sizing remains a separate review item."
+  ]
+}

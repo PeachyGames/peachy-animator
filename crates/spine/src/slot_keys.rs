@@ -93,7 +93,7 @@ pub(super) fn read(
                                         f32::from(next_color[channel]) / 255.,
                                     );
                                     curves[channel] = if (v1 - v0).abs() < 1e-8 {
-                                        super::flat_curve(
+                                        super::retained_flat_curve(
                                             time,
                                             next_time,
                                             v0,

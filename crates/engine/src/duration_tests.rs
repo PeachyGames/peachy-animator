@@ -39,6 +39,7 @@ fn document() -> Document {
             draw_order: vec![],
             path_tracks: vec![],
             sequence_tracks: vec![],
+            slider_tracks: vec![],
         }],
         skin_scope: Default::default(),
         events: vec![],
@@ -564,7 +565,7 @@ fn native_rejects_stored_duration_and_old_format_and_keeps_fixture_keys_valid() 
             [2.].as_slice(),
         ),
     ] {
-        let fixture: Document = serde_json::from_str(source).unwrap();
+        let fixture: Document = crate::native_fixture::decode(source).unwrap();
         fixture.validate().unwrap();
         assert_eq!(fixture.format, FORMAT_VERSION);
         assert_eq!(

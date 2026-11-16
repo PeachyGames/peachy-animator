@@ -1,5 +1,5 @@
 use peachy_document::{Attachment, MeshVertices};
-use peachy_spine::{export_json, import_json, inspect};
+use peachy_spine::{ExportTarget, export_json_for, import_json, inspect};
 use serde_json::{Value, json};
 
 fn fixture() -> Value {
@@ -35,7 +35,8 @@ fn weighted_mesh_roundtrip_keeps_all_influences_including_repeats_zeros_and_roun
     assert_eq!(influences[0][5].weight, 0.0);
     assert_eq!(influences[0][5].position, [-10.0, 0.0]);
     assert_ne!(influences[0].iter().map(|i| i.weight).sum::<f32>(), 1.0);
-    let output = export_json(&document).unwrap();
+    // This raw fidelity fixture includes an independent attachment name.
+    let output = export_json_for(&document, ExportTarget::Runtime43).unwrap();
     assert!(inspect(&output).supported);
     let encoded = &output["skins"][0]["attachments"]["body"]["cloth"];
     assert_eq!(encoded["vertices"].as_array().unwrap().len(), 39);
@@ -76,8 +77,11 @@ fn integral_json_float_counts_and_bone_indices_import_and_roundtrip_identically(
     assert!(inspect(&source).supported);
     let actual = import_json(&source, &expected.name).unwrap();
     assert_eq!(actual, expected);
-    let output = export_json(&actual).unwrap();
-    assert_eq!(output, export_json(&expected).unwrap());
+    let output = export_json_for(&actual, ExportTarget::Runtime43).unwrap();
+    assert_eq!(
+        output,
+        export_json_for(&expected, ExportTarget::Runtime43).unwrap()
+    );
     assert_eq!(import_json(&output, &expected.name).unwrap(), expected);
 }
 

@@ -1,0 +1,267 @@
+{
+  "date": "2026-11-14",
+  "baselineCommit": "cd253931b2548a3a9f7a1f6409c4eedb812074ed",
+  "nativeFormat": 22,
+  "reference": {
+    "installedEditor": "4.3.26",
+    "externalRuntime": "4.3.13",
+    "actualNativeScreenshotsInspected": true,
+    "clientPixels": [
+      1500,
+      960
+    ],
+    "publicScreenshots": "Only Peachy and original geometric cutouts; installed-reference captures stay private",
+    "sources": [
+      "https://esotericsoftware.com/spine-slots",
+      "https://esotericsoftware.com/spine-keys",
+      "https://esotericsoftware.com/blog/Spine-4.3-released"
+    ]
+  },
+  "shared": {
+    "commands": 51,
+    "tools": 11,
+    "rawCommand": "setDrawOrderKey",
+    "semanticCommand": "setDrawOrder",
+    "globalOwner": {
+      "type": "drawOrder"
+    },
+    "fullHiddenAndEmptyOrder": true,
+    "setupSlotIdentitiesUnchanged": true,
+    "independentMinimalEncoding": "Longest increasing subsequence; tie choice ours",
+    "clipboardLayout": "Identical ordered slot names"
+  },
+  "focusedChecks": {
+    "engineDrawOrder": 20,
+    "engineTimeline": 26,
+    "desktopDrawOrder": 9,
+    "desktopCurves": 48,
+    "desktopClipboard": 19,
+    "desktopTree": 4,
+    "mcpSchema": 9,
+    "mcpActualStdio": 10,
+    "filtersOverlap": true,
+    "format": true,
+    "workspaceClippyAllTargets": true,
+    "workspaceBuild": true,
+    "architecture": true
+  },
+  "native": {
+    "passed": true,
+    "pendingSaveExcluded": true,
+    "existingKeyPendingSaveExcluded": true,
+    "actualTypedRotation": 15,
+    "mixedAutoKeyOneUndoRedo": true,
+    "undoPreservesPending": true,
+    "shiftClamp": true,
+    "boundaryNoopRedo": true,
+    "resetNoopRedo": true,
+    "nonsetupReset": true,
+    "actualGoldDrag": true,
+    "unselectedSourceDrag": true,
+    "stableRowIdentity": true,
+    "nativeEscapeCancel": true,
+    "cancelledHeldDoesNotRearm": true,
+    "releaseOutsideCancels": true,
+    "fullWidthRowReentry": true,
+    "drawOrderKeyCopyPaste": true,
+    "explicitResetRetimedTo": 1.75,
+    "typedRetimeOneUndoRedo": true,
+    "deleteUndoRedo": true,
+    "nativePlayback": true,
+    "savedF32Exact": true,
+    "keys": 8,
+    "freshFinalReopen": "passed",
+    "ownedProcessesClosed": true,
+    "freshProcessNoHistory": true,
+    "freshImageCount": 4,
+    "freshActualPlayback": true,
+    "canonicalProjectUnchanged": true,
+    "freshEarlyCapture": "draw-order-authoring-early.png",
+    "freshFinalCapture": "draw-order-authoring-editor.png",
+    "project": "examples/peach-bot/draw-order-authoring-bot.peachy",
+    "projectSha256": "7dd9e844eb4b4fbb743be210472d930603ae07115d73d9feb12367a8d1f20149",
+    "finalWorkspaceNativeBinarySha256": "e5925961f6560d178f84606bca8f70d62cfee85c95537d9b798db981f8995740",
+    "captures": [
+      "draw-order-authoring-early.png",
+      "draw-order-authoring-editor.png"
+    ]
+  },
+  "actualMcp": {
+    "actualStdioMcp": true,
+    "tools": 11,
+    "commands": 51,
+    "createdFromRootOnly": true,
+    "finishedRigRead": false,
+    "authoredBones": 1,
+    "authoredSlots": 4,
+    "authoredRegions": 4,
+    "clips": [
+      {
+        "name": "orders",
+        "drawOrderKeys": 3
+      },
+      {
+        "name": "copied-orders",
+        "drawOrderKeys": 2
+      }
+    ],
+    "rawOffsetsPreserved": true,
+    "semanticNoopPreservesRawAndRedo": true,
+    "typedCopyRetimeDeleteUndoRedo": true,
+    "coincidentSlotIsolation": true,
+    "wrongLayoutRejectedAtomically": true,
+    "rawPoseSamples": 265,
+    "hiddenSlotSamples": 32,
+    "fullHiddenAndEmptySlotOrder": true,
+    "finiteReadback": true,
+    "readOnlyEvaluationPreservesHistory": true,
+    "savedReopened": true,
+    "requestCount": 343,
+    "sourceFilesUnchanged": 5,
+    "atomicRejectedRequests": 8,
+    "independentHeadlessDocument": true
+  },
+  "nativeRuntime": {
+    "bones": 1,
+    "slots": 4,
+    "skins": [
+      "default"
+    ],
+    "clips": [
+      {
+        "name": "calibration",
+        "nativeEnd": 1.75,
+        "runtimeEnd": 1.75,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default"
+        ],
+        "maxWorldError": 1.25668286887759e-08
+      }
+    ],
+    "tolerance": 0.001,
+    "comparisons": 312,
+    "maxWorldError": 1.25668286887759e-08,
+    "regionComparisons": 1664,
+    "maxRegionError": 7.62939453125e-06,
+    "drawOrderChecks": 52,
+    "colorComparisons": 832
+  },
+  "mcpStandardRuntime": {
+    "bones": 1,
+    "slots": 4,
+    "skins": [
+      "default"
+    ],
+    "clips": [
+      {
+        "name": "copied-orders",
+        "nativeEnd": 1.25,
+        "runtimeEnd": 1.25,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default"
+        ],
+        "maxWorldError": 2.832769475542897e-16
+      },
+      {
+        "name": "orders",
+        "nativeEnd": 1.5,
+        "runtimeEnd": 1.5,
+        "samplesPerSkin": 52,
+        "skins": [
+          "default"
+        ],
+        "maxWorldError": 2.832769475542897e-16
+      }
+    ],
+    "tolerance": 0.001,
+    "comparisons": 624,
+    "maxWorldError": 2.832769475542897e-16,
+    "regionComparisons": 3200,
+    "maxRegionError": 0,
+    "drawOrderChecks": 104,
+    "colorComparisons": 1600
+  },
+  "mcpFullOrderRuntime": {
+    "passed": true,
+    "samples": 265,
+    "fullOrderChecks": 265,
+    "fullOrderIndices": 1060,
+    "visibleOrderChecks": 265,
+    "hiddenSlotSamples": 32,
+    "worldValues": 1590,
+    "maxWorldError": 2.832769475542897e-16,
+    "regionValues": 8224,
+    "maxRegionError": 0,
+    "colorValues": 4240,
+    "maxColorError": 0,
+    "clips": [
+      {
+        "name": "copied-orders",
+        "duration": 1.25
+      },
+      {
+        "name": "orders",
+        "duration": 1.5
+      }
+    ],
+    "skins": [
+      "default"
+    ],
+    "tolerance": 0.001
+  },
+  "installedEditorInterchange": {
+    "installedSpine": "4.3.26",
+    "slotNamesAndSetupOrderEqual": true,
+    "sourceGlobalKeys": 8,
+    "returnedGlobalKeys": 8,
+    "globalTimeAndEffectiveOrderPairsEqual": true,
+    "effectiveOrderSamples": 23,
+    "effectiveOrdersEqual": true,
+    "rootRotateKeySemanticsEqual": true,
+    "equivalentRawOffsetDifferences": [
+      {
+        "time": 0.0,
+        "sourceOffsets": [
+          {
+            "offset": -1,
+            "slot": "s01_green_cutout"
+          }
+        ],
+        "returnedOffsets": [
+          {
+            "slot": "s00_red_cutout",
+            "offset": 1
+          }
+        ]
+      }
+    ],
+    "rawMinimalTieChoiceClaimed": false
+  },
+  "sourcePreservation": {
+    "originalInputsUnchanged": 5,
+    "nativeProjectUnchanged": true,
+    "canonicalNativeProjectByteIdentical": true,
+    "originalImages": {
+      "examples/peach-bot/images/blue_cutout.png": "6e8f281942e95b5a77774e683622dac99ea2aef706c99f3627dad968d6c2120f",
+      "examples/peach-bot/images/gold_cutout.png": "1d5176e0918d529c884d1dfb4711d13f3ead660a675daa1393a8047aca262d57",
+      "examples/peach-bot/images/green_cutout.png": "229836e11ae1df5149812a654d331a4880265fca0f6b8145793a284c186debee",
+      "examples/peach-bot/images/red_cutout.png": "2ce9e128fa59d39d08b91ca00584832f9670562af677dc915336b5cdc618dfa4"
+    }
+  },
+  "limits": [
+    "Draw-order folders and independent folder keys",
+    "Setup slot reordering and identity remapping",
+    "Cross-layout clipboard mapping",
+    "Native mixed-flush Undo drops pending visuals; Peachy restores pending work",
+    "Compact native Tree/property sizing and exact styling",
+    "Other open blog features: stored curve presets, broader weights, mappings and sliders",
+    "MCP owns an independent headless document; no live desktop bridge"
+  ],
+  "hostedCi": {
+    "passed": false,
+    "mainGated": true,
+    "featurePrDraft": true
+  }
+}

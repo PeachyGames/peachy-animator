@@ -1,5 +1,10 @@
+use super::selection_input::ViewportPressTarget;
 use super::*;
 use peachy_engine::{geometry_bounds, pick_attachment};
+
+#[cfg(test)]
+#[path = "pane_resize_tests.rs"]
+mod tests;
 
 impl Editor {
     pub(super) fn canvas(&mut self, ui: &mut egui::Ui) {
@@ -42,12 +47,27 @@ impl Editor {
                 }
             });
         });
-        let (rect, response) = ui.allocate_exact_size(ui.available_size(), Sense::click_and_drag());
+        let (_, rect) = ui.allocate_space(ui.available_size());
+        let mut input_rect = rect;
+        if self.show_tree || self.has_dock_views() || self.curves_visible() || self.show_weights {
+            let radius = ui.style().interaction.resize_grab_radius_side;
+            if radius.is_finite() && radius > 0. {
+                // Pane resize handles extend into the viewport. Rect::contains
+                // includes its right endpoint, so omit that shared endpoint too.
+                input_rect.max.x = (rect.right() - radius).next_down().max(rect.left());
+            }
+        }
+        let response = ui.interact(
+            input_rect,
+            egui::Id::new("viewport-input"),
+            Sense::click_and_drag(),
+        );
         self.record_target("viewport", rect);
-        self.prepare_viewport_transform_press(ui, rect);
+        self.record_target("viewportInput", input_rect);
+        self.prepare_viewport_transform_press(ui, input_rect);
         let painter = ui.painter_at(rect);
         painter.rect_filled(rect, 0., Color32::from_gray(43));
-        let mut scene = match self.scene_for_view() {
+        let (mut scene, transform_frame) = match self.scene_with_transform_frame() {
             Ok(scene) => scene,
             Err(error) => {
                 self.show_evaluation_error(ui, rect, error);
@@ -113,6 +133,12 @@ impl Editor {
         let ghosts = ghosts.unwrap_or_default();
         let screen = |p: [f32; 2]| scene_view::screen_point(origin, zoom, p);
         let world_point = |p: Pos2| scene_view::view_world_point(origin, zoom, p);
+        // Hit-test the actual down position even when later pointer moves share
+        // this frame. The resulting intent is frozen until click/drag dispatch.
+        let primary_press = ui.input(|input| key_drag::primary_pointer_event(&input.events, true));
+        let hit_point = primary_press
+            .map(|(point, _)| point)
+            .or(response.interact_pointer_pos());
         let grid = 50. * zoom;
         for x in scene_view::grid_lines(rect.left(), rect.right(), origin.x, grid) {
             painter.line_segment(
@@ -189,14 +215,9 @@ impl Editor {
         if self.ghosting.on_top {
             self.paint_ghosts(&painter, &ghosts, zoom);
         }
-        let overlay_hit = self.paint_attachment_overlays(
-            &painter,
-            &scene.overlays,
-            origin,
-            zoom,
-            response.interact_pointer_pos(),
-        );
-        let selected_bone = self.selected_bone();
+        let overlay_hit =
+            self.paint_attachment_overlays(&painter, &scene.overlays, origin, zoom, hit_point);
+        let selected_bones = self.selected_bones();
         let doc = self.session.document();
         let mut nearest_bone: Option<(usize, f32)> = None;
         for (i, (bone, matrix)) in doc.bones.iter().zip(&scene.world).enumerate() {
@@ -211,7 +232,7 @@ impl Editor {
             let selected = if self.tool == Tool::Weights {
                 self.weights.bone == Some(i)
             } else {
-                selected_bone == Some(i)
+                selected_bones.contains(&i)
             };
             let bound = self.tool == Tool::Weights && self.weights.mesh.as_ref().is_some_and(|key|
                 matches!(doc.attachment(key),Some(Attachment::Mesh(Mesh {vertices:MeshVertices::Weighted {influences},.. })) if influences.iter().flatten().any(|influence|influence.bone == i)));
@@ -245,7 +266,9 @@ impl Editor {
                 painter.circle_filled(start, if selected { 5. } else { 3. }, color);
             }
             if selected {
-                painter.circle_stroke(start, 13., Stroke::new(1., ACCENT));
+                if self.tool != Tool::Rotate {
+                    painter.circle_stroke(start, 13., Stroke::new(1., ACCENT));
+                }
                 painter.text(
                     end + vec2(10., -10.),
                     egui::Align2::LEFT_CENTER,
@@ -254,14 +277,27 @@ impl Editor {
                     ACCENT,
                 );
             }
-            if (self.tree.filters.bones || self.weights.bind.is_some() || self.ik_target.is_some())
-                && let Some(mouse) = response.interact_pointer_pos()
+            if (self.tree.filters.bones
+                || self.weights.bind.is_some()
+                || self.ik_target.is_some()
+                || self.slider_source_picker_active())
+                && let Some(mouse) = hit_point
             {
                 let distance = distance_to_segment(mouse, start, end);
                 if distance < 8. && nearest_bone.is_none_or(|(_, d)| distance < d) {
                     nearest_bone = Some((i, distance));
                 }
             }
+        }
+        if self.tool == Tool::Rotate
+            && let Some(frame) = &transform_frame
+        {
+            let pivot = screen(frame.primary_world().point(0., 0.));
+            painter.circle_stroke(pivot, 20., Stroke::new(2., Color32::from_rgb(225, 92, 85)));
+            self.capture_targets.insert(
+                "gizmoOrigin".into(),
+                [pivot.x - 3., pivot.y - 3., pivot.x + 3., pivot.y + 3.],
+            );
         }
         let mut nearest_vertex = None;
         if matches!(self.tool, Tool::Mesh | Tool::Weights) {
@@ -272,9 +308,6 @@ impl Editor {
                 if self.tool == Tool::Weights
                     && Some(&draw.attachment) != self.weights.mesh.as_ref()
                 {
-                    continue;
-                }
-                if self.tool == Tool::Mesh && !self.setup_mode && !mesh.is_weighted() {
                     continue;
                 }
                 let selected = if self.tool == Tool::Weights {
@@ -355,11 +388,11 @@ impl Editor {
                     let p = screen(p);
                     if selected {
                         let selected_vertex = if self.tool == Tool::Weights {
-                            self.weights.vertex == Some(i)
+                            self.weights.vertices.binary_search(&i).is_ok()
                         } else {
                             i == self.mesh_vertex
                         };
-                        if self.tool == Tool::Weights {
+                        if self.tool == Tool::Weights && rect.contains(p) {
                             self.capture_targets.insert(
                                 format!("weightsVertex:{i}"),
                                 [p.x - 5., p.y - 5., p.x + 5., p.y + 5.],
@@ -460,8 +493,7 @@ impl Editor {
             .map(|(i, _)| TreeItem::Bone(i))
             .or(overlay_hit)
             .or_else(|| {
-                response
-                    .interact_pointer_pos()
+                hit_point
                     .and_then(|p| pick_attachment(&scene.attachments, world_point(p)))
                     .map(|draw| {
                         if self.tree.filters.attachments || self.weights.bind.is_some() {
@@ -490,12 +522,16 @@ impl Editor {
             && let Some(local) = self.selected_transform()
             && let Some(parent) = self
                 .selection
-                .as_ref()
+                .primary()
                 .and_then(|item| super::tools::item_parent(item, doc, &scene.world))
         {
-            let (applied, world) = match self.selection.as_ref() {
-                Some(TreeItem::Bone(bone)) => (scene.applied_locals[*bone], scene.world[*bone]),
-                _ => (local, parent.then(Affine::from_transform(local))),
+            let (applied, parent, world) = match &transform_frame {
+                Some(frame) => (
+                    frame.primary_applied(),
+                    frame.primary_parent(),
+                    frame.primary_world(),
+                ),
+                _ => (local, parent, parent.then(Affine::from_transform(local))),
             };
             let pivot = screen(world.point(0., 0.));
             self.record_target(
@@ -555,8 +591,9 @@ impl Editor {
                     format!("gizmo:{}", if axis == 0 { "X" } else { "Y" }),
                     [tip.x - 4., tip.y - 4., tip.x + 4., tip.y + 4.],
                 );
-                if let Some(mouse) = ui
-                    .input(|i| i.pointer.press_origin())
+                if let Some(mouse) = primary_press
+                    .map(|(point, _)| point)
+                    .or_else(|| ui.input(|i| i.pointer.press_origin()))
                     .or(response.interact_pointer_pos())
                 {
                     let distance = distance_to_segment(mouse, pivot + unit * 20., tip);
@@ -570,12 +607,17 @@ impl Editor {
         painter.text(
             rect.left_bottom() + vec2(12., -14.),
             egui::Align2::LEFT_BOTTOM,
-            if self.weights.bind.is_some() || self.ik_target.is_some() {
+            if self.weights.bind.is_some()
+                || self.ik_target.is_some()
+                || self.slider_source_picker_active()
+            {
                 &self.status
             } else if self.tool == Tool::Weights {
                 "Weights · select a vertex to inspect bindings · G"
             } else if self.tool == Tool::Shear {
                 "Shear · drag X or Y handle · Z · Escape cancels"
+            } else if self.tool == Tool::Mesh && !self.setup_mode {
+                "Animate vertices · drag or nudge one vertex · K keys edited pose · Escape cancels"
             } else if self.tool == Tool::Mesh && self.selected_mesh_is_weighted() {
                 "Weighted vertices · select to inspect bone influences"
             } else if self.tool == Tool::Mesh {
@@ -589,6 +631,7 @@ impl Editor {
         if self.error.is_some()
             || self.rename.is_some()
             || self.duplicate_animation.is_some()
+            || self.export_dialog.is_some()
             || egui::Popup::is_any_open(ui.ctx())
             || !ui.input(|input| input.focused)
             || self.mesh_blocked
@@ -599,14 +642,17 @@ impl Editor {
             self.toggle_transform_tool();
             return;
         }
-        if self.ik_target.is_some() {
+        if self.slider_source_picker_active() || self.ik_target.is_some() {
             if response.clicked() {
                 if let Some(item) = picked {
                     self.select(item);
                 } else {
-                    self.status =
+                    self.status = if self.slider_source_picker_active() {
+                        "Choose an existing source bone; Escape cancels".into()
+                    } else {
                         "Choose an existing target bone; new-target creation is not supported yet"
-                            .into();
+                            .into()
+                    };
                 }
             }
             return;
@@ -619,18 +665,22 @@ impl Editor {
             }
             return;
         }
-        if self.tool == Tool::Weights
-            || (self.tool == Tool::Mesh && (self.setup_mode || self.selected_mesh_is_weighted()))
-        {
+        if self.tool == Tool::Weights {
+            self.weights_viewport_input(
+                ui,
+                &response,
+                nearest_vertex,
+                picked,
+                (rect, origin, zoom),
+            );
+            return;
+        }
+        if self.tool == Tool::Mesh {
             if (response.clicked() || response.drag_started_by(egui::PointerButton::Primary))
                 && let Some((key, vertex, _)) = nearest_vertex
             {
                 self.select(TreeItem::Attachment(key.clone()));
-                if self.tool == Tool::Weights {
-                    self.weights.vertex = Some(vertex);
-                } else {
-                    self.mesh_vertex = vertex;
-                }
+                self.mesh_vertex = vertex;
                 if self.tool == Tool::Mesh
                     && response.drag_started_by(egui::PointerButton::Primary)
                     && let Some(pointer) = ui
@@ -642,36 +692,45 @@ impl Editor {
             } else if response.clicked() {
                 if let Some(item) = picked {
                     self.select(item);
-                } else if self.tool == Tool::Weights {
-                    self.cancel_weight_edit();
-                    self.weights.vertex = None;
-                    self.weights.bone = None;
                 } else {
                     self.deselect();
                 }
             }
         } else {
-            if response.clicked() && handle_axis.is_none() {
-                if let Some(item) = picked.clone() {
-                    self.select(item);
-                } else {
-                    self.deselect();
-                }
-            }
+            self.observe_viewport_press(
+                &response,
+                rect,
+                picked,
+                handle_axis,
+                primary_press.map(|(point, _)| world_point(point)),
+            );
             if response.drag_started_by(egui::PointerButton::Primary) && !self.transform_blocked {
-                if handle_axis.is_none()
-                    && let Some(item) = picked
-                {
-                    self.select(item);
-                }
-                if let Some(pointer) = ui
-                    .input(|i| i.pointer.press_origin())
-                    .or(response.interact_pointer_pos())
-                {
+                if let Some(press) = self.take_viewport_press() {
+                    let axis = match press.target {
+                        ViewportPressTarget::Gizmo(axis) => Some(axis),
+                        ViewportPressTarget::Item(item) => {
+                            if !self.selection.contains(&item) {
+                                self.select_with_modifiers(item, press.modifiers);
+                            }
+                            None
+                        }
+                        ViewportPressTarget::Empty => None,
+                    };
                     self.transform_blocked = false;
-                    self.begin_viewport_transform(world_point(pointer), handle_axis);
+                    self.begin_viewport_transform(press.world, axis);
+                }
+            } else if response.clicked()
+                && let Some(press) = self.take_viewport_press()
+            {
+                match press.target {
+                    ViewportPressTarget::Item(item) => {
+                        self.select_with_modifiers(item, press.modifiers)
+                    }
+                    ViewportPressTarget::Empty => self.deselect(),
+                    ViewportPressTarget::Gizmo(_) => {}
                 }
             }
+            self.settle_viewport_press(ui.ctx());
         }
         if (response.dragged_by(egui::PointerButton::Primary) || response.drag_stopped())
             && let Some(command) = mesh_edit
@@ -687,6 +746,12 @@ impl Editor {
                     self.error = Some(error);
                 }
             }
+        }
+        if (response.dragged_by(egui::PointerButton::Primary) || response.drag_stopped())
+            && self.deform_drag.is_some()
+            && let Some(pointer) = response.interact_pointer_pos()
+        {
+            self.update_deform_drag(pointer);
         }
         if response.dragged_by(egui::PointerButton::Primary)
             && self.viewport_transform_active()
@@ -704,7 +769,9 @@ impl Editor {
                 );
             }
             self.finish_viewport_transform();
-            if self.mesh_drag.take().is_some() {
+            let setup_mesh = self.mesh_drag.take().is_some();
+            let deform_mesh = self.deform_drag.take().is_some();
+            if setup_mesh || deform_mesh {
                 self.session.commit_transaction();
             }
         }

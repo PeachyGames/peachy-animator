@@ -148,6 +148,7 @@ fn extreme_shear_sampling_and_pose_preview_preserve_original_keys_curves_and_his
             draw_order: vec![],
             path_tracks: vec![],
             sequence_tracks: vec![],
+            slider_tracks: vec![],
         }],
         skin_scope: Default::default(),
         events: vec![],

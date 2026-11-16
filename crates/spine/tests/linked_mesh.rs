@@ -1,7 +1,7 @@
 //! `linkedmesh` attachments: sources in any skin (omitted = default), own
 //! path and color, `timelines` flag; malformed links are refused.
 use peachy_document::{Attachment, MeshLink};
-use peachy_spine::{export_json, import_json, inspect};
+use peachy_spine::{ExportTarget, export_json, export_json_for, import_json, inspect};
 use serde_json::{Value, json};
 
 fn fixture() -> Value {
@@ -52,7 +52,7 @@ fn links_resolve_across_skins_and_roundtrip() {
     let (_, _, third) = link(&doc, "alt", "n");
     assert_eq!((third.skin.as_str(), third.timelines), ("default", false));
     assert_eq!(link(&doc, "default", "k").2.source, "m");
-    let output = export_json(&doc).unwrap();
+    let output = export_json_for(&doc, ExportTarget::Runtime43).unwrap();
     let alt = &output["skins"]
         .as_array()
         .unwrap()
@@ -67,6 +67,10 @@ fn links_resolve_across_skins_and_roundtrip() {
     assert_eq!(alt["n"]["timelines"], json!(false));
     assert!(alt["p"].get("vertices").is_none());
     assert_eq!(import_json(&output, "Linked").unwrap(), doc);
+    assert_eq!(
+        export_json(&doc).unwrap_err(),
+        "Spine Editor export: attachment default/s/k has explicit name \"same-skin\" different from placeholder \"k\"; export as Runtime43 to preserve both identities"
+    );
 }
 
 #[test]

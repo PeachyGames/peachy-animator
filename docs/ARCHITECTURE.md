@@ -22,7 +22,14 @@ setup-to-key conversion, frame snapping and curve preservation, shared by intera
 and automated clients. Session adds bounded snapshot history, dirty state and gesture
 transactions around that transition. Cancelled gestures preserve the prior redo branch.
 
-Evaluation starts from setup on every call. `evaluate_scene` resolves skins and returns
+Evaluation samples authored state with the selected skin before pending overlays,
+then uses one ordered effective state for bone/inheritance, constraint and slot
+domains. Inactive host slot/Slider tracks skip before explicit pending overrides.
+Slider samples referenced tracks into that state without recursively solving a
+second skeleton. `checked_scene_from_evaluated` consumes the resulting checked
+pose, so geometry/readback do not repeat the constraint solve. Authored locals
+and Slider Time/Mix remain separate from their applied values.
+`evaluate_scene` resolves skins and returns
 world transforms, textured vertex/UV/index buffers in draw order and their common bounds. Its optional
 preview remains available to pure callers; the desktop now uses cancellable command
 transactions for both bone and region pointer gestures. Rendering and fit-to-view use
@@ -70,6 +77,12 @@ v4 vertices. Complete strict schema, geometry, curve/order and legacy time-bound
 validation happens before v2 hold normalization. Native v3/v4 stale duration fields
 remain errors; migration does not use the Spine adapter or weaken unknown-field
 validation.
+
+Native v23 adds strict Slider constraints and per-animation `slider_tracks`.
+The decoder migrates v22 by adding empty lists in memory; legacy payloads reject
+injected new fields. Frozen example bytes remain unchanged. A test-only pure
+fixture builder upgrades known historical payloads for engine/adapter tests;
+production migration stays in I/O and the engine still depends only on document.
 
 The desktop owns dialogs, texture upload, camera and pointer coordinates, labels and
 platform events. Its entrypoint parses arguments and starts the app. `editor/mod.rs`
@@ -240,6 +253,13 @@ exact destination keys are replaced while close neighbors remain separate. Every
 transition is a serializable command through the existing pure validation boundary.
 The engine uses no OS clipboard, event, clock or file APIs.
 
+`engine/timeline_inventory.rs` provides authored inventory and exact keys for
+explicit typed owners, shared by the desktop and revision-checked MCP
+`get_animation_keys`. Empty owners request inventory only. The full inventory
+and scoped result expose unsupported timeline descriptors; these are not editable
+IDs. Queries neither solve nor depend on skin, visibility, pending poses or UI
+selection. Canonical linked Deform aliases cannot duplicate an owner.
+
 `Session::preview_transaction` recomputes from a fixed document/pose baseline.
 Moving away from an overwritten key restores it during preview. Cancellation keeps
 the existing redo branch; commit creates one history entry. The desktop captures
@@ -247,21 +267,64 @@ press-time source keys, modifiers and chart geometry, and cancels a key preview
 before context changes or Save/Export/Open. Completed Undo/Redo clears key selection
 so a restored destination cannot inherit a moved key's time-based selection.
 
+`engine/group_clipboard.rs` defines portable group entries and strict new nested
+decoders; `timeline.rs` shares existing leaf arithmetic for one global origin and
+complete explicit target maps. Preflight covers all entries before mutation and
+canonical target aliases cannot collide. Copy's `sourceOwners` receipt stays
+separate from portable data. Existing single-owner codecs/commands are unchanged.
+
 `timeline_clipboard.rs` is the imperative clipboard shell. Its session-owned buffer
 contains key data, never assets or file paths. Explicit successful Copy/Cut mirrors a
 versioned JSON envelope through egui's native clipboard output. Dedicated clipboard
 input events take precedence over raw-key fallbacks and only run for chart focus.
 Keyboard Paste requires the current envelope; text fields keep their input. The
 system clipboard is not an engine dependency or native-project field.
+The new editor-local grouped path uses a version 3 OS envelope and separate
+original-owner bindings; leaf version 2 remains unchanged. Paste keeps existing
+selection and records accepted IDs as diagnostics, not automatic selection.
+Final checks05/06 and bounded grouped/leaf-v2 native acceptance pass, including
+the unchanged-binary minimum-window and Save/fresh-process follow-up. Typed
+Document recovery is exact; diagnostic/file decimal spelling is not raw-byte
+equality. The [native result](../examples/peach-bot/group-clipboard-native-result.peachy)
+is distinct from the MCP clip1 case. Owned processes are closed. General Tree
+multi-target mapping remains absent; the later leaf receipt contract follows.
+Actual MCP run02 and separate 208-pose runtime geometry checks validate the shared
+data path; they do not close native input acceptance. The exact pointer regression
+passes after a test repaint barrier refreshes post-Undo geometry.
+
+`timeline_leaf_clipboard.rs` adds a process-local canonical `LeafSourceReceipt`
+bound to exact owned payload text and copy-time animation diagnostics. The v2
+portable envelope is unchanged. Bone keys use explicit Bone/active Slot or true
+Region parent-Bone targets; otherwise no-owner/Animation fallback uses the owned
+source. Constraint effects remap/tombstone the receipt, and successful Open/New
+clears it. Foreign OS text cannot recreate ownership; failed operations preserve
+the prior valid clipboard/state. Source animation does not dictate destination clip.
+Final checks04 and five native routing cases pass; native Undo and same-case Save
+byte equality to MCP5d432/fresh exact typed reopen pass, while MCP/headless checks
+cover Undo/Redo and inactive/pending/remap guards. No native Redo or new runtime
+check is claimed. Slot global DrawOrder presentation and broader Region controls/
+styling remain gaps. See [leaf scope](slices/leaf-clipboard.md) and
+[scalar evidence](evidence/leaf-clipboard.json).
 
 
 The pure `KeySelection` model keeps an explicit Rows/Shown expansion phase separate
 from key count. It reconciles exact identities before expanding and excludes keys
-outside the shown rows/current bone/clip. The desktop's ordered action stream
-combines Select All, clipboard and deletion. A release-aware input latch suppresses
+outside the shown owner set/rows/clip. With no selected editable Tree owner,
+bounded all-owner rows use the shared authored inventory; a typed selection
+retains its explicit primary owner for Graph dispatch. Read-only descriptors and
+inaccessible Deform owners cannot silently join an editable group. The desktop's
+ordered action stream combines Select All, clipboard and deletion. A release-aware input latch suppresses
 held repeats; passive observation after shortcut routing handles releases while a
 text field/modal owns input without consuming that control's events. Selection
 expansion never dispatches a document command or moves the playhead.
+Bounded two-bone scalar native acceptance verifies selection/retiming, one-step
+history, held cancellation, primary-owner Graph routing, minimum layout and
+Save/reopen. Cancellation preserves the exact selected set/primary and redo,
+blocking continued held movement until release. The native pending baseline is
+empty; nonempty pending preservation has headless coverage only. At that earlier
+checkpoint mixed Copy explicitly refused. The grouped continuation above extends
+that boundary; Shift/Offset, Lock/Sync and general Tree multi-selection remain
+separate capabilities.
 
 
 ## Key-derived duration

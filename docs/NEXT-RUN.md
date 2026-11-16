@@ -4,6 +4,785 @@ Written November 10, 2026, at the end of the import-parity push. Read this
 first, then `AGENTS.md`. The workspace rules in `../AGENTS.md` and `../CLAUDE.md`
 still apply.
 
+## Current progress — November 16, 2026
+
+Paused at Chris's request after this verified checkpoint. Resume with the next
+Offset calibration below; do not treat the broader parity goal as complete.
+
+The current shared engine/MCP checkpoint is **native v23 /64 commands /25 MCP tools**.
+The earlier desktop checkpoint verifies ordered multi-Bone selection, translation,
+Parent numeric entry, pending/keying/history and edited Save/fresh reopen. Its
+adaptive workspace retains four complete Tree rows and reachable grouped channels.
+See [multi-Bone evidence](evidence/multi-bone-authoring.json) and the
+[minimum-workspace review](evidence/minimum-workspace.html).
+
+The supplied training studies have a separate fresh v23 replay: **7,033 commands,
+308 actual MCP requests and 260 external-runtime poses**. Halloween has three
+original clips; Wind has two clips demonstrating five mechanisms with artwork
+proxies. These remain mechanism reconstructions, not exact tutorial clones or
+fresh native playback. See [the four-group acceptance map](slices/training-recreation.md#four-group-acceptance-map).
+
+**Bounded native Cycle Offset acceptance now passes** on Desktop `dc60e423…b2998`.
+Offset and blank automatic Loop Start/End controls share Session previews and
+request-ordered source-to-target mappings with MCP. Generated cached boundaries
+are excluded from hit/keyboard selection; genuine anchors and original phase-zero
+endpoints remain selectable. Either mode toggle clears the remembered origin.
+A native-discovered fast move/release bug is fixed; release coordinates/modifiers
+are latched even when the entire drag completes between frames.
+
+Actual OS input verifies fast Offset and ordinary retiming, a mixed two-track
+Offset with one Undo, fixed-base previews, same-Bone pending X preservation,
+Escape/Save cancellation and held blocking, bounds, reset/recapture, Undo/Redo,
+1120×740 controls, edited Save and exact fresh-process recovery with empty history,
+pending/cache/clipboard and one PNG. Manual Fit and a filtered Tree qualify the
+screenshots; no all-row visibility, automatic-fit or pixel-parity claim is made.
+
+Checks02/03/04 pass **15 desktop Offset /16 engine /6 MCP unit /2 stdio tests**,
+affected Dopesheet43/key-drag4/clipboard45, retained Graph48/workspace16/pane-resize5
+filters (overlap), formatting, all-target Clippy, workspace build and architecture7.
+The 32-request metadata study keeps its separate `050f` result. A further **15
+actual MCP requests** rebuild from 97 blank-root commands, replay the real UI
+deltas and produce the **exact native Document, live authored/applied/world pose
+with pending X25 and byte-identical saved `68126` project**. That actual native
+result passes **364 external-runtime poses** at 0.001. All owned processes close.
+See the [visual review](evidence/cycle-offset-ui.html),
+[scalar proof](evidence/cycle-offset-ui.json),
+[editable result](../examples/peach-bot/cycle-offset-native-result.peachy),
+[scope](slices/cycle-offset.md) and [MCP contract](MCP.md).
+
+**Next:** calibrate and implement the remaining Offset domains: native Stepped,
+negative/full-period and nonzero-loop/outside-key behavior, then broader typed
+tracks. The prepared original four-clip probe and guarded controller remain for
+those checks; retired one-shot producers must not be assumed present. Complete
+marquee/Graph workflows, Shift/Adjust, editable Current and matching track bars
+remain open. The live desktop MCP bridge remains open; current MCP sessions are
+independent editors, with shared math proven by exact replay rather than a live
+connection. The broader parity goal remains active.
+
+## Adaptive workspace native follow-up — November 16, 2026
+
+The UI-only follow-up passes on Desktop
+`d1fc05d94a66032d50e262b566caa2046419a5702628a9b368b640ed394c14e8`.
+Native v23 /64 commands /23 tools are unchanged. At 1120×740, Dopesheet+Timeline
+retains a 206-pixel canvas and four complete Tree Bone rows; adding Playback
+leaves a 293.71875-pixel canvas. Actual pixel-wheel input reaches the last
+Shear Y key and recovers the first X key. Document, pending pose, redo and
+selection remain exact across layout/scroll and foreground yield. Key/nudge
+probes are undone to the byte-exact original native `14f2` source. Closing
+Playback and returning to 1500×960 restores all measured default pane heights
+with zero delta. All owned GUI processes are closed. See the
+[before/after review](evidence/minimum-workspace.html) and
+[scalar evidence](evidence/minimum-workspace.json).
+
+Source checks03/04 pass workspace16, layout5, Dopesheet42, multi-Bone14,
+Graph47 and Curves52 (overlapping filters), fmt, all-target Clippy, workspace
+build and architecture7. The checks04 `divider` filter matched zero tests and
+is not divider evidence. A separate correctly named `pane_resize_` filter
+passes five tests alongside eight uncommitted engine Offset-foundation tests;
+that supplemental context is excluded from the UI-only checkpoint and did not
+rebuild the accepted native binary. No new MCP, runtime or installed-Spine
+interchange run follows from this UI acceptance. Full stacked-Graph minimum
+layout, group Properties beyond membership, native custom-divider preferences
+and cross-restart preference recovery remain open.
+
+## Earlier bounded multi-Bone native acceptance — November 16, 2026
+
+Current inventory is native **v23 /64 commands /23 tools**. Shared Session edits
+now compose explicit per-Bone authored-local results and keys atomically, with
+pending poses, grouped Auto Key, fixed-baseline previews and undo/redo. Shared
+semantic translation captures one evaluated input frame, keeps logical primary
+separate from its highest selected ancestor, and filters selected descendants
+for viewport movement. Parent numeric assignment instead affects every selected
+member, including descendants. **Bounded native candidate acceptance now passes**
+on unchanged Desktop `1558c256…5763`.
+
+Actual input verifies nine Tree and three viewport selection steps, three
+viewport translation axes, selected-ancestor gizmo/filter behavior, changed
+held-preview Escape/block/release, Parent numeric assignment including selected
+descendants, Animate pending Save exclusion with live pending retained, global K,
+full-set keying and exact history. At that checkpoint, 1120×740 acceptance covered
+only the listed toolbar controls: the Tree was tiny and the rig clipped; the
+adaptive follow-up above addresses the measured layout cases. Final edited Save and fresh
+reopen restore the complete typed Document with empty history/pending/clipboard
+and one PNG. All owned native/MCP processes are closed.
+
+The [native result](../examples/peach-bot/multi-bone-native-result.peachy), SHA256
+`14f2e7039d5c90967f37fddd9d1233cac2537c4219c36b47f15313ecd9f513a2`,
+is distinct from the MCP-authored `f3bd…0983` result. Separate actual MCP Setup
+and keyed-save readbacks use 15+15 requests; a six-request native-witness process
+brings the total to 36 requests/14 pose queries. Setup and 0.5-second authored
+locals, applied locals and world matrices match exact native witnesses.
+
+Actual MCP run03 on the final workspace binary passes **104 requests**, **57 construction commands**, **21 pose
+queries** and **four atomic negative cases** from a blank root and one original
+PNG. The seven-Bone/three-clip baseline and authored result, exact byte hashes and
+construction recipe are public in [checkpoint evidence](evidence/multi-bone-authoring.json).
+Pending edits stay outside Save/export; headless Open/New requires explicit discard to
+replace pending-only state. Requested-skin evaluation and semantic translation
+do not change the Session's selected skin or solve separately for each Bone.
+
+Focused engine group8/Session9 and MCP6-unit/4-stdio checks pass. Final source
+checks pass desktop multi-Bone14, ordered-selection3, Dopesheet41, clipboard45,
+Graph47, Curves52, transform-gesture9 and Slider-creation5 (overlapping filters),
+plus formatting, all-target Clippy, workspace build and architecture7. The exact
+authored result passes 156 external-runtime poses at 0.001 with the current CLI:
+maximum world error 1.3313017376503922e−5 and region error 1.52587890625e−5.
+That 156-pose runtime proof belongs to the MCP-authored result; the native `14f2`
+save has no fresh external-runtime comparison. Hosted CI has not passed.
+
+Installed Spine 4.3.26 calibration confirms Cmd-add preserves the first unrelated
+anchor; removing it in a three-independent-branch selection chooses the first
+survivor. A selected ancestor becomes the effective gizmo anchor. Peachy preserves
+logical selection separately from that anchor. Parent typed X assigns every member, while
+Local/Parent/World viewport translation skips selected descendants and Local
+movement follows each edited Bone's frame. Bones/Images compensation was off;
+the reference process is closed and its source restored exactly. Rotate/Scale
+observations remain incomplete and Shear was inconclusive; none promotes group
+Rotate/Scale/Shear implementation or acceptance.
+
+**Next action:** continue semantic cycle Offset reference calibration using the
+prepared four-clip original fixture. Phase 1 now establishes closing asymmetric
+Bezier movement on two completely selected tracks, repeated +12/+6-frame moves,
+deselect/reselect then +6, remembered originals and three Undo operations restoring
+all four clips exactly. Earlier partial-selection observations do not establish
+the two-track contract. Stepped seams, negative/full-period moves, nonzero loop
+bounds and partial-selection/intervening-edit context remain to calibrate before
+full shared engine/UI/MCP integration. The engine foundation was subsequently
+committed and pushed as `263ebca`; its original eight-test proof stays historical.
+The latest single-key seed checks and unresolved mixed-selection memory gate are
+summarized above; neither establishes full Offset UI/MCP acceptance.
+Use selective additional Rotate/Scale/Shear probes before choosing further
+group-transform formulas.
+Keep source, native and runtime evidence separate. Group Rotate/Scale/Shear,
+non-Parent numeric entry, group numeric drag, full group Properties workflows,
+general selection/clipboard overlaps, compound Graph/Deform hierarchy,
+Shift/ripple/cycle Offset, Lock/Sync and the live GUI bridge remain open. The
+overall parity goal stays active; do not substitute primitive translation for
+the full group-transform or tutorial timing workflows.
+
+## Tutorial replay refreshed — November 15, 2026 (November 16 UTC)
+
+Both larger studies now pass actual MCP replay on the current v23 /64-command /
+19-tool server, rather than relying on their November 14 checkpoint. Halloween
+replays 4,063 construction commands and Wind 2,970 from root-only projects. Complete
+rig/motion documents match the originals through the official v22 migration;
+history, Save/reopen, all five clips' motion/loop gates and Deform isolation pass.
+Five retained native samples also match exact authored/applied locals and worlds.
+Fresh explicit Runtime43 JSON exports and the current CLI pass 260 external
+runtime poses at 0.001 using the retained, unchanged image atlases. Maximum mesh
+errors remain 0.000732421875 /0.0003662109375. See
+[the dated scope and limitations](slices/training-recreation.md).
+
+This refresh does not add fresh native playback, movies, Setup-binding residual
+checks, exact tutorial fidelity, full Editor interchange or a live desktop MCP
+bridge. The new server sessions are independent headless sessions. Continue the
+ordered multi-Bone/semantic cycle Offset work below; do not repeat this replay
+without a relevant change or unresolved failure.
+
+## Verified bounded compound Dopesheet — November 15, 2026
+
+Native acceptance passes on unchanged Desktop
+`14b0575fff64d33f621954f09af426daa7010fcb4d88d1c634d64f4c87a068d4`.
+Actual visible Slot, true Region and retained global-root scopes match the
+installed direct Bone/Slot family. Slot RGBA paste to explicit driver Slot,
+Undo/Redo, all12-key plus5-frame retime, held Escape/continued-held block,
+1120×740 full9×9 key targets and actual edited Save/fresh-process reopen match
+complete MCP documents. Pending starts empty; nonempty pending/remap/inactive
+coverage remains headless. The minimum claim is for timeline targets; the short
+Tree pane remains a broader workspace review item. All owned instances are closed.
+
+MCP44 constructs the lab from a blank root/one original PNG with43 commands;
+separate MCP10 opens the actual native saved file, matches its complete moved
+Document, has empty history and checks six exact attachment-boundary poses.
+Native result `06d53f2ec4827902e39886a194333073244acf3e3aedc735261bf8fb3b6f07a5`
+is public alongside baseline `2aebcfd8…a2d5` and the extracted one-command move.
+Native writer bytes are not compared to MCP json! decimal spellings.
+Reference Slot-paste export confirms only the new nominal driverRGBA red key at50;
+rounding/default omissions and raw offset representation remain qualified.
+See [review](evidence/compound-dopesheet.html), [scalars](evidence/compound-dopesheet.json)
+and [native result](../examples/peach-bot/compound-dopesheet-native-result.peachy).
+
+Source checks03/04 pass Dopesheet41, clipboard45, broad Graph47, broad Curves52
+and key-drag4 (overlapping filters), fmt, Clippy, build and architecture7. MCP/CLI
+stay `0f659abb…d112` / `a414e845…18ab6`; v23 and64/19 stay unchanged. No new geometry
+algorithm or new licensed-runtime comparison is claimed by this UI follow-up.
+
+**The November 15 next action is advanced by the accepted multi-Bone checkpoint above;
+semantic cycle Offset remains open.** A single ordered selection must drive Tree, viewport,
+primary/history/number groups and one atomic shared multi-pose Session operation;
+loop-boundary/memento Offset is separate from ordinary key retiming. Keep exact
+clipboard maps independent of Dopesheet/Graph. Probe sibling vs parent/child,
+Local/Parent/World translation, rotation pivot, signed Scale/Shear, mixed numeric
+values, key states and primary fallback before assuming group transform math.
+MCP needs the same shared operation, not UI-only looping over per-Bone previews.
+Keep Slot identity distinct from its Draw-order-list presentation: the visible
+Animate Slot currently still has Draw-order Properties, and its parent-Bone pose
+controls are not complete. The adaptive workspace follow-up above improves the
+measured minimum-window Tree cases without completing those controls; timeline
+scope still does not establish full Slot/Region workflow parity.
+The [fresh official-source audit](slices/spine-blog-audit-20261114.md) confirms
+these and the remaining freeform mesh, automatic weights and layered Preview gaps.
+General Tree/compound Graph/Deform hierarchy, Shift/ripple, Lock/Sync and the full
+broader parity backlog remain open. Do not repeat completed compound scope work.
+
+Private lifecycle and selected proof are tracked in
+`.local/training-spine-20261114/timeline/multi-owner/task.json`. The accepted
+follow-up retires one-shot producers, native-result scratch and redundant
+captures after public evidence integration. The guarded controller and one
+existing reference scratch transfer directly to the queued multi-Bone calibration
+until that unit integrates; selected immutable native/reference
+JSON witnesses and MCP/source reports remain for active PR review until integration
+or supersession. Recreate any later native helper only for an actual next probe,
+retaining exact identity/foreground and topmost-at-point checks, including F12 polling.
+
+## Verified bounded leaf owner routing — November 15, 2026
+
+Current v23 and **64 commands /19 tools** are unchanged. Desktop5825/source04
+passes the five native no-owner/explicit Bone/cross-animation/visible Slot/true
+Region cases against complete MCP71 typed documents. Original IDs stay selected,
+incoming keys stay unselected, Paste→Cut/two-Undo and other/cross/Slot Undo pass.
+Final same-name Region/clip1 native Save is byte-identical to public MCP5d432;
+fresh reopen is exact with empty history/clipboard and one image. Old OS Paste
+cannot revive the receipt. All owned processes are closed. Native Undo is
+verified; MCP/headless Undo/Redo is separate. No new native inactive/pending/remap
+or minimum-window claim is added. See [scope](slices/leaf-clipboard.md),
+[review](evidence/leaf-clipboard.html) and [scalar evidence](evidence/leaf-clipboard.json).
+
+**Next action:** calibrate the next bounded workflow beyond leaf routing: Slot
+compound Dopesheet scope/Region pose controls or general Tree target mapping.
+Visible Animate Slot still shows global DrawOrder scope; Region extra unkeyed/
+all-seven rows and single-owner-header styling remain. Shift ripple, cycle
+Offset and Lock/Sync remain separate implementation/calibration gates. Preserve
+the existing Slider strict-interchange failures, precision failures and guarded
+referenced domains. Do not repeat completed leaf fallback implementation.
+
+Leaf closure retires **163 enumerated task files** in `leaf-cleanup.json`, with
+absence verified: duplicate saved scratch/Spine clone, redundant captures/exports,
+failed-check logs/bytecode and both reassigned native controls/export helper/both
+builders. Accepted 03/04/06 reports/logs, 20 selected F12 and three OS-window proofs/
+metadata, MCP71 recipe/requests/scalars/poses and five reference goldens plus
+baseline/full source remain for current PR review and next compound Slot/Bone/
+Tree/Offset calibration until integration or supersession. Shared target serves
+the ongoing goal. All owned processes are closed; no reclaimed-space claim.
+
+Native input helpers must check the topmost window at each mouse target as well
+as the exact foreground PID. Capture starting bounds only after the editor has
+settled; a startup frame can be a different size. Coordinate foreground intervals
+with other active GUI tasks. The ended leaf helpers were retired, so retain these
+checks when recreating a focused probe.
+
+## Verified bounded grouped clipboard — November 15, 2026 follow-up
+
+Current inventory is **64 commands /19 tools**, native v23 unchanged. Shared
+group copy/paste, one global origin and explicit complete owner maps are
+implemented. Actual MCP run02 passes 57 requests from a blank root/one PNG,
+25 construction commands, nine negative atomic cases, history/reopen and 12 poses.
+Separate other-target/cross-animation exports pass 104 poses each, 208 total,
+at 0.001; maximum world errors are 1.200913195020803e−5 /1.1076360095785276e−5 and
+both region maxima are 1.52587890625e−5. Four MCP unit/two actual-stdio tests pass.
+Final checks05/06 pass Dopesheet 29/grouped 13/leaf 15, engine group 7/timeline 28
+(overlapping) and MCP four-unit/two-stdio, plus fmt/Clippy/build/architecture 7.
+**Bounded native acceptance now passes**, including the minimum/persistence
+follow-up on the same Desktop87ee. See [scope](slices/grouped-clipboard.md),
+[review](evidence/grouped-clipboard.html) and [scalar evidence](evidence/grouped-clipboard.json).
+
+Native authoring now passes Copy/Paste/Cut, original IDs/primary preservation,
+whole-document history, another Tree bone and cross-animation binding cases.
+At historical `da1a1da`, the user directed **finish code checks and push first**;
+minimum/Save/reopen were then partial. The unchanged binary now passes 1120×740
+with all eight key targets inside RowsClip/full original image, CmdS clean state
+and fresh-process complete typed Document equality, empty history/clipboard and
+one image. All owned native/MCP/Spine processes are closed. The leaf-v2
+native control also passes Copy 2, original-selection preservation on Paste and
+Cut/two-Undo recovery. The [native saved result](../examples/peach-bot/group-clipboard-native-result.peachy)
+uses clip 0 paste; public MCPd833 uses clip 1, so their bytes are intentionally distinct.
+**Historical next action:** the no-Tree leaf fallback below was subsequently
+accepted by the leaf checkpoint above; general Tree/Shift/Offset remains separate.
+Final source checks pass; installed paste preserves original-owner
+identity even when those same bones are reselected in reverse order. Two other
+selected parents map in the measured order; MCP explicit maps reproduce it, but
+general Tree multi-selection is absent. The later leaf checkpoint adds the owned
+single-leaf receipt and lifecycle guards without completing general Tree target
+mapping, Slot/Region scope, Shift/Offset or Lock/Sync.
+
+The group checkpoint retires **121 enumerated task-owned disposable files** in
+`group-cleanup.json`: generated runtime bundles/scratch, superseded MCP01 outputs,
+duplicate MCP02 saved assets and redundant captures/bytecode/export helper.
+The native-completion follow-up retires **27 further enumerated files** in
+`group-native-completion-cleanup.json`, after its saved result was copied byte-
+exact to the public native1944 project: private scratch, redundant persistence
+captures and logs. Six accepted F12 JSON witnesses/two OS windows with metadata,
+selected earlier states and MCP02 recipes/requests/scalars stay for active PR
+review until integration or supersession. Reference goldens remain for Tree/
+Offset calibration. Both native-control helpers and the evidence builder were
+reassigned to the leaf unit. That end condition is now reached and they are
+retired in its 163-file cleanup above; grouped minimum/persistence is complete.
+All owned processes are closed. Shared Cargo target serves the continuing goal.
+No reclaimed-space amount is claimed. Final workspace build07 after focused
+tests restores the accepted Desktop/MCP/CLI hashes recorded in the evidence.
+
+## Earlier multi-owner timeline checkpoint — November 15, 2026
+
+The `b45d18d` inventory was **63 commands /18 tools**, native v23 unchanged. The shared
+owner/key query and bounded all-owner Dopesheet UI pass **ordinary multi-owner
+native acceptance** on the original two-bone scalar case. Final MCP run03
+passes 41 requests/25 authored commands, exact mixed retiming/history/reopen and
+five rejected read-only queries. Baseline and moved runtime exports each pass 104
+poses at 0.001. See [the scope](slices/multi-owner-timeline.md),
+[review](evidence/multi-owner-timeline.html) and
+[scalar evidence](evidence/multi-owner-timeline.json).
+
+Native checks pass mixed selection/+5 displayed frames, one-step Undo/Redo, held
+Escape/continued-held blocking, eight-key Delete/Undo, Graph owner/channel
+retention/pruning, 1120×740 targets and exact Save/fresh-process reopen. Native
+pending state starts empty; nonempty pending preservation is headless-only.
+Mixed Copy refuses without changing document/selection/redo/internal clipboard.
+
+Grouped clipboard is now the in-progress continuation above. Shift/Offset,
+Lock/Sync and general Tree
+multi-selection remain open; ordinary movement does not implement wrapping Offset.
+Reference Offset's three Undo operations restore all animation data exactly;
+the owned Spine window is closed with original bounds and Setup mode restored.
+All current owned native/MCP processes are closed; the public baseline is unchanged.
+
+The checkpoint retires 79 task-owned disposable files: generated runtime bundles,
+scratch projects, superseded MCP outputs, redundant captures and closed-native
+helpers/bytecode. Selected final recipes, requests, scalars and native-state/window
+witnesses remain for active PR review until integration or supersession. Original
+reference fixtures/exports remain for grouped clipboard and Offset calibration;
+the shared Cargo target remains needed by the continuing goal. No new checkout,
+target or repository copy was created, and no reclaimed-capacity amount is claimed.
+
+## Verified earlier Slider source/creation checkpoint — November 15, 2026
+
+**Bounded native source/creation acceptance passed.** Native v23 remains, with
+**63 commands /17 tools**. Implementation and final source-study04 pass 141 MCP
+requests/15 retained poses from blank/one PNG; private source SHA256 is
+`60b75a59d56d4df1b41120dbb9e3d29abe187e3a0ceff7a1c287aa32f220b109`.
+Runtime geometry passes 104 poses at 0.001 (world maximum 8.897442157262958e−6,
+region maximum 1.52587890625e−5). Preserve the verified **58/14** manual checkpoint
+below. The coordinator owns native/CLI/runtime/Cargo execution and final
+evidence/count promotion for this continuation.
+
+Installed calibration now defines semantic prepend/trailing-numeric creation,
+forward/inverse identity remapping, source assignment deleting only Time keys,
+property default/source-pair memory, finite endpoint repairs/reversals, hidden
+manual-Time restoration and genuine Setup Mix capture from own sample Time.
+Own-turn Frame **27** must not be recomputed as **81** from a later final source
+transform. Preferences stay outside Document; process reset is observed, while
+controlled same-process Save/Open preserves distinctive Source Min **8**.
+Native typed source/property/range/clear/history/Save/Open checks now pass within
+the [bounded contract](slices/slider-constraints.md#source-and-creation-continuation).
+
+Run02's accepted object-form source property is fixed; run03 retains the strict
+negative and passes. A later positional source-range array acceptance bug is also
+fixed with object-only decoding; totals are63 engine Slider,33 desktop,16 schema,
+6 stdio and six overlapping Session cases. Fmt/Clippy/build/architecture pass.
+Final run04 repeats141 requests/15 samples and the same canonical hash after wire
+hardening. A separate10-request check proves array rejection preserves document/
+history/revision and valid-object Undo is exact. Final read-only native reopen
+also passes on `6b638bb1…be3f`; detailed source interactions remain the `61db0591…5a867`
+evidence. A separate final-build native held-range check now proves Source Min
+**10→13**, `active.numeric=false`, unchanged hidden Time/Mix/pending/selection,
+exact held Escape/redo restoration, continued movement blocking, release and a
+fresh committed gesture with exact one-step Undo/Redo. The source hash stays
+unchanged. Both104-pose geometry checks retain their earlier unchanged errors. All owned processes are closed
+and reference bounds restored; no other-app input occurred. Final fitted
+1120×740 presentation has one image/empty history/full original art.
+
+The multi-owner timing continuation above follows this verified source checkpoint.
+Installed ordinary movement, shared clipboard origin, single-property Shift and
+bounded repeated Offset were measured there; the later phase-1 reference above
+resolves remembered originals across the qualified complete-track reselection case.
+Remaining Deform/event reference-domain transitions follow later.
+The earlier November 15 held attempt stayed at8 and remains an excluded trial;
+the subsequent native replay closes changed-preview cancellation. Do not reopen
+creation/source as generically pending. Source interchange geometry passes104 poses, but four strict
+authored differences include loss of hidden manual Time. Preserve that failure,
+two raw `1e30` precision failures, Loop/counter refusals and Physics/events/remaining
+Deform guards. Do not repeat hosted-CI dispatch, restart the canceled female
+fullcheck or run LM Studio. Cleanup records25 original disposable task files plus
+three held-range helper/scratch files retired after verified closure;
+selected recipes/transcripts/original calibration/native/runtime/interchange
+witnesses retain an active PR-review dependency until integration/supersession.
+The shared target remains needed by the continuing goal. No new task folder,
+checkout or target is needed, and this checkpoint does not complete full parity.
+
+## November 15 Slider continuation
+
+The verified bounded Slider checkpoint uses **native v23, 58 commands / 14 MCP
+tools**. Manual Frame/Mix controls share pending poses, Auto Key/K, independent
+keys, typed Dopesheet/Graph, curve splitting, clipboard and Session history with
+MCP. Historical v22 examples remain byte-frozen and migrate in memory. One
+ordered effective state supplies constraints, slot domains and checked geometry
+without another solve; skin applies before host sampling and pending overlays.
+
+Actual native manual/Graph/history/cancellation/Save/minimum checks pass. Final
+public reopening has one image/empty history, playback advances to 0.224702 seconds
+and stops/resets to 0. Final MCP recreation uses 84 actual requests from a blank
+project and one original PNG; no finished rig is an input. Canonical
+`examples/peach-bot/slider-bot.peachy` SHA256 is
+`f097c00c4542d46b7e2ee846d72d74606c9a6e5fad9bf41ccc1dcdc277a60dc6`.
+Native tests edit/restore this rig, rather than independently creating it.
+
+Domain 170/170, Sequence/activity 177/177, incoming 101/101, other-Slider 21/21 and
+driven Time/Mix 12/12 each pass final affected matrices at unchanged 0.001. Other
+bounded studies, three Loop precision and twelve Sequence counter refusals stay
+separate. Two raw 1e30 adversarial precision mismatches remain failures. Final
+runtime geometry passes 104 poses (max world 1.83804e−5 /region 2.28882e−5).
+Installed 4.3.26 geometry also passes 104 poses at max 1.52588e−5 with exact UVs,
+but its strict authored comparison remains false: Time/Mix order and small
+Bezier/value canonicalization differ. No lossless interchange claim follows.
+
+Focused two-worker checks, formatting, all-target Clippy, workspace build and
+seven-crate architecture pass. See [contract](slices/slider-constraints.md),
+[gallery](evidence/slider-constraints.html) and
+[scalar record](evidence/slider-constraints.json). Required hosted CI remains
+unavailable; keep PR #1 in draft and do not dispatch workflows. Push verified checkpoints
+at will under Chris's standing authorization.
+
+**Historical next action at the manual checkpoint:** close the Slider source/
+creation workflow gap. Native
+New→Slider prepends (raw Add appends), so define exact remapping/identity/history
+before creation UI. Source assignment deletes Time keys while preserving Mix;
+clear is state-dependent and must not be guessed from one derived frame. Local,
+source property/ranges and derived Frame display need shared semantic/query APIs
+and MCP alongside native controls. Physics/events and remaining Deform/Sequence
+reference domains, extreme precision and lossless authored conversion stay open.
+Continue the blog backlog after that; the canceled female-pose full check remains
+canceled and LM Studio must not be started.
+
+All task-owned reference/native/MCP processes are verified closed. Native input
+helpers, redundant captures and disposable generated outputs retire at checkpoint;
+selected private observations, final requests/recipes/reports and original
+calibration inputs retain an active PR /next Slider work dependency until integrated
+or superseded. The shared Cargo target remains required by the continuing goal.
+No new checkout/target/repository copy was created.
+
+## November 15 workspace divider continuation
+
+The canvas now reserves the nearest right pane's actual egui resize grab band
+from input, using a stable canvas owner and a separate input rectangle. Full
+painting/Fit/projection and the 320-pixel minimum viewport budget are unchanged;
+already owned drags continue outside that rectangle, and all-hidden right panes
+restore full input. Native Tree grabs at −2/0/+2 logical border offsets preserve
+document/history/selection. Properties resizing exposes all mapping fields and
+Options, and held Mix/Escape still works after resizing. The public full-table
+capture is updated. Five focused tests additionally cover Weights-only/Curves-only
+boundaries, pending/history preservation, released-size persistence within the
+session and an owned Move across the reserved strip. These pane variants have
+headless coverage only; no new native or cross-restart docking acceptance follows.
+
+The affected checks pass: 5 pane, 26 Transform, 40 weight, 52 curve and 26 Deform,
+plus formatting, all-target Clippy, workspace build and the architecture check.
+A pre-existing Deform test clicked raw key metadata below the Properties clip
+on both the mapping checkpoint and floating-scrollbar control. Key/Delete
+capture targets now include only visible intersections; the real-event test
+wheels Properties until its button is visible and verifies clip containment.
+Shared key commands are unchanged. The final native unweighted replay passes:
+actual Arrow Right, Key/Undo preserving the pending pose, Properties shrinking
+with pending pose/redo intact, absent offscreen key/Delete captures, an 80-pixel
+wheel revealing Key, and Key/Delete restoring the baseline document. Artwork is
+unchanged and the owned window is closed. Weighted/unweighted cases pass focused
+event checks; no new native weighted-mesh claim follows. All current source and
+native gates for this bounded workspace follow-up pass.
+
+**Next feature action: calibrate manually driven Slider constraints from native
+controls and public runtime behavior, or the remaining bounded UI workflows in
+the [blog backlog](slices/spine-blog-audit-20261114.md).** Mapping checkpoint
+`54936e4` and workspace follow-up `58618c5` are pushed, with draft PR1 updated
+and its remote head verified. Temporary input helpers, disposable fixtures and
+redundant step captures are retired; selected private witnesses remain for active
+PR review until integration or supersession. The shared Cargo target remains
+needed by the continuing parity goal. There is no native-format or MCP-schema
+change. All recorded reference/native identities are verified closed.
+
+Standing authorization from November 15: push verified parity checkpoints at
+will and update the existing draft PR without asking again. Hosted workflow
+execution remains separately gated: the registry is empty, read-only workflow
+lookup returns 404, and automatic approval review rejected dispatch under the
+workflow/spending rule. Continue local/native verification, retain draft status
+and avoid repeating dispatches while that condition remains.
+See [UI parity](UI_PARITY.md#workspace-divider-input--november-15-2026).
+
+## November 15 Transform mapping continuation
+
+World X→Rotate now passes shared core/MCP, actual native acceptance and both
+external-runtime/installed-editor gates. Native v22 stays, with **53 commands /
+13 tools**. See [scope](slices/transform-mapping-authoring.md),
+[gallery](evidence/transform-mapping.html) and [scalar evidence](evidence/transform-mapping.json).
+
+Native typing, repair/reversal, Clamp/Mix, held cancellation/input blocking,
+Undo/Redo, Offset extrapolation, owned/pending Save, zero-scale blank/recovery,
+minimum 1120×740 controls and fresh public reopen/playback pass. Native and the
+122-request root-only MCP recipe save byte-identical
+`examples/peach-bot/transform-mapping-bot.peachy` (SHA256
+`62a637db493f5abf41bd197c4cdb5db03c83120d95acae6e4fd24f285204757d`).
+The native coalesced edge-drag exposed floating scrollbar overlap; a reserved
+solid outer scrollbar fixes it, with a whole-workspace regression and native
+replay. The regression settles egui's scrollbar animation before freezing geometry.
+Temporary diagnostics are removed. The workspace continuation above now resolves
+the former exact-edge resize gap; exact styling and general docking remain open.
+
+The 103-case matrix records 101 runtime passes at unchanged 0.001 tolerance,
+one overflow refusal and one measured consumer-precision refusal. Installed
+Spine points down for the paired biased/unbiased −180 controls; its JS runtime
+points up for the biased source. Do not relabel this refusal as a runtime pass.
+Published f32 poses remain; the private wide FK never solves constraints again.
+Exact final 04 installed interchange passes 52 poses with zero world/region/UV error
+and exact raw authored sections, including mappings/keys/attachment dimensions.
+At the mapping checkpoint, 26 Transform, 39 weight and 51 curve cases, prior core/MCP/adapter checks,
+fmt, all-target Clippy, workspace build and seven-crate architecture pass.
+
+All task-owned reference/native windows are closed. Public original lab/captures
+and scalar evidence are committed with this slice. Private calibration sources,
+selected licensed captures, final 04 requests/recipes/reports and consumer outputs
+remain only for active PR review, until integrated or superseded. Task-owned
+superseded outputs, temporary native helpers and redundant raw diagnostics retire
+at this checkpoint. The shared Cargo target remains required by ongoing parity
+work; no extra target/worktree/repository copy was created. PR1 remains draft;
+required hosted CI still gates main integration.
+
+Continue the [blog backlog](slices/spine-blog-audit-20261114.md): manually driven
+Slider constraints need native/public-runtime calibration before a new model;
+other mappings, creation/reconnection, stored Curves defaults/presets,
+Auto/Smooth/brush weights and locks/Update also remain. Problems, broader Color,
+Pies/overlay and exact styling/docking remain open. The canceled female-pose full
+verification stays canceled.
+
+## November 15 multi-vertex Direct continuation
+
+Multi-vertex Direct weights now has a dedicated native pane, additive/marquee
+selection, mixed blank/asterisk display, absolute assignment and cumulative
+relative gestures. The shared engine command and read-only `get_mesh_weights`
+bring MCP to **52 commands / 12 tools**; native **v22** is unchanged. Applied
+binding snapshots now include sampled inheritance modes. Legacy omitted modes
+retain Setup reconstruction. See [scope](slices/weight-multivertex.md),
+[gallery](evidence/weight-multivertex.html) and [evidence](evidence/weight-multivertex.json).
+
+Actual native input/history/cancellation, pending Save exclusion, fast Cmd release,
+fresh public reopen, playback and 1120×740 layout pass. Native and root-only MCP
+authoring save byte-identical `examples/peach-bot/multi-weights-bot.peachy`
+(SHA256 `87214e61dc6410d8f9f0306deacd7b19b2a658a9353bd2b15b9f2be606540807`).
+Ninety actual stdio requests recreate the lab from one original PNG; both the
+external runtime and installed 4.3.26 roundtrip pass at unchanged 0.001 tolerance.
+An additional 141-request study verifies five captured inheritance modes;
+its keyed modes are imported fixture data, not new inheritance-key authoring.
+Focused two-worker checks, formatting, all-target Clippy, workspace build and
+seven-crate architecture check pass. Hosted CI still gates main; keep PR1 draft.
+
+Sparse creation inserts only a new `[0,0]` entry in consistent mesh binding order.
+Existing raw entries are untouched. Installed controls isolated an import failure
+for cyclic cross-vertex precedence; Editor export now rejects it before writes,
+while Runtime export preserves the arrays. Deform-layout remapping remains a
+separate requirement for sparse creation with keyed/pending Deform data.
+
+Continue the [blog backlog](slices/spine-blog-audit-20261114.md): stored Curves
+presets/default choices, transform mappings/sliders, Auto/Smooth/brush weights,
+locks/Update and multiple selected bones. Pies/overlay controls, Problems, broader
+Color and exact styling/docking remain open. The canceled female-pose full check
+stays canceled.
+
+All owned native/reference processes are closed. Private original calibration
+inputs, selected captures, scalar reports, actual MCP requests/recipes and final
+runtime/interchange outputs remain in `weights-multivertex/` until active review
+is integrated or superseded. Temporary input helpers, invalid input diagnostics
+and reconstructible Save backups retire at the verified checkpoint. The shared
+Cargo target remains required by ongoing parity work; no extra checkout or target
+was created.
+
+## November 14 global draw-order continuation
+
+Global Animate draw order now has Tree movement/dragging, Reset, pending poses,
+Auto Key/K and typed Dopesheet retime/clipboard/Delete. Shared raw and semantic
+commands plus complete hidden-slot readback bring MCP to **51 commands / 11
+tools**; native v22 stays. Actual native input, cancellation/history, fresh
+canonical reopen/playback, both authored runtime checks and installed 4.3.26
+interchange pass. Focused two-worker checks, formatting, all-target Clippy,
+workspace build and architecture pass. See [review](evidence/draw-order-authoring.html),
+[scope](slices/draw-order-authoring.md) and [evidence](evidence/draw-order-authoring.json).
+
+The exact native eight-key lab is
+`examples/peach-bot/draw-order-authoring-bot.peachy`. Its four original PNGs
+also drive the separate root-only actual MCP study: 343 requests, two clips,
+265 poses, 32 hidden-slot samples. No finished rig is a recipe input. Raw
+imported encodings survive; newly encoded minimal ties are ours. Peachy Undo
+preserves pending poses, an explicit measured history difference from Spine.
+
+Folders, Setup reordering, cross-layout clipboard mapping and compact native
+property sizing remain. Continue the blog backlog with stored curve presets
+and default choices, multi-vertex weights, transform mappings and sliders.
+Observe native behavior before adding each shared engine/MCP boundary. Problems,
+broader Color and arbitrary docking remain open. Hosted CI still gates main;
+keep the PR draft. The canceled female-pose full check remains canceled.
+
+All owned native/reference processes are closed. Private original inputs,
+MCP recipes/requests, authored exports and selected review witnesses remain in
+the existing `draw-order-authoring/` record until review/CI evidence is superseded.
+Temporary input helpers, raw step captures and superseded Save backups retire
+at the verified checkpoint. The shared Cargo target remains required by ongoing
+parity work; no extra target, worktree or repository copy was created.
+
+## November 14 Curves continuation
+
+Curves now has a separate fitted relative-transition pane and shares exact
+Dopesheet selection with Scalar Graph. Scalar tangents/numerics, raw scalar/IK
+curve setters and shared preset/handle actions bring MCP to 49 commands / 11
+tools; native v22 stays. Installed 4.3.26 reset/live matrices, actual native
+typing/cancel/history/persistence and both authored external runtime checks pass.
+Focused two-worker checks, formatting, Clippy, build and architecture pass.
+See [review](evidence/curves-authoring.html), [scope](slices/curves-authoring.md)
+and [scalar evidence](evidence/curves-authoring.json).
+
+Stored preset management is disabled. Last chosen, native property grouping,
+flat Match destinations and several Separate-off coupled domains remain open;
+unsupported operations fail explicitly. The current Views count is 16 of the
+installed editor's 17; Problems and broader Color remain. Full parity is not
+claimed. Required hosted CI still gates main; keep the feature PR draft.
+
+Global Animate draw-order editing is covered by the continuation above. The
+4.3 Look around demo uses it alongside completed slot swaps/fades. Per-folder
+keys need a later identity/model slice. Continue
+Curves library/defaults, multi-vertex weights, cross-property mappings and sliders
+as documented in [the official audit](slices/spine-blog-audit-20261114.md).
+
+Owned Curves native/reference processes are closed. Final original projects,
+reports and selected captures remain in `curves-authoring/` until review or
+supersession; temporary helpers/raw captures retire at the verified checkpoint.
+Shared Cargo target remains required by continuing parity work; no second target
+or checkout was created. The canceled female-pose full check remains canceled.
+
+## November 14 export-target continuation
+
+Native, CLI and MCP export now share explicit Spine Editor 4.3 / Runtime 4.3
+consumer targets. Editor is the default and rejects unsafe default name overrides
+before writing; Runtime preserves independent names, placeholders, skin fallback,
+slot keys, Deform and linked references. Native v22 and 45 commands/11 tools stay.
+Actual native pending/history/cancel/rejection/export, CLI and stdio MCP checks
+pass. Three bundle files are identical across native/MCP/CLI. Four accepted Editor
+controls survive installed 4.3.26 import/re-export; region and minimal linked-mesh
+Runtime fixtures pass the external oracle. Focused checks, formatting, Clippy,
+build and architecture pass. See [gallery](evidence/export-targets.html),
+[contract](slices/export-targets.md) and [scalar evidence](evidence/export-targets.json).
+
+The previous naming gap is bounded by an explicit consumer policy; this is not
+silent normalization or a complete .spine converter. All owned GUI is closed.
+Private original inputs, reports, selected captures and final bundles remain in
+`.local/training-spine-20261114/names-contract/` until review or supersession.
+Task-owned raw captures, Cocoa/input diagnostics, invalid probes and redundant
+CLI outputs retire at closure; shared target remains required by ongoing parity.
+
+The reset/final-key probes and bounded scalar Curves workflow are covered by the
+latest continuation above. Continue its recorded authoring gaps, multi-vertex
+Direct/Auto/brush weights, cross-property transform mapping and sliders.
+Use [the refreshed official blog audit](slices/spine-blog-audit-20261114.md).
+Hosted CI still gates main; keep the feature PR draft. The canceled female-pose
+full check remains canceled.
+
+## November 14 slot authoring continuation
+
+Slot swaps/hiding and RGBA fades now have native/MCP authoring, shared float
+pending poses, Auto Key/K, exact typed keys/clipboard and four-channel Graph
+editing. Properties matches the observed Set slot color dialog and adjacent key.
+Native v22 stays; MCP has 45 strict commands/11 tools and raw hidden-slot arrays.
+New color keys share the calibrated split command with MCP; 104 independently
+observed native split parameters match, including a nonzero-origin holdout.
+
+Actual native modal/Graph/keyboard/history/pending Save/reopen/playback checks
+pass; both authored three-clip exports match the external runtime. Focused checks,
+formatting, Clippy, build and architecture pass. See
+[review gallery](evidence/slot-authoring.html), [contract](slices/slot-authoring.md)
+and [scalar evidence](evidence/slot-authoring.json). Private reference comparisons,
+authored projects and MCP logs remain in
+`.local/training-spine-20261114/slot-authoring/` until review. Temporary helpers,
+invalid probes, redundant captures and verified duplicate Save backups retire at
+closure. The shared Cargo target remains needed for continuing parity work.
+
+The default-skin name-override gap found here is now handled by the explicit
+Editor/Runtime export contract above, preserving valid native/runtime metadata.
+Then continue multi-vertex/Auto/brush tools, all-keyed row hierarchy/mixed Graph,
+Offset, broader Color and current blog features. Byte sampling ties/extreme-time
+fallback remain explicit limits. Hosted workflow registration still returns zero;
+keep the feature PR draft and main gated on required hosted CI. Do not restart
+the canceled female-pose full check.
+
+## November 14 Deform timeline continuation
+
+Deform Dopesheet rows, exact retime/copy/delete and typed clipboards now share
+engine commands with native controls and MCP. Graph edits normalized 0–100
+pose-transition curves with presets, draggable tangents and numeric percentages.
+Graph/Dopesheet tabs span the bottom beneath Tree, matching observed 4.3.26
+placement. Native v22 remains unchanged; MCP now has 11 tools / 41 commands,
+including read-only `copy_animation_keys` and exact `setDeformCurve`.
+
+Integrated native mouse/key, clipboard/history, Escape, playback and Save/reopen
+acceptance passes; both native- and MCP-authored projects match the external
+runtime. Local focused checks, formatting, Clippy, build and architecture pass.
+See [review gallery](evidence/deform-timeline.html),
+[contract](slices/deform-timeline.md) and
+[official update backlog](slices/spine-blog-audit-20261114.md). The actual installed
+Views menu has 17 entries, not 15; Curves/Problems and broader Color remain open.
+Owned native/reference processes are closed. Private comparison/projects/MCP
+logs remain in `.local/training-spine-20261114/timeline/`; redundant F12 captures
+and helpers retire after the verified commit. The shared Cargo target is retained
+for continuing parity development; no second target/worktree was created.
+
+Continue through bounded slices: Animate slot attachment/RGBA color authoring
+(image swaps/fades used in the 4.3 blog), then multi-vertex/Auto/brush tools,
+all-keyed bone hierarchy/mixed Graph and Offset. Hosted CI still lists no registered
+workflows as of this check; keep feature PR draft and do not integrate main until
+the required hosted check passes. Female-pose full verification remains canceled.
+
+## November 14 authoring update
+
+Final private tutorial review: `.local/training-spine-20261114/recreation/index.html`.
+The timestamped visual action transcript and full audio-coverage records are
+linked there. Both recreated projects were built through actual MCP calls from
+raw cutouts and the empty source layout; the finished rig is excluded from
+recipe inputs. Halloween has 79 bones, 27 meshes, one IK constraint and three
+clips; Wind has five explicitly qualified technique cases, seven weighted
+meshes and two clips. Both pass the external runtime checks. See
+[training recreation](slices/training-recreation.md).
+
+Prepared on `feat/training-deform-authoring`; **main integration awaits hosted
+CI**. The manual dispatch returns HTTP 404 (`check.yml` not found on the default
+branch), while the contents API confirms the file exists on remote main and
+Actions reports zero registered workflows/runs. Repository Actions is enabled;
+no settings were changed. Do not describe this as a hosted CI pass or silently
+waive the required gate.
+
+Startup image loading now uses the actual WGPU device texture limit. The private
+training example that aborted above 2048 pixels now opens with all original images;
+both imported clips were observed playing in the native editor. No source artwork
+was changed. Local assessment/implementation evidence is in
+`.local/training-spine-20261114/`.
+
+Single-vertex weighted/unweighted **Animate deform authoring** is implemented:
+Vertices retains the current mode; drag/nudge, pending offsets, Auto Key, K,
+contextual Deform key/delete, undo/redo and guarded fixed-baseline previews share
+the engine. Native v22 remains. See [the contract](slices/deform-authoring.md)
+and [original-fixture evidence](evidence/deform-authoring.json).
+
+Fresh tutorial outcomes are now built through actual stdio MCP calls from a
+root-only `create_project`, using raw cutouts and the source Photoshop layout.
+The finished artist rig is excluded from recipe inputs. Shared commands append
+slots and region/weighted mesh attachments; single-page packed export supports
+4096×4096. See [scope and evidence](slices/training-recreation.md).
+
+Audio coverage of all four videos is complete. Instructional portions are silent;
+visual action transcripts use 569 frames across 31 contact sheets. The Wind
+showcase's last 16.4 seconds contain speech whose wording remains unverified;
+visible English subtitles are transcribed. Wind source artwork was not supplied,
+so its five technique cases use explicit proxies. Do not call this an exact
+character recreation or full tutorial workflow/UI parity.
+
+Deform Dopesheet rows/curves are covered by the continuation above. Remaining
+mesh work includes multi-vertex editing, Auto/brush weights and multi-bone cycle Offset workflows.
+The tutorials' wind motion is hand-keyed; no wind rig was supplied. Physics
+simulation remains separate. The female-pose full-check cancellation below
+still applies. Manual CI requires an explicit focused test-name filter and
+caps Cargo/test workers at two.
+
 ## Where things stand
 
 - `main` at `6d67e5f` or later, pushed. Native format **v22**.
@@ -52,8 +831,11 @@ still apply.
 - Commits use the trailer `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
   This repo's workflow: feature branch, fast-forward `main`, `git push origin main`.
   (The game repo's "no Co-Authored-By" rule does not apply here.)
-- Disk: stop below 15 GB free (28 GB at the end of this session). `target/` is
-  about 14 GB; don't create a second target directory.
+- Disk: run `python3 /Users/chris/.local/bin/codex-disk-check --path "$PWD" --json`
+  and include `--expected-write-gb` before a large write. Keep 15 decimal GB of
+  verified available capacity after the write; report raw free and native macOS
+  available capacity separately. Follow the helper's verified/raw-free fallback
+  policy; a low `df` alone is not a block. Reuse the existing Cargo target.
 - Tests: `-j 2` and `-- --test-threads=2`. Vitest is banned for the game only.
 
 ## Tooling

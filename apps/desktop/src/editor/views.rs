@@ -6,6 +6,7 @@ use super::*;
 pub(super) enum DockView {
     Animations,
     Audio,
+    Curves,
     Ghosting,
     Graph,
     MeshTools,
@@ -23,9 +24,10 @@ pub(super) enum DockView {
 mod tests;
 
 impl DockView {
-    const ALL: [Self; 12] = [
+    const ALL: [Self; 13] = [
         Self::Animations,
         Self::Audio,
+        Self::Curves,
         Self::Ghosting,
         Self::Graph,
         Self::MeshTools,
@@ -41,6 +43,7 @@ impl DockView {
         match self {
             Self::Animations => "Animations",
             Self::Audio => "Audio",
+            Self::Curves => "Curves",
             Self::Ghosting => "Ghosting",
             Self::Graph => "Graph",
             Self::MeshTools => "Mesh Tools",
@@ -57,6 +60,7 @@ impl DockView {
         match self {
             Self::Animations => Icon::Animations,
             Self::Audio => Icon::Audio,
+            Self::Curves => Icon::Curves,
             Self::Ghosting => Icon::Ghosting,
             Self::Graph => Icon::Graph,
             Self::MeshTools => Icon::MeshTools,
@@ -73,12 +77,20 @@ impl DockView {
     fn available_in_setup(self) -> bool {
         !matches!(
             self,
-            Self::Animations | Self::Ghosting | Self::Graph | Self::Playback
+            Self::Animations | Self::Curves | Self::Ghosting | Self::Graph | Self::Playback
         )
     }
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub(super) enum AnimationView {
+    #[default]
+    Dopesheet,
+    Graph,
+}
+
 pub(super) struct ViewTabs {
+    pub animation_view: AnimationView,
     pub open: BTreeSet<DockView>,
     active: DockView,
     animation_query: String,
@@ -91,8 +103,9 @@ pub(super) struct ViewTabs {
 impl Default for ViewTabs {
     fn default() -> Self {
         Self {
+            animation_view: AnimationView::Dopesheet,
             open: BTreeSet::new(),
-            active: DockView::Weights,
+            active: DockView::Animations,
             animation_query: String::new(),
             skin_query: String::new(),
             outline_zoom: 1.,
@@ -130,12 +143,18 @@ impl Editor {
             .collect()
     }
 
-    pub(super) fn has_dock_views(&self) -> bool {
-        !self.visible_dock_views().is_empty()
+    pub(super) fn auxiliary_min_height(&self) -> f32 {
+        match self.view_tabs.active {
+            DockView::Animations | DockView::Skins => 170.,
+            DockView::Playback => 212.,
+            _ => 200.,
+        }
     }
 
-    pub(super) fn focus_weights_tab(&mut self) {
-        self.view_tabs.active = DockView::Weights;
+    pub(super) fn has_dock_views(&self) -> bool {
+        self.visible_dock_views()
+            .iter()
+            .any(|view| !matches!(view, DockView::Graph | DockView::Curves | DockView::Weights))
     }
 
     fn open_dock_view(&mut self, view: DockView) {
@@ -147,7 +166,11 @@ impl Editor {
         } else {
             self.view_tabs.open.insert(view);
         }
-        self.view_tabs.active = view;
+        if view == DockView::Graph {
+            self.view_tabs.animation_view = AnimationView::Graph;
+        } else if !matches!(view, DockView::Curves | DockView::Weights) {
+            self.view_tabs.active = view;
+        }
     }
 
     pub(super) fn open_audio_view(&mut self) {
@@ -170,10 +193,81 @@ impl Editor {
         self.open_dock_view(DockView::Graph);
     }
 
+    pub(super) fn open_curves_view(&mut self) {
+        self.open_dock_view(DockView::Curves);
+    }
+    pub(super) fn curves_visible(&self) -> bool {
+        !self.setup_mode && self.dock_view_open(DockView::Curves)
+    }
+
     pub(super) fn graph_visible(&self) -> bool {
         !self.setup_mode
             && self.dock_view_open(DockView::Graph)
-            && self.view_tabs.active == DockView::Graph
+            && self.view_tabs.animation_view == AnimationView::Graph
+    }
+
+    pub(super) fn dopesheet_visible(&self) -> bool {
+        !self.setup_mode
+            && self.show_dopesheet
+            && (self.view_tabs.animation_view == AnimationView::Dopesheet
+                || !self.dock_view_open(DockView::Graph))
+    }
+
+    pub(super) fn animation_views_open(&self) -> bool {
+        !self.setup_mode && (self.show_dopesheet || self.dock_view_open(DockView::Graph))
+    }
+
+    pub(super) fn animation_views(&mut self, ui: &mut egui::Ui) {
+        if self.view_tabs.animation_view == AnimationView::Graph
+            && !self.dock_view_open(DockView::Graph)
+        {
+            self.view_tabs.animation_view = AnimationView::Dopesheet;
+        } else if self.view_tabs.animation_view == AnimationView::Dopesheet && !self.show_dopesheet
+        {
+            self.view_tabs.animation_view = AnimationView::Graph;
+        }
+        self.record_target("animationViews", ui.clip_rect());
+        let mut focus = None;
+        ui.horizontal(|ui| {
+            for (view, icon, label, open) in [
+                (
+                    AnimationView::Graph,
+                    Icon::Graph,
+                    "Graph",
+                    self.dock_view_open(DockView::Graph),
+                ),
+                (
+                    AnimationView::Dopesheet,
+                    Icon::Dopesheet,
+                    "Dopesheet",
+                    self.show_dopesheet,
+                ),
+            ] {
+                if !open {
+                    continue;
+                }
+                let tab =
+                    icons::tool_button(ui, icon, label, self.view_tabs.animation_view == view);
+                self.record_target(&format!("animationViewTab:{label}"), tab.rect);
+                if tab.clicked() {
+                    self.cancel_gesture();
+                    self.view_tabs.animation_view = view;
+                    focus = Some(if view == AnimationView::Graph {
+                        Self::graph_id()
+                    } else {
+                        Self::dopesheet_id()
+                    });
+                }
+            }
+        });
+        if self.graph_visible() {
+            self.graph_panel(ui);
+        } else if self.dopesheet_visible() {
+            self.timeline(ui);
+        }
+        if let Some(focus) = focus {
+            ui.memory_mut(|memory| memory.request_focus(focus));
+        }
     }
 
     pub(super) fn open_preview_view(&mut self) {
@@ -215,6 +309,8 @@ impl Editor {
                     self.open_slot_color_view();
                 } else if view == DockView::Graph {
                     self.open_graph_view();
+                } else if view == DockView::Curves {
+                    self.open_curves_view();
                 } else if view == DockView::Preview {
                     self.open_preview_view();
                 } else {
@@ -234,6 +330,7 @@ impl Editor {
             self.cancel_gesture();
             self.restore_hidden_views();
             self.show_dopesheet = true;
+            self.view_tabs.animation_view = AnimationView::Dopesheet;
             ui.memory_mut(|memory| memory.request_focus(Self::dopesheet_id()));
             ui.close();
         }
@@ -274,6 +371,7 @@ impl Editor {
             self.show_timeline = false;
             self.show_weights = false;
             self.view_tabs.open.clear();
+            self.view_tabs.animation_view = AnimationView::Dopesheet;
             self.ghosting.enabled = false;
             self.mesh_tools = Default::default();
             self.weights.bind = None;
@@ -283,7 +381,11 @@ impl Editor {
     }
 
     pub(super) fn auxiliary_dock(&mut self, ui: &mut egui::Ui) {
-        let visible = self.visible_dock_views();
+        let visible: Vec<_> = self
+            .visible_dock_views()
+            .into_iter()
+            .filter(|view| !matches!(view, DockView::Graph | DockView::Curves | DockView::Weights))
+            .collect();
         if !visible.contains(&self.view_tabs.active) {
             let Some(&view) = visible.first() else { return };
             self.view_tabs.active = view;
@@ -347,14 +449,17 @@ impl Editor {
                     DockView::Animations => self.animations_panel(ui),
                     DockView::Audio => self.audio_panel(ui),
                     DockView::Ghosting => self.ghosting_panel(ui),
-                    DockView::Graph => self.graph_panel(ui),
+                    DockView::Graph => {
+                        unreachable!("Graph shares the animation dock with Dopesheet")
+                    }
+                    DockView::Curves => unreachable!("Curves has its own vertical pane"),
                     DockView::MeshTools => self.mesh_tools_panel(ui),
                     DockView::Metrics => self.metrics_panel(ui),
                     DockView::Playback => self.playback_panel(ui),
                     DockView::Preview => self.preview_panel(ui),
                     DockView::Skins => self.skins_panel(ui),
                     DockView::SlotColor => self.slot_color_panel(ui),
-                    DockView::Weights => self.weights_panel(ui),
+                    DockView::Weights => unreachable!("Weights has its own vertical pane"),
                     DockView::Outline => unreachable!(),
                 });
         }
@@ -393,6 +498,7 @@ impl Editor {
     }
 
     fn skins_panel(&mut self, ui: &mut egui::Ui) {
+        self.record_target("skinsPanelClip", ui.clip_rect());
         let search = ui.add(
             egui::TextEdit::singleline(&mut self.view_tabs.skin_query).hint_text("Search skins"),
         );
@@ -595,6 +701,6 @@ impl Editor {
     }
 
     pub(super) fn views_diagnostic(&self) -> serde_json::Value {
-        serde_json::json!({"open": self.visible_dock_views().iter().map(|view| view.label()).collect::<Vec<_>>(), "storedOpen":DockView::ALL.into_iter().filter(|&view| self.dock_view_open(view)).map(DockView::label).collect::<Vec<_>>(), "active":self.view_tabs.active.label(), "tree":self.show_tree,"dopesheet":self.show_dopesheet && !self.setup_mode,"timeline":self.show_timeline && !self.setup_mode,"storedTimeline":self.show_timeline,"weights":self.show_weights,"minimized":self.hidden_views.is_some(), "outlineZoom": self.view_tabs.outline_zoom, "outlinePan":[self.view_tabs.outline_pan.x,self.view_tabs.outline_pan.y],"unimplemented":[]})
+        serde_json::json!({"open": self.visible_dock_views().iter().map(|view| view.label()).collect::<Vec<_>>(), "storedOpen":DockView::ALL.into_iter().filter(|&view| self.dock_view_open(view)).map(DockView::label).collect::<Vec<_>>(), "active":self.view_tabs.active.label(), "tree":self.show_tree,"dopesheet":self.dopesheet_visible(),"storedDopesheet":self.show_dopesheet,"graph":self.graph_visible(),"animationView":format!("{:?}",self.view_tabs.animation_view),"timeline":self.show_timeline && !self.setup_mode,"storedTimeline":self.show_timeline,"weights":self.show_weights,"minimized":self.hidden_views.is_some(), "outlineZoom": self.view_tabs.outline_zoom, "outlinePan":[self.view_tabs.outline_pan.x,self.view_tabs.outline_pan.y],"unimplemented":[]})
     }
 }

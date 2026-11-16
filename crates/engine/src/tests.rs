@@ -182,7 +182,8 @@ fn gestures_have_one_undo_step_and_cancel_preserves_the_redo_branch() {
 #[test]
 fn scene_uses_skin_fallback_draw_order_and_one_geometry_for_bounds() {
     let fixture: Document =
-        serde_json::from_str(include_str!("../../../examples/peach-bot/peach-bot.peachy")).unwrap();
+        crate::native_fixture::decode(include_str!("../../../examples/peach-bot/peach-bot.peachy"))
+            .unwrap();
     fixture.validate().unwrap();
     let peach = evaluate_scene(&fixture, Some(0), 0.3, "peach", None).unwrap();
     let mint = evaluate_scene(&fixture, Some(0), 0.3, "mint", None).unwrap();
@@ -240,6 +241,7 @@ fn doc() -> Document {
             draw_order: vec![],
             path_tracks: vec![],
             sequence_tracks: vec![],
+            slider_tracks: vec![],
         }],
         skin_scope: Default::default(),
         events: vec![],
@@ -334,7 +336,8 @@ fn validates_cycles_and_nonfinite_transforms() {
 }
 
 fn original() -> Document {
-    serde_json::from_str(include_str!("../../../examples/peach-bot/peach-bot.peachy")).unwrap()
+    crate::native_fixture::decode(include_str!("../../../examples/peach-bot/peach-bot.peachy"))
+        .unwrap()
 }
 
 #[test]

@@ -218,7 +218,7 @@ mod tests {
 
     #[test]
     fn summary_merges_only_exact_key_times_across_all_bones_and_tracks() {
-        let mut doc: Document = serde_json::from_str(include_str!(
+        let mut doc: Document = peachy_io::decode_project(include_str!(
             "../../../../examples/peach-bot/peach-bot.peachy"
         ))
         .unwrap();
