@@ -4,7 +4,33 @@ Written November 10, 2026, at the end of the import-parity push. Read this
 first, then `AGENTS.md`. The workspace rules in `../AGENTS.md` and `../CLAUDE.md`
 still apply.
 
-## Bounded multi-Bone native acceptance — November 16, 2026
+## Adaptive workspace native follow-up — November 16, 2026
+
+The UI-only follow-up passes on Desktop
+`d1fc05d94a66032d50e262b566caa2046419a5702628a9b368b640ed394c14e8`.
+Native v23 /64 commands /23 tools are unchanged. At 1120×740, Dopesheet+Timeline
+retains a 206-pixel canvas and four complete Tree Bone rows; adding Playback
+leaves a 293.71875-pixel canvas. Actual pixel-wheel input reaches the last
+Shear Y key and recovers the first X key. Document, pending pose, redo and
+selection remain exact across layout/scroll and foreground yield. Key/nudge
+probes are undone to the byte-exact original native `14f2` source. Closing
+Playback and returning to 1500×960 restores all measured default pane heights
+with zero delta. All owned GUI processes are closed. See the
+[before/after review](evidence/minimum-workspace.html) and
+[scalar evidence](evidence/minimum-workspace.json).
+
+Source checks03/04 pass workspace16, layout5, Dopesheet42, multi-Bone14,
+Graph47 and Curves52 (overlapping filters), fmt, all-target Clippy, workspace
+build and architecture7. The checks04 `divider` filter matched zero tests and
+is not divider evidence. A separate correctly named `pane_resize_` filter
+passes five tests alongside eight uncommitted engine Offset-foundation tests;
+that supplemental context is excluded from the UI-only checkpoint and did not
+rebuild the accepted native binary. No new MCP, runtime or installed-Spine
+interchange run follows from this UI acceptance. Full stacked-Graph minimum
+layout, group Properties beyond membership, native custom-divider preferences
+and cross-restart preference recovery remain open.
+
+## Earlier bounded multi-Bone native acceptance — November 16, 2026
 
 Current inventory is native **v23 /64 commands /23 tools**. Shared Session edits
 now compose explicit per-Bone authored-local results and keys atomically, with
@@ -19,8 +45,9 @@ Actual input verifies nine Tree and three viewport selection steps, three
 viewport translation axes, selected-ancestor gizmo/filter behavior, changed
 held-preview Escape/block/release, Parent numeric assignment including selected
 descendants, Animate pending Save exclusion with live pending retained, global K,
-full-set keying and exact history. At 1120×740 only the listed toolbar controls
-are accepted: the Tree is tiny and the rig clipped. Final edited Save and fresh
+full-set keying and exact history. At that checkpoint, 1120×740 acceptance covered
+only the listed toolbar controls: the Tree was tiny and the rig clipped; the
+adaptive follow-up above addresses the measured layout cases. Final edited Save and fresh
 reopen restore the complete typed Document with empty history/pending/clipboard
 and one PNG. All owned native/MCP processes are closed.
 
@@ -58,11 +85,17 @@ the reference process is closed and its source restored exactly. Rotate/Scale
 observations remain incomplete and Shear was inconclusive; none promotes group
 Rotate/Scale/Shear implementation or acceptance.
 
-**Next action:** finish semantic cycle Offset reference calibration using the
-prepared four-clip original fixture: repeated-move memory/reselection, closing
-asymmetric Bezier and Stepped seams, and nonzero loop bounds. It is separate
-from ordinary retiming and is not implemented. Use selective additional
-Rotate/Scale/Shear probes before choosing further group-transform formulas.
+**Next action:** continue semantic cycle Offset reference calibration using the
+prepared four-clip original fixture. Phase 1 now establishes closing asymmetric
+Bezier movement on two completely selected tracks, repeated +12/+6-frame moves,
+deselect/reselect then +6, remembered originals and three Undo operations restoring
+all four clips exactly. Earlier partial-selection observations do not establish
+the two-track contract. Stepped seams, negative/full-period moves, nonzero loop
+bounds and partial-selection/intervening-edit context remain to calibrate before
+full shared engine/UI/MCP integration. The separate uncommitted engine foundation
+has eight focused passing tests; it does not provide Offset UI/MCP acceptance.
+Use selective additional Rotate/Scale/Shear probes before choosing further
+group-transform formulas.
 Keep source, native and runtime evidence separate. Group Rotate/Scale/Shear,
 non-Parent numeric entry, group numeric drag, full group Properties workflows,
 general selection/clipboard overlaps, compound Graph/Deform hierarchy,
@@ -127,9 +160,9 @@ values, key states and primary fallback before assuming group transform math.
 MCP needs the same shared operation, not UI-only looping over per-Bone previews.
 Keep Slot identity distinct from its Draw-order-list presentation: the visible
 Animate Slot currently still has Draw-order Properties, and its parent-Bone pose
-controls are not complete. Include that and the short minimum-window Tree pane
-in the selection/workspace follow-up rather than treating timeline scope as full
-Slot/Region workflow parity.
+controls are not complete. The adaptive workspace follow-up above improves the
+measured minimum-window Tree cases without completing those controls; timeline
+scope still does not establish full Slot/Region workflow parity.
 The [fresh official-source audit](slices/spine-blog-audit-20261114.md) confirms
 these and the remaining freeform mesh, automatic weights and layered Preview gaps.
 General Tree/compound Graph/Deform hierarchy, Shift/ripple, Lock/Sync and the full
@@ -302,7 +335,8 @@ and reference bounds restored; no other-app input occurred. Final fitted
 
 The multi-owner timing continuation above follows this verified source checkpoint.
 Installed ordinary movement, shared clipboard origin, single-property Shift and
-bounded repeated Offset are measured; Offset reselection memory remains unresolved.
+bounded repeated Offset were measured there; the later phase-1 reference above
+resolves remembered originals across the qualified complete-track reselection case.
 Remaining Deform/event reference-domain transitions follow later.
 The earlier November 15 held attempt stayed at8 and remains an excluded trial;
 the subsequent native replay closes changed-preview cancellation. Do not reopen

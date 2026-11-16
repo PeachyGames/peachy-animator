@@ -80,8 +80,13 @@ cloth/hair timing supplies the tutorial workflow, not implementation code.
 Owned installed 4.3.26 observations use an original six-bone/two-region fixture and
 one original blue PNG. Exact exported pairs establish mixed selected-key +5,
 Undo, one clipboard origin across two bones, single-property Shift and bounded
-repeated Offset. Reselection produces asymmetric per-track Offset data and remains
-unresolved. Three actual Undo operations restore all animation data exactly.
+repeated Offset. That earlier reselection trial produced asymmetric per-track
+data and did not establish the complete-track contract. Later original
+closing-Bezier controls establish two completely selected tracks, repeated moves
+and reselection retaining original curves, with three Undo operations restoring
+all four clips exactly. Stepped, negative/full-period, nonzero-range and partial
+context cases remain open; this is reference calibration, not Offset acceptance.
+Three actual Undo operations in the earlier trial restore all animation data exactly.
 The reference window is closed with original bounds and Setup mode restored.
 Unstable/interrupted attempts are excluded. No proprietary implementation or
 artist artwork was read/copied; licensed interface captures remain private.
@@ -1309,8 +1314,9 @@ Actual guarded input verifies nine Tree and three viewport selection steps,
 Local/Parent/World translation, selected-ancestor anchor/filter behavior, Parent
 numeric assignment including descendants, pending Save exclusion with live
 pending retained, global K/full-set keys, exact history and changed held-preview
-Escape/block/release. At 1120×740 the tested toolbar controls are visible; the
-Tree is tiny and the rig clipped, so full minimum-window usability is not claimed.
+Escape/block/release. Its historical 1120×740 acceptance covers the tested toolbar
+controls; the Tree was tiny and the rig clipped. The adaptive follow-up below
+separately measures the improved layout without claiming every stacked view.
 
 The actual edited [native result](../examples/peach-bot/multi-bone-native-result.peachy)
 has SHA256 `14f2e7039d5c90967f37fddd9d1233cac2537c4219c36b47f15313ecd9f513a2`.
@@ -1328,3 +1334,36 @@ claimed. Broader group Rotate/Scale/Shear, numeric/group Properties, semantic
 cycle Offset and a live desktop bridge remain open. Hosted CI has not passed;
 no full Spine or pixel parity follows. Private reference captures and transcripts
 remain outside Git; only original fixture data and Peachy captures are public.
+
+### Adaptive workspace follow-up — November 16, 2026
+
+The four-path UI change was written independently within our workspace/layout
+code and verified using our existing original multi-Bone native result. Guarded
+native input on Desktop
+`d1fc05d94a66032d50e262b566caa2046419a5702628a9b368b640ed394c14e8`
+measures a 206-pixel canvas with Dopesheet+Timeline and 293.71875 pixels with
+Playback at 1120×740, with four complete Tree Bone rows. Real pixel-wheel events
+reach the last Shear Y key and return to the first X key; document, pending pose,
+redo and selection are unchanged. Pending also survives foreground yield.
+Returning to 1500×960 after closing Playback restores the measured default pane
+heights with zero delta. Key/nudge probes are undone to source SHA256
+`14f2e7039d5c90967f37fddd9d1233cac2537c4219c36b47f15313ecd9f513a2`
+byte-exactly. All owned GUI processes are closed.
+
+Source checks03/04 pass workspace16, layout5, Dopesheet42, multi-Bone14, Graph47,
+Curves52, formatting, all-target Clippy, workspace build and architecture7;
+filters overlap. The checks04 divider filter matched no tests. A later correct
+`pane_resize_` filter passes five cases in a context that also contains eight
+passing uncommitted engine Offset-foundation tests. Those engine files are not
+part of this UI-only checkpoint, and its native binary was not rebuilt for the
+supplemental check. Neither that foundation nor closing-Bezier reference probes
+accept an Offset UI/MCP feature.
+
+No new MCP/runtime/interchange run or geometry algorithm is claimed. Native v23
+and 64 commands/23 tools stay unchanged. Full stacked-Graph minimum layout,
+Properties beyond membership, native custom-divider preference recovery and
+cross-restart layout preferences remain open. Hosted CI has not passed. The
+[review](evidence/minimum-workspace.html) publishes only original Peachy captures;
+[scalar evidence](evidence/minimum-workspace.json) separates this follow-up from
+the historical `1558` authoring and MCP/runtime proofs. No proprietary editor or
+runtime implementation was inspected or copied.

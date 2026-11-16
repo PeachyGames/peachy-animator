@@ -444,7 +444,7 @@ impl Editor {
         let pitch = layout::timeline_row_pitch(ui);
         let (_, rect) = ui.allocate_space(vec2(
             ui.available_width(),
-            layout::timeline_chart_height(ui),
+            layout::timeline_chart_height_in(ui),
         ));
         // Property controls own the label column; only the grid can scrub or retime keys.
         let grid = egui::Rect::from_min_max(
@@ -531,6 +531,7 @@ impl Editor {
         row_ui.spacing_mut().item_spacing.y = 0.;
         egui::ScrollArea::vertical()
             .id_salt("dopesheet-row-scroll")
+            .min_scrolled_height(0.)
             .auto_shrink([false, false])
             .max_height(row_area.height())
             .show_rows(&mut row_ui, pitch, rows.len(), |ui, range| {

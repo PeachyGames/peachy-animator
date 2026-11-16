@@ -1,5 +1,41 @@
 # Spine workspace and interaction parity
 
+## Adaptive minimum workspace — November 16, 2026
+
+**Bounded native layout acceptance passes on Desktop `d1fc05d9…14e8`.** Adaptive
+panel budgets retain a usable canvas and Tree while stacked animation views and
+Properties scroll their content. At **1120×740**, native Dopesheet/Timeline leaves
+a 206-pixel canvas; adding Playback leaves 293.71875 pixels in that measured
+layout. Four complete Bone rows (0,3,4,5) remain visible in both cases. These are
+specific layout states, not a guarantee that every view combination fits.
+
+With two selected Bones, the keyed Dopesheet includes all seven property channels
+per Bone, 14 total. Actual pixel-wheel scrolling exposes the last Bone4 ShearY
+key and recovers the first Bone2 X key, both fully inside the rows clip. Document,
+pending values, selection and redo remain exact through resizing, scrolling and
+a foreground yield. Native key/nudge probes are undone back to the byte-exact
+public `14f2e703…13a2` source. Closing Playback and expanding to **1500×960**
+restores Tree, Properties and animation-view heights with measured zero deltas.
+Custom divider-height retention has source/event coverage; the native expansion
+probe verifies the default heights, not arbitrary manually resized preferences.
+
+Focused checks pass workspace16, layout5, Dopesheet42, multi-Bone14, Graph47 and
+Curves52, with overlapping filters; formatting, all-target Clippy, workspace build
+and architecture7 also pass. The attempted `divider` filter matched zero tests
+and provides no divider-test evidence. A separate combined-working-tree check
+passes five `pane_resize_` tests; its eight engine Offset foundation tests remain
+unfinished feature work, without Offset UI/MCP acceptance. This UI checkpoint adds no MCP or external
+runtime run and does not change the pending-Undo policy. All owned GUI instances
+are closed. Engine cycle Offset remains a separate unfinished slice.
+
+The earlier `1558c256…5763` multi-Bone minimum capture below remains valid
+historical evidence; the adaptive checkpoint addresses its tiny Tree/clipped
+workspace limitation in the measured states. Full stacked Graph minimum layout,
+complete group Properties beyond membership and broader docking remain open.
+See the [before/after review](evidence/minimum-workspace.html),
+[scalar evidence](evidence/minimum-workspace.json) and unchanged
+[native source](../examples/peach-bot/multi-bone-native-result.peachy).
+
 ## Bounded multi-Bone authoring checkpoint — November 16, 2026
 
 **Bounded native authoring acceptance passes on Desktop `1558c256…5763`, alongside

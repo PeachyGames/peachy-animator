@@ -25,6 +25,15 @@ the MCP protocol run. See the
 [native saved result](../examples/peach-bot/multi-bone-native-result.peachy), plus
 [checkpoint evidence](evidence/multi-bone-authoring.json).
 
+The later adaptive workspace follow-up is UI-only: native Desktop `d1fc05d9…14e8`
+passes the measured 1120×740 canvas/Tree budgets, actual first-to-last property
+key scrolling, exact pending/redo/selection preservation and default-height
+recovery at 1500×960. It reuses the byte-exact native `14f2` project and adds no
+MCP tool, command, protocol replay or runtime comparison. See the
+[workspace review](evidence/minimum-workspace.html) and
+[scalar evidence](evidence/minimum-workspace.json). The uncommitted engine cycle
+Offset foundation is separate and has no integrated UI/MCP acceptance.
+
 The preceding 22-tool explicit-pose
 checkpoint passed 138 actual MCP requests from a blank project/one original PNG,
 plus 104 external-runtime poses across two clips at 0.001 (maximum world error
@@ -165,8 +174,10 @@ skin switch nor a live GUI bridge. Current focused MCP checks pass six unit and
 four actual stdio cases; the 104-request study also exercises the semantic tool.
 The later bounded native replay separately accepts selection, Translate, Parent
 numeric assignment, pending/keying/history and held cancellation. Minimum
-1120×740 acceptance covers tested toolbar controls only: the Tree is tiny and
-the rig clipped. Broader Properties/layout and full group-transform parity remain open.
+1120×740 acceptance on `1558` covered tested toolbar controls only; its tiny Tree
+and clipped rig are historical limitations. The later adaptive workspace check
+above accepts the measured canvas/Tree/scroll cases. Full stacked-Graph minimum
+layout, Properties beyond membership and full group-transform parity remain open.
 
 ## Semantic Bone translation — code/MCP checkpoint
 

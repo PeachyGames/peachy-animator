@@ -1,6 +1,19 @@
 # Peachy Animator
 
-The current **bounded native checkpoint** adds ordered multi-Bone selection, atomic
+The current **bounded adaptive workspace follow-up** passes native input on
+Desktop `d1fc05d9…14e8`, with native v23 /64 commands /23 MCP tools unchanged.
+At 1120×740, the tested Dopesheet/Timeline layout retains a 206-pixel canvas and
+four complete Tree Bone rows; adding Playback leaves a 293.71875-pixel canvas.
+Actual pixel-wheel input reaches the last Shear Y key and recovers the first X
+key without changing document, pending pose, redo or selection. Re-expanding to
+1500×960 restores the default pane heights exactly. The original native result
+is byte-exact after Undo and all owned GUI processes are closed. See the
+[before/after review](docs/evidence/minimum-workspace.html) and
+[scalar evidence](docs/evidence/minimum-workspace.json). Full stacked-Graph
+minimum layout, group Properties beyond membership and cross-restart layout
+preferences remain open. This UI follow-up adds no new MCP or runtime proof.
+
+The preceding **bounded multi-Bone native checkpoint** adds ordered selection, atomic
 authored-pose edits and shared Local/Parent/World translation. Native v23 and
 64 commands stay unchanged; **23 MCP tools** include explicit pose editing,
 keying and semantic `transform_bones`. An actual blank-root/one-original-PNG run
@@ -9,9 +22,9 @@ negative cases, pending/history, Auto Key and exact Save/reopen. Final combined
 source checks and **bounded native acceptance pass** on Desktop `1558c256…5763`.
 Actual input verifies Tree/viewport selection, all three translation axes,
 ancestor filtering, Parent numeric assignment, pending/keying/history and held
-Escape/block/release. At 1120×740 the tested toolbar controls are visible;
-the Tree remains tiny and the rig clipped, so this is not full minimum-layout
-parity. Edited Save/fresh reopen is exact with empty history/pending/clipboard
+Escape/block/release. Its historical 1120×740 acceptance covered toolbar controls;
+the tiny Tree and clipped rig motivated the adaptive follow-up above. Edited
+Save/fresh reopen is exact with empty history/pending/clipboard
 and one PNG. Separate MCP readbacks use 36 requests/14 poses, including exact
 Setup and 0.5-second authored/applied/world witnesses. All owned processes are closed.
 

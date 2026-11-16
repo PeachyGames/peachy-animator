@@ -5,6 +5,20 @@ runtime JSON. A feature is accepted through independent implementation, command/
 history checks, native interaction where applicable, and a controlled editor/runtime
 comparison. The native `.peachy` format is our own editable model.
 
+Latest **UI-only workspace checkpoint**, November 16: adaptive panel budgets pass
+native acceptance on Desktop `d1fc05d9…14e8`. At 1120×740, the measured
+Dopesheet/Timeline and Playback variants retain at least 206 canvas pixels and
+four complete Bone rows; all 14 keyed channels of a two-Bone group are reachable
+by actual scrolling. Layout/scroll/foreground yield preserve data, pending,
+selection and redo. Native expansion restores default pane heights exactly;
+custom divider preferences have source/event coverage only. Source03/04 focused
+checks, Clippy/build and architecture pass; `divider` matched zero tests. No new
+MCP/runtime proof or completed cycle Offset is implied. A separate combined
+working-tree run passes five pane-resize tests alongside eight unfinished engine
+Offset foundation tests; the UI checkpoint excludes that engine work. The earlier multi-Bone
+checkpoint below stays separate. See [review](evidence/minimum-workspace.html),
+[scalars](evidence/minimum-workspace.json) and [UI limits](UI_PARITY.md).
+
 Current **bounded native/MCP checkpoint**: native **v23 /64 commands /23 tools**. Ordered
 multi-Bone selection and shared atomic authored-pose edits/keying now support
 pending poses and Auto Key; shared translation filters selected descendants and
@@ -123,7 +137,7 @@ not a new native claim. All final affected local checks pass. See
 
 | Spine capability | Current implementation | Evidence or remaining gate |
 | --- | --- | --- |
-| Workspace, controls and conventions | Layout/shortcut alignment plus typed Tree, ordered Bone membership/primary snapshots, contextual selection, filters, activation dots, picking, bounded Direct vertex multi-selection and nonoverlapping canvas/divider input | Native ordered Tree/viewport selection, transform controls at 1120×740 and exact edited Save/fresh reopen pass. Minimum Tree/rig visibility, full group Properties, remaining tools, general overlaps and docking stay open. See [UI parity](UI_PARITY.md) |
+| Workspace, controls and conventions | Layout/shortcut alignment, adaptive pane budgets/scrolling, typed Tree, ordered Bone membership/primary snapshots, contextual selection, filters, activation dots, picking, bounded Direct vertex multi-selection and nonoverlapping canvas/divider input | Native adaptive 1120×740 Dopesheet/Timeline/Playback cases retain at least 206 canvas pixels and four complete Bone rows; all 14 grouped channels are reachable and default wide heights recover exactly. Earlier selection/Save/reopen proof stays valid. Full stacked Graph, group Properties, general overlaps and docking stay open. See [UI parity](UI_PARITY.md) |
 | Views discovery and auxiliary panels | 16 bounded implemented views, including Curves, Metrics and a compact Timeline | Actual installed 4.3.26 menu has 17 entries: Problems is missing; Slot Color needs current Color behavior. Advanced Graph, Preview mixing and general docking remain. See [native inventory audit](slices/spine-blog-audit-20261114.md) |
 | Transform tools and axes | Existing single-Bone tools plus shared multi-Bone Local/Parent/World translation, selected-ancestor filtering and separate all-member Parent numeric assignment; explicit authored results publish atomically | Actual MCP104, source checks and bounded Native1558 three-axis/ancestor/numeric/cancellation/keying checks pass. Runtime156 covers the MCP-authored result, not native14f2. Group Rotate/Scale/Shear, non-Parent numeric/group numeric drag, general transformed-parent domains and exact visual/tool conventions remain open |
 | Selection navigation | Ordered Bone membership and explicit primary, Page Up/Down history and Cmd/Ctrl+number storage / number recall use complete selection snapshots | Native Cmd-add/remove and ancestor anchors pass nine Tree and three viewport cases; navigation/group storage has code/event coverage. General Shift-range and persisted group preferences remain open |
