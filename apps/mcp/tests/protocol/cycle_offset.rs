@@ -153,6 +153,23 @@ async fn stdio_cycle_offset_track_cohorts_reselection_pending_undo_and_reopen() 
     assert_phases(&first, &[0.1]);
     assert_eq!(first["boundaryKeys"].as_array().unwrap().len(), 2);
     assert_eq!(first["state"]["hasCycleOffsetMemory"], true);
+    let mappings = first["mappings"].as_array().unwrap();
+    let requested = selection(&pending["document"], &[1]);
+    assert_eq!(mappings.len(), requested.as_array().unwrap().len());
+    for (mapping, source) in mappings.iter().zip(requested.as_array().unwrap()) {
+        assert_eq!(&mapping["source"], source);
+        assert!(
+            first["keys"]
+                .as_array()
+                .unwrap()
+                .contains(&mapping["target"])
+        );
+    }
+    assert_eq!(
+        mappings.first().unwrap()["target"],
+        mappings.last().unwrap()["target"],
+        "Distinct start/end sources share one wrapped point"
+    );
     let first_state = doc(&client).await;
     assert_eq!(
         first_state["state"]["pendingPose"],
@@ -194,7 +211,20 @@ async fn stdio_cycle_offset_track_cohorts_reselection_pending_undo_and_reopen() 
     // Different seed count/order within the SAME cohort must preserve origins.
     let all_reversed = selection(&changed["document"], &[2, 1]);
     let seeds = all_reversed.as_array().unwrap();
-    let one_per_track = json!([seeds[0], seeds.last().unwrap()]);
+    let one_per_track = json!([
+        seeds
+            .iter()
+            .find(|key| key["bone"] == 2
+                && key["time"].as_f64().unwrap() > 0.
+                && key["time"].as_f64().unwrap() < 1.)
+            .unwrap(),
+        seeds
+            .iter()
+            .find(|key| key["bone"] == 1
+                && key["time"].as_f64().unwrap() > 0.
+                && key["time"].as_f64().unwrap() < 1.)
+            .unwrap()
+    ]);
     let reselected = mutate(
         &client,
         "offset_animation_keys",
@@ -281,11 +311,52 @@ async fn stdio_cycle_offset_stale_wire_atomicity_and_explicit_reset_preserve_red
     )
     .await;
     mutate(&client, "history", json!({"action":"undo"})).await;
+    let before_fake = doc(&client).await;
+    let fake = mutate(
+        &client,
+        "offset_animation_keys",
+        json!({"animation":0,
+        "keys":[{"type":"bone","bone":1,"property":"y","time":0},
+                {"type":"bone","bone":1,"property":"y","time":1}],
+        "range":{"start":0,"end":1},"delta":0.125}),
+    )
+    .await;
+    assert_eq!(fake["keys"], json!([]));
+    assert_eq!(fake["boundaryKeys"], json!([]));
+    assert_eq!(fake["phases"], json!([]));
+    assert_eq!(fake["mappings"].as_array().unwrap().len(), 2);
+    assert!(
+        fake["mappings"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|mapping| mapping["target"].is_null())
+    );
+    let mut after_fake = doc(&client).await;
+    assert_eq!(
+        after_fake["state"]["revision"].as_u64().unwrap(),
+        before_fake["state"]["revision"].as_u64().unwrap() + 1
+    );
+    after_fake["state"]["revision"] = before_fake["state"]["revision"].clone();
+    assert_eq!(
+        after_fake, before_fake,
+        "Only-fake receipt changed native authoring state or redo"
+    );
     let state = doc(&client).await;
     assert_eq!(state["state"]["canRedo"], true);
     let valid = json!({"expected_revision":state["state"]["revision"],"animation":0,
         "keys":selection(&state["document"],&[1,2]),"range":{"start":0,"end":1},"delta":0.125});
-    let key = valid["keys"][0].clone();
+    let key = valid["keys"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|key| {
+            key["bone"] == 1
+                && key["time"].as_f64().unwrap() > 0.
+                && key["time"].as_f64().unwrap() < 1.
+        })
+        .unwrap()
+        .clone();
     for (field, value) in [
         ("expected_revision", json!(0)),
         ("keys", json!([])),
@@ -327,6 +398,7 @@ async fn stdio_cycle_offset_stale_wire_atomicity_and_explicit_reset_preserve_red
     .await;
     // Installed single-key selection shifts its WHOLE property track. The
     // other owner's track and every unrelated animation stay untouched.
+    let single_source = key.clone();
     let whole = mutate(
         &client,
         "offset_animation_keys",
@@ -337,6 +409,9 @@ async fn stdio_cycle_offset_stale_wire_atomicity_and_explicit_reset_preserve_red
     // Shrinking to Driver preserves Driver's existing original curve and phase.
     assert_eq!(phases(&whole), vec![0.25]);
     assert!(whole["keys"].as_array().unwrap().len() > 1);
+    assert_eq!(whole["mappings"].as_array().unwrap().len(), 1);
+    assert_eq!(whole["mappings"][0]["source"], single_source);
+    assert!(whole["mappings"][0].get("target").is_some());
     assert!(
         whole["keys"]
             .as_array()

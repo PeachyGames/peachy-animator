@@ -58,6 +58,7 @@ pub(super) fn editor_fixture() -> Editor {
         key_selection: Default::default(),
         dopesheet_focus: Default::default(),
         key_drag: None,
+        cycle_offset: Default::default(),
         timeline_clipboard: None,
         leaf_source: None,
         group_clipboard: None,

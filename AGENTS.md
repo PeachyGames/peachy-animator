@@ -1,12 +1,13 @@
 # Peachy Animator
 
-Current Cycle Offset foundation: native v23 /64 commands /25 MCP tools. Exact
-Bone key seeds offset whole closed property tracks. Same-set and subset memory
-retain surviving origins; a newly affected/returning track rebases all current
-selected tracks. Engine10/MCP4unit2stdio, actual MCP276 and runtime364 pass.
-Full native Offset UI/seed mapping and live desktop MCP remain open. Read
-[the current scope](docs/slices/cycle-offset.md) and
-[evidence](docs/evidence/cycle-offset.json); preserve historical proof scopes below.
+Current Cycle Offset checkpoint: native v23 /64 commands /25 MCP tools. Bounded
+native controls, exact requested-key mappings, generated-seam filtering and reset
+are accepted on Desktop dc60e423…b2998, including the fast release repair.
+UI15/engine16/MCP6unit2stdio and final local checks pass. Actual15-request blank
+MCP replay matches native Document/live pose/saved68126 bytes; that native result
+passes364 runtime poses. See [review](docs/evidence/cycle-offset-ui.html),
+[scope](docs/slices/cycle-offset.md) and [evidence](docs/evidence/cycle-offset-ui.json).
+Broader Offset domains, complete UI parity and live desktop MCP remain open.
 
 Starting a new session on Spine parity? Read [docs/NEXT-RUN.md](docs/NEXT-RUN.md) first: current
 state, verification workflow, pitfalls and the prioritized next tasks.

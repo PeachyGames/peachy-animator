@@ -1614,6 +1614,22 @@ impl Session {
     pub fn cycle_offset_memory(&self) -> &crate::CycleOffsetMemory {
         &self.cycle_offsets
     }
+    /// Read-only actual-anchor hit-test mask for Offset, preserving query order.
+    /// Empty Bone-key queries are allowed; generated seams are omitted.
+    pub fn cycle_offset_selectable_keys(
+        &self,
+        animation: usize,
+        keys: &[crate::AnimationKey],
+        range: crate::CycleOffsetRange,
+    ) -> Result<Vec<crate::AnimationKey>, String> {
+        crate::cycle_offset_selectable_keys(
+            self.document(),
+            animation,
+            keys,
+            range,
+            &self.cycle_offsets,
+        )
+    }
     /// Explicit recapture boundary after an affected track/context changed.
     /// Forgetting a cache alone creates no authoring history or dirty state.
     pub fn reset_cycle_offset_memory(&mut self) -> Result<(), String> {

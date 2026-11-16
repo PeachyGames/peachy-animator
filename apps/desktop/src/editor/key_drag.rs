@@ -1,7 +1,52 @@
 //! A fixed drag snapshot; screen input stays here and key transitions stay in the engine.
 use super::dopesheet_selection::{KeyId, KeySelectionSnapshot, TimelineScope};
 use super::*;
-use peachy_engine::{AnimationKey, KeyOwner};
+use peachy_engine::{AnimationKey, CycleOffsetRange, CycleOffsetReceipt, KeyOwner};
+
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub(super) enum KeyDragOperation {
+    #[default]
+    Retime,
+    Offset(CycleOffsetRange),
+}
+
+/// Per-document view preferences and operation diagnostics, never project data.
+#[derive(Default)]
+pub(super) struct CycleOffsetView {
+    pub enabled: bool,
+    pub bounds: BTreeMap<usize, [Option<f32>; 2]>,
+    pub blocked: bool,
+    pub receipt: Option<CycleOffsetReceipt>,
+    mask: Option<CycleOffsetMask>,
+}
+struct CycleOffsetMask {
+    generation: u64,
+    animation: usize,
+    scope: TimelineScope,
+    range: CycleOffsetRange,
+    selectable: Result<std::sync::Arc<Vec<AnimationKey>>, String>,
+}
+impl CycleOffsetView {
+    pub fn range(&self, animation: usize, end: f32) -> CycleOffsetRange {
+        let bounds = self.bounds.get(&animation).copied().unwrap_or_default();
+        CycleOffsetRange {
+            start: bounds[0].unwrap_or(0.),
+            end: bounds[1].unwrap_or(end),
+        }
+    }
+    pub fn operation(&self, animation: usize, end: f32) -> KeyDragOperation {
+        if self.enabled {
+            KeyDragOperation::Offset(self.range(animation, end))
+        } else {
+            KeyDragOperation::Retime
+        }
+    }
+}
+
+pub(super) struct KeyDragContext {
+    pub skin: String,
+    pub fps: u32,
+}
 
 /// Keep event-time modifiers even when later keys changed the frame's modifier snapshot.
 pub(super) fn primary_pointer_event(
@@ -67,6 +112,9 @@ pub(super) struct KeyDrag {
     pub toggle: bool,
     pub offset: f32,
     pub active: bool,
+    pub operation: KeyDragOperation,
+    pub context: Option<KeyDragContext>,
+    pub receipt_before: Option<CycleOffsetReceipt>,
 }
 
 impl KeyDrag {
@@ -103,6 +151,9 @@ impl KeyDrag {
             toggle: modifiers.command || modifiers.ctrl,
             offset: 0.,
             active: false,
+            operation: KeyDragOperation::Retime,
+            context: None,
+            receipt_before: None,
         })
     }
     pub fn should_preview(
@@ -116,7 +167,7 @@ impl KeyDrag {
         if self.active {
             dragging || released
         } else {
-            dragging && !released && !clicked && (pointer_x - self.origin_x).abs() > threshold
+            (released || (dragging && !clicked)) && (pointer_x - self.origin_x).abs() > threshold
         }
     }
     pub fn offset_at(&self, pointer_x: f32, fps: u32, unsnapped: bool) -> Option<f32> {
@@ -135,8 +186,13 @@ impl KeyDrag {
         if !offset.is_finite() {
             return None;
         }
-        let earliest = self.sources.iter().map(|key| key.time()).reduce(f32::min)?;
-        Some(offset.max(-earliest))
+        match self.operation {
+            KeyDragOperation::Offset(_) => Some(offset),
+            KeyDragOperation::Retime => {
+                let earliest = self.sources.iter().map(|key| key.time()).reduce(f32::min)?;
+                Some(offset.max(-earliest))
+            }
+        }
     }
     #[cfg(test)]
     fn command(&self, delta: f32) -> Command {
@@ -199,12 +255,101 @@ impl KeyDrag {
             "presentationScope":match &self.presentation_scope {TimelineScope::All=>serde_json::json!({"type":"all"}),TimelineScope::Owners(owners)=>serde_json::json!({"type":"owners","owners":owners})},
             "toggle":self.toggle,
             "pressedTime":self.pressed_time,"originX":self.origin_x,
+            "operation":match self.operation {
+                KeyDragOperation::Retime=>serde_json::json!({"type":"retime"}),
+                KeyDragOperation::Offset(range)=>serde_json::json!({"type":"offset","range":{"start":range.start,"end":range.end}})
+            },
+            "skin":self.context.as_ref().map(|context|&context.skin),
+            "fps":self.context.as_ref().map(|context|context.fps),
             "chart":{"start":self.geometry.start,"width":self.geometry.width,"extent":self.geometry.extent}
         })
     }
 }
 
 impl Editor {
+    /// Every memory-only transition invalidates this shell cache explicitly.
+    pub(super) fn invalidate_cycle_offset_mask(&mut self) {
+        self.cycle_offset.mask = None;
+    }
+
+    pub(super) fn cycle_offset_selectable(
+        &mut self,
+    ) -> Result<std::sync::Arc<Vec<AnimationKey>>, String> {
+        let animation = self.animation;
+        let range = self.cycle_offset.range(animation, self.animation_end());
+        let generation = self.session.document_generation();
+        let scope = self.key_selection.scope().clone();
+        let cached = self.cycle_offset.mask.as_ref().is_some_and(|mask| {
+            mask.generation == generation
+                && mask.animation == animation
+                && mask.scope == scope
+                && mask.range == range
+        });
+        if !cached {
+            let keys = self
+                .key_selection
+                .shown()
+                .keys
+                .iter()
+                .filter(|key| matches!(key, AnimationKey::Bone { .. }))
+                .cloned()
+                .collect::<Vec<_>>();
+            let selectable = self
+                .session
+                .cycle_offset_selectable_keys(animation, &keys, range)
+                .map(std::sync::Arc::new)
+                .map_err(|error| Self::cycle_offset_error_message(&error));
+            self.cycle_offset.mask = Some(CycleOffsetMask {
+                generation,
+                animation,
+                scope,
+                range,
+                selectable,
+            });
+        }
+        self.cycle_offset.mask.as_ref().unwrap().selectable.clone()
+    }
+
+    fn cycle_offset_error_message(error: &str) -> String {
+        if error.contains("Stale Cycle Offset") {
+            "These curves changed after Offset began. Turn Offset off and on to use the current curves.".into()
+        } else {
+            format!("Offset unavailable: {error}")
+        }
+    }
+
+    pub(super) fn reconcile_cycle_offset_selection(&mut self) {
+        if !self.cycle_offset.enabled || self.setup_mode {
+            return;
+        }
+        match self.cycle_offset_selectable() {
+            Ok(selectable) => self.key_selection.retain_keys(|key| {
+                !matches!(key, AnimationKey::Bone { .. }) || selectable.contains(key)
+            }),
+            Err(error) => self.status = error,
+        }
+    }
+
+    pub(super) fn toggle_cycle_offset(&mut self) {
+        self.cancel_gesture();
+        // Undo/Redo can restore origins while this view mode is off. Clear on
+        // both transitions, after the owned transaction has been canceled.
+        match self.session.reset_cycle_offset_memory() {
+            Ok(()) => {
+                self.cycle_offset.enabled = !self.cycle_offset.enabled;
+                self.cycle_offset.receipt = None;
+                self.invalidate_cycle_offset_mask();
+                self.status = if self.cycle_offset.enabled {
+                    "Offset: selected keys seed whole closed Bone property tracks.".into()
+                } else {
+                    "Offset off".into()
+                };
+                self.reconcile_cycle_offset_selection();
+            }
+            Err(error) => self.status = Self::cycle_offset_error_message(&error),
+        }
+    }
+
     fn restore_dopesheet_drag_selection(&mut self, drag: KeyDrag) {
         if let Some(snapshot) = drag.snapshot {
             let animation = self.active_animation();
@@ -228,13 +373,42 @@ impl Editor {
             if drag.active {
                 self.session.cancel_transaction();
             }
+            self.cycle_offset.blocked = true;
+            self.cycle_offset.receipt = drag.receipt_before.clone();
+            self.invalidate_cycle_offset_mask();
             self.restore_dopesheet_drag_selection(drag);
+        }
+    }
+    pub(super) fn reconcile_dopesheet_input(&mut self, ctx: &egui::Context) {
+        if ctx.input(|input| {
+            !input.pointer.primary_down()
+                && !input.pointer.button_released(egui::PointerButton::Primary)
+        }) {
+            self.cycle_offset.blocked = false;
+        }
+        if self.key_drag.is_some()
+            && (!ctx.input(|input| input.focused)
+                || self.error.is_some()
+                || self.rename.is_some()
+                || self.duplicate_animation.is_some()
+                || self.export_dialog.is_some()
+                || self.slot_color_dialog_open()
+                || egui::Popup::is_any_open(ctx)
+                || ctx.text_edit_focused())
+        {
+            self.cancel_dopesheet_drag();
         }
     }
     pub(super) fn update_dopesheet_drag(&mut self, pointer_x: f32, unsnapped: bool) {
         let Some(mut drag) = self.key_drag.take() else {
             return;
         };
+        if matches!(drag.operation, KeyDragOperation::Offset(_)) && drag.copy {
+            self.cycle_offset.blocked = true;
+            self.restore_dopesheet_drag_selection(drag);
+            self.status = "Copying keys while using Offset is not supported.".into();
+            return;
+        }
         if !drag.active {
             // Finish a previous numeric-control edit before capturing this gesture's base.
             self.session.commit_transaction();
@@ -248,31 +422,64 @@ impl Editor {
         let result = offset
             .ok_or_else(|| "Invalid key drag position".to_string())
             .and_then(|offset| {
-                let selected = self.session.preview_move_animation_keys(
-                    drag.animation,
-                    &drag.sources,
-                    offset,
-                    drag.copy,
-                )?;
-                Ok((offset, selected))
+                let (selected, primary) = match drag.operation {
+                    KeyDragOperation::Retime => {
+                        let selected = self.session.preview_move_animation_keys(
+                            drag.animation,
+                            &drag.sources,
+                            offset,
+                            drag.copy,
+                        )?;
+                        let primary = drag
+                            .sources
+                            .iter()
+                            .position(|key| key == &drag.pressed)
+                            .and_then(|index| selected.get(index))
+                            .cloned();
+                        (selected, primary)
+                    }
+                    KeyDragOperation::Offset(range) => {
+                        let receipt = self.session.preview_offset_animation_keys(
+                            drag.animation,
+                            &drag.sources,
+                            range,
+                            offset,
+                        )?;
+                        let selected = receipt
+                            .mappings
+                            .iter()
+                            .filter_map(|mapping| mapping.target.clone())
+                            .collect();
+                        let primary = receipt
+                            .mappings
+                            .iter()
+                            .find(|mapping| mapping.source == drag.pressed)
+                            .and_then(|mapping| mapping.target.clone());
+                        self.cycle_offset.receipt = Some(receipt);
+                        self.invalidate_cycle_offset_mask();
+                        (selected, primary)
+                    }
+                };
+                Ok((offset, selected, primary))
             });
         match result {
-            Ok((offset, selected)) => {
+            Ok((offset, selected, primary)) => {
                 drag.offset = offset;
-                let primary = drag
-                    .sources
-                    .iter()
-                    .position(|key| key == &drag.pressed)
-                    .and_then(|index| selected.get(index))
-                    .cloned();
                 self.key_selection.replace(selected);
                 self.key_selection.set_primary(primary);
                 self.key_drag = Some(drag);
             }
             Err(error) => {
                 self.session.cancel_transaction();
+                self.cycle_offset.blocked = true;
+                self.cycle_offset.receipt = drag.receipt_before.clone();
+                self.invalidate_cycle_offset_mask();
                 self.restore_dopesheet_drag_selection(drag);
-                self.error = Some(error);
+                if error.contains("Stale Cycle Offset") {
+                    self.status = Self::cycle_offset_error_message(&error);
+                } else {
+                    self.error = Some(error);
+                }
             }
         }
     }
@@ -286,11 +493,40 @@ impl Editor {
             } else {
                 format!(
                     "{} {} keys",
-                    if drag.copy { "Duplicated" } else { "Moved" },
+                    match drag.operation {
+                        KeyDragOperation::Offset(_) => "Offset",
+                        KeyDragOperation::Retime if drag.copy => "Duplicated",
+                        KeyDragOperation::Retime => "Moved",
+                    },
                     drag.sources.len()
                 )
             };
         }
+    }
+
+    pub(super) fn cycle_offset_diagnostic(&self) -> serde_json::Value {
+        let range = self
+            .cycle_offset
+            .range(self.animation, self.animation_end());
+        let bounds = self
+            .cycle_offset
+            .bounds
+            .get(&self.animation)
+            .copied()
+            .unwrap_or_default();
+        serde_json::json!({
+            "enabled":self.cycle_offset.enabled,"blocked":self.cycle_offset.blocked,
+            "bounds":{"start":bounds[0],"end":bounds[1]},
+            "effectiveRange":{"start":range.start,"end":range.end},
+            "hasMemory":!self.session.cycle_offset_memory().is_empty(),
+            "selectableKeys":self.cycle_offset.mask.as_ref().and_then(|mask|mask.selectable.as_ref().ok()).map(|keys|keys.as_ref()),
+            "selectionError":self.cycle_offset.mask.as_ref().and_then(|mask|mask.selectable.as_ref().err()),
+            "lastReceipt":self.cycle_offset.receipt.as_ref().map(|receipt|serde_json::json!({
+                "keys":receipt.keys,"boundaryKeys":receipt.boundary_keys,
+                "mappings":receipt.mappings.iter().map(|mapping|serde_json::json!({"source":mapping.source,"target":mapping.target})).collect::<Vec<_>>(),
+                "phases":receipt.phases.iter().map(|phase|serde_json::json!({"source":phase.source,"range":{"start":phase.range.start,"end":phase.range.end},"phase":phase.phase})).collect::<Vec<_>>()
+            }))
+        })
     }
 }
 

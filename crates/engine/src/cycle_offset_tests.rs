@@ -859,3 +859,483 @@ fn cycle_offset_cache_capture_and_whole_period_noops_preserve_raw_data_and_redo(
     session.redo();
     assert_eq!(session.document().animations[1].name, "redo");
 }
+
+#[test]
+fn cycle_offset_mappings_preserve_request_order_without_selecting_whole_tracks() {
+    let doc = fixture(true);
+    let sources = [
+        AnimationKey::Bone {
+            bone: 2,
+            property: Property::Rotation,
+            time: 0.65,
+        },
+        AnimationKey::Bone {
+            bone: 1,
+            property: Property::Y,
+            time: 0.2,
+        },
+        AnimationKey::Bone {
+            bone: 1,
+            property: Property::Y,
+            time: 0.6,
+        },
+    ];
+    let outcome = CycleOffsetPlan::capture(&doc, 0, &sources, range())
+        .unwrap()
+        .advance(&doc, 0.2)
+        .unwrap();
+    assert_eq!(outcome.keys.len(), 10);
+    assert_eq!(outcome.mappings.len(), 3);
+    for ((mapping, source), time) in
+        outcome
+            .mappings
+            .iter()
+            .zip(&sources)
+            .zip([0.65_f32 + 0.2, 0.2_f32 + 0.2, 0.6_f32 + 0.2])
+    {
+        assert_eq!(&mapping.source, source);
+        let AnimationKey::Bone { bone, property, .. } = source else {
+            unreachable!()
+        };
+        assert_eq!(
+            mapping.target,
+            Some(AnimationKey::Bone {
+                bone: *bone,
+                property: *property,
+                time
+            })
+        );
+        let actual = outcome.document.animations[0]
+            .tracks
+            .iter()
+            .find(|track| track.bone == *bone && track.property == *property)
+            .unwrap();
+        assert!(
+            actual
+                .keys
+                .iter()
+                .any(|key| key.time.to_bits() == time.to_bits())
+        );
+    }
+    assert_eq!(outcome.receipt().mappings, outcome.mappings);
+}
+
+#[test]
+fn cycle_offset_mapping_original_endpoints_share_one_accepted_anchor() {
+    // Native original first0 and terminal60 independently retain selection of
+    // frame6 after +6. Backspace without reselection removes that same anchor.
+    let doc = fixture(false);
+    let sources = [
+        AnimationKey::Bone {
+            bone: 1,
+            property: Property::Y,
+            time: 1.,
+        },
+        AnimationKey::Bone {
+            bone: 1,
+            property: Property::Y,
+            time: 0.,
+        },
+    ];
+    let outcome = CycleOffsetPlan::capture(&doc, 0, &sources, range())
+        .unwrap()
+        .advance(&doc, 0.1)
+        .unwrap();
+    assert_eq!(outcome.keys.len(), 5);
+    assert_eq!(outcome.mappings.len(), 2);
+    for (mapping, source) in outcome.mappings.iter().zip(&sources) {
+        assert_eq!(&mapping.source, source);
+        assert_eq!(
+            mapping.target,
+            Some(AnimationKey::Bone {
+                bone: 1,
+                property: Property::Y,
+                time: 0.1
+            })
+        );
+    }
+    assert_eq!(outcome.mappings[0].target, outcome.mappings[1].target);
+}
+
+#[test]
+fn cycle_offset_mapping_previews_use_original_anchor_arithmetic_and_history() {
+    let doc = fixture(false);
+    let mut session = Session::new(doc).unwrap();
+    let original = AnimationKey::Bone {
+        bone: 1,
+        property: Property::Y,
+        time: 0.2,
+    };
+    session
+        .offset_animation_keys(0, &[original], range(), 0.4)
+        .unwrap();
+    session
+        .dispatch(Command::RenameAnimation {
+            animation: 1,
+            name: "redo".into(),
+        })
+        .unwrap();
+    session.undo();
+    let baseline = session.document().clone();
+    let memory = session.cycle_offset_memory().clone();
+    let source_time = 0.2_f32 + 0.4;
+    let source = AnimationKey::Bone {
+        bone: 1,
+        property: Property::Y,
+        time: source_time,
+    };
+    session.begin_transaction();
+    let first = session
+        .preview_offset_animation_keys(0, std::slice::from_ref(&source), range(), 0.1)
+        .unwrap();
+    let target_time = 0.2_f32 + 0.5;
+    assert_ne!(
+        target_time.to_bits(),
+        (source_time + 0.1).to_bits(),
+        "This fixture must discriminate associated f32 sums"
+    );
+    assert_eq!(
+        first.mappings,
+        [CycleOffsetKeyMapping {
+            source: source.clone(),
+            target: Some(AnimationKey::Bone {
+                bone: 1,
+                property: Property::Y,
+                time: target_time
+            })
+        }]
+    );
+    assert!(
+        session.document().animations[0].tracks[0]
+            .keys
+            .iter()
+            .any(|key| key.time.to_bits() == target_time.to_bits())
+    );
+    let second = session
+        .preview_offset_animation_keys(0, std::slice::from_ref(&source), range(), 0.2)
+        .unwrap();
+    assert_eq!(
+        second.mappings[0].target,
+        Some(AnimationKey::Bone {
+            bone: 1,
+            property: Property::Y,
+            time: 0.2_f32 + 0.6
+        })
+    );
+    let valid = session.document().clone();
+    let invalid = AnimationKey::Bone {
+        bone: 1,
+        property: Property::Y,
+        time: source_time.next_up(),
+    };
+    assert!(
+        session
+            .preview_offset_animation_keys(0, &[invalid], range(), 0.2)
+            .is_err()
+    );
+    assert_eq!(session.document(), &valid);
+    session.cancel_transaction();
+    assert_eq!(session.document(), &baseline);
+    assert_eq!(session.cycle_offset_memory(), &memory);
+    assert!(session.can_redo());
+    let committed = session
+        .offset_animation_keys(0, std::slice::from_ref(&source), range(), 0.1)
+        .unwrap();
+    let final_doc = session.document().clone();
+    session.undo();
+    assert_eq!(session.document(), &baseline);
+    session.redo();
+    assert_eq!(session.document(), &final_doc);
+    let current = committed.mappings[0].target.as_ref().unwrap();
+    let noop = session
+        .offset_animation_keys(0, std::slice::from_ref(current), range(), 0.)
+        .unwrap();
+    assert_eq!(noop.mappings[0].source, *current);
+    assert_eq!(noop.mappings[0].target, Some(current.clone()));
+}
+
+#[test]
+fn cycle_offset_mapping_cache_only_and_full_period_noops_keep_exact_identities() {
+    let doc = fixture(false);
+    let mut session = Session::new(doc.clone()).unwrap();
+    let initial = selection(&doc, &[0]);
+    for delta in [0., 1., -2.] {
+        let receipt = session
+            .offset_animation_keys(0, &initial, range(), delta)
+            .unwrap();
+        assert_eq!(receipt.mappings.len(), initial.len());
+        for (mapping, source) in receipt.mappings.iter().zip(&initial) {
+            assert_eq!(&mapping.source, source);
+            assert_eq!(mapping.target.as_ref(), Some(source));
+        }
+        assert!(!session.can_undo());
+    }
+    let seed = AnimationKey::Bone {
+        bone: 1,
+        property: Property::Y,
+        time: 0.2,
+    };
+    session
+        .offset_animation_keys(0, &[seed], range(), 0.1)
+        .unwrap();
+    let shifted = session.document().clone();
+    let current = selection(&shifted, &[0]);
+    let receipt = session
+        .offset_animation_keys(0, &current, range(), 2.)
+        .unwrap();
+    for (index, (mapping, source)) in receipt.mappings.iter().zip(&current).enumerate() {
+        assert_eq!(&mapping.source, source);
+        if index == 0 || index == current.len() - 1 {
+            assert!(
+                mapping.target.is_none(),
+                "Generated boundaries never become selected seeds"
+            );
+        } else {
+            assert_eq!(mapping.target.as_ref(), Some(source));
+        }
+    }
+    assert_eq!(session.document(), &shifted);
+    session.undo();
+    assert_eq!(session.document(), &doc);
+}
+
+#[test]
+fn cycle_offset_generated_seed_mask_noops_and_mixed_tracks_preserve_state() {
+    let doc = fixture(false);
+    let mut session = Session::new(doc.clone()).unwrap();
+    let target = EditTarget::Animate {
+        animation: 0,
+        time: 0.4,
+    };
+    let mut pending_local = session.authored_pose(target).unwrap().bone_locals()[0];
+    pending_local.x = 17.;
+    session
+        .edit_pose(0, target, pending_local, &[Property::X], false)
+        .unwrap();
+    session
+        .offset_animation_keys(0, &selection(&doc, &[0, 1]), range(), 0.1)
+        .unwrap();
+    session
+        .dispatch(Command::RenameAnimation {
+            animation: 1,
+            name: "redo".into(),
+        })
+        .unwrap();
+    session.undo();
+    let before = session.document().clone();
+    let memory = session.cycle_offset_memory().clone();
+    let pose = session.pose_edits().clone();
+    let generation = session.document_generation();
+    let fake = [
+        AnimationKey::Bone {
+            bone: 1,
+            property: Property::Y,
+            time: 1.,
+        },
+        AnimationKey::Bone {
+            bone: 1,
+            property: Property::Y,
+            time: 0.,
+        },
+        AnimationKey::Bone {
+            bone: 2,
+            property: Property::Rotation,
+            time: 0.,
+        },
+    ];
+    assert!(
+        session
+            .cycle_offset_selectable_keys(0, &fake, range())
+            .unwrap()
+            .is_empty()
+    );
+    assert!(
+        session
+            .cycle_offset_selectable_keys(0, &[], range())
+            .unwrap()
+            .is_empty()
+    );
+    let frozen = CycleOffsetPlan::capture_with_memory(&before, 0, &fake, range(), &memory).unwrap();
+    let mut stale = before.clone();
+    stale.animations[0].tracks[0].keys[1].value += 1.;
+    assert!(frozen.advance(&stale, 0.1).unwrap_err().contains("Stale"));
+    assert!(
+        session
+            .offset_animation_keys(0, &fake, range(), f32::NAN)
+            .is_err()
+    );
+    let receipt = session
+        .offset_animation_keys(0, &fake, range(), 0.1)
+        .unwrap();
+    assert!(receipt.keys.is_empty());
+    assert!(receipt.boundary_keys.is_empty());
+    assert!(receipt.phases.is_empty());
+    assert_eq!(receipt.mappings.len(), fake.len());
+    for (mapping, source) in receipt.mappings.iter().zip(&fake) {
+        assert_eq!(&mapping.source, source);
+        assert!(mapping.target.is_none());
+    }
+    assert_eq!(session.document(), &before);
+    assert_eq!(session.cycle_offset_memory(), &memory);
+    assert_eq!(session.pose_edits(), &pose);
+    assert_eq!(session.document_generation(), generation);
+    assert!(session.can_redo());
+    let real = AnimationKey::Bone {
+        bone: 2,
+        property: Property::Rotation,
+        time: 0.1,
+    };
+    let mixed = [fake[0].clone(), real.clone(), fake[1].clone()];
+    assert_eq!(
+        session
+            .cycle_offset_selectable_keys(0, &mixed, range())
+            .unwrap()
+            .as_slice(),
+        std::slice::from_ref(&real)
+    );
+    assert_eq!(session.document(), &before);
+    assert_eq!(session.cycle_offset_memory(), &memory);
+    assert!(
+        session
+            .cycle_offset_selectable_keys(0, &[fake[0].clone(), fake[0].clone()], range())
+            .is_err()
+    );
+    let receipt = session
+        .offset_animation_keys(0, &mixed, range(), 0.1)
+        .unwrap();
+    assert_eq!(receipt.phases.len(), 1);
+    assert_eq!(
+        receipt.phases[0].source,
+        AnimationKey::Bone {
+            bone: 2,
+            property: Property::Rotation,
+            time: 0.
+        }
+    );
+    assert_eq!(receipt.phases[0].phase, 0.2);
+    assert_eq!(
+        receipt.mappings,
+        [
+            CycleOffsetKeyMapping {
+                source: mixed[0].clone(),
+                target: None
+            },
+            CycleOffsetKeyMapping {
+                source: real,
+                target: Some(AnimationKey::Bone {
+                    bone: 2,
+                    property: Property::Rotation,
+                    time: 0.2
+                })
+            },
+            CycleOffsetKeyMapping {
+                source: mixed[2].clone(),
+                target: None
+            },
+        ]
+    );
+    assert_eq!(
+        session.document().animations[0].tracks[0],
+        before.animations[0].tracks[0]
+    );
+    assert_eq!(session.pose_edits(), &pose);
+    session.undo();
+    assert_eq!(session.document(), &before);
+    assert_eq!(session.cycle_offset_memory(), &memory);
+}
+
+#[test]
+fn cycle_offset_real_zero_phase_return_and_explicit_reset_follow_native_controls() {
+    let doc = fixture(false);
+    let mut session = Session::new(doc.clone()).unwrap();
+    session
+        .offset_animation_keys(
+            0,
+            &[AnimationKey::Bone {
+                bone: 1,
+                property: Property::Y,
+                time: 0.2,
+            }],
+            range(),
+            0.4,
+        )
+        .unwrap();
+    let zero = AnimationKey::Bone {
+        bone: 1,
+        property: Property::Y,
+        time: 0.,
+    };
+    let end = AnimationKey::Bone {
+        bone: 1,
+        property: Property::Y,
+        time: 1.,
+    };
+    assert_eq!(
+        session
+            .cycle_offset_selectable_keys(0, &[end.clone(), zero.clone()], range())
+            .unwrap()
+            .as_slice(),
+        std::slice::from_ref(&zero)
+    );
+    let receipt = session
+        .offset_animation_keys(0, &[end.clone(), zero], range(), 0.1)
+        .unwrap();
+    assert!(receipt.mappings[0].target.is_none());
+    let moved = (0.6_f32 + 0.5).rem_euclid(1.);
+    assert_eq!(
+        receipt.mappings[1].target,
+        Some(AnimationKey::Bone {
+            bone: 1,
+            property: Property::Y,
+            time: moved
+        })
+    );
+    let seed = AnimationKey::Bone {
+        bone: 1,
+        property: Property::Y,
+        time: 0.5,
+    };
+    session
+        .offset_animation_keys(0, &[seed], range(), 0.5)
+        .unwrap();
+    assert_eq!(session.document(), &doc);
+    assert_eq!(
+        session
+            .cycle_offset_selectable_keys(0, std::slice::from_ref(&end), range())
+            .unwrap()
+            .as_slice(),
+        std::slice::from_ref(&end)
+    );
+    let receipt = session
+        .offset_animation_keys(0, &[end], range(), 0.1)
+        .unwrap();
+    assert_eq!(
+        receipt.mappings[0].target,
+        Some(AnimationKey::Bone {
+            bone: 1,
+            property: Property::Y,
+            time: 0.1
+        })
+    );
+    // Native Off/On recaptures current data: the previous generated seam is
+    // carried into the interior after another real seed moves +6.
+    session.reset_cycle_offset_memory().unwrap();
+    let seed = AnimationKey::Bone {
+        bone: 1,
+        property: Property::Y,
+        time: 0.2_f32 + 0.1,
+    };
+    session
+        .offset_animation_keys(0, &[seed], range(), 0.1)
+        .unwrap();
+    let shifted = &session.document().animations[0].tracks[0].keys;
+    assert_eq!(shifted.len(), 6);
+    for ((key, time), value) in shifted
+        .iter()
+        .zip([0., 0.1, 0.2, 0.4, 0.8, 1.])
+        .zip([-4.000004, 1.999998, 8., 32., -16., -4.000004])
+    {
+        close(key.time, time);
+        close(key.value, value);
+    }
+}

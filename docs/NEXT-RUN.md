@@ -6,6 +6,9 @@ still apply.
 
 ## Current progress — November 16, 2026
 
+Paused at Chris's request after this verified checkpoint. Resume with the next
+Offset calibration below; do not treat the broader parity goal as complete.
+
 The current shared engine/MCP checkpoint is **native v23 /64 commands /25 MCP tools**.
 The earlier desktop checkpoint verifies ordered multi-Bone selection, translation,
 Parent numeric entry, pending/keying/history and edited Save/fresh reopen. Its
@@ -19,32 +22,42 @@ original clips; Wind has two clips demonstrating five mechanisms with artwork
 proxies. These remain mechanism reconstructions, not exact tutorial clones or
 fresh native playback. See [the four-group acceptance map](slices/training-recreation.md#four-group-acceptance-map).
 
-**Cycle Offset now has a verified shared engine and two MCP tools.** Exact key
-seeds identify whole closed Bone property tracks. Native reference checks establish
-that an unchanged affected set preserves original curves; shrinking retains the
-surviving origins/phases and drops departed tracks; adding or returning a track
-rebases all selected current curves. The corrected seven-step Linear sequence
-matches installed Spine scalars at 0.0001, with exact seven-step Undo/Redo snapshots.
-The separate closing-Bezier sequence matches +12/+18/+24-frame reference results.
-All four probe clips, raw source bytes and window bounds are restored; owned
-Spine and MCP processes are closed.
+**Bounded native Cycle Offset acceptance now passes** on Desktop `dc60e423…b2998`.
+Offset and blank automatic Loop Start/End controls share Session previews and
+request-ordered source-to-target mappings with MCP. Generated cached boundaries
+are excluded from hit/keyboard selection; genuine anchors and original phase-zero
+endpoints remain selectable. Either mode toggle clears the remembered origin.
+A native-discovered fast move/release bug is fixed; release coordinates/modifiers
+are latched even when the entire drag completes between frames.
 
-Final checks pass ten engine tests, four MCP unit/two stdio tests, existing MCP
-regressions, formatting, all-target Clippy, workspace build and architecture7.
-Actual MCP run04 passes **276 requests /97 construction commands /11 atomic
-negative cases**, history, pending/cache exclusion and exact Save/fresh reopen.
-The saved result passes **364 external-runtime poses** at 0.001 across seven clips.
-See [scope](slices/cycle-offset.md), [scalar evidence](evidence/cycle-offset.json),
-the [editable authored result](../examples/peach-bot/cycle-offset-authored-bot.peachy)
-and [MCP contract](MCP.md).
+Actual OS input verifies fast Offset and ordinary retiming, a mixed two-track
+Offset with one Undo, fixed-base previews, same-Bone pending X preservation,
+Escape/Save cancellation and held blocking, bounds, reset/recapture, Undo/Redo,
+1120×740 controls, edited Save and exact fresh-process recovery with empty history,
+pending/cache/clipboard and one PNG. Manual Fit and a filtered Tree qualify the
+screenshots; no all-row visibility, automatic-fit or pixel-parity claim is made.
 
-**Next:** integrate the native Offset control with engine-owned requested-seed
-mapping and fixed-baseline gestures. Native Stepped/negative/full-period/nonzero
-loop checks, broader typed timelines/outside-loop tracks and intervening-edit
-memory behavior remain gates. Preserve the scope distinction: the runtime check
-includes untouched Stepped/nonzero clips and does not establish their native
-Offset interaction. The live desktop MCP bridge remains open; current MCP
-sessions are independent headless editors.
+Checks02/03/04 pass **15 desktop Offset /16 engine /6 MCP unit /2 stdio tests**,
+affected Dopesheet43/key-drag4/clipboard45, retained Graph48/workspace16/pane-resize5
+filters (overlap), formatting, all-target Clippy, workspace build and architecture7.
+The 32-request metadata study keeps its separate `050f` result. A further **15
+actual MCP requests** rebuild from 97 blank-root commands, replay the real UI
+deltas and produce the **exact native Document, live authored/applied/world pose
+with pending X25 and byte-identical saved `68126` project**. That actual native
+result passes **364 external-runtime poses** at 0.001. All owned processes close.
+See the [visual review](evidence/cycle-offset-ui.html),
+[scalar proof](evidence/cycle-offset-ui.json),
+[editable result](../examples/peach-bot/cycle-offset-native-result.peachy),
+[scope](slices/cycle-offset.md) and [MCP contract](MCP.md).
+
+**Next:** calibrate and implement the remaining Offset domains: native Stepped,
+negative/full-period and nonzero-loop/outside-key behavior, then broader typed
+tracks. The prepared original four-clip probe and guarded controller remain for
+those checks; retired one-shot producers must not be assumed present. Complete
+marquee/Graph workflows, Shift/Adjust, editable Current and matching track bars
+remain open. The live desktop MCP bridge remains open; current MCP sessions are
+independent editors, with shared math proven by exact replay rather than a live
+connection. The broader parity goal remains active.
 
 ## Adaptive workspace native follow-up — November 16, 2026
 

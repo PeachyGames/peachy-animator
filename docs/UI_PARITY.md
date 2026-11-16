@@ -1,27 +1,55 @@
 # Spine workspace and interaction parity
 
-## Cycle Offset reference contract — November 16, 2026
+## Bounded native Cycle Offset — November 16, 2026
 
-The current shared foundation adds `offset_animation_keys` and
-`reset_cycle_offset_memory` for **v23 /64 commands /25 MCP tools**; full native
-Peachy Offset UI and seed-selection mapping are not accepted. Installed 4.3.26
-input establishes that one valid selected Bone key offsets its whole property
-track. The same affected track set preserves original curves despite seed
-reselection/order; shrinking retains surviving memory and drops departed tracks;
-expanding with a new track recaptures all selected current tracks. These are
-reference observations, not acceptance inferred from generated key receipts.
+**Native Offset acceptance passes on Desktop `dc60e423…b2998`**, retaining
+**v23 /64 commands /25 MCP tools**. The Dopesheet has an Offset toggle and frame
+Loop Start/End fields; blank fields use the full clip. Exact selected Bone seeds
+offset their whole closed property tracks, while selection follows only mapped
+requested seeds. Generated seams have no key hit in Offset mode. Fast coalesced
+move/release works for both Offset and ordinary retiming, and the footer names
+the active operation. Shared masks also filter keyboard selection without
+restarting the Select All expansion phase.
 
-The temporary implementation requires complete closed Bone tracks exactly
-filling the explicit loop. Other families, outside-loop tracks and broader
-reference cases remain open, alongside the live desktop bridge. Final source04
-and actual MCP04 pass 276 requests/97 construction commands/11 atomic negatives,
-seven-step reference data and exact history/Save/reopen; the public authored
-result passes 364 external-runtime poses at 0.001. These are shared data/geometry
-proofs, not native Peachy Offset interaction acceptance. See the
-[contract](MCP.md#closed-bone-track-cycle-offset), [evidence](evidence/cycle-offset.json),
-[slice](slices/cycle-offset.md), [baseline](../examples/peach-bot/cycle-offset-bot.peachy),
-[authored result](../examples/peach-bot/cycle-offset-authored-bot.peachy) and
-[97-command recipe](../examples/peach-bot/cycle-offset-authoring-commands.json).
+Actual OS input verifies single/mixed two-track edits and one-step Undo/Redo,
+same-Bone pending X25 retained through Y Offset, changed held preview/Escape,
+continued-held blocking, Save cancellation/exclusion, off/on recapture, and
+explicit/automatic bounds. At **1120×740**, Offset, Loop Start and End are visible;
+manual Fit at 49% supplies the pictured camera. The Tree is filtered, Properties
+scrolls, and this is not every Tree row or full stacked-Graph visibility. Fresh
+native reopen restores the complete Document exactly, with empty history,
+pending edits, cycle memory and clipboard, plus one image. All owned processes
+are closed.
+
+Installed 4.3.26 input establishes phase-zero endpoint aliasing, nonzero generated
+seams, real zero anchors and off/on recapture. The same affected track set retains
+origins despite seed order/count; shrinking keeps surviving origins and drops
+departed tracks; a new/returning track rebases all selected current curves.
+The shared operation remains limited to closed Bone scalar tracks exactly
+filling explicit loop bounds. Other families, outside-loop/open tracks, native
+negative/full-period/Stepped/nonzero-loop interaction and broader history/context
+cases remain open. General marquee selection, Shift/ripple, Adjust, editable
+Current, complete stacked Graph and the live desktop MCP bridge also remain open.
+Offset's toolbar position, missing animation summary and connecting track bars
+differ visibly from Spine; no full or pixel parity is claimed.
+
+Final checks pass desktop Offset15, Dopesheet43, key-drag4 and clipboard45,
+engine16 and MCP6 unit/2 stdio cases, formatting, all-target Clippy, workspace
+build and architecture7. Filters overlap; no full-suite or hosted-CI pass follows.
+The native result `68126b9a…42a4` has a separate **15-request actual MCP replay**
+from a blank root/original PNG: complete Document and live pending authored,
+applied and world poses match exactly; saved bytes match native. That native
+seven-clip result passes **364 external-runtime poses at 0.001**, with maximum
+world error 1.547993635142575e−5 and region error 1.52587890625e−5. This includes
+untouched Stepped/nonzero-loop clips, not their native Offset interaction.
+
+See the [native review](evidence/cycle-offset-ui.html),
+[native scalar record](evidence/cycle-offset-ui.json),
+[editable native result](../examples/peach-bot/cycle-offset-native-result.peachy),
+[contract](MCP.md#closed-bone-track-cycle-offset) and [slice](slices/cycle-offset.md).
+The earlier [foundation evidence](evidence/cycle-offset.json) keeps its separate
+276-request/97-command/11-negative scope and
+[authored result](../examples/peach-bot/cycle-offset-authored-bot.peachy).
 
 ## Adaptive minimum workspace — November 16, 2026
 
@@ -49,7 +77,8 @@ and provides no divider-test evidence. A separate combined-working-tree check
 passes five `pane_resize_` tests; its eight engine Offset foundation tests remain
 unfinished feature work, without Offset UI/MCP acceptance. This UI checkpoint adds no MCP or external
 runtime run and does not change the pending-Undo policy. All owned GUI instances
-are closed. Engine cycle Offset remains a separate unfinished slice.
+are closed. Offset was unfinished at that layout checkpoint; its later bounded
+native acceptance is recorded above.
 
 The earlier `1558c256…5763` multi-Bone minimum capture below remains valid
 historical evidence; the adaptive checkpoint addresses its tiny Tree/clipped

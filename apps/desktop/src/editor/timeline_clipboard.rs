@@ -157,6 +157,12 @@ impl Editor {
     fn select_all_dopesheet_keys(&mut self) {
         self.cancel_gesture();
         self.reconcile_dopesheet_selection();
+        if self.cycle_offset.enabled
+            && let Err(error) = self.cycle_offset_selectable()
+        {
+            self.status = error;
+            return;
+        }
         let scope = match self.key_selection.select_all_shown() {
             Ok(scope) => scope,
             Err(error) => {
@@ -164,6 +170,7 @@ impl Editor {
                 return;
             }
         };
+        self.reconcile_cycle_offset_selection();
         let count = self.key_selection.len();
         self.status = match scope {
             SelectionScope::None => "No keys shown".into(),

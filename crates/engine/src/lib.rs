@@ -52,8 +52,8 @@ pub use commands::{
 pub use constraint_effects::{ConstraintIndexRemap, EditEffects};
 pub use curve_editing::{CurvePreset, CurveSelection, curve_edit_targets};
 pub use cycle_offset::{
-    CycleOffsetMemory, CycleOffsetOutcome, CycleOffsetPhase, CycleOffsetPlan, CycleOffsetRange,
-    CycleOffsetReceipt,
+    CycleOffsetKeyMapping, CycleOffsetMemory, CycleOffsetOutcome, CycleOffsetPhase,
+    CycleOffsetPlan, CycleOffsetRange, CycleOffsetReceipt, cycle_offset_selectable_keys,
 };
 pub use draw_order_authoring::{
     DrawOrderPlacement, draw_order_key_time, move_draw_order_slot, place_draw_order_slot,

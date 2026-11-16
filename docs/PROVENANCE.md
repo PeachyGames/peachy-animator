@@ -1397,7 +1397,48 @@ commands/11 atomic negatives, seven-step installed-reference goldens and exact
 history/Save/reopen; its child closes with inputs/binaries unchanged. Public
 authored SHA `0316f848…3d73` stays unchanged and passes 364 public-API external
 runtime poses at 0.001, maximum world error 1.4148056052931679e−5 and Region error
-1.52587890625e−5. This is data/geometry proof. Full native Offset controls/seed-selection mapping,
-other families, outside-loop tracks, remaining reference gates and a live
-desktop MCP bridge are open. See [the slice](slices/cycle-offset.md) and
+1.52587890625e−5. This is the foundation's data/geometry proof; native controls
+and seed-selection mapping were still open at that checkpoint. The bounded
+follow-up below closes those measured cases. Other families, outside-loop tracks,
+remaining reference gates and a live desktop MCP bridge remain open. See [the slice](slices/cycle-offset.md) and
 [MCP contract](MCP.md#closed-bone-track-cycle-offset) and [scalar evidence](evidence/cycle-offset.json).
+
+### Native Offset controls and exact MCP replay — November 16, 2026
+
+Independent shared requested-key mappings distinguish original anchors from
+generated boundaries, preserve request order and handle endpoint collisions.
+The separate 32-request receipt/reset study (author29 plus observer3) saves
+`050f5abd…272ab`; its metadata fixture is distinct from the earlier `0316` result
+and the native result below. Neither earlier runtime report is reassigned to it.
+
+Guarded native input on Desktop
+`dc60e423a84a6994d3bd026b6333cf3b030c364b5a611f3059b4146c3a7b2998`
+passes single/mixed seeds, fast Offset and ordinary retime release, mapped seed
+selection, held preview/Escape/Save cancellation with continued-held blocking,
+unrelated pending X preservation, explicit/automatic loop bounds and Off/On
+recapture. The reserved footer keeps Offset/Loop Start/End controls visible at
+1120×740; the rig was manually fitted and Tree filtered, so all Tree rows are
+not claimed visible. Fresh reopen restores the complete Document with empty
+history, pending pose, cache and clipboard, and one image. All owned processes
+are closed. Final checks pass engine16, MCP6unit/2stdio, desktop Offset15,
+formatting, all-target Clippy, workspace build and architecture7; filters overlap.
+
+A separate 15-request actual MCP replay constructs the 97-command original lab
+from blank without importing a finished rig, then uses the measured native
+deltas. The entire Document and live authored/applied/world arrays with pending
+values match exactly; Save is byte-identical to the public
+[native result](../examples/peach-bot/cycle-offset-native-result.peachy), SHA256
+`68126b9a56801e5be6a2e6b6ca641dfcf4145832bbddbe6f348d3e7239ed42a4`.
+Opening that native file is also exact. Its separate external runtime 4.3.13
+check passes seven clips/364 poses at unchanged 0.001 tolerance, maximum world
+error 1.547993635142575e−5 and Region error 1.52587890625e−5. Source inputs and
+CLI remain unchanged; owned MCP children close.
+
+The [review](evidence/cycle-offset-ui.html) and
+[scalar evidence](evidence/cycle-offset-ui.json) publish only original fixture
+data and Peachy captures. Licensed reference captures stay private; no proprietary
+implementation was inspected. Shift/ripple, editable Current, broader styling,
+native negative/full-period/Stepped/nonzero-loop interaction, open/outside and
+non-Bone tracks, canonical start/end unmerge selection, broader history/context
+rules and a live desktop MCP bridge remain open. Hosted CI has not passed;
+this is bounded native/MCP acceptance, not full Spine parity.

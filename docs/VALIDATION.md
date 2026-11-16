@@ -1,5 +1,20 @@
 # First-slice validation — November 5, 2026
 
+## Native Cycle Offset and selection mappings — November 16, 2026
+
+Bounded native acceptance passes on Desktop `dc60e423…b2998`: fast single/mixed
+track drags, one-step history, pending X25 preservation, held cancellation/Save,
+explicit/automatic bounds, reset, minimum controls and exact fresh recovery.
+The final source context passes15 Offset UI tests; engine16/MCP6unit2stdio and
+43/4/45/48/16/5 affected/retained filters are scoped in the evidence rather than
+summed. Formatting, all-target Clippy, build and architecture7 pass.
+A separate15-request blank97-command MCP replay matches the full native Document,
+authored/applied/world pose with pending edits and saved68126 bytes exactly.
+The native result passes364 external-runtime poses at0.001, maximum world error
+0.00001547993635142575 and Region error0.0000152587890625. These proofs do not
+accept broader Offset domains, complete native styling or a live GUI bridge.
+See [review](evidence/cycle-offset-ui.html) and [scalars](evidence/cycle-offset-ui.json).
+
 ## Cycle Offset engine/MCP foundation — November 16, 2026
 
 Final combined checks pass ten engine Offset tests, four MCP unit/two stdio

@@ -6,6 +6,8 @@ mod curve_controller;
 mod curve_gesture;
 mod curve_widgets;
 mod curves;
+#[cfg(test)]
+mod cycle_offset_ui_tests;
 mod deform_curves;
 mod dopesheet;
 mod dopesheet_scope;
@@ -121,6 +123,7 @@ pub(crate) struct Editor {
     key_selection: dopesheet_selection::KeySelection,
     dopesheet_focus: dopesheet_scope::DopesheetFocus,
     key_drag: Option<key_drag::KeyDrag>,
+    cycle_offset: key_drag::CycleOffsetView,
     timeline_clipboard: Option<peachy_engine::AnimationKeyClipboard>,
     leaf_source: Option<timeline_clipboard::LeafSourceReceipt>,
     group_clipboard: Option<timeline_clipboard::GroupClipboard>,
@@ -259,6 +262,7 @@ impl Editor {
             key_selection: Default::default(),
             dopesheet_focus: Default::default(),
             key_drag: None,
+            cycle_offset: Default::default(),
             timeline_clipboard: None,
             leaf_source: None,
             group_clipboard: None,
@@ -624,6 +628,14 @@ impl Editor {
                 || self.animation != drag.animation
                 || self.timeline_scope() != drag.presentation_scope
                 || self.selection != drag.presentation
+                || drag.context.as_ref().is_some_and(|context| {
+                    self.skin != context.skin
+                        || self.session.document().fps != context.fps
+                        || drag.operation
+                            != self
+                                .cycle_offset
+                                .operation(self.animation, self.animation_end())
+                })
         }) {
             self.cancel_dopesheet_drag();
         }
@@ -706,6 +718,7 @@ impl Editor {
             return;
         }
         self.session.undo();
+        self.invalidate_cycle_offset_mask();
         self.apply_session_edit_effects();
         self.key_selection.clear();
         self.drag = None;
@@ -763,6 +776,7 @@ impl Editor {
             return;
         }
         self.session.redo();
+        self.invalidate_cycle_offset_mask();
         self.apply_session_edit_effects();
         self.key_selection.clear();
         self.drag = None;
@@ -815,6 +829,7 @@ impl Editor {
                     self.key_selection = Default::default();
                     self.dopesheet_focus = Default::default();
                     self.key_drag = None;
+                    self.cycle_offset = Default::default();
                     self.clear_timeline_clipboard();
                     self.timeline_input = Default::default();
                     self.weights = Default::default();
@@ -910,6 +925,7 @@ impl Editor {
         self.mesh_handles.clear();
         self.weights_handles.clear();
         self.reconcile_selection();
+        self.reconcile_dopesheet_input(&ctx);
         self.reconcile_timeline_input(&ctx);
         self.reconcile_graph_input(&ctx);
         self.reconcile_draw_order_input(&ctx);
@@ -929,6 +945,9 @@ impl Editor {
             ctx.request_repaint();
         }
         self.workspace_panels(ui);
+        if !ctx.input(|input| input.pointer.primary_down()) {
+            self.cycle_offset.blocked = false;
+        }
         self.finish_idle_transactions(&ctx);
         self.observe_preview_focus(&ctx);
         self.observe_audio_focus(&ctx);
@@ -998,6 +1017,7 @@ impl Editor {
                     "targets":self.capture_targets,"meshHandles":self.mesh_handles,"innerSize":[ctx.content_rect().width(),ctx.content_rect().height()]
                 });
                 report["clipboard"] = self.timeline_clipboard_diagnostic();
+                report["cycleOffset"] = self.cycle_offset_diagnostic();
                 report["views"] = self.views_diagnostic();
                 report["showBones"] = self.show_bones.into();
                 report["treeQuery"] = self.tree.query.clone().into();

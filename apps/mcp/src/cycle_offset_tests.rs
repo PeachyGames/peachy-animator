@@ -183,13 +183,22 @@ fn cycle_offset_mcp_single_seed_offsets_whole_track_without_clearing_memory() {
     let server = server();
     let before = snapshot(&server);
     let mut request = input();
-    request["keys"] = json!([{"type":"bone","bone":0,"property":"x","time":0.0}]);
+    request["keys"] = json!([{"type":"bone","bone":0,"property":"x","time":0.625}]);
     let result = server.offset_animation_keys(Parameters(serde_json::from_value(request).unwrap()));
     assert_ne!(result.is_error, Some(true), "{result:?}");
     let receipt = result.structured_content.unwrap();
     assert_eq!(receipt["phases"][0]["phase"], 0.25);
     assert!(receipt["keys"].as_array().unwrap().len() > 1);
     assert_eq!(receipt["boundaryKeys"].as_array().unwrap().len(), 2);
+    assert_eq!(receipt["mappings"].as_array().unwrap().len(), 1);
+    assert_eq!(
+        receipt["mappings"][0]["source"],
+        json!({"type":"bone","bone":0,"property":"x","time":0.625})
+    );
+    assert_eq!(
+        receipt["mappings"][0]["target"],
+        json!({"type":"bone","bone":0,"property":"x","time":0.75})
+    );
     let after = snapshot(&server);
     assert_ne!(
         after.0["document"]["animations"][0],
@@ -204,6 +213,81 @@ fn cycle_offset_mcp_single_seed_offsets_whole_track_without_clearing_memory() {
         before.0["state"]["pendingPose"]
     );
     assert_eq!(after.0["state"]["hasCycleOffsetMemory"], true);
+}
+
+#[test]
+fn cycle_offset_mcp_mapping_preserves_request_order_and_endpoint_collisions() {
+    let server = server();
+    // Restore the original closed track and empty memory, retaining the
+    // unrelated pending pose. The earlier helper offset is no longer active.
+    server
+        .state
+        .lock()
+        .unwrap()
+        .project_mut()
+        .unwrap()
+        .session
+        .undo();
+    let mut request = input();
+    let keys = json!([
+        {"type":"bone","bone":0,"property":"x","time":1.0},
+        {"type":"bone","bone":0,"property":"x","time":0.5},
+        {"type":"bone","bone":0,"property":"x","time":0.0}]);
+    request["keys"] = keys.clone();
+    let result = server.offset_animation_keys(Parameters(serde_json::from_value(request).unwrap()));
+    assert_ne!(result.is_error, Some(true), "{result:?}");
+    let receipt = result.structured_content.unwrap();
+    let mappings = receipt["mappings"].as_array().unwrap();
+    assert_eq!(mappings.len(), 3);
+    for (mapping, source) in mappings.iter().zip(keys.as_array().unwrap()) {
+        assert_eq!(&mapping["source"], source);
+        assert!(
+            receipt["keys"]
+                .as_array()
+                .unwrap()
+                .contains(&mapping["target"])
+        );
+    }
+    assert_eq!(
+        mappings[0]["target"], mappings[2]["target"],
+        "Original end aliases original start"
+    );
+    assert_eq!(mappings[1]["target"]["time"], 0.625);
+    assert_eq!(mappings[0]["target"]["time"], 0.125);
+    assert_ne!(mappings[0]["source"], mappings[2]["source"]);
+}
+
+#[test]
+fn cycle_offset_mcp_only_fake_keys_map_to_null_without_authoring_or_memory_changes() {
+    let server = server();
+    let before = snapshot(&server);
+    let sources = json!([
+        {"type":"bone","bone":0,"property":"x","time":1.0},
+        {"type":"bone","bone":0,"property":"x","time":0.0}]);
+    let mut request = input();
+    request["keys"] = sources.clone();
+    let result = server.offset_animation_keys(Parameters(serde_json::from_value(request).unwrap()));
+    assert_ne!(result.is_error, Some(true), "{result:?}");
+    let receipt = result.structured_content.unwrap();
+    assert_eq!(receipt["keys"], json!([]));
+    assert_eq!(receipt["boundaryKeys"], json!([]));
+    assert_eq!(receipt["phases"], json!([]));
+    let mappings = receipt["mappings"].as_array().unwrap();
+    assert_eq!(mappings.len(), 2);
+    for (mapping, source) in mappings.iter().zip(sources.as_array().unwrap()) {
+        assert_eq!(&mapping["source"], source);
+        assert!(mapping["target"].is_null());
+    }
+    let mut after = snapshot(&server);
+    assert_eq!(
+        after.0["state"]["revision"].as_u64().unwrap(),
+        before.0["state"]["revision"].as_u64().unwrap() + 1
+    );
+    after.0["state"]["revision"] = before.0["state"]["revision"].clone();
+    assert_eq!(
+        after, before,
+        "Only-fake input changed Document/pending/memory/history/dirty/skin"
+    );
 }
 
 #[test]

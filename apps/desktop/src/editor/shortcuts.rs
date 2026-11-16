@@ -289,7 +289,9 @@ impl Editor {
         {
             return;
         }
-        if self.key_drag.is_some() && ctx.input(|input| input.key_pressed(egui::Key::Escape)) {
+        if self.key_drag.is_some()
+            && ctx.input_mut(|input| input.consume_key(egui::Modifiers::NONE, egui::Key::Escape))
+        {
             self.cancel_dopesheet_drag();
             return;
         }

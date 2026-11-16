@@ -47,6 +47,13 @@ impl TrackId {
     }
 }
 
+#[derive(Clone, Debug)]
+struct RequestedSeed {
+    track: TrackId,
+    source: AnimationKey,
+    selectable: bool,
+}
+
 #[derive(Clone, Debug, PartialEq)]
 struct TrackMemory {
     animation_name: String,
@@ -93,6 +100,17 @@ pub struct CycleOffsetPhase {
 pub struct CycleOffsetPlan {
     memory: CycleOffsetMemory,
     selected: Vec<TrackId>,
+    requested: Vec<RequestedSeed>,
+}
+
+/// One requested source seed and its accepted target. This list preserves
+/// request order; it is separate from all keys of the affected property tracks.
+#[derive(Clone, Debug, PartialEq)]
+pub struct CycleOffsetKeyMapping {
+    pub source: AnimationKey,
+    /// None marks an ignored generated seam. Targets can coincide when original
+    /// first/end seeds follow the same accepted anchor.
+    pub target: Option<AnimationKey>,
 }
 
 #[derive(Clone, Debug)]
@@ -104,15 +122,17 @@ pub struct CycleOffsetOutcome {
     /// The two loop-boundary IDs per affected track; these need not be new keys.
     pub boundary_keys: Vec<AnimationKey>,
     pub phases: Vec<CycleOffsetPhase>,
+    /// Only requested seeds, never an instruction to select all affected keys.
+    pub mappings: Vec<CycleOffsetKeyMapping>,
 }
 
-/// Accepted key/phase metadata, without another full Document clone. Native
-/// selection behavior for generated seams remains a separate interaction gate.
+/// Accepted key/phase and requested-seed metadata, without another Document clone.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CycleOffsetReceipt {
     pub keys: Vec<AnimationKey>,
     pub boundary_keys: Vec<AnimationKey>,
     pub phases: Vec<CycleOffsetPhase>,
+    pub mappings: Vec<CycleOffsetKeyMapping>,
 }
 impl CycleOffsetOutcome {
     pub fn receipt(&self) -> CycleOffsetReceipt {
@@ -120,6 +140,7 @@ impl CycleOffsetOutcome {
             keys: self.keys.clone(),
             boundary_keys: self.boundary_keys.clone(),
             phases: self.phases.clone(),
+            mappings: self.mappings.clone(),
         }
     }
 }
@@ -147,8 +168,7 @@ impl CycleOffsetPlan {
         range: CycleOffsetRange,
         memory: &CycleOffsetMemory,
     ) -> Result<Self, String> {
-        document.validate()?;
-        range.duration()?;
+        let requested_keys = classify_requested(document, animation, keys, range, memory)?;
         let clip = document
             .animations
             .get(animation)
@@ -157,60 +177,31 @@ impl CycleOffsetPlan {
             return Err("Select at least one existing key for Cycle Offset".into());
         }
         let mut selected = Vec::new();
-        let mut requested: BTreeMap<TrackId, BTreeSet<u32>> = BTreeMap::new();
-        for key in keys {
-            let AnimationKey::Bone {
-                bone,
-                property,
-                time,
-            } = key
-            else {
-                return Err("Cycle Offset currently supports whole Bone scalar tracks only; other selected timeline families remain unsupported".into());
-            };
-            if !time.is_finite() || *time < 0. {
-                return Err(
-                    "Cycle Offset source identities must have finite nonnegative times".into(),
-                );
-            }
-            let id = TrackId {
-                animation,
-                bone: *bone,
-                property: *property,
-                start: time_id(range.start),
-                end: time_id(range.end),
-            };
-            if !requested.contains_key(&id) {
-                selected.push(id);
-            }
-            if !requested.entry(id).or_default().insert(time_id(*time)) {
-                return Err("Duplicate Cycle Offset source key".into());
+        let mut requested = BTreeSet::new();
+        for seed in &requested_keys {
+            if seed.selectable && requested.insert(seed.track) {
+                selected.push(seed.track);
             }
         }
-        // Seed order/count does not identify a context: the canonical affected
-        // property-track set does. Validate the whole previous context before
-        // discarding any origins, including a remembered track being left.
-        for (id, remembered) in &memory.tracks {
-            validate_expected(document, *id, remembered)?;
+        // Only actual anchors seed a property. Ignored generated boundaries do
+        // not shrink/reset the active context when they are the entire request.
+        if selected.is_empty() {
+            return Ok(Self {
+                memory: memory.clone(),
+                selected,
+                requested: requested_keys,
+            });
         }
         let expands_context = selected.iter().any(|id| !memory.tracks.contains_key(id));
         let mut next = if expands_context {
             CycleOffsetMemory::default()
         } else {
             let mut retained = memory.clone();
-            retained.tracks.retain(|id, _| requested.contains_key(id));
+            retained.tracks.retain(|id, _| requested.contains(id));
             retained
         };
         for id in &selected {
             let track = track(document, *id)?;
-            let times = &requested[id];
-            let existing = track
-                .keys
-                .iter()
-                .map(|key| time_id(key.time))
-                .collect::<BTreeSet<_>>();
-            if !times.is_subset(&existing) {
-                return Err("Unknown exact Cycle Offset source key".into());
-            }
             if !next.tracks.contains_key(id) {
                 let first = track
                     .keys
@@ -252,6 +243,7 @@ impl CycleOffsetPlan {
         Ok(Self {
             memory: next,
             selected,
+            requested: requested_keys,
         })
     }
 
@@ -263,8 +255,8 @@ impl CycleOffsetPlan {
         if !delta.is_finite() {
             return Err("Cycle Offset delta must be finite".into());
         }
-        for id in &self.selected {
-            validate_expected(document, *id, &self.memory.tracks[id])?;
+        for (id, remembered) in &self.memory.tracks {
+            validate_expected(document, *id, remembered)?;
         }
         let mut candidate = document.clone();
         let mut memory = self.memory.clone();
@@ -305,14 +297,218 @@ impl CycleOffsetPlan {
             entry.expected = shifted.into();
         }
         candidate.validate()?;
+        let mappings = self.map_requested_keys(&memory)?;
         Ok(CycleOffsetOutcome {
             document: candidate,
             memory,
             keys,
             boundary_keys,
             phases,
+            mappings,
         })
     }
+
+    fn map_requested_keys(
+        &self,
+        accepted: &CycleOffsetMemory,
+    ) -> Result<Vec<CycleOffsetKeyMapping>, String> {
+        let mut lineages = BTreeMap::new();
+        for id in &self.selected {
+            let before = &self.memory.tracks[id];
+            let after = &accepted.tracks[id];
+            lineages.insert(
+                *id,
+                TrackLineage {
+                    sources: anchor_lineage(before)?,
+                    targets: anchor_times(after)?,
+                    source_keys: before
+                        .expected
+                        .iter()
+                        .map(|key| (time_id(key.time), key.time))
+                        .collect(),
+                    accepted_keys: after.expected.iter().map(|key| time_id(key.time)).collect(),
+                },
+            );
+        }
+        self.requested
+            .iter()
+            .map(|seed| {
+                if !seed.selectable {
+                    return Ok(CycleOffsetKeyMapping {
+                        source: seed.source.clone(),
+                        target: None,
+                    });
+                }
+                let id = &seed.track;
+                let source = &seed.source;
+                let AnimationKey::Bone { time, .. } = source else {
+                    return Err("Cycle Offset requested lineage must be a Bone key".into());
+                };
+                let before = &self.memory.tracks[id];
+                let after = &accepted.tracks[id];
+                let lineage = &lineages[id];
+                let target_time = if before.phase.to_bits() == after.phase.to_bits() {
+                    // Cache-only/full-period no-ops keep the exact current identity,
+                    // including distinct selectable original first/end keys.
+                    lineage
+                        .source_keys
+                        .get(&time_id(*time))
+                        .copied()
+                        .ok_or("Cycle Offset requested identity disappeared")?
+                } else {
+                    let anchor = lineage
+                        .sources
+                        .get(&time_id(*time))
+                        .ok_or("Cycle Offset selectable source anchor disappeared")?;
+                    lineage.targets[*anchor]
+                };
+                if !lineage.accepted_keys.contains(&time_id(target_time)) {
+                    return Err("Cycle Offset accepted anchor identity disappeared".into());
+                }
+                Ok(CycleOffsetKeyMapping {
+                    source: source.clone(),
+                    target: Some(id.key(target_time)),
+                })
+            })
+            .collect()
+    }
+}
+
+/// Exact selectable-anchor subset in request order, without mutation or a pose
+/// solve. Known generated seams are excluded; uncached tracks start from their
+/// explicit raw keys. Empty queries are allowed; non-Bone/unknown/duplicate IDs
+/// and stale remembered data fail under the same checks as Offset capture.
+pub fn cycle_offset_selectable_keys(
+    document: &Document,
+    animation: usize,
+    keys: &[AnimationKey],
+    range: CycleOffsetRange,
+    memory: &CycleOffsetMemory,
+) -> Result<Vec<AnimationKey>, String> {
+    Ok(
+        classify_requested(document, animation, keys, range, memory)?
+            .into_iter()
+            .filter(|seed| seed.selectable)
+            .map(|seed| seed.source)
+            .collect(),
+    )
+}
+
+struct SelectableSources {
+    existing: BTreeSet<u32>,
+    anchors: Option<BTreeSet<u32>>,
+}
+
+fn classify_requested(
+    document: &Document,
+    animation: usize,
+    keys: &[AnimationKey],
+    range: CycleOffsetRange,
+    memory: &CycleOffsetMemory,
+) -> Result<Vec<RequestedSeed>, String> {
+    document.validate()?;
+    range.duration()?;
+    document
+        .animations
+        .get(animation)
+        .ok_or("Unknown animation for Cycle Offset")?;
+    // Context transitions cannot discard evidence of an intervening stale edit,
+    // even when a requested source itself is a generated, ignored boundary.
+    for (id, remembered) in &memory.tracks {
+        validate_expected(document, *id, remembered)?;
+    }
+    let mut facts: BTreeMap<TrackId, SelectableSources> = BTreeMap::new();
+    let mut seen = BTreeSet::new();
+    let mut requested = Vec::with_capacity(keys.len());
+    for source in keys {
+        let AnimationKey::Bone {
+            bone,
+            property,
+            time,
+        } = source
+        else {
+            return Err("Cycle Offset currently supports whole Bone scalar tracks only; other selected timeline families remain unsupported".into());
+        };
+        if !time.is_finite() || *time < 0. {
+            return Err("Cycle Offset source identities must have finite nonnegative times".into());
+        }
+        let id = TrackId {
+            animation,
+            bone: *bone,
+            property: *property,
+            start: time_id(range.start),
+            end: time_id(range.end),
+        };
+        let fact = match facts.entry(id) {
+            std::collections::btree_map::Entry::Occupied(entry) => entry.into_mut(),
+            std::collections::btree_map::Entry::Vacant(entry) => {
+                let current = track(document, id)?;
+                let anchors = memory
+                    .tracks
+                    .get(&id)
+                    .map(|remembered| {
+                        anchor_lineage(remembered).map(|anchors| anchors.into_keys().collect())
+                    })
+                    .transpose()?;
+                entry.insert(SelectableSources {
+                    existing: current.keys.iter().map(|key| time_id(key.time)).collect(),
+                    anchors,
+                })
+            }
+        };
+        let identity = time_id(*time);
+        if !fact.existing.contains(&identity) {
+            return Err("Unknown exact Cycle Offset source key".into());
+        }
+        if !seen.insert((id, identity)) {
+            return Err("Duplicate Cycle Offset source key".into());
+        }
+        let selectable = fact
+            .anchors
+            .as_ref()
+            .is_none_or(|anchors| anchors.contains(&identity));
+        requested.push(RequestedSeed {
+            track: id,
+            source: source.clone(),
+            selectable,
+        });
+    }
+    Ok(requested)
+}
+
+struct TrackLineage {
+    sources: BTreeMap<u32, usize>,
+    targets: Vec<f32>,
+    source_keys: BTreeMap<u32, f32>,
+    accepted_keys: BTreeSet<u32>,
+}
+
+fn anchor_times(memory: &TrackMemory) -> Result<Vec<f32>, String> {
+    memory.original[..memory.original.len() - 1]
+        .iter()
+        .map(|key| {
+            if memory.phase == 0. {
+                Ok(key.time)
+            } else {
+                moved_time(key.time, memory.range, memory.phase)
+            }
+        })
+        .collect()
+}
+
+fn anchor_lineage(memory: &TrackMemory) -> Result<BTreeMap<u32, usize>, String> {
+    let mut lineage = BTreeMap::new();
+    for (index, time) in anchor_times(memory)?.into_iter().enumerate() {
+        if lineage.insert(time_id(time), index).is_some() {
+            return Err("Cycle Offset original anchor identities collapse".into());
+        }
+        if memory.phase == 0. && time_id(time) == time_id(memory.range.start) {
+            // Original closing keys were independently confirmed to follow the
+            // same moved anchor as their matching original first key.
+            lineage.insert(time_id(memory.range.end), index);
+        }
+    }
+    Ok(lineage)
 }
 
 fn time_id(time: f32) -> u32 {

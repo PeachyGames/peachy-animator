@@ -2,7 +2,7 @@
 use super::dopesheet_scope::DopesheetFocus;
 use super::dopesheet_selection::{KeyId, ShownKeys};
 use super::icons::Icon;
-use super::key_drag::{ChartGeometry, KeyDrag, primary_pointer_event};
+use super::key_drag::{ChartGeometry, KeyDrag, KeyDragContext, primary_pointer_event};
 use super::*;
 use peachy_engine::{KeyOwner, UnsupportedAnimationTimeline};
 
@@ -65,6 +65,7 @@ impl Editor {
             .cloned()
             .collect();
         self.key_selection.mark_readonly(readonly);
+        self.reconcile_cycle_offset_selection();
     }
     pub(super) fn timeline_owner(&self) -> Option<peachy_engine::KeyOwner> {
         match self.selection.single() {
@@ -327,8 +328,27 @@ impl Editor {
         }
     }
     pub(super) fn animation_controls(&mut self, ui: &mut egui::Ui) {
+        self.animation_controls_on_surface(ui, false);
+    }
+    fn animation_controls_on_surface(&mut self, ui: &mut egui::Ui, dopesheet: bool) {
         ui.horizontal(|ui| {
+            ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
             self.timeline_clipboard_toolbar(ui);
+            if dopesheet {
+                let available = self.active_animation().is_some()
+                    && self.slot_authoring_input_available(ui.ctx());
+                let offset = ui.add_enabled(
+                    available,
+                    egui::Button::selectable(self.cycle_offset.enabled, "Offset"),
+                ).on_hover_text("Offset whole closed Bone property tracks around the loop, using the selected keys as seeds. Other timeline families are not supported yet.");
+                let rect = offset.rect.intersect(ui.clip_rect());
+                if rect.is_positive() {
+                    self.record_target("timelineOffset", rect);
+                }
+                if offset.clicked() {
+                    self.toggle_cycle_offset();
+                }
+            }
             for (direction, name) in [
                 (PlayDirection::Backward, "playBackward"),
                 (PlayDirection::Forward, "playForward"),
@@ -384,11 +404,15 @@ impl Editor {
                 .monospace()
                 .color(ACCENT),
             );
+            if dopesheet {
+                self.cycle_offset_bound_control(ui, 0, "Loop Start", "timelineLoopStart");
+                self.cycle_offset_bound_control(ui, 1, "End", "timelineLoopEnd");
+            }
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 let close = icons::toolbar_button(
                     ui,
                     Icon::Delete,
-                    if self.graph_visible() {
+                    if !dopesheet {
                         "Close Graph view"
                     } else {
                         "Close Dopesheet view"
@@ -397,7 +421,7 @@ impl Editor {
                     true,
                 );
                 self.record_target(
-                    if self.graph_visible() {
+                    if !dopesheet {
                         "closeView:Graph"
                     } else {
                         "closeView:Dopesheet"
@@ -406,7 +430,7 @@ impl Editor {
                 );
                 if close.clicked() {
                     self.cancel_gesture();
-                    if self.graph_visible() {
+                    if !dopesheet {
                         self.view_tabs.open.remove(&super::views::DockView::Graph);
                         self.view_tabs.animation_view = super::views::AnimationView::Dopesheet;
                         if self.show_dopesheet {
@@ -424,21 +448,101 @@ impl Editor {
                         }
                     }
                 }
-                ui.label(
-                    RichText::new("A / D: play · W / S: keys · R / F: frames")
-                        .small()
-                        .color(MUTED),
-                );
+                if ui.available_width() > 270. {
+                    ui.label(
+                        RichText::new("A / D: play · W / S: keys · R / F: frames")
+                            .small()
+                            .color(MUTED),
+                    );
+                }
             });
         });
     }
 
+    fn cycle_offset_bound_control(
+        &mut self,
+        ui: &mut egui::Ui,
+        index: usize,
+        label: &str,
+        target: &str,
+    ) {
+        let stored = self
+            .cycle_offset
+            .bounds
+            .get(&self.animation)
+            .copied()
+            .unwrap_or_default()[index];
+        let fps = f64::from(self.session.document().fps);
+        let automatic = if index == 0 { 0. } else { self.animation_end() };
+        let mut frames = f64::from(stored.unwrap_or(automatic)) * fps;
+        let parsed = std::cell::Cell::new(None);
+        ui.label(label);
+        let enabled =
+            self.active_animation().is_some() && self.slot_authoring_input_available(ui.ctx());
+        let response = ui
+            .add_enabled_ui(enabled, |ui| {
+                ui.push_id(("cycle-offset-bound", self.animation, index), |ui| {
+                    ui.add_sized(
+                        [43., 22.],
+                        egui::DragValue::new(&mut frames)
+                            .speed(1.)
+                            .range(0.0..=f64::MAX)
+                            .clamp_existing_to_range(false)
+                            .update_while_editing(false)
+                            .custom_formatter(|value, _| {
+                                if stored.is_none() {
+                                    String::new()
+                                } else {
+                                    format!("{value:.3}")
+                                        .trim_end_matches('0')
+                                        .trim_end_matches('.')
+                                        .to_string()
+                                }
+                            })
+                            .custom_parser(|text| {
+                                if text.trim().is_empty() {
+                                    parsed.set(Some(None));
+                                    return Some(f64::from(automatic) * fps);
+                                }
+                                let value = text
+                                    .trim()
+                                    .parse::<f64>()
+                                    .ok()
+                                    .filter(|value| value.is_finite() && *value >= 0.);
+                                if let Some(value) = value {
+                                    parsed.set(Some(Some(value)));
+                                }
+                                value
+                            }),
+                    )
+                })
+                .inner
+            })
+            .inner;
+        let rect = response.rect.intersect(ui.clip_rect());
+        if rect.is_positive() {
+            self.record_target(target, rect);
+        }
+        response.clone().on_hover_text(format!("Frames. Blank uses the full clip automatically ({}). Clear the field to restore automatic bounds.", f64::from(automatic) * fps));
+        if enabled && (response.changed() || parsed.get().is_some()) {
+            let requested = parsed.get().unwrap_or(Some(frames));
+            let seconds = requested.map(|frames| (frames / fps) as f32);
+            if seconds.is_none_or(|seconds| seconds.is_finite() && seconds >= 0.) {
+                self.cancel_gesture();
+                self.cycle_offset.bounds.entry(self.animation).or_default()[index] = seconds;
+            } else {
+                self.status = "Loop bound is outside the finite animation range.".into();
+            }
+        }
+    }
+
     pub(super) fn timeline(&mut self, ui: &mut egui::Ui) {
         self.reconcile_dopesheet_selection();
+        self.reconcile_dopesheet_input(ui.ctx());
         let view_rect = ui.max_rect();
         self.record_target("dopesheet", view_rect);
         self.record_target("dopesheetClip", ui.clip_rect());
-        self.animation_controls(ui);
+        self.animation_controls_on_surface(ui, true);
         ui.add_space(5.0);
         let label_width = 240.0;
         let pitch = layout::timeline_row_pitch(ui);
@@ -519,6 +623,12 @@ impl Editor {
             );
         }
         let shown = self.key_selection.shown();
+        let offset_selectable = if self.cycle_offset.enabled {
+            Some(self.cycle_offset_selectable())
+        } else {
+            None
+        };
+        let offset_input_available = !matches!(offset_selectable, Some(Err(_)));
         let explicit_owner = self.timeline_owner();
         let rows = self.shown_dopesheet_rows(&shown);
         let mut key_targets = Vec::new();
@@ -804,16 +914,22 @@ impl Editor {
                         if !rows_clip.contains(p) || !grid.contains(p) {
                             continue;
                         }
-                        if editable {
+                        let selectable = offset_input_available
+                            && offset_selectable.as_ref().is_none_or(|result| {
+                                result.as_ref().is_ok_and(|keys| {
+                                    !matches!(key_id, KeyId::Bone { .. }) || keys.contains(key_id)
+                                })
+                            });
+                        if editable && selectable {
                             key_targets.push((key_id.clone(), p));
                         }
-                        if editable {
+                        if editable && selectable {
                             self.record_target(
                                 &format!("timelineKey:{qualified}:{index}"),
                                 key_rect.intersect(rows_clip),
                             );
                         }
-                        if explicit_owner.as_ref() == Some(&row_owner) && editable {
+                        if explicit_owner.as_ref() == Some(&row_owner) && editable && selectable {
                             let legacy = match key_id {
                                 KeyId::Slider {
                                     constraint,
@@ -842,7 +958,7 @@ impl Editor {
                             0.5,
                             if self.key_selection.contains(key_id.clone()) {
                                 ACCENT
-                            } else if editable {
+                            } else if editable && selectable {
                                 color
                             } else {
                                 MUTED
@@ -874,6 +990,8 @@ impl Editor {
             )
         });
         if self.error.is_none()
+            && offset_input_available
+            && !self.cycle_offset.blocked
             && self.rename.is_none()
             && self.duplicate_animation.is_none()
             && self.export_dialog.is_none()
@@ -895,15 +1013,33 @@ impl Editor {
                 origin.x,
                 modifiers,
             );
+            let operation = self
+                .cycle_offset
+                .operation(self.animation, self.animation_end());
             if let Some(drag) = self.key_drag.as_mut() {
                 drag.presentation_scope = presentation_scope;
                 drag.presentation = self.selection.clone();
                 drag.snapshot = Some(snapshot);
+                drag.operation = operation;
+                drag.context = Some(KeyDragContext {
+                    skin: self.skin.clone(),
+                    fps: self.session.document().fps,
+                });
+                drag.receipt_before = self.cycle_offset.receipt.clone();
             }
             response.request_focus();
         }
-        let released = response.drag_stopped_by(egui::PointerButton::Primary);
-        if let Some(pointer) = response.interact_pointer_pos()
+        // Egui can receive the threshold-crossing move and release together,
+        // before it promotes a potential drag. The frozen press owns that
+        // release even when the response has no drag_stopped flag yet.
+        let owned_release = self.key_drag.is_some() && release_event.is_some();
+        let released = response.drag_stopped_by(egui::PointerButton::Primary) || owned_release;
+        let drag_pointer = if owned_release {
+            release_event.map(|(position, _)| position)
+        } else {
+            response.interact_pointer_pos()
+        };
+        if let Some(pointer) = drag_pointer
             && self.key_drag.as_ref().is_some_and(|drag| {
                 drag.should_preview(
                     pointer.x,
@@ -925,8 +1061,10 @@ impl Editor {
         }
         if released && self.key_drag.as_ref().is_some_and(|drag| drag.active) {
             self.finish_dopesheet_drag();
-        } else if response.clicked()
-            || (released && self.key_drag.as_ref().is_some_and(|drag| !drag.active))
+        } else if offset_input_available
+            && !self.cycle_offset.blocked
+            && (response.clicked()
+                || (released && self.key_drag.as_ref().is_some_and(|drag| !drag.active)))
         {
             // A press that never crossed the drag threshold keeps ordinary click semantics.
             let toggle = self.key_drag.as_ref().map_or_else(
@@ -960,7 +1098,9 @@ impl Editor {
             }
         } else if released {
             self.finish_dopesheet_drag();
-        } else if self.key_drag.is_none()
+        } else if offset_input_available
+            && !self.cycle_offset.blocked
+            && self.key_drag.is_none()
             && response.dragged_by(egui::PointerButton::Primary)
             && ui
                 .input(|input| input.pointer.press_origin())
@@ -984,8 +1124,13 @@ impl Editor {
         let footer = ui.add(
             egui::Label::new(
                 RichText::new(format!(
-                    "{} selected · Delete to remove · Cmd/Ctrl-click toggles · Drag to retime{}",
+                    "{} selected · Delete to remove · Cmd/Ctrl-click toggles · Drag to {}{}",
                     self.key_selection.len(),
+                    if self.cycle_offset.enabled {
+                        "offset"
+                    } else {
+                        "retime"
+                    },
                     if shown.unsupported.is_empty() && shown.readonly_owners.is_empty() {
                         ""
                     } else {

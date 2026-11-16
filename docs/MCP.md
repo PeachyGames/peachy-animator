@@ -8,14 +8,36 @@ evaluation and file services as the desktop. It uses the official
 
 The current implementation publishes **native v23 /64 commands /25 tools**.
 The two new tools, `offset_animation_keys` and `reset_cycle_offset_memory`, expose
-the shared closed Bone-track Offset foundation. Final source04 passes ten engine
-cases, four MCP unit/two actual stdio cases, discovery and prior pose/Translate
-regressions, formatting, Clippy/build and architecture7. Actual MCP04 passes
+the shared closed Bone-track Offset operations. Requested-key mapping checks now
+pass 16 engine cases, six MCP unit/two actual stdio cases, fifteen desktop cases,
+regressions, formatting, Clippy/build and architecture7. The latest exact-server
+study passes **32 requests**: 29 in an authoring session that constructs the
+97-command lab from a blank root; three in a separate observer that reads the
+public baseline for typed comparison. No finished rig is imported into the authoring session.
+Mapping/reset controls and exact Save/reopen pass, inputs/binary remain unchanged,
+and both owned children close. Saved `050f5abd…272ab` is this Linear reset result;
+it differs from the earlier public `0316f848…3d73` authored fixture.
+
+Bounded native Offset acceptance now passes on Desktop `dc60e423…b2998`: fast
+Offset/retime release, requested-key selection mappings, held preview/cancel,
+pending Save exclusion, reset, loop bounds, minimum footer controls and exact
+fresh reopen. A **separate 15-request** MCP replay starts blank, constructs the
+97-command lab and reproduces the native whole Document and live authored/
+applied/world pose with pending values. Its Save is byte-identical to the
+[native `68126b9a…d42a4` result](../examples/peach-bot/cycle-offset-native-result.peachy),
+and opening that native file is exact. All owned children close. This native
+seven-clip result passes **364 external-runtime poses** at **0.001**: maximum
+world error **1.547993635142575e−5**, Region error **1.52587890625e−5**.
+
+The earlier foundation source04 passed ten engine cases and four MCP unit/two
+actual stdio cases plus its other checks. Its separate actual MCP04 passes
 276 requests, 97 construction commands and 11 atomic negatives, seven-step
 installed-reference goldens and exact Undo/Redo/Save/reopen; its owned child is
 closed. The unchanged public authored result passes 364 external-runtime poses
-at 0.001. This does not accept full Offset UI or a live desktop bridge.
-See [scalar evidence](evidence/cycle-offset.json).
+at 0.001. That runtime proof belongs to `0316`, not the new `050f` result.
+The `0316`, `050f` and native `68126` results remain separate evidence scopes.
+No live desktop bridge is claimed. See the [native review](evidence/cycle-offset-ui.html)
+and [scalar evidence](evidence/cycle-offset-ui.json).
 
 The earlier November 16 multi-Bone **bounded native/MCP checkpoint** keeps native **v23** and **64 commands**,
 with **23 tools** including shared semantic Translate. Actual run03 on the final
@@ -118,7 +140,7 @@ client's working directory. Absolute paths are accepted only inside that root.
 | `transform_bones` | Revision-checked semantic Translate for an explicit ordered Bone selection, selected primary and required skin. Uses one evaluated input frame and shared Local/Parent/World conversion, filters selected descendants, then applies all candidate poses atomically through Session. |
 | `key_bone_poses` | Revision-checked keying of explicit per-Bone property lists from one shared authored/pending snapshot. One atomic undo step; no implicit X/Y grouping. |
 | `key_edited_pose` | Revision-checked global K equivalent: key every edited Bone/IK/Slider/Deform/Slot/DrawOrder target for one animation/time in one shared Session operation. |
-| `offset_animation_keys` | Revision-checked periodic Offset of whole closed Bone scalar tracks identified by exact key seeds. Uses Session origins/phases with canonical track-set shrink/expansion rules. Returns every affected key, boundary keys and phase receipts; see the temporary scope below. |
+| `offset_animation_keys` | Revision-checked periodic Offset of whole closed Bone scalar tracks identified by actual anchor seeds. Uses canonical track-set memory. Returns affected keys, bounds, phases and request-ordered `{source,target|null}` mappings; cached generated boundary seeds are ignored and do not affect the track set. See the temporary scope below. |
 | `reset_cycle_offset_memory` | Revision-checked explicit clearing of all current remembered Offset tracks. Changes no Document, pending pose, dirty baseline or authoring history; successful reset advances revision. |
 | `get_animation_keys` | Revision-checked authored inventory and exact keys for required explicit owners. Empty owners return inventory with no selected keys. Reports unsupported timeline families; no pending pose, geometry solve, visibility filtering or mutation. See the strict contract below. |
 | `copy_animation_keys` | Read-only capture of exact keys from one bone, IK or Slider constraint, Deform attachment, slot or global draw order. Slider clipboards retain independent Time/Mix identities and one relative origin. Slot clipboards can mix attachment and color keys; Deform includes vertex/influence layout. Draw order requires the identical ordered slot-name layout on paste. Requires the current revision. |
@@ -232,26 +254,43 @@ requirement. Rotate/Scale/Shear group operations remain outside this tool.
 Decoder/state/stdio, actual 104-request checks and final combined source gates
 pass, alongside bounded native Translate interaction acceptance. Group
 Rotate/Scale/Shear, non-Parent numeric operations, group numeric dragging,
-semantic cycle Offset and a live GUI bridge remain open.
+cycle Offset outside the closed Bone-track scope and a live GUI bridge remain open.
 
 ## Closed Bone-track cycle Offset
 
 `offset_animation_keys` requires exactly `expected_revision`, `animation`, `keys`,
 `range` and `delta`. Animation is an index; delta is signed finite f32 seconds.
 Range is an object with finite `start`/`end`, nonnegative start and end greater
-than start. Use exact current key IDs from `get_animation_keys`, for example:
+than start. Use exact current key IDs from `get_animation_keys`; this example
+assumes a selectable original start key at remembered phase zero:
 
 ```json
 {"expected_revision":7,"animation":0,"keys":[{"type":"bone","bone":2,"property":"y","time":0}],"range":{"start":0,"end":1},"delta":0.1}
 ```
 
-Every supplied key must exist. A nonempty valid subset acts as **track seeds**:
-one key shifts its whole Bone/property track, including unselected keys. Multiple
+Every supplied key must exist. A nonempty valid subset of **actual anchor seeds**
+shifts its whole Bone/property tracks, including unselected keys. Multiple
 distinct seeds on the same track still apply one offset; duplicate exact IDs
 reject. Each affected track must fill the explicit range, with first/end keys
 exactly at the bounds and matching endpoint values. Outside-range/open tracks
 and non-Bone families are unsupported. This tool does not retime an arbitrary
 partial key selection or infer a loop from the current selection.
+
+`get_animation_keys` inventories stored keys, including generated boundaries;
+their presence does not by itself make them selectable Offset anchors. At
+remembered phase zero, original start/end keys are actual anchors. With nonzero
+movement, those two distinct requested IDs may map to the same wrapped target.
+At a nonzero remembered phase, the closing end is fake; start is actual only
+when an original anchor lands there. Cached generated boundary requests map to
+`null`, are ignored and do not seed tracks. Classification happens before a
+cohort recapture. Mixed requests operate only on tracks seeded by actual anchors.
+
+A valid only-fake request succeeds with `keys:[]`, `boundaryKeys:[]`, `phases:[]`
+and one null-target mapping per requested key in request order. Document, pending
+poses, history/redo, dirty state and the entire prior cache remain unchanged;
+MCP revision still advances by one. Full-period/zero-movement no-ops preserve
+actual key identities, including distinct original start/end IDs at phase zero;
+fake mappings remain null even on a no-op.
 
 Session memory identifies tracks by animation, Bone, property and loop bounds;
 seed count/order do not define the cohort. The same affected track set continues
@@ -270,11 +309,15 @@ positional objects encoded as arrays, non-string property tokens, invalid IDs,
 duplicate seeds, nonfinite/unrepresentable results and stale revisions also
 preserve Document, pending values, redo, memory and revision.
 
-The response is `{revision,state,keys,boundaryKeys,phases}`. `keys` includes all
+The response is `{revision,state,keys,boundaryKeys,phases,mappings}`. `keys` includes all
 current keys of the affected tracks, not just seeds; `boundaryKeys` identifies the
 two loop bounds per track. Each phase record contains `source`, `range:{start,end}`
-and `phase`, relative to that cohort's captured originals. These receipts do not
-automatically select new/generated keys or change an open desktop window.
+and `phase`, relative to that cohort's captured originals. `mappings` preserves
+the original requested key order, with one `{source,target}` entry per request;
+target is an exact accepted key ID or null. Distinct endpoint sources can share
+one accepted target without losing either mapping entry. Whole-track output keys
+and generated seams are not automatic selection instructions. These receipts do
+not change an open desktop window.
 
 `reset_cycle_offset_memory` requires only `{"expected_revision":7}`. It clears
 all current remembered tracks without changing Document, pending values, dirty
@@ -299,9 +342,19 @@ unchanged inputs/binaries. The saved authored SHA `0316f848…3d73` is unchanged
 The current CLI checks all seven authored clips at 52 samples each: **364 poses**
 at unchanged **0.001**, maximum world error **1.4148056052931679e−5** and Region
 error **1.52587890625e−5**. See [scalar evidence](evidence/cycle-offset.json).
-Desktop Offset controls,
-broader timeline families, open/outside ranges and full Spine Offset parity are
-not accepted by this foundation.
+The later 32-request receipt study on exact server `ee0bebd0…a38f4` verifies
+original endpoint collisions, fake-only no-ops, mixed mappings and explicit reset
+matching the installed toggle/recapture control. Its saved `050f5abd…272ab` result
+reopens exactly with empty transient state; it has no new runtime comparison.
+The subsequent native `dc60` checkpoint and separate 15-request blank-root replay
+verify the same shared operations through actual desktop controls, including fast
+release and the reserved Offset/Loop Start/End footer at 1120×740. They produce
+the distinct public `68126` result and its own 364-pose runtime proof above; they
+do not assign that runtime result to `050f`. See the [native review](evidence/cycle-offset-ui.html)
+and [scalar evidence](evidence/cycle-offset-ui.json).
+Broader timeline families, open/outside ranges, Shift/ripple, native negative/
+full-period/Stepped/nonzero-loop interactions, canonical start/end unmerge
+selection, broader history/context rules and full Spine Offset parity remain open.
 
 ## Exact authored key inventory and mixed timing
 
@@ -1055,7 +1108,7 @@ calibration, differences and verification limits.
 
 ## World X to Rotate mapping
 
-The implementation inventory is v23, with **64 commands /25 tools**; bounded semantic Translate native/MCP acceptance and the closed Bone-track Offset engine/MCP foundation pass their separate checks. Native Offset UI remains open.
+The implementation inventory is v23, with **64 commands /25 tools**; bounded semantic Translate and closed Bone-track Offset native/MCP acceptance pass their separate checks. Broader Offset workflows and the live desktop bridge remain open.
 An existing world-space X→Rotate transform constraint can be edited by the same
 semantic range operation as the native Min/Max controls:
 

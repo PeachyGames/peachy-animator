@@ -997,7 +997,7 @@ impl AnimatorServer {
     }
 
     #[tool(
-        description = "Offset complete closed Bone scalar tracks periodically through shared Session original-curve memory. Requires latest revision, a nonempty subset of exact current typed Bone key maps as track seeds, explicit inclusive range start/end and finite delta seconds. Every seed must exist; one seed identifies its WHOLE property track, including unselected keys. Duplicate identities reject. Each affected track must have first/end keys matching the bounds and matching endpoint values, with no outside keys. Memory belongs to canonical affected tracks, not seed membership/order. The same cohort continues originals; shrinking validates every old remembered track, preserves surviving originals/phases and drops departed tracks. Adding a newly affected property track validates old context then recaptures ALL selected CURRENT tracks at phase zero, including when a departed track returns. Stale remembered data/context refuses without clearing memory; explicit reset_cycle_offset_memory permits recapture. Returns all current affected keys, boundaryKeys and per-track phases. Undo/Redo restore their Session memory snapshots. Memory is session-only, excluded from Save/export and empty after Open/New. Outside/open tracks and non-Bone timelines are unsupported; this temporary foundation is not full Spine Offset parity. No live GUI bridge.",
+        description = "Offset complete closed Bone scalar tracks periodically through shared Session original-curve memory. Requires latest revision, nonempty exact current typed Bone key maps, explicit inclusive range start/end and finite delta seconds. Every requested key must exist; actual anchor seeds identify their WHOLE property tracks, including unselected keys. Current generated boundary keys are ignored, map to null and do not seed tracks; an only-fake request is a successful Document/memory/history no-op that still advances MCP revision. Duplicate identities reject. Each affected track must have first/end keys matching the bounds and matching endpoint values, with no outside keys. Memory belongs to canonical actual affected tracks, not seed membership/order. The same cohort continues originals; shrinking validates every old remembered track, preserves surviving originals/phases and drops departed tracks. Adding a newly affected property track validates old context then recaptures ALL selected CURRENT tracks at phase zero, including when a departed track returns. Stale remembered data/context refuses without clearing memory; explicit reset_cycle_offset_memory permits recapture. Returns all affected keys, boundaryKeys, phases and mappings preserving original request order. Each mapping contains its requested source and exact accepted target or null; distinct original start/end sources may share a moved target. The whole-track key list is not an instruction to select generated seams. Undo/Redo restore Session memory snapshots. Memory is session-only, excluded from Save/export and empty after Open/New. Outside/open tracks and non-Bone timelines are unsupported; this temporary foundation is not full Spine Offset parity. No live GUI bridge.",
         annotations(
             destructive_hint = false,
             idempotent_hint = false,
@@ -1019,9 +1019,12 @@ impl AnimatorServer {
             let phases = receipt.phases.iter().map(|phase| json!({
                 "source":phase.source,"range":{"start":phase.range.start,"end":phase.range.end},"phase":phase.phase,
             })).collect::<Vec<_>>();
+            let mappings = receipt.mappings.iter().map(|mapping| json!({
+                "source":mapping.source,"target":mapping.target,
+            })).collect::<Vec<_>>();
             state.revision += 1;
             Ok(json!({"revision":state.revision,"state":state.summary(),"keys":receipt.keys,
-                "boundaryKeys":receipt.boundary_keys,"phases":phases}))
+                "boundaryKeys":receipt.boundary_keys,"phases":phases,"mappings":mappings}))
         })
     }
 

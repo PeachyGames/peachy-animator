@@ -1,21 +1,29 @@
 # Peachy Animator
 
-The current **cycle Offset engine/MCP foundation is verified**: native **v23 /64
+The current **bounded cycle Offset native/MCP checkpoint is verified**: native **v23 /64
 commands /25 MCP tools**. `offset_animation_keys` uses exact key seeds to offset
 whole closed Bone/property tracks; `reset_cycle_offset_memory` explicitly clears
 its transient cache. The same affected set preserves originals, shrinking keeps
 survivors, and adding a track rebases all selected current tracks after stale
-validation. Full native Offset controls/selection mapping, other timeline
-families, outside-loop tracks and the live desktop bridge remain open. Final
-checks04 and actual MCP04 pass 276 requests, 97 construction commands, 11 atomic
-negatives and exact history/Save/reopen; the public authored result passes 364
-external-runtime poses at unchanged 0.001 tolerance.
+validation. Native Desktop `dc60e423…b2998` passes fast Offset/retime release,
+mapped seed selection, held cancellation, pending Save exclusion, reset, loop
+bounds, minimum footer controls and exact fresh reopen. A separate 15-request MCP
+replay constructs the 97-command lab from blank and reproduces the native whole
+Document, pending authored/applied/world pose and byte-identical Save. That
+[native result](examples/peach-bot/cycle-offset-native-result.peachy) passes 364
+external-runtime poses at unchanged 0.001 tolerance. All owned processes are closed.
+Shift/ripple, other timeline families, outside-loop tracks, broader selection/
+history rules and the live desktop bridge remain open.
+
+The earlier 276-request foundation study and its `0316` authored result, and the
+32-request `050f` receipt/reset study, remain separate proofs.
 Try the original [baseline](examples/peach-bot/cycle-offset-bot.peachy),
 [authored result](examples/peach-bot/cycle-offset-authored-bot.peachy) and
 [97-command recipe](examples/peach-bot/cycle-offset-authoring-commands.json).
 See the [bounded slice](docs/slices/cycle-offset.md),
 [MCP contract](docs/MCP.md#closed-bone-track-cycle-offset) and
-[scalar evidence](docs/evidence/cycle-offset.json).
+[native review](docs/evidence/cycle-offset-ui.html) /
+[scalar evidence](docs/evidence/cycle-offset-ui.json).
 
 The earlier **bounded adaptive workspace follow-up** passes native input on
 Desktop `d1fc05d9…14e8`, with native v23 /64 commands /23 MCP tools unchanged.
@@ -52,7 +60,7 @@ the [MCP-authored result](examples/peach-bot/multi-bone-authored-bot.peachy) and
 See the [checkpoint evidence](docs/evidence/multi-bone-authoring.json) and
 [shared MCP contract](docs/MCP.md#semantic-bone-translation--codemcp-checkpoint).
 Group Rotate/Scale/Shear, non-Parent numeric operations, group numeric dragging,
-Shift/ripple/cycle Offset, broader Graph/clipboard workflows and a live GUI bridge
+Shift/ripple, broader cycle Offset, Graph/clipboard workflows and a live GUI bridge
 remain open, as do complete group Properties workflows. The MCP-authored result
 passes 156 external-runtime poses at 0.001; that result differs from the native
 save, which has no fresh runtime comparison. Full parity remains incomplete and
@@ -439,8 +447,9 @@ The bounded all-owner continuation shows represented keyed owners together when
 no editable Tree owner is selected. Ordinary typed-key moves can cross owners;
 leaf portable wire remains unchanged, with session-owned fallback receipts.
 Grouped copy/paste has bounded native minimum/persistence acceptance.
-Shift currently bypasses snapping;
-Spine-style Shift ripple and cycle Offset remain separate unimplemented controls.
+Shift currently bypasses snapping; Spine-style Shift ripple remains open. The
+bounded cycle Offset controls above use a reserved footer for Offset and explicit
+Loop Start/End, with shared whole-track and requested-key mapping semantics.
 
 The workspace follows Spine’s default arrangement: viewport left, Tree and item
 properties right, transform controls below the viewport, and Dopesheet below those

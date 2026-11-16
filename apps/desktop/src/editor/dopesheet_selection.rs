@@ -527,6 +527,20 @@ impl KeySelection {
     pub fn keys(&self) -> &[AnimationKey] {
         &self.keys
     }
+    /// A view eligibility mask does not restart the user's Select All phase.
+    pub fn retain_keys(&mut self, mut keep: impl FnMut(&AnimationKey) -> bool) {
+        self.keys.retain(|key| keep(key));
+        if self
+            .primary
+            .as_ref()
+            .is_none_or(|key| !self.keys.contains(key))
+        {
+            self.primary = self.keys.first().cloned();
+        }
+        if self.keys.is_empty() {
+            self.expansion = SelectionScope::None;
+        }
+    }
     pub fn replace(&mut self, keys: Vec<AnimationKey>) {
         self.clear();
         for key in keys {
