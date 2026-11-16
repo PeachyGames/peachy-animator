@@ -1,9 +1,10 @@
 # Tutorial recreation through MCP — November 14, 2026
 
-**Verification scope:** these authored studies were verified at the November 14,
-2026 checkpoint, baseline commit `a173c3e1229ab3a49115c94cbd14ede33cf89f40`.
-The recorded MCP replay, native playback and runtime results below do not establish
-a fresh replay on every later build. Later bounded Deform/Graph/Curves, multi-vertex
+**Verification scope:** the original studies and native playback were verified
+November 14, 2026, baseline `a173c3e1229ab3a49115c94cbd14ede33cf89f40`.
+A fresh v23 MCP/runtime replay on November 15 local / November 16 UTC at
+`18bd0e44c46a6c1ee55f83e1daab210d47c94d5c` now passes as detailed below;
+it does not add fresh native playback. Later bounded Deform/Graph/Curves, multi-vertex
 Direct and clipboard acceptance is recorded in its own slices; those features
 must not be treated as wholly absent because this earlier study bypassed their UI.
 
@@ -20,6 +21,38 @@ and Save behavior.
 region or mesh into an existing skin and slot; occupied placeholders are
 rejected. Mesh payloads carry independently authored geometry, UVs, triangles
 and influences. These commands do not introduce a native-format migration.
+
+## Current v23 replay — November 15 local / November 16 UTC
+
+Checked at 2026-11-16 04:48:34 UTC on HEAD `18bd0e4`, with **64 commands /19 tools**.
+Both studies were rebuilt from a blank root and the prepared images through
+**7,033 construction commands** (4,063 Halloween /2,970 Wind), using **308 actual
+stdio requests** (188/120; initialization notifications excluded). No finished
+rig was imported as an authoring input. The complete documents equal their
+historical baselines after Peachy's shared v22→v23 CLI decoder migration;
+history, Save/reopen and empty reopen history are exact. Original inputs and
+their source hashes remain unchanged.
+
+There are **271 evaluation calls**: 252 samples at 12 FPS, 10 additional endpoint
+queries, two finite Setup queries, two Halloween Deform-isolation queries and
+five comparisons against the old native witnesses. Sampling includes frame zero;
+these are not 271 unique/interior poses. All five old-native world, authored-local
+and applied-local arrays compare exactly. Loop seams remain zero; the five Wind
+case checks and bones-fixed Halloween Deform isolation pass again.
+
+Fresh `runtime43` JSON exports, the previously verified atlas/texture with source
+hashes preserved, and the current CLI pass **260 external-runtime 4.3.13 poses**
+(156 Halloween /104 Wind) at unchanged **0.001** tolerance. Maximum world/mesh
+errors remain **0.0004515261 /0.000732421875** for Halloween and
+**0.0002205513 /0.0003662109375** for Wind. MCP SHA256 is `0f659abb…9d112`;
+CLI is `a414e845…18ab6`. Both owned MCP children are closed.
+
+This is a fresh headless authoring/geometry check against the earlier native
+witnesses, not a new native playback or raster review. It installs no dependency,
+renders no movie, performs no complete installed-editor interchange, establishes
+no live GUI bridge and does not remeasure Setup-bind residuals. The November 14
+loaded-art/playback and Setup-bind evidence below remains historical. See the
+[redacted replay record](../evidence/training-recreation.json).
 
 ## Reference coverage
 
@@ -40,6 +73,8 @@ text with sample-bounded timings.
 
 The four supplied groups produced two authored animation studies, not four exact
 tutorial reproductions. Part2 and Part3 share the Halloween evidence below.
+The table combines historical November 14 native playback with the fresh v23
+MCP/runtime replay above; it does not claim fresh native playback.
 
 | Training group | Accepted outcome | MCP / native / runtime evidence | Main workflow or fidelity limit |
 | --- | --- | --- | --- |
@@ -53,7 +88,7 @@ Later [Curves](curves-authoring.md), [multi-vertex Direct](weight-multivertex.md
 checkpoints extend the available authoring workflows. Their finite acceptance
 does not turn these studies into exact source-animation or complete Spine UI parity.
 
-## Recreation evidence
+## Historical November 14 recreation evidence
 
 The private Halloween study begins with the prepared cutouts and one-root image
 layout. It independently places controls, constructs meshes and weights, and

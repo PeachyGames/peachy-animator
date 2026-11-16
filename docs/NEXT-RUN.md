@@ -4,6 +4,25 @@ Written November 10, 2026, at the end of the import-parity push. Read this
 first, then `AGENTS.md`. The workspace rules in `../AGENTS.md` and `../CLAUDE.md`
 still apply.
 
+## Tutorial replay refreshed — November 15, 2026 (November 16 UTC)
+
+Both larger studies now pass actual MCP replay on the current v23 /64-command /
+19-tool server, rather than relying on their November 14 checkpoint. Halloween
+replays 4,063 construction commands and Wind 2,970 from root-only projects. Complete
+rig/motion documents match the originals through the official v22 migration;
+history, Save/reopen, all five clips' motion/loop gates and Deform isolation pass.
+Five retained native samples also match exact authored/applied locals and worlds.
+Fresh explicit Runtime43 JSON exports and the current CLI pass 260 external
+runtime poses at 0.001 using the retained, unchanged image atlases. Maximum mesh
+errors remain 0.000732421875 /0.0003662109375. See
+[the dated scope and limitations](slices/training-recreation.md).
+
+This refresh does not add fresh native playback, movies, Setup-binding residual
+checks, exact tutorial fidelity, full Editor interchange or a live desktop MCP
+bridge. The new server sessions are independent headless sessions. Continue the
+ordered multi-Bone/semantic cycle Offset work below; do not repeat this replay
+without a relevant change or unresolved failure.
+
 ## Verified bounded compound Dopesheet — November 15, 2026
 
 Native acceptance passes on unchanged Desktop

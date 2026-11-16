@@ -221,5 +221,135 @@
     "Native playback and loaded-art review passed for both final saved studies. Exact source poses/timing, artwork quality and Spine UI interaction parity remain qualified."
   ],
   "privateEvidencePolicy": "Artist cutouts, source documents, exported skeleton data, screenshots, detailed logs and absolute source paths remain outside Git.",
-  "verificationCompleteForAuthoredStudies": true
+  "verificationCompleteForAuthoredStudies": true,
+  "currentV23Replay": {
+    "dateLocal": "2026-11-15",
+    "dateUtc": "2026-11-16",
+    "checkedAtUtc": "2026-11-16T04:48:34.915181+00:00",
+    "commit": "18bd0e44c46a6c1ee55f83e1daab210d47c94d5c",
+    "passed": true,
+    "privateReportSha256": "7600658fb6865c8d9dc827283af0e9e109337ac8e2982d1ff10ecf3cb2dadbae",
+    "historicalEvidenceDate": "2026-11-14",
+    "historicalFieldsPreserved": true,
+    "nativeFormat": 23,
+    "commands": 64,
+    "mcpTools": 19,
+    "actualStdioMcp": true,
+    "mcpSha256": "0f659abb43c80d6dd4c502c35e91284848a9851947e13c682afdef290879d112",
+    "cliSha256": "a414e845f0500c562e4ffaa579da64df8ca6a3e6379a6a2127aa7d9c6c618ab6",
+    "counts": {
+      "constructionCommands": 7033,
+      "actualRequests": 308,
+      "sampleCallsAt12Fps": 252,
+      "additionalEndpointQueries": 10,
+      "setupQueries": 2,
+      "deformIsolationQueries": 2,
+      "priorNativeComparisonQueries": 5,
+      "evaluationCalls": 271,
+      "externalRuntimePoses": 260
+    },
+    "samplingQualification": "12 FPS calls include frame zero; additional endpoint/Setup/isolation/witness calls are not unique interior poses. Actual requests exclude initialization notifications.",
+    "comparisonMigration": "Peachy shared CLI v22 decoder, empty apply and native v23 write; complete documents compared after migration.",
+    "finishedRigImportedAsAuthoringInput": false,
+    "sourceInputsUnchanged": true,
+    "atlasReuse": "Previously verified atlas/texture reused with unchanged source hashes; current runtime43 JSON exported afresh.",
+    "studies": [
+      {
+        "study": "halloween",
+        "constructionCommands": 4063,
+        "actualRequests": 188,
+        "sampleCallsAt12Fps": 156,
+        "endpointQueries": 6,
+        "priorNativeWitnessesCompared": 3,
+        "priorNativeWorldAuthoredAppliedArraysExact": true,
+        "completeDocumentMatchesMigratedBaseline": true,
+        "historyExact": true,
+        "savedReopenedExact": true,
+        "reopenHistoryEmpty": true,
+        "setupFinite": true,
+        "setupBindResidualRechecked": false,
+        "allLoopSeamsZero": true,
+        "allWindCaseChecksPass": null,
+        "savedSha256": "60507c7d92a3a24aad562c8c3f9967889350aea90261655887dc0183838d3438",
+        "runtime43ExportSha256": "63d17f0854342132875f052930caa2184b8cac9939dfbeda91866c0fe974a295",
+        "childClosed": true,
+        "externalRuntime": {
+          "passed": true,
+          "runtimePackageVersion": "4.3.13",
+          "freshCurrentMcpExport": true,
+          "samples": 156,
+          "tolerance": 0.001,
+          "worldComparisons": 73944,
+          "maxWorldError": 0.00045152608799980953,
+          "meshComparisons": 377832,
+          "maxMeshError": 0.000732421875,
+          "uvComparisons": 755664,
+          "maxUVError": 2.930755726993084e-08
+        }
+      },
+      {
+        "study": "wind",
+        "constructionCommands": 2970,
+        "actualRequests": 120,
+        "sampleCallsAt12Fps": 96,
+        "endpointQueries": 4,
+        "priorNativeWitnessesCompared": 2,
+        "priorNativeWorldAuthoredAppliedArraysExact": true,
+        "completeDocumentMatchesMigratedBaseline": true,
+        "historyExact": true,
+        "savedReopenedExact": true,
+        "reopenHistoryEmpty": true,
+        "setupFinite": true,
+        "setupBindResidualRechecked": false,
+        "allLoopSeamsZero": true,
+        "allWindCaseChecksPass": true,
+        "savedSha256": "b9fa16ebdabb5bfb325bc80821b2ed4c220e2585847892b707644d996e9b9cbd",
+        "runtime43ExportSha256": "99324cfc4d60b0004ea872697816ebbd3eec6d62d59c945c3d3a0ffefec156d6",
+        "childClosed": true,
+        "externalRuntime": {
+          "passed": true,
+          "runtimePackageVersion": "4.3.13",
+          "freshCurrentMcpExport": true,
+          "samples": 104,
+          "tolerance": 0.001,
+          "worldComparisons": 29952,
+          "maxWorldError": 0.0002205512801083387,
+          "meshComparisons": 105248,
+          "maxMeshError": 0.0003662109375,
+          "uvComparisons": 210496,
+          "maxUVError": 1.437729224562645e-08
+        }
+      }
+    ],
+    "deformIsolation": {
+      "passed": true,
+      "boneWorldDelta": 0.0,
+      "targetKinds": [
+        "face",
+        "hat",
+        "cowl",
+        "body",
+        "broom"
+      ],
+      "meshMotionWorldUnits": [
+        4.5,
+        7.0,
+        5.0001220703125,
+        3.8043212890625,
+        9.0
+      ],
+      "undoExact": true
+    },
+    "freshNativePlayback": false,
+    "renderedMovies": false,
+    "installedDependencies": false,
+    "liveGuiBridge": false,
+    "fullInstalledEditorInterchange": false,
+    "setupBindResidualRechecked": false,
+    "limits": [
+      "Historical native playback/loaded-art and Setup-bind results remain November14 evidence.",
+      "Current prior-native numerical-array comparisons do not establish fresh OS-window or raster inspection.",
+      "Wind remains a five-case proxy-art mechanism study; exact artist topology, timing and chest controls remain unclaimed."
+    ]
+  }
 }
