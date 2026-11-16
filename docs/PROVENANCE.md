@@ -1276,3 +1276,33 @@ helper/bytecode files are retired under `held-range-task.json`; selected scalar,
 window and image witnesses remain for active PR review until integration or
 supersession. No editor/runtime implementation was inspected, no Rust code or
 API count changed, and no full Spine, pixel or lossless conversion is claimed.
+
+
+### Ordered Bone authoring and semantic translation — November 16, 2026
+
+The new selection, atomic Session transitions and group translation were written
+independently from ordinary affine mathematics, our original fixtures and
+permitted input/output observations in installed Spine 4.3.26. Public context is
+[Tree selection](https://esotericsoftware.com/spine-tree#Selection),
+[translation](https://esotericsoftware.com/spine-tools#Translate-tool),
+[compensation](https://esotericsoftware.com/spine-tools#Compensation) and
+[Graph order](https://esotericsoftware.com/spine-graph#Order). These guide pages
+are unversioned; their general descriptions do not replace the pinned native
+measurements. No Spine editor or runtime implementation was inspected or copied.
+
+An original three-branch control distinguishes first-survivor removal from a
+selected ancestor becoming the gizmo anchor. Separate saved native controls
+establish that Parent typed X affects every selected member, while viewport
+translation suppresses selected descendants and Local movement uses each edited
+Bone's frame. Compensation was off. Inconclusive Scale/Shear handle trials are
+retained as limits, not promoted to implementation acceptance. Owned reference
+processes were closed and their source bytes and window settings restored.
+
+The final workspace MCP independently constructs the public seven-Bone lab from
+57 commands and one existing original PNG. Its 104-request protocol study and
+156-pose separately licensed Spine 4.3.13 public-API oracle check are recorded in
+[the scalar evidence](evidence/multi-bone-authoring.json). The lab has four Region
+attachments; it adds no weighted-mesh evaluation claim. Desktop event checks are
+separate from OS input and raster evidence: native candidate acceptance remains
+pending, along with the broader group-transform, Offset and live desktop bridge
+work. Private reference captures and transcripts remain outside Git.

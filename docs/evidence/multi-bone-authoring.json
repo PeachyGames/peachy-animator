@@ -41,7 +41,9 @@
     "imageSha256": "6e8f281942e95b5a77774e683622dac99ea2aef706c99f3627dad968d6c2120f",
     "imageAlreadyPublicNoDuplicateCreated": true,
     "containsArtistData": false,
-    "containsPrivatePaths": false
+    "containsPrivatePaths": false,
+    "regions": 4,
+    "meshes": 0
   },
   "sharedScope": {
     "orderedBoneMembersAndExplicitLogicalPrimary": true,
@@ -144,7 +146,8 @@
     "cliBinarySha256": "237156b8f9986fed5e4a2d3c512aba5956a36d8b07c03d05189c66d2afb96bc2",
     "doesNotEstablishOsInputOrRasterParity": true,
     "recordedMcpAuthoringBinarySha256": "dfebe81a7029baf8730f91390578440e2867e04545e1ffabeda38b53886229eb",
-    "sameSourceReproducedByFinalMcpBinarySha256": "04cbd7c12b29efbfd652f832027513a62890a60c5dfa5d0441aa308003591505"
+    "sameSourceReproducedByFinalMcpBinarySha256": "04cbd7c12b29efbfd652f832027513a62890a60c5dfa5d0441aa308003591505",
+    "meshCoverageClaimed": false
   },
   "installedReference": {
     "version": "4.3.26",
