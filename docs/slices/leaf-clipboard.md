@@ -7,6 +7,12 @@ checkpoint. The new leaf replay uses Desktop5825; the parent Desktop87ee group
 minimum-window proof remains separate. See the [review gallery](../evidence/leaf-clipboard.html)
 and [scalar evidence](../evidence/leaf-clipboard.json).
 
+The later [compound checkpoint](../evidence/compound-dopesheet.html) on Desktop14b
+closes the bounded Slot/Bone/Region presentation gap below and adds explicit
+Slot-payload targeting. Its native/MCP evidence is separate; the original Bone
+leaf routes and v2 payload remain unchanged. Full Region controls, compound
+Graph/Deform hierarchy and general Tree/Shift/Offset remain open.
+
 ## Measured installed-reference cases
 
 Owned Spine 4.3.26 input uses the same original six-bone/two-region/one-PNG fixture
@@ -31,10 +37,11 @@ Graph fallbacks also require editability. Inactive/pending/constraint-remap
 behavior has headless coverage; this slice adds no physical native pass for it.
 
 The visible Peachy Animate Slots-filter row is `TreeItem::DrawOrderSlot`, not
-`Slot`. Its Dopesheet currently keeps **global DrawOrder scope**, not merely
+`Slot`. At this leaf checkpoint its Dopesheet kept **global DrawOrder scope**, not merely
 Slot-only scope. The parent-Bone routing fix now includes that actual row type,
 with an actual filter/row-event regression and passed native replay. This fixes
-the Bone leaf paste target; native Slot/Bone compound scope remains open.
+the Bone leaf paste target. The later compound checkpoint above closes the
+bounded presentation gap without changing the explicit global DrawOrder target.
 
 `leaf-attachment-paste` was actually a Bone:tip selection. It is a valid extra
 bone-target control, **not Region evidence**; the true Region case is

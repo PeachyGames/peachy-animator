@@ -2,13 +2,14 @@
 
 ## Installed compound Bone/Slot/Region scope — November 15, 2026
 
-**Installed Spine 4.3.26 observations and Peachy local source/MCP checks pass;
-new Peachy native acceptance remains pending.** The original compound fixture distinguishes these scopes in
-the active `clipboard` animation:
+**Bounded native Peachy acceptance now passes on Desktop `14b0575f…68d4`,
+alongside installed Spine 4.3.26 calibration and shared source/MCP checks.**
+Native v23 and **64 commands /19 tools** are unchanged. The original installed
+compound fixture establishes these scopes in the active `clipboard` animation:
 
 | Selected context | Observed Dopesheet rows |
 | --- | --- |
-| `follower` Bone, either sibling Slot, or true `follower_bar` Region | `follower` header, Rotate, RGBA for both `follower_accent` and `follower_bar`, Attach for `follower_bar`, plus global Draw order → Default |
+| `follower` Bone, a directly owned sibling Slot, or true `follower_bar` Region | `follower` header, Rotate, keyed sibling RGBA rows (`follower_accent`, `follower_bar`, and `follower_zebra` in the four-slot control), Attach for `follower_bar`, plus global Draw order → Default |
 | Unrelated `driver_marker` Slot | `driver` header, Translate Y and RGBA for `driver_marker`, plus the same global Draw order; the follower family is excluded |
 | Unkeyed `follower_parent` Bone | Its empty Bone header and global Draw order; no empty scalar channels or descendant follower rows |
 | Cleared selection | Both keyed Bone/Slot families and global Draw order; no empty seven-channel expansion |
@@ -23,7 +24,8 @@ row list in these observed states.
 The installed Graph retains the compound row tree and displays the family's
 Bone/RGBA curves together. Peachy's bounded typed-owner Graph does not yet
 establish that complete compound display/editing workflow; visible curves alone
-do not verify editing every timeline kind. Region pose-tool behavior and exact
+do not verify editing every timeline kind. Full visible Slot/Region properties,
+parent-Bone pose-tool behavior and exact
 row/header styling remain separate acceptance questions.
 
 The four-slot discriminator resolves the observed ordering: the Tree lists zebra,
@@ -32,16 +34,45 @@ then all keyed RGBA rows in name order accent/bar/zebra, then the Attach row for
 bar. Slot property families are grouped together, not interleaved per Slot or
 ordered by the Tree's front-to-back list.
 
-An explicit `Slot: driver_marker` paste at Frame 50 visibly receives the red
-source `follower_bar` RGBA key. An Undo capture exists; exact CLI export readback
-remains pending, so no exact-data/history claim follows from that image alone.
-Peachy's before-candidate capture of the actual visible `DrawOrderSlot:2` shows
-only global DrawOrder rows, with its complete Document unchanged. The new
-compound implementation's native acceptance remains pending.
+Installed export readback confirms that explicit `Slot: driver_marker` paste at
+Frame 50 adds the red `follower_bar` RGBA key and retains its old target keys.
+Other raw differences are native writer rounding, omitted defaults and metadata;
+strict JSON equality is false. Installed Undo has visual evidence only.
 
-These finite observations do not establish
-general Tree multi-selection, recursive descendant scope, every Sync/filter
-mode, Shift/Offset or full Spine interaction parity.
+Peachy's same-fixture before capture shows the actual visible `DrawOrderSlot:2`
+with only global DrawOrder rows and an unchanged complete Document. The final
+native build passes actual visible Slot and true Region family scopes, global
+root retention, explicit Slot-color paste with complete-document Undo/Redo, and
+12-key movement by five displayed frames matching the complete MCP document.
+The additional [native Slot-color paste capture](evidence/compound-dopesheet-slot-paste.png)
+shows the explicit driver target at frame 50; its complete-document comparison
+and Undo/Redo are recorded separately from the pictures.
+A changed held preview followed by Escape restores the baseline, all 12 IDs,
+primary and redo; continued movement stays blocked until release. At
+**1120×740**, all 12 full 9×9 key targets lie inside the rows clip with the
+original image loaded. This checks timeline targets, not every Tree row: the
+minimum capture has a very short default Tree pane, and pane sizing remains a
+broader layout review item.
+
+Actual edited Save and fresh-process reopen preserve the complete typed moved
+Document, with empty history/clipboard and one image. The saved result is
+`06d53f2e…07a5`. A separate 10-request actual MCP process opens that native save,
+matches the complete moved Document and checks visibility in six samples around
+the moved attachment boundaries, leaves
+the source unchanged and closes cleanly. The earlier 44-request original MCP
+recipe and source checks remain separate evidence. All owned instances are closed.
+
+See the [before/after review](evidence/compound-dopesheet.html),
+[scalar results](evidence/compound-dopesheet.json),
+[original construction recipe](../examples/peach-bot/compound-dopesheet-authoring-commands.json),
+[move recipe](../examples/peach-bot/compound-dopesheet-move-commands.json) and
+[native saved result](../examples/peach-bot/compound-dopesheet-native-result.peachy).
+
+Native cancellation starts with empty pending edits; nonempty pending,
+inactive-owner and remapping guards have headless coverage. These finite checks
+do not establish general Tree multi-selection, recursive descendant or mixed
+Deform scope, every Sync/filter mode, Shift/Offset, compound Graph editing,
+pixel equivalence or full Spine interaction parity.
 
 ## Verified bounded leaf target routing — November 15, 2026
 
@@ -62,9 +93,10 @@ See [scope](slices/leaf-clipboard.md), [review](evidence/leaf-clipboard.html) an
 [scalar evidence](evidence/leaf-clipboard.json).
 
 At that leaf checkpoint the visible Slot's Dopesheet still had global DrawOrder
-scope. The compound candidate above addresses presentation; its native acceptance,
-full Region pose controls/picking and
-single-owner-header styling remain gaps. This adds no native inactive/pending/
+scope. The [accepted compound section above](#installed-compound-boneslotregion-scope--november-15-2026)
+now closes that bounded presentation/native acceptance gap. Full Region pose
+controls/picking, general Tree multi-selection, compound Graph editing and exact
+header styling remain open. The leaf checkpoint adds no native inactive/pending/
 constraint-remap or minimum-window claim; those guards have headless coverage
 and prior grouped minimum evidence stays separate. General Tree/Shift/Offset/
 Lock/Sync remain open.

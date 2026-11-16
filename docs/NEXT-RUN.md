@@ -4,38 +4,61 @@ Written November 10, 2026, at the end of the import-parity push. Read this
 first, then `AGENTS.md`. The workspace rules in `../AGENTS.md` and `../CLAUDE.md`
 still apply.
 
-## Compound Dopesheet candidate — November 15, 2026
+## Verified bounded compound Dopesheet — November 15, 2026
 
-Source checks03/04 pass: Dopesheet41, clipboard45, broad Graph47, broad Curves52
-and key-drag4 (overlapping filters), fmt, Clippy, workspace build and architecture7.
-Desktop is `14b0575fff64d33f621954f09af426daa7010fcb4d88d1c634d64f4c87a068d4`;
-MCP/CLI stay `0f659abb…d112` / `a414e845…18ab6`. Inventory stays v23, 64/19.
-Actual MCP run03 passes44 requests/43 construction commands from a blank root and
-one original PNG, mixed12-key retiming, explicit Slot-color paste, exact history,
-one negative atomic case,12 poses and Save/reopen. The public
-[original compound lab](../examples/peach-bot/compound-dopesheet-bot.peachy)
-is byte-identical to its saved baseline `2aebcfd8…a2d5`.
+Native acceptance passes on unchanged Desktop
+`14b0575fff64d33f621954f09af426daa7010fcb4d88d1c634d64f4c87a068d4`.
+Actual visible Slot, true Region and retained global-root scopes match the
+installed direct Bone/Slot family. Slot RGBA paste to explicit driver Slot,
+Undo/Redo, all12-key plus5-frame retime, held Escape/continued-held block,
+1120×740 full9×9 key targets and actual edited Save/fresh-process reopen match
+complete MCP documents. Pending starts empty; nonempty pending/remap/inactive
+coverage remains headless. The minimum claim is for timeline targets; the short
+Tree pane remains a broader workspace review item. All owned instances are closed.
 
-**Next action: finish new native candidate acceptance before claiming UI parity.**
-Use a task-owned scratch copy of that public lab; check actual visible Slot and
-true Region family scope, global-root retained Bone focus, mixed retime/history/
-held Escape, explicit Slot-color paste, minimum layout and Save/fresh reopen.
-Installed reference calibration and old7edd same-fixture before capture are done.
-Native reference Slot-color paste has visual Undo evidence; exact saved scratch
-CLI export readback remains pending. No native replay on Desktop14b is claimed.
-See [candidate evidence](evidence/compound-dopesheet.json) and
-[observations](UI_PARITY.md#installed-compound-boneslotregion-scope--november-15-2026).
+MCP44 constructs the lab from a blank root/one original PNG with43 commands;
+separate MCP10 opens the actual native saved file, matches its complete moved
+Document, has empty history and checks six exact attachment-boundary poses.
+Native result `06d53f2ec4827902e39886a194333073244acf3e3aedc735261bf8fb3b6f07a5`
+is public alongside baseline `2aebcfd8…a2d5` and the extracted one-command move.
+Native writer bytes are not compared to MCP json! decimal spellings.
+Reference Slot-paste export confirms only the new nominal driverRGBA red key at50;
+rounding/default omissions and raw offset representation remain qualified.
+See [review](evidence/compound-dopesheet.html), [scalars](evidence/compound-dopesheet.json)
+and [native result](../examples/peach-bot/compound-dopesheet-native-result.peachy).
 
-Private records reuse `.local/training-spine-20261114/timeline/multi-owner/task.json`.
-The guarded `compound_native_control.py` supports explicit Session-file selection,
-F12 snapshots and inner-to-native target mapping. Preserve process identity,
-foreground and topmost-at-point checks, including during F12 polling. All owned
-native/MCP instances are closed. Scratch reference/helper, selected captures and
-MCP44 protocol remain required by the pending native gates until integration;
-retire superseded/disposable artifacts after acceptance. Do not repeat the
-completed Slot-order probe: sibling RGBA rows sort by name before all Attach rows;
-Tree front-to-back order is distinct. General Tree/mixed-Deform/Graph-all-curves,
-Shift/Offset, Lock/Sync and broader parity remain open.
+Source checks03/04 pass Dopesheet41, clipboard45, broad Graph47, broad Curves52
+and key-drag4 (overlapping filters), fmt, Clippy, build and architecture7. MCP/CLI
+stay `0f659abb…d112` / `a414e845…18ab6`; v23 and64/19 stay unchanged. No new geometry
+algorithm or new licensed-runtime comparison is claimed by this UI follow-up.
+
+**Next action: native-calibrate and implement real ordered multi-Bone authoring
+and semantic cycle Offset.** A single ordered selection must drive Tree, viewport,
+primary/history/number groups and one atomic shared multi-pose Session operation;
+loop-boundary/memento Offset is separate from ordinary key retiming. Keep exact
+clipboard maps independent of Dopesheet/Graph. Probe sibling vs parent/child,
+Local/Parent/World translation, rotation pivot, signed Scale/Shear, mixed numeric
+values, key states and primary fallback before assuming group transform math.
+MCP needs the same shared operation, not UI-only looping over per-Bone previews.
+Keep Slot identity distinct from its Draw-order-list presentation: the visible
+Animate Slot currently still has Draw-order Properties, and its parent-Bone pose
+controls are not complete. Include that and the short minimum-window Tree pane
+in the selection/workspace follow-up rather than treating timeline scope as full
+Slot/Region workflow parity.
+The [fresh official-source audit](slices/spine-blog-audit-20261114.md) confirms
+these and the remaining freeform mesh, automatic weights and layered Preview gaps.
+General Tree/compound Graph/Deform hierarchy, Shift/ripple, Lock/Sync and the full
+broader parity backlog remain open. Do not repeat completed compound scope work.
+
+Private lifecycle and selected proof are tracked in
+`.local/training-spine-20261114/timeline/multi-owner/task.json`. The accepted
+follow-up retires one-shot producers, native-result scratch and redundant
+captures after public evidence integration. The guarded controller and one
+existing reference scratch transfer directly to the queued multi-Bone calibration
+until that unit integrates; selected immutable native/reference
+JSON witnesses and MCP/source reports remain for active PR review until integration
+or supersession. Recreate any later native helper only for an actual next probe,
+retaining exact identity/foreground and topmost-at-point checks, including F12 polling.
 
 ## Verified bounded leaf owner routing — November 15, 2026
 

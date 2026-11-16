@@ -8,9 +8,13 @@ five native owner contexts against actual MCP71 typed documents, native Undo,
 same-case Save byte equality and exact fresh typed reopen. Portable v2 wire stays
 unchanged; source receipts are session-local. All owned processes are closed.
 See [scope](leaf-clipboard.md), [review](../evidence/leaf-clipboard.html) and
-[scalar evidence](../evidence/leaf-clipboard.json). Slot global DrawOrder scope,
-broader Region pose controls/rows/header styling and general Tree/Shift/Offset/
-Lock/Sync remain gaps; no full Spine workflow claim follows.
+[scalar evidence](../evidence/leaf-clipboard.json). At that leaf checkpoint, Slot
+global DrawOrder scope, broader Region controls/rows/header styling and general
+Tree/Shift/Offset/Lock/Sync remained gaps; no full Spine workflow claim follows.
+The Slot-global-only observation is now historical before evidence: bounded
+compound native acceptance on Desktop `14b0575f…68d4` supersedes it for the
+measured direct Bone/Slot/Region families. See the [compound review](../evidence/compound-dopesheet.html),
+[scalar record](../evidence/compound-dopesheet.json) and fresh audit below.
 The bounded November 15 world X-to-Rotate continuation also passes native/MCP/
 runtime/Editor acceptance; its remaining feature and resize limits stay explicit.
 Current inventory is native v23 and **64 commands/19 tools**. Grouped clipboard
@@ -43,7 +47,7 @@ range preview10→13, held Escape/block/release and one-step commit/Undo/Redo ar
 also verified. The earlier58/14 evidence remains historical. Precision failures
 and lossy authored interchange remain open.
 
-The November15 primary-source refresh still lists4.3.27 Unreleased and4.3.26 as
+The earlier November15 primary-source refresh still lists4.3.27 Unreleased and4.3.26 as
 the installed release baseline; no newer release is evidenced. The current
 tutorial workflow is multi-owner Dopesheet timing from Wind. Bounded all-owner
 rows and ordinary movement pass their earlier bounded native acceptance. Group
@@ -268,7 +272,7 @@ not complete this broader objective.
 
 | Public update area | Current gap and required native/MCP work |
 | --- | --- |
-| Dopesheet-centric synchronization and curve refinements | Earlier ordinary timing/Curves/Graph acceptance is retained. Grouped clipboard passes MCP run02/57,208 runtime poses, source checks and bounded native authoring/minimum/Save/fresh-reopen, preserving original selection and typed saved data. Later leaf routing passes five native owner cases against MCP71, native Undo and same-case Save/fresh typed reopen. Visible Slot global DrawOrder scope, Region controls/extra rows/header styling, general Tree mapping, Shift/Offset, Lock/Sync, presets/defaults and uncalibrated handles remain. See [leaf scope](leaf-clipboard.md). See [group scope](grouped-clipboard.md) and [ordinary timing](multi-owner-timeline.md). |
+| Dopesheet-centric synchronization and curve refinements | Earlier ordinary timing/Curves/Graph acceptance is retained. Grouped clipboard passes MCP run02/57,208 runtime poses, source checks and bounded native authoring/minimum/Save/fresh-reopen, preserving original selection and typed saved data. Later leaf routing passes five native owner cases against MCP71, native Undo and same-case Save/fresh typed reopen. Slot-global-only display is historical before evidence, superseded within bounded compound native14b acceptance. Compound Graph/Deform hierarchy, broader Region controls/styling, general Tree mapping, Shift/Offset, Lock/Sync, presets/defaults and uncalibrated handles remain. See [compound review](../evidence/compound-dopesheet.html), [leaf scope](leaf-clipboard.md), [group scope](grouped-clipboard.md) and [ordinary timing](multi-owner-timeline.md). |
 | Sliders | Bounded manual/source checkpoints include semantic prepend/remapping, source assignment/clear/property/ranges, process-view memory and own-turn display through native/shared MCP APIs. Referenced Physics/events and remaining Deform transitions, extreme precision and lossless authored conversion remain open. Earlier failed strict interchange and two raw extreme mismatches stay failures. See [contract](slider-constraints.md). |
 | Transform property mapping and local/world choices | One world X→Rotate writer now has accepted evaluation and shared native/MCP endpoint authoring. Tree/Properties resizing now passes bounded native checks; other cross-property destinations, general connection/source/target editing, Match, local/additive and Transform timelines are absent. See [bounded contract](transform-mapping-authoring.md). |
 | Multiple-mesh tracing and weight workflows | Explicit payload creation and bounded one-mesh/one-bone Direct selection/editing exist through shared native/MCP paths. Native topology generation, multiple-mesh/bone workflows, Auto/Smooth/brush/locks/Update, sparse Deform remapping and Pies/overlay remain. |
@@ -319,3 +323,32 @@ Only public descriptions, original project code and permitted editor/runtime
 observations inform this work. No proprietary implementation, bundled example
 art or private artist data is included here. Exact visual comparisons remain a
 separate requirement from numerical compatibility.
+
+## Fresh official-source audit — November 15, 2026
+
+Agent-reach's Jina route returned HTTP 401; its Exa fallback retrieved the official
+release post, Dopesheet/Keys/Mesh/Weights/Preview guides, changelog and relevant
+recent post. The blog-index reader exposed only a category shell, so this is a
+targeted audit, not proof that no newer post exists. No linked tutorial video or
+downloaded project was inspected in this refresh.
+
+The [4.3 announcement](https://esotericsoftware.com/blog/Spine-4.3-released)
+exposes no publication date. The [official changelog](https://esotericsoftware.com/spine-changelog)
+dates **4.3.00 stable to May 14, 2026**, **4.3.26 to September 7**, and still labels
+**4.3.27 Unreleased**. These are release dates, not an inferred blog publication
+date. Retain the installed 4.3.26 behavioral baseline.
+
+| Rank | Concrete remaining authoring capability | Official target and current implementation evidence |
+| --- | --- | --- |
+| 1 | Multi-bone authoring and semantic cycle Offset/ripple | The undated [Keys guide](https://esotericsoftware.com/spine-keys#Offset) specifies wrapping, loop-boundary keys and repeated-move memory; the [Dopesheet guide](https://esotericsoftware.com/spine-dopesheet) covers multi-item selection/Adjust. Ordinary mixed retime and clipboard already work. Tree selection is still one `Option<TreeItem>` in `editor/mod.rs`; `dopesheet.rs` uses Shift to bypass snapping. A shared Offset operation with explicit loop bounds/history needs native and MCP acceptance. Existing [calibration](multi-owner-timeline.md#offset-wrapping-and-repeated-movement-without-reselection) leaves reselection memory unresolved. |
+| 2 | Freeform mesh construction and tracing | The undated [Mesh guide](https://esotericsoftware.com/spine-meshes) describes hull/edge construction, Generate and Trace; the 4.3 announcement adds multi-mesh tracing. Explicit mesh payloads already recreate topology through MCP. `engine/mesh.rs::split_triangle` only inserts a centroid and refuses weighted subdivision. A bounded New/Create/Modify workflow with shared topology commands remains a direct Halloween Part2 gap. |
+| 3 | Automatic/batch weight tools | The 4.3 announcement supports batch mesh binding/weight tools; the undated [Weights guide](https://esotericsoftware.com/spine-weights) distinguishes Direct, brush, Auto and smoothing. Accepted multi-vertex Direct remains one attachment/one bone in `MeshWeightSelection` and `EditMeshBoneWeights`. Auto/Smooth/Prune/brush and batch-mesh workflows need independent semantics and shared native/MCP operations; [Direct acceptance](weight-multivertex.md) does not establish them. |
+| 4 | Layered item-animation preview | [Skins for equipped items — October 20, 2026](https://esotericsoftware.com/blog/Skins-for-equipped-items-Spine-Tips-11) combines item animation with locomotion; the undated [Preview guide](https://esotericsoftware.com/spine-preview) describes tracks, alpha, crossfades and additive playback. `editor/preview.rs` explicitly implements a single track without mixing. A two-track checked evaluator/native preview with MCP sampling is a concrete next slice; skin activation alone does not reproduce this outcome, and physics follow-through remains separate. |
+
+The preceding compound continuation now has bounded native 14b acceptance and six
+original public captures, including before/after, smaller-window and reopened
+states. It closes the measured Slot-global-only presentation gap without proving
+compound Graph authoring, mixed Deform hierarchy, general Tree selection or
+Shift/Offset. Keep older captures and dated claims as historical evidence. This
+fresh research changes neither source code nor the scope of the accepted tutorial
+mechanism studies; full Spine workflow parity remains open.

@@ -1,15 +1,23 @@
 # Peachy Animator
 
-The compound Dopesheet candidate groups a selected Bone, Slot or Region's direct
-Bone/Slot tracks together, retains Bone context on Draw order selection, and hides
-unkeyed channels. Slot leaf paste uses the explicit selected Slot. Local source
-checks and a fresh **44-request MCP** study pass; **native acceptance of this new
-desktop build remains pending**. Try the original
-[Compound Dopesheet Lab](examples/peach-bot/compound-dopesheet-bot.peachy) and its
-[43-command construction recipe](examples/peach-bot/compound-dopesheet-authoring-commands.json).
-See the [candidate evidence](docs/evidence/compound-dopesheet.json) and
-[installed observations](docs/UI_PARITY.md#installed-compound-boneslotregion-scope--november-15-2026).
-Inventory remains native v23, **64 commands /19 tools**.
+Compound Dopesheet groups a selected Bone, Slot or Region's direct Bone/Slot
+tracks together, retains Bone context on Draw order selection and hides unkeyed
+channels. Native input on Desktop14b verifies 12-key mixed retiming, exact
+Undo/Redo, held cancellation, explicit Slot-color paste and all 12 timeline targets
+at 1120×740. Edited Save/fresh reopen matches the complete MCP document with empty
+history/clipboard and one image. The original blank-root **44-request MCP** study
+and a separate **10-request native-save readback** pass. See the
+[before/after review](docs/evidence/compound-dopesheet.html) and
+[scalar evidence](docs/evidence/compound-dopesheet.json).
+
+Try the [original lab](examples/peach-bot/compound-dopesheet-bot.peachy), its
+[43-command construction recipe](examples/peach-bot/compound-dopesheet-authoring-commands.json),
+the [one-command mixed move](examples/peach-bot/compound-dopesheet-move-commands.json)
+and the [native saved result](examples/peach-bot/compound-dopesheet-native-result.peachy).
+Inventory remains native v23, **64 commands /19 tools**. Compound Graph/Deform
+hierarchy, general Tree multi-selection, full visible Slot/Region properties and
+pose controls, Shift/Offset and
+Lock/Sync remain open; the minimum claim covers timeline targets, not every Tree row.
 
 The preceding **64 commands /19 tools**, native v23 checkpoint verifies leaf clipboard
 owner routing through five native cases: no-owner source fallback, explicit Bone,
