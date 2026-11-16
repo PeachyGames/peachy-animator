@@ -4,6 +4,37 @@ Written November 10, 2026, at the end of the import-parity push. Read this
 first, then `AGENTS.md`. The workspace rules in `../AGENTS.md` and `../CLAUDE.md`
 still apply.
 
+## Current progress — November 16, 2026
+
+The accepted checkpoint remains **native v23 /64 commands /23 MCP tools**.
+Ordered multi-Bone selection, Local/Parent/World Translate, ancestor filtering,
+Parent numeric entry, pending/keying/history and edited Save/fresh reopen pass
+bounded native checks. The adaptive minimum workspace also passes: four complete
+Tree rows, reachable grouped channels and exact data/pending/redo preservation.
+See [multi-Bone evidence](evidence/multi-bone-authoring.json) and the
+[minimum-workspace review](evidence/minimum-workspace.html).
+
+The supplied training studies have a separate fresh v23 replay: **7,033 commands,
+308 actual MCP requests and 260 external-runtime poses**. Halloween has three
+original clips; Wind has two clips demonstrating five mechanisms with artwork
+proxies. These remain mechanism reconstructions, not exact tutorial clones or
+fresh native playback. See [the four-group acceptance map](slices/training-recreation.md#four-group-acceptance-map).
+
+Offset engine foundation **`263ebca` is committed and pushed**. The current MCP
+working tree adds two tools for **25 tools**, with 64 commands/v23 unchanged;
+this is **work in progress, not an accepted Offset checkpoint**. Installed input
+confirms that one selected key seeds its whole property track. The corresponding
+seed follow-up passes nine engine checks and four MCP unit/two actual stdio
+checks. A further native control confirms that expanding from one selected key
+to all five current keys on the same property retains the original curves.
+Expanding to both property tracks instead carries an old seam into the result,
+exposing an unresolved memory-policy mismatch when the affected track set changes.
+All four reference animations and the original probe bytes are restored, and the
+owned Spine process is closed. Resolve that contract before final Offset
+integration/acceptance; earlier all-key study results do not close this gate.
+The live desktop MCP bridge remains open: current MCP sessions are independent
+headless editors, not control of the already-open native window.
+
 ## Adaptive workspace native follow-up — November 16, 2026
 
 The UI-only follow-up passes on Desktop
@@ -92,8 +123,10 @@ deselect/reselect then +6, remembered originals and three Undo operations restor
 all four clips exactly. Earlier partial-selection observations do not establish
 the two-track contract. Stepped seams, negative/full-period moves, nonzero loop
 bounds and partial-selection/intervening-edit context remain to calibrate before
-full shared engine/UI/MCP integration. The separate uncommitted engine foundation
-has eight focused passing tests; it does not provide Offset UI/MCP acceptance.
+full shared engine/UI/MCP integration. The engine foundation was subsequently
+committed and pushed as `263ebca`; its original eight-test proof stays historical.
+The latest single-key seed checks and unresolved mixed-selection memory gate are
+summarized above; neither establishes full Offset UI/MCP acceptance.
 Use selective additional Rotate/Scale/Shear probes before choosing further
 group-transform formulas.
 Keep source, native and runtime evidence separate. Group Rotate/Scale/Shear,
