@@ -595,12 +595,14 @@ impl WorkingState {
 #[derive(Clone)]
 struct HistoryEntry {
     state: WorkingState,
+    cycle_offsets: crate::CycleOffsetMemory,
     /// Forward map from this stored before-state to its matching after-state.
     effects: crate::EditEffects,
 }
 
 struct Transaction {
     state: WorkingState,
+    cycle_offsets: crate::CycleOffsetMemory,
     /// Fixed original baseline to the currently published preview.
     effects: crate::EditEffects,
     source_view: crate::slider_source::SourceView,
@@ -615,6 +617,8 @@ pub struct Session {
     transaction: Option<Transaction>,
     last_effects: crate::EditEffects,
     source_view: crate::slider_source::SourceView,
+    /// Original curves/accepted phases are transient, with history snapshots.
+    cycle_offsets: crate::CycleOffsetMemory,
     /// Active skin for skin-required bones/constraints. View state, outside
     /// history and the document, like the shell's skin selection.
     skin: String,
@@ -635,6 +639,7 @@ impl Session {
             transaction: None,
             last_effects: crate::EditEffects::default(),
             source_view: crate::slider_source::SourceView::default(),
+            cycle_offsets: crate::CycleOffsetMemory::default(),
             skin: "default".into(),
         })
     }
@@ -1519,6 +1524,7 @@ impl Session {
             }
             self.redo.push(HistoryEntry {
                 state: std::mem::replace(&mut self.state, previous.state),
+                cycle_offsets: std::mem::replace(&mut self.cycle_offsets, previous.cycle_offsets),
                 effects: previous.effects,
             });
         }
@@ -1536,6 +1542,7 @@ impl Session {
             }
             self.undo.push(HistoryEntry {
                 state: std::mem::replace(&mut self.state, next.state),
+                cycle_offsets: std::mem::replace(&mut self.cycle_offsets, next.cycle_offsets),
                 effects: next.effects,
             });
         }
@@ -1545,6 +1552,7 @@ impl Session {
         if self.transaction.is_none() {
             self.transaction = Some(Transaction {
                 state: self.state.clone(),
+                cycle_offsets: self.cycle_offsets.clone(),
                 effects: crate::EditEffects::default(),
                 source_view: self.source_view.clone(),
             });
@@ -1602,12 +1610,92 @@ impl Session {
         )?;
         Ok(identities)
     }
+    /// Read-only original-key memory. It is transient, outside saved Documents.
+    pub fn cycle_offset_memory(&self) -> &crate::CycleOffsetMemory {
+        &self.cycle_offsets
+    }
+    /// Explicit recapture boundary after an affected track/context changed.
+    /// Forgetting a cache alone creates no authoring history or dirty state.
+    pub fn reset_cycle_offset_memory(&mut self) -> Result<(), String> {
+        if self.transaction.is_some() {
+            return Err("Finish the active gesture before resetting Cycle Offset memory".into());
+        }
+        self.cycle_offsets.clear();
+        Ok(())
+    }
+    /// Periodically move complete tracks from remembered originals. Selection
+    /// changes alone do not clear memory; stale affected tracks fail explicitly.
+    /// Current scope is complete Bone scalar tracks, not arbitrary key subsets.
+    pub fn offset_animation_keys(
+        &mut self,
+        animation: usize,
+        keys: &[crate::AnimationKey],
+        range: crate::CycleOffsetRange,
+        delta: f32,
+    ) -> Result<crate::CycleOffsetReceipt, String> {
+        let plan = crate::CycleOffsetPlan::capture_with_memory(
+            self.document(),
+            animation,
+            keys,
+            range,
+            &self.cycle_offsets,
+        )?;
+        let outcome = plan.advance(self.document(), delta)?;
+        let receipt = outcome.receipt();
+        let pose = self
+            .state
+            .pose
+            .after_document(self.document(), &outcome.document)?;
+        self.replace_with_cycle_memory(
+            WorkingState {
+                document: outcome.document,
+                pose,
+            },
+            outcome.memory,
+        );
+        Ok(receipt)
+    }
+    /// Recompute each pointer preview from the transaction's fixed document,
+    /// pending pose and accepted per-track phase. Failed previews publish nothing.
+    pub fn preview_offset_animation_keys(
+        &mut self,
+        animation: usize,
+        keys: &[crate::AnimationKey],
+        range: crate::CycleOffsetRange,
+        delta: f32,
+    ) -> Result<crate::CycleOffsetReceipt, String> {
+        let transaction = self.transaction.as_ref().ok_or("No active transaction")?;
+        let base = &transaction.state;
+        let plan = crate::CycleOffsetPlan::capture_with_memory(
+            &base.document,
+            animation,
+            keys,
+            range,
+            &transaction.cycle_offsets,
+        )?;
+        let outcome = plan.advance(&base.document, delta)?;
+        let receipt = outcome.receipt();
+        let pose = base
+            .pose
+            .after_document(&base.document, &outcome.document)?;
+        let view = transaction.source_view.clone();
+        self.publish_preview_with_cycle_memory(
+            WorkingState {
+                document: outcome.document,
+                pose,
+            },
+            crate::EditEffects::default(),
+            view,
+            outcome.memory,
+        )?;
+        Ok(receipt)
+    }
     pub fn commit_transaction(&mut self) {
         self.last_effects = crate::EditEffects::default();
         if let Some(previous) = self.transaction.take()
             && previous.state != self.state
         {
-            self.record(previous.state, previous.effects);
+            self.record_with_cycle_memory(previous.state, previous.effects, previous.cycle_offsets);
         }
     }
     pub fn cancel_transaction(&mut self) {
@@ -1618,6 +1706,7 @@ impl Session {
             }
             self.last_effects = previous.effects.inverse();
             self.state = previous.state;
+            self.cycle_offsets = previous.cycle_offsets;
             self.source_view = previous.source_view;
         }
     }
@@ -1641,8 +1730,24 @@ impl Session {
         baseline_effects: crate::EditEffects,
         view: crate::slider_source::SourceView,
     ) -> Result<(), String> {
+        let memory = self
+            .transaction
+            .as_ref()
+            .ok_or("No active transaction")?
+            .cycle_offsets
+            .clone();
+        self.publish_preview_with_cycle_memory(candidate, baseline_effects, view, memory)
+    }
+    fn publish_preview_with_cycle_memory(
+        &mut self,
+        candidate: WorkingState,
+        baseline_effects: crate::EditEffects,
+        view: crate::slider_source::SourceView,
+        memory: crate::CycleOffsetMemory,
+    ) -> Result<(), String> {
         let transaction = self.transaction.as_mut().ok_or("No active transaction")?;
         if candidate == self.state && view == self.source_view {
+            self.cycle_offsets = memory;
             self.last_effects = crate::EditEffects::default();
             return Ok(());
         }
@@ -1651,6 +1756,7 @@ impl Session {
             self.document_generation = self.document_generation.wrapping_add(1);
         }
         self.state = candidate;
+        self.cycle_offsets = memory;
         transaction.effects = baseline_effects;
         self.source_view = view;
         self.last_effects = effects;
@@ -1694,9 +1800,37 @@ impl Session {
             }
         }
     }
+    fn replace_with_cycle_memory(
+        &mut self,
+        candidate: WorkingState,
+        memory: crate::CycleOffsetMemory,
+    ) {
+        self.last_effects = crate::EditEffects::default();
+        if candidate == self.state {
+            self.cycle_offsets = memory;
+            return;
+        }
+        if self.state.document != candidate.document {
+            self.document_generation = self.document_generation.wrapping_add(1);
+        }
+        let previous = std::mem::replace(&mut self.state, candidate);
+        let previous_memory = std::mem::replace(&mut self.cycle_offsets, memory);
+        if self.transaction.is_none() {
+            self.record_with_cycle_memory(previous, crate::EditEffects::default(), previous_memory);
+        }
+    }
     fn record(&mut self, previous: WorkingState, effects: crate::EditEffects) {
+        self.record_with_cycle_memory(previous, effects, self.cycle_offsets.clone());
+    }
+    fn record_with_cycle_memory(
+        &mut self,
+        previous: WorkingState,
+        effects: crate::EditEffects,
+        cycle_offsets: crate::CycleOffsetMemory,
+    ) {
         self.undo.push(HistoryEntry {
             state: previous,
+            cycle_offsets,
             effects,
         });
         if self.undo.len() > 128 {

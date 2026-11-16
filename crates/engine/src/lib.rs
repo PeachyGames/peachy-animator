@@ -6,6 +6,7 @@ mod color_curve_split;
 mod commands;
 mod constraint_effects;
 mod curve_editing;
+mod cycle_offset;
 mod deform_authoring;
 mod draw_order_authoring;
 mod ghosting;
@@ -50,6 +51,10 @@ pub use commands::{
 };
 pub use constraint_effects::{ConstraintIndexRemap, EditEffects};
 pub use curve_editing::{CurvePreset, CurveSelection, curve_edit_targets};
+pub use cycle_offset::{
+    CycleOffsetMemory, CycleOffsetOutcome, CycleOffsetPhase, CycleOffsetPlan, CycleOffsetRange,
+    CycleOffsetReceipt,
+};
 pub use draw_order_authoring::{
     DrawOrderPlacement, draw_order_key_time, move_draw_order_slot, place_draw_order_slot,
 };
@@ -137,6 +142,8 @@ mod creation_tests;
 mod curve_action_tests;
 #[cfg(test)]
 mod curve_target_tests;
+#[cfg(test)]
+mod cycle_offset_tests;
 #[cfg(test)]
 mod deform_authoring_tests;
 #[cfg(test)]
