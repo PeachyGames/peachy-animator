@@ -568,10 +568,11 @@
   ],
   "limits": [
     "Native original-owner routing only; general Tree multi-selection and automatic different-target mapping remain open. MCP requires explicit complete target maps.",
-    "Single-owner paste from all-owner context without a Tree owner lacks a source-owner receipt.",
+    "At this grouped checkpoint, single-owner paste without a Tree owner lacked a receipt; the leaf-clipboard follow-up resolves that gap.",
     "External group text without the current editor-local receipt is refused; source-owner indices are not portable clipboard data.",
     "Native pending baseline is empty; nonempty pending preservation is covered by focused event/core tests.",
     "Undo restores document history and clears transient key selection; no native selection-history parity claim.",
     "Shift/Offset, Lock/Sync, unsupported owner families and known Slider precision/lossy-interchange gaps remain open."
-  ]
+  ],
+  "followup": "leaf-clipboard.json"
 }

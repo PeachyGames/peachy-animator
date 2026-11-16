@@ -1,0 +1,470 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-15",
+  "scope": "Bounded single-owner source fallback and explicit Bone/Slot/Region routing; full Spine workflow parity remains open",
+  "versions": {
+    "nativeFormat": 23,
+    "commands": 64,
+    "mcpTools": 19,
+    "clipboardEnvelope": 2,
+    "referenceEditor": "4.3.26"
+  },
+  "project": {
+    "path": "examples/peach-bot/leaf-clipboard-bot.peachy",
+    "sha256": "5d432da2d6773ada1c8c0499a29c85207d689420fa817330104acd7efeddde6d",
+    "construction": "examples/peach-bot/multi-owner-authoring-commands.json",
+    "constructionCommands": 25,
+    "pasteCommand": "examples/peach-bot/leaf-clipboard-paste-commands.json",
+    "pasteCommandSha256": "6281979fc6c61f9c6b41054ceb3afb1c8b65d356ee55df9915996c0a4093c881",
+    "imageSha256": "6e8f281942e95b5a77774e683622dac99ea2aef706c99f3627dad968d6c2120f"
+  },
+  "binaries": {
+    "peachy-animator": "7edd697b394f786554d0868e45fdae314e225566a5939464076b798914450ba1",
+    "peachy-mcp": "0f659abb43c80d6dd4c502c35e91284848a9851947e13c682afdef290879d112",
+    "peachy-cli": "a414e845f0500c562e4ffaa579da64df8ca6a3e6379a6a2127aa7d9c6c618ab6"
+  },
+  "nativeReplayBinarySha256": "58255481712c76ecd655ffd1fc1d1e917239a5f083ba2b93a690a5cf194a4c19",
+  "finalBuildDifference": "Only user-facing error wording changed after the complete5825 native replay; final focused leaf tests/Clippy/build pass. Success-path behavior and data are unchanged.",
+  "sourceChecks": [
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exitCode": 0,
+      "summary": []
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "test",
+        "-p",
+        "peachy-animator",
+        "leaf_clipboard",
+        "-j2",
+        "--",
+        "--test-threads=2"
+      ],
+      "exitCode": 0,
+      "summary": [
+        "test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 360 filtered out; finished in 1.57s"
+      ]
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "-j2",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exitCode": 0,
+      "summary": []
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "build",
+        "--workspace",
+        "-j2"
+      ],
+      "exitCode": 0,
+      "summary": []
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exitCode": 0,
+      "summary": []
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "test",
+        "-p",
+        "peachy-animator",
+        "leaf_clipboard",
+        "-j2",
+        "--",
+        "--test-threads=2"
+      ],
+      "exitCode": 0,
+      "summary": [
+        "test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 360 filtered out; finished in 1.67s"
+      ]
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "test",
+        "-p",
+        "peachy-animator",
+        "draw_order",
+        "-j2",
+        "--",
+        "--test-threads=2"
+      ],
+      "exitCode": 0,
+      "summary": [
+        "test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 361 filtered out; finished in 0.79s"
+      ]
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "test",
+        "-p",
+        "peachy-animator",
+        "slot",
+        "-j2",
+        "--",
+        "--test-threads=2"
+      ],
+      "exitCode": 0,
+      "summary": [
+        "test result: ok. 46 passed; 0 failed; 0 ignored; 0 measured; 324 filtered out; finished in 4.85s"
+      ]
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "test",
+        "-p",
+        "peachy-animator",
+        "timeline_clipboard::tests",
+        "-j2",
+        "--",
+        "--test-threads=2"
+      ],
+      "exitCode": 0,
+      "summary": [
+        "test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 355 filtered out; finished in 0.15s"
+      ]
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "-j2",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exitCode": 0,
+      "summary": []
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "build",
+        "--workspace",
+        "-j2"
+      ],
+      "exitCode": 0,
+      "summary": []
+    },
+    {
+      "argv": [
+        "python3",
+        "scripts/check-architecture.py",
+        "--cargo",
+        "../.local-tools/peachy-animator/cargo"
+      ],
+      "exitCode": 0,
+      "summary": []
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "test",
+        "-p",
+        "peachy-animator",
+        "group_clipboard",
+        "-j2",
+        "--",
+        "--test-threads=2"
+      ],
+      "exitCode": 0,
+      "summary": [
+        "test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 356 filtered out; finished in 0.81s"
+      ]
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "test",
+        "-p",
+        "peachy-animator",
+        "dopesheet",
+        "-j2",
+        "--",
+        "--test-threads=2"
+      ],
+      "exitCode": 0,
+      "summary": [
+        "test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 340 filtered out; finished in 1.66s"
+      ]
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "test",
+        "-p",
+        "peachy-animator",
+        "graph",
+        "-j2",
+        "--",
+        "--test-threads=2"
+      ],
+      "exitCode": 0,
+      "summary": [
+        "test result: ok. 46 passed; 0 failed; 0 ignored; 0 measured; 323 filtered out; finished in 3.45s"
+      ]
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "test",
+        "-p",
+        "peachy-animator",
+        "curves",
+        "-j2",
+        "--",
+        "--test-threads=2"
+      ],
+      "exitCode": 0,
+      "summary": [
+        "test result: ok. 52 passed; 0 failed; 0 ignored; 0 measured; 317 filtered out; finished in 3.97s"
+      ]
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "test",
+        "-p",
+        "peachy-animator",
+        "slider",
+        "-j2",
+        "--",
+        "--test-threads=2"
+      ],
+      "exitCode": 0,
+      "summary": [
+        "test result: ok. 35 passed; 0 failed; 0 ignored; 0 measured; 334 filtered out; finished in 1.92s"
+      ]
+    },
+    {
+      "argv": [
+        "../.local-tools/peachy-animator/cargo",
+        "test",
+        "-p",
+        "peachy-animator",
+        "deform",
+        "-j2",
+        "--",
+        "--test-threads=2"
+      ],
+      "exitCode": 0,
+      "summary": [
+        "test result: ok. 28 passed; 0 failed; 0 ignored; 0 measured; 341 filtered out; finished in 2.76s"
+      ]
+    }
+  ],
+  "testFiltersOverlap": true,
+  "installedReference": {
+    "reference": "Spine4.3.26",
+    "passed": true,
+    "copied": "Driver TranslateY5/25 values3/14",
+    "pasteAtFrame": 50,
+    "cases": {
+      "noSelectedBone": "leaf-no-bone-paste",
+      "explicitOtherBone": "leaf-explicit-parent-paste",
+      "crossAnimationNoBone": "leaf-cross-paste",
+      "selectedSlotPoseBone": "leaf-slot-paste",
+      "selectedRegionPoseBone": "leaf-true-region-paste"
+    },
+    "expected": {
+      "noSelectedBone": "OriginalDriver50/70",
+      "explicitOtherBone": "SourceParent50/70",
+      "crossAnimationNoBone": "OriginalDriver50/70 in retime",
+      "selectedSlotPoseBone": "Follower50/70",
+      "selectedRegionPoseBone": "Follower50/70"
+    },
+    "undoRestorationExact": true,
+    "ownedProcessClosed": true,
+    "boundsSetupAndOriginalFilterRestored": true,
+    "excluded": {
+      "leaf-attachment-paste": "Actually Bone:tip; valid extraBone control, notRegion",
+      "leaf-cross-before": "Emptyviewportclick didnotclear selectedBone; Escape cleared it before accepted cross case"
+    }
+  },
+  "native": {
+    "passed": true,
+    "binarySha256": "58255481712c76ecd655ffd1fc1d1e917239a5f083ba2b93a690a5cf194a4c19",
+    "actualNativeInput": true,
+    "allFiveTypedDocumentsExactMcp": true,
+    "cases": {
+      "original": "no-owner-pasted",
+      "otherBone": "other-bone-pasted",
+      "crossAnimation": "cross-pasted",
+      "slotPoseBone": "slot-pasted",
+      "regionPoseBone": "region-pasted"
+    },
+    "sourceCopyReadOnly": true,
+    "clipboardVersion": 2,
+    "originalSelectionAndPrimaryPreserved": true,
+    "sourceCutRemovesOriginalsOnly": true,
+    "twoUndoBaselineExact": true,
+    "explicitTargetUndoExact": true,
+    "crossAnimationSourceBindingPreserved": true,
+    "visibleAnimateSlotVariant": "DrawOrderSlot",
+    "slotParentBoneRouting": true,
+    "slotPresentationGap": "Global DrawOrder scope remains; native Spine shows parent Bone rows",
+    "regionParentBoneScope": true,
+    "regionUnrelatedDriverSelectionPruned": true,
+    "incomingKeysNotSelected": true,
+    "nativeSaveByteEqualMcp": true,
+    "savedSha256": "5d432da2d6773ada1c8c0499a29c85207d689420fa817330104acd7efeddde6d",
+    "freshTypedDocumentExact": true,
+    "emptyFreshHistory": true,
+    "oneOriginalImage": true,
+    "freshClipboardEmpty": true,
+    "oldOsTextCannotReviveReceipt": true,
+    "ownedProcessesClosed": true,
+    "nativePendingBaselineEmpty": true,
+    "headlessOnly": [
+      "nonempty pending",
+      "constraint prepend/remap/tombstone UndoRedo",
+      "inactive parent/appearance/Graph gates",
+      "linkedDeform alias/rename refusal"
+    ],
+    "nativeRedoNotReplayed": true,
+    "remainingPresentation": [
+      "Slot compound Bone/Slot/global-order row scope",
+      "Region pose tool controls",
+      "extra empty scalar rows and owner header styling"
+    ]
+  },
+  "actualMcp": {
+    "passed": true,
+    "binarySha256": "0f659abb43c80d6dd4c502c35e91284848a9851947e13c682afdef290879d112",
+    "actualStdioMcp": true,
+    "finishedRigImportedAsRecipeInput": false,
+    "nativeSelectionOrLiveBridge": false,
+    "commands": 64,
+    "tools": 19,
+    "requests": 71,
+    "constructionCommands": 25,
+    "copyReadOnly": true,
+    "cases": [
+      {
+        "case": "original",
+        "animation": 0,
+        "explicitTargetBone": 2,
+        "nativeNominalFramesAndValuesMatch": true,
+        "undoRedoExact": true
+      },
+      {
+        "case": "otherBone",
+        "animation": 0,
+        "explicitTargetBone": 1,
+        "nativeNominalFramesAndValuesMatch": true,
+        "undoRedoExact": true
+      },
+      {
+        "case": "crossAnimation",
+        "animation": 1,
+        "explicitTargetBone": 2,
+        "nativeNominalFramesAndValuesMatch": true,
+        "undoRedoExact": true
+      },
+      {
+        "case": "slotPoseBone",
+        "animation": 1,
+        "explicitTargetBone": 4,
+        "nativeNominalFramesAndValuesMatch": true,
+        "undoRedoExact": true
+      },
+      {
+        "case": "regionPoseBone",
+        "animation": 1,
+        "explicitTargetBone": 4,
+        "nativeNominalFramesAndValuesMatch": true,
+        "undoRedoExact": true
+      }
+    ],
+    "negativeAtomicCases": 2,
+    "poseSamples": 12,
+    "saveReopenExact": true,
+    "emptyReopenHistory": true,
+    "imageSha256": "6e8f281942e95b5a77774e683622dac99ea2aef706c99f3627dad968d6c2120f",
+    "savedSha256": "5d432da2d6773ada1c8c0499a29c85207d689420fa817330104acd7efeddde6d",
+    "childClosed": true
+  },
+  "nativeMcpByteEqualityScope": "Same named original fixture and same final Region-to-parent-Bone paste; no general Spine interchange equality claim",
+  "images": [
+    {
+      "path": "leaf-clipboard-source.png",
+      "sha256": "307207d246a566ba1d6df93f33326365dbb2e5a1911b6e79a71a442fbe98d374",
+      "inspection": "Native input + unchanged v2 clipboard"
+    },
+    {
+      "path": "leaf-clipboard-no-owner.png",
+      "sha256": "8ad4b00274b26fd92eefbc559d91214847a10224c3386a0ebd15100d6d3bbd7f",
+      "inspection": "Native input + complete typed Document"
+    },
+    {
+      "path": "leaf-clipboard-cut.png",
+      "sha256": "7b54758fd7a2c035ec0a86b2a3522baf44bc137fe840d0955c66b3fc92d38cba",
+      "inspection": "Native input + exact Undo"
+    },
+    {
+      "path": "leaf-clipboard-slot-scope.png",
+      "sha256": "0e8b69fdc7445a511286fe086bab866b4ff945a740bacca6968e5870005f0a5c",
+      "inspection": "Native input + explicit presentation gap"
+    },
+    {
+      "path": "leaf-clipboard-region-before.png",
+      "sha256": "0f1f958de19aa9753cb34e4cd3cb223dd8831306acdbd7cae69cdc96cd374693",
+      "inspection": "Native input + owner scope"
+    },
+    {
+      "path": "leaf-clipboard-region-after.png",
+      "sha256": "d1e4341820ffbd9213fd0ce0e25c18925ed68b7e8b516ed3c407a6406f610811",
+      "inspection": "Native input + complete typed Document"
+    },
+    {
+      "path": "leaf-clipboard-reopened.png",
+      "sha256": "57f09ed5f4a84c53ac30098b1b18f65fd721c8a80208eac5b411a382188fee31",
+      "inspection": "Native persistence + byte equality"
+    }
+  ],
+  "limits": [
+    "No live desktop MCP bridge.",
+    "Native active Bone/Slot/Region routing only; constraint history remaps, pending and inactive/linked-Deform cases have focused headless event coverage.",
+    "Native Undo is replayed; Redo is covered by MCP/headless tests, not a new native Redo replay.",
+    "Visible Animate Slot keeps global DrawOrder timeline scope; compound Bone/Slot presentation remains open.",
+    "Region pose controls, extra empty scalar rows and owner header styling remain UI differences.",
+    "No new native minimum-window, pixel or external-runtime comparison for this leaf slice; parent group checks remain separate.",
+    "General Tree multi-selection, Shift/Offset, Lock/Sync and unsupported domains remain open."
+  ],
+  "cleanup": {
+    "retiredTaskOwnedFiles": 163,
+    "selectedProofUntil": "Active PR integration or supersession",
+    "sharedCargoTarget": "Required by continuing parity goal",
+    "reclaimedCapacityClaim": false
+  }
+}

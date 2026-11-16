@@ -1,5 +1,30 @@
 # Spine workspace and interaction parity
 
+## Verified bounded leaf target routing — November 15, 2026
+
+Desktop `58255481…a4c19` passes all five native owner cases against complete MCP71
+typed documents: NoOwner/original, explicit other Bone, cross-animation NoOwner,
+the actual visible `DrawOrderSlot:1` row→Bone4 and true Region→Bone4. Native Paste
+retains the original two IDs and leaves incoming keys unselected; direct Cut
+removes originals and two Undo operations restore baseline. Other/cross/Slot
+cases Undo exactly. Native Redo is not claimed; MCP/headless Undo/Redo passes.
+Region selection prunes unrelated Driver keys and uses Bone4 property rows.
+
+Native Save of the same-name Region/clip1 case is byte-identical to the public
+[MCP leaf lab](../examples/peach-bot/leaf-clipboard-bot.peachy). Fresh reopen restores
+the complete typed Document with empty history/clipboard and one image; old OS
+Paste cannot recreate a source receipt. Three OS screenshots were inspected and
+all owned processes are closed. Inventory stays v23, **64 commands /19 tools**.
+See [scope](slices/leaf-clipboard.md), [review](evidence/leaf-clipboard.html) and
+[scalar evidence](evidence/leaf-clipboard.json).
+
+The visible Slot's Dopesheet still has global DrawOrder scope. Slot compound
+scope, full Region pose controls/picking, extra unkeyed/all-seven rows and
+single-owner-header styling remain gaps. This adds no native inactive/pending/
+constraint-remap or minimum-window claim; those guards have headless coverage
+and prior grouped minimum evidence stays separate. General Tree/Shift/Offset/
+Lock/Sync remain open.
+
 ## Verified bounded grouped clipboard — November 15, 2026 follow-up
 
 Current inventory is **64 commands /19 tools**, native v23 unchanged. Desktop
@@ -37,7 +62,7 @@ removes the four original keys, leaving only driver 50/70 and follower 57/80.
 Reselecting original bones in reverse does not reverse their identities; two
 different selected parents map in the measured order. General Tree multi-selection
 is absent, so the latter is available only through explicit MCP mapping. The
-single-leaf no-Tree-owner fallback still lacks a source receipt. Accepted pasted
+later leaf checkpoint closes bounded no-Tree source fallback. Accepted pasted
 IDs are diagnostics, not automatic replacement selection. See
 [scope](slices/grouped-clipboard.md), [review](evidence/grouped-clipboard.html) and
 [scalar evidence](evidence/grouped-clipboard.json).

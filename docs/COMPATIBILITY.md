@@ -4,6 +4,22 @@ Target: Spine **4.3.x JSON**, with export metadata `4.3.26`. The initial externa
 oracle is separately installed `@esotericsoftware/spine-core` **4.3.13**.
 Compatibility applies to the subset below, not every 4.3 project or future patch.
 
+## Leaf clipboard owner routing — November 15, 2026 (bounded acceptance passed)
+
+Native v23 and **64 commands /19 tools** are unchanged. The v2 leaf portable
+payload is unchanged; an editor-session receipt supplies canonical no-owner
+fallback, with explicit Bone or active Slot/Region parent-Bone overrides.
+Actual MCP71 from blank/one original PNG verifies five explicit owner cases,
+two atomic negatives, exact Undo/Redo and Save/reopen. Native replay matches all
+five complete typed documents, including the actual Animate Slot row. Native
+Undo and exact fresh reopen pass; the final same-name Region/clip1 Save is
+byte-identical to [MCP5d432](../examples/peach-bot/leaf-clipboard-bot.peachy).
+This adds no external-runtime or lossless Spine-interchange claim. All owned
+processes are closed. Slot scope is still global DrawOrder; full Slot/Region
+controls, Region row/header styling and general Tree/Shift/Offset/Lock/Sync remain
+gaps. See [scope](slices/leaf-clipboard.md), [review](evidence/leaf-clipboard.html)
+and [scalar evidence](evidence/leaf-clipboard.json).
+
 ## Grouped clipboard — November 15, 2026 (bounded acceptance passed)
 
 Current native v23 has **64 commands /19 tools**. Portable grouped entries share
@@ -28,8 +44,8 @@ is claimed.
 Installed observations distinguish original-owner fallback, unchanged identity
 when the same bones are reselected in reverse, and ordered mapping onto two
 different parents. Native paste preserves original selection; source owners and
-accepted destination IDs must not be conflated. Tree multi-target mapping and
-single-leaf fallback without a Tree owner remain gaps. Existing slot/skin/layout
+accepted destination IDs must not be conflated. Tree multi-target mapping remains
+a gap; the later leaf checkpoint closes bounded no-Tree source fallback. Existing slot/skin/layout
 guards and Slider lossy interchange/precision failures are unchanged. See
 [scope](slices/grouped-clipboard.md) and [scalar evidence](evidence/grouped-clipboard.json).
 

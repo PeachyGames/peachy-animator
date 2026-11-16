@@ -3,6 +3,14 @@
 Public sources were checked November 14 after the slot authoring commit
 `f345fdd`. The implementation record includes verified export-target, Curves,
 global draw-order and November 15 multi-vertex Direct continuations below.
+The latest leaf-routing continuation keeps 64/19/native v23 unchanged and passes
+five native owner contexts against actual MCP71 typed documents, native Undo,
+same-case Save byte equality and exact fresh typed reopen. Portable v2 wire stays
+unchanged; source receipts are session-local. All owned processes are closed.
+See [scope](leaf-clipboard.md), [review](../evidence/leaf-clipboard.html) and
+[scalar evidence](../evidence/leaf-clipboard.json). Slot global DrawOrder scope,
+broader Region pose controls/rows/header styling and general Tree/Shift/Offset/
+Lock/Sync remain gaps; no full Spine workflow claim follows.
 The bounded November 15 world X-to-Rotate continuation also passes native/MCP/
 runtime/Editor acceptance; its remaining feature and resize limits stay explicit.
 Current inventory is native v23 and **64 commands/19 tools**. Grouped clipboard
@@ -14,8 +22,8 @@ checkpoint left minimum/Save/reopen partial; subsequent unchanged-binary native
 proof closes both, with exact typed recovery and empty history/clipboard/one
 image. See the [native result](../../examples/peach-bot/group-clipboard-native-result.peachy).
 All owned processes are closed; no raw JSON byte-equality claim follows.
-General Tree target selection, no-Tree leaf fallback, Shift/Offset and Lock/Sync
-remain open. See [group scope](grouped-clipboard.md),
+General Tree target selection, Shift/Offset and Lock/Sync remain open; bounded
+no-Tree leaf fallback is accepted by the later continuation above. See [group scope](grouped-clipboard.md),
 [review](../evidence/grouped-clipboard.html) and
 [scalar evidence](../evidence/grouped-clipboard.json).
 
@@ -260,7 +268,7 @@ not complete this broader objective.
 
 | Public update area | Current gap and required native/MCP work |
 | --- | --- |
-| Dopesheet-centric synchronization and curve refinements | Earlier ordinary timing/Curves/Graph acceptance is retained. Grouped clipboard passes MCP run02/57,208 runtime poses, source checks and bounded native authoring/minimum/Save/fresh-reopen, preserving original selection and typed saved data. General Tree target mapping, no-Tree leaf fallback, Shift/Offset, Lock/Sync, presets/defaults and uncalibrated handles remain. See [group scope](grouped-clipboard.md) and [ordinary timing](multi-owner-timeline.md). |
+| Dopesheet-centric synchronization and curve refinements | Earlier ordinary timing/Curves/Graph acceptance is retained. Grouped clipboard passes MCP run02/57,208 runtime poses, source checks and bounded native authoring/minimum/Save/fresh-reopen, preserving original selection and typed saved data. Later leaf routing passes five native owner cases against MCP71, native Undo and same-case Save/fresh typed reopen. Visible Slot global DrawOrder scope, Region controls/extra rows/header styling, general Tree mapping, Shift/Offset, Lock/Sync, presets/defaults and uncalibrated handles remain. See [leaf scope](leaf-clipboard.md). See [group scope](grouped-clipboard.md) and [ordinary timing](multi-owner-timeline.md). |
 | Sliders | Bounded manual/source checkpoints include semantic prepend/remapping, source assignment/clear/property/ranges, process-view memory and own-turn display through native/shared MCP APIs. Referenced Physics/events and remaining Deform transitions, extreme precision and lossless authored conversion remain open. Earlier failed strict interchange and two raw extreme mismatches stay failures. See [contract](slider-constraints.md). |
 | Transform property mapping and local/world choices | One world X→Rotate writer now has accepted evaluation and shared native/MCP endpoint authoring. Tree/Properties resizing now passes bounded native checks; other cross-property destinations, general connection/source/target editing, Match, local/additive and Transform timelines are absent. See [bounded contract](transform-mapping-authoring.md). |
 | Multiple-mesh tracing and weight workflows | Explicit payload creation and bounded one-mesh/one-bone Direct selection/editing exist through shared native/MCP paths. Native topology generation, multiple-mesh/bone workflows, Auto/Smooth/brush/locks/Update, sparse Deform remapping and Pies/overlay remain. |

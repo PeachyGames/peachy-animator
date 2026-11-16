@@ -1,5 +1,36 @@
 # First-slice validation — November 5, 2026
 
+## Verified bounded leaf routing — November 15, 2026
+
+`leaf-focused-checks-04` passes Leaf 10, Slot 46, Draw-order 9 and legacy
+clipboard 15, formatting, all-target Clippy, workspace build and architecture 7.
+Checks03 also pass group 13, Dopesheet 29, Graph 46, Curves 52, Slider 35 and Deform 28;
+filters overlap. Detailed native replay uses Desktop SHA256
+`58255481712c76ecd655ffd1fc1d1e917239a5f083ba2b93a690a5cf194a4c19`.
+Final checks06 repeat Leaf 10, formatting, all-target Clippy and workspace build
+after five user-facing error strings were simplified; success paths/data/routing
+are unchanged. Final Desktop SHA256 is
+`7edd697b394f786554d0868e45fdae314e225566a5939464076b798914450ba1`.
+The new error wording has no separate native replay claim.
+MCP/CLI hashes remain those of accepted group/MCP evidence below. Inventory remains
+native v23, **64 commands /19 tools**.
+
+Actual Leaf MCP71 constructs from blank/one original PNG through 25 commands,
+matches five explicit-owner goldens, preserves state/redo in two negative cases,
+checks exact Undo/Redo/Save/reopen and 12 poses, and closes its child. Native replay
+then matches all five complete typed case documents, including the visible Animate
+Slot row and true Region parent Bone. Native original-ID retention, Paste→Cut/
+two-Undo recovery, other/cross/Slot Undo and Region unrelated-key pruning pass.
+Native Redo is not claimed. The final same-name Region/clip1 native Save equals
+the [public lab](../examples/peach-bot/leaf-clipboard-bot.peachy) byte-for-byte:
+`5d432da2d6773ada1c8c0499a29c85207d689420fa817330104acd7efeddde6d`.
+Fresh native reopen restores the full typed Document with empty history/clipboard
+and one image, and old OS Paste cannot revive receipt ownership. All owned
+processes are closed; three OS screenshots were inspected. This adds no external
+runtime, native inactive/pending/remap or new minimum-window check. See
+[scope](slices/leaf-clipboard.md), [review](evidence/leaf-clipboard.html) and
+[scalar evidence](evidence/leaf-clipboard.json).
+
 ## Verified bounded grouped clipboard — November 15, 2026 follow-up
 
 Native v23 is unchanged at **64 commands /19 tools**. Four focused MCP unit and
@@ -31,7 +62,7 @@ checks. Respective maximum world errors are 1.200913195020803e−5 and
 contain no mesh/UV comparisons. CLI SHA256 is
 `a414e845f0500c562e4ffaa579da64df8ca6a3e6379a6a2127aa7d9c6c618ab6`.
 Installed source-selection/target mapping and paste-preserves-original-selection
-observations are separate from pending Peachy UI acceptance. The 208 runtime
+observations are separate from Peachy UI acceptance. The 208 runtime
 comparisons are independent of the 12 MCP pose queries and establish no raster
 result. Check04's pointer regression used stale marker geometry after two Undo
 operations changed the extent. A repaint barrier fixes the test; the exact click

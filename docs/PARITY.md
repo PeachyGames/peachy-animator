@@ -5,7 +5,17 @@ runtime JSON. A feature is accepted through independent implementation, command/
 history checks, native interaction where applicable, and a controlled editor/runtime
 comparison. The native `.peachy` format is our own editable model.
 
-Current grouped-clipboard checkpoint: native **v23** unchanged, **64 commands /
+Current leaf-routing checkpoint: native **v23**, **64 commands /19 tools** unchanged.
+Five native contexts match complete MCP71 case documents: no-owner source fallback,
+explicit Bone, cross-animation, visible Animate Slot and true Region parent Bone.
+Native Undo, same-case native/MCP Save byte equality and exact fresh reopen with
+empty history/clipboard/one image pass. MCP/headless Undo/Redo is separate evidence.
+All owned processes are closed. Slot Dopesheet scope remains global DrawOrder;
+broader Slot/Region controls, Region rows/header styling, general Tree mapping,
+Shift/Offset and Lock/Sync remain open. See [scope](slices/leaf-clipboard.md),
+[review](evidence/leaf-clipboard.html) and [scalar evidence](evidence/leaf-clipboard.json).
+
+Preceding grouped-clipboard checkpoint: native **v23** unchanged, **64 commands /
 19 tools**. Bounded native acceptance now includes minimum layout and persistence.
 Shared global-origin group copy/paste and explicit target mapping
 pass focused MCP checks and actual 57-request blank-project run02. Two separate
@@ -15,8 +25,9 @@ binary; history/clipboard are empty and one image loads. The earlier `da1a1da`
 code push was partial; its two gates are now closed. See the
 [native result](../examples/peach-bot/group-clipboard-native-result.peachy).
 All owned processes are closed. Original-selection
-preservation is the measured native policy. Tree multi-target mapping, no-Tree
-single-leaf fallback, Shift/Offset and Lock/Sync remain open. See
+preservation is the measured native policy. Tree multi-target mapping,
+Shift/Offset and Lock/Sync remain open; bounded no-Tree leaf fallback is accepted
+by the later checkpoint above. See
 [scope](slices/grouped-clipboard.md), [review](evidence/grouped-clipboard.html) and
 [scalar evidence](evidence/grouped-clipboard.json).
 
@@ -118,7 +129,7 @@ not a new native claim. All final affected local checks pass. See
 | Preview view | Independent keyed clip/skin, clock/transport/Loop/Speed, own pan/zoom/Fit/Bones and localized checked-evaluation errors | Useful in Setup without pending-pose overrides. Single track and instant switches; mixing, layering and next-entry Repeat remain pending. See [scope](VIEWS.md) |
 | Mesh Tools view | Size/Feather/Hull soft selection for unweighted Setup vertex drags and nudges; frozen atomic gestures, influence colors and radius rings | Single selected vertex; Rotate/Scale, weighted/Animate soft transforms and other vertex attachment types remain pending. See [scope](VIEWS.md) |
 | Compact Timeline view | Shared cursor/transport, exact global key markers, decimal entry, snapped/Shift scrubbing, Loop wrapping, pan/zoom and Zoom Keys below the viewport | Independent of Dopesheet visibility; input/history/pose and minimum-window checks. Shared pan/zoom, free docking and exact installed interaction parity remain pending. See [scope](VIEWS.md) |
-| Timeline authoring | Exact typed owner/key inventory, bounded all-owner rows/selection and ordinary mixed retiming/removal; grouped clipboard with global origin, separate source receipts and explicit engine/MCP target maps; animation rename/duplicate | Grouped MCP run02/57, source checks,208 runtime poses and bounded native authoring/minimum/Save/fresh-reopen pass. Paste preserves original selection; typed-document recovery is exact without raw JSON byte equality. General Tree target mapping, no-Tree leaf fallback, Shift/Offset, marquee, Lock/Sync, unsupported timeline editing and clip mixing remain. See [group scope](slices/grouped-clipboard.md) and [ordinary timing](slices/multi-owner-timeline.md) |
+| Timeline authoring | Exact typed owner/key inventory, bounded all-owner rows/selection and ordinary mixed retiming/removal; grouped clipboard with global origin, separate source receipts and explicit engine/MCP target maps; animation rename/duplicate | Grouped MCP run02/57, source checks,208 runtime poses and bounded native authoring/minimum/Save/fresh-reopen pass. Paste preserves original selection; typed-document recovery is exact without raw JSON byte equality. Later leaf routing passes five native owner cases, native Undo and same-case Save/fresh typed reopen against MCP71. Visible Slot global DrawOrder scope, full Region controls/row styling, general Tree mapping, Shift/Offset, marquee, Lock/Sync, unsupported timeline editing and clip mixing remain. See [leaf scope](slices/leaf-clipboard.md). See [group scope](slices/grouped-clipboard.md) and [ordinary timing](slices/multi-owner-timeline.md) |
 | Rig/artwork authoring | Add child bones, rename bones/slots; fresh MCP root-only projects and append-only slot/region/weighted mesh creation through shared commands | Desktop image import/attachment creation and freeform topology remain; stable IDs required before delete/reparent. See [tutorial reconstruction](slices/training-recreation.md) |
 | IK constraints | Bounded one-/two-bone normal IK, animated targets, authored/applied separation, Setup Mix/Positive/target/Rename; keyed Mix/Positive in grouped Dopesheet rows with typed retiming/clipboard and shared pending poses (native9) | [Phase A](slices/ik-design.md), [animated IK review](IK_ANIMATION_REVIEW.md); raw curve precision, creation, transformed chains, interactive review and exact installed UI remain gates |
 | Nested IK chains and child offsets | Leg-then-toe style chains solve sequentially in list order (either order); two-bone children may sit off the parent axis | Original Chain Lab and offset variants match the external runtime in forward and reversed order; a 62-bone game rig with 6 IK and 16 physics constraints round-trips with matching poses |

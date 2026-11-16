@@ -57,6 +57,7 @@ pub(super) fn editor_fixture() -> Editor {
         key_selection: Default::default(),
         key_drag: None,
         timeline_clipboard: None,
+        leaf_source: None,
         group_clipboard: None,
         paste_receipt: None,
         timeline_input: Default::default(),

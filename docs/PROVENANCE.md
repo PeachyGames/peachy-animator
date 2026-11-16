@@ -1,5 +1,29 @@
 # Implementation provenance
 
+## Leaf clipboard target references and receipts — November 15, 2026
+
+Five owned Spine 4.3.26 black-box goldens use the original six-bone/two-region
+fixture and one original PNG: no-owner, explicit other Bone, cross-animation,
+Slot pose Bone and true Region pose Bone. The earlier Tip attachment trial was
+actually Bone:tip and is excluded as Region evidence. Full reference export SHA,
+animations/bones, 933×728 bounds, Setup and original filters are restored; the
+owned process is closed. Licensed captures stay private; no proprietary code
+was inspected or copied.
+
+The independent desktop receipt keeps canonical source identity outside unchanged
+v2 portable payloads. Source checks04 and native Desktop5825 verify all five
+complete typed documents against actual MCP71 cases, visible Slot routing, Region
+pruning and native Undo. MCP/headless Undo/Redo is separate. The blank/one-PNG
+MCP study uses 25 construction commands, two atomic negatives and 12 pose queries;
+it adds no live selection bridge or external-runtime claim. Final same-name
+Region/clip1 native Save is byte-identical to [public MCP5d432](../examples/peach-bot/leaf-clipboard-bot.peachy).
+Fresh native typed reopen is exact with empty history/clipboard and one image;
+old OS text cannot revive the receipt. Three OS screenshots were inspected and
+all owned processes are closed. No new native inactive/pending/remap/minimum
+claim follows. Slot global DrawOrder presentation, full Region controls/styling
+and general Tree/Shift/Offset/Lock/Sync remain open. See [scope](slices/leaf-clipboard.md),
+[review](evidence/leaf-clipboard.html) and [scalar evidence](evidence/leaf-clipboard.json).
+
 ## Grouped clipboard references and shared boundary — November 15, 2026
 
 Existing official Dopesheet/Keys/changelog references and the original six-bone
@@ -38,8 +62,8 @@ is `194418f07951345927cbff588a9ba867a8b957713cfc16330200493d82cf0ae3`;
 it pastes in clip 0, while the unchanged MCPd833 case pastes in clip 1. Twelve
 saved-file/diagnostic decimal-spelling differences are f32-bit equal; no raw
 JSON byte equality is inferred. All owned native/Spine/MCP processes are closed.
-General Tree multi-target UI and leaf
-fallback without a Tree owner remain gaps. Those finite geometry comparisons
+General Tree multi-target UI remains a gap; the later leaf checkpoint closes
+bounded no-Tree source fallback. Those finite geometry comparisons
 establish no broader clipboard interaction or pixel equivalence. See [scope](slices/grouped-clipboard.md) and
 [scalar evidence](evidence/grouped-clipboard.json).
 

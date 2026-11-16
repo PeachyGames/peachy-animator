@@ -1,0 +1,32 @@
+[
+  {
+    "command": "pasteAnimationKeys",
+    "animation": 1,
+    "target": {
+      "type": "bone",
+      "bone": 4
+    },
+    "time": 0.8333333333333334,
+    "clipboard": {
+      "keys": [
+        {
+          "key": {
+            "curve": "linear",
+            "time": 0.0,
+            "value": 3.0
+          },
+          "property": "y"
+        },
+        {
+          "key": {
+            "curve": "linear",
+            "time": 0.3333333134651184,
+            "value": 14.0
+          },
+          "property": "y"
+        }
+      ],
+      "type": "bone"
+    }
+  }
+]

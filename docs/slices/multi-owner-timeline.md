@@ -227,8 +227,12 @@ Ordinary movement now has separate native, actual MCP and runtime evidence.
 The [group clipboard slice](grouped-clipboard.md) now implements explicit owner
 mapping and one shared origin with actual MCP evidence and passing source checks;
 its bounded native acceptance now also includes minimum/Save/fresh reopen. General
-Tree target mapping and no-Tree leaf fallback remain separate from Shift/Offset.
-Existing one-owner clipboard behavior and mixed-Copy refusal do not complete it.
+Tree target mapping remains separate from Shift/Offset. The later
+[leaf continuation](leaf-clipboard.md) accepts no-Tree source fallback and measured
+Slot/Region parent-Bone routing through MCP71 and five native typed-document
+matches, native Undo and exact Save/fresh reopen. It adds no new native
+inactive/pending/remap/minimum or runtime claim. Broader Slot/Region scope and
+general Tree mapping remain open; the earlier mixed-Copy refusal is historical.
 
 Mixed Shift ripple scope, Offset memory resets/nonzero loop bounds, Sync modes,
 filter/lock behavior, fractional timing and general Bezier handling remain

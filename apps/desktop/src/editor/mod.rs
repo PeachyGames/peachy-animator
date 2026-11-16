@@ -114,6 +114,7 @@ pub(crate) struct Editor {
     key_selection: dopesheet_selection::KeySelection,
     key_drag: Option<key_drag::KeyDrag>,
     timeline_clipboard: Option<peachy_engine::AnimationKeyClipboard>,
+    leaf_source: Option<timeline_clipboard::LeafSourceReceipt>,
     group_clipboard: Option<timeline_clipboard::GroupClipboard>,
     paste_receipt: Option<timeline_clipboard::PasteReceipt>,
     timeline_input: timeline_clipboard::TimelineInput,
@@ -249,6 +250,7 @@ impl Editor {
             key_selection: Default::default(),
             key_drag: None,
             timeline_clipboard: None,
+            leaf_source: None,
             group_clipboard: None,
             paste_receipt: None,
             timeline_input: Default::default(),
@@ -365,6 +367,9 @@ impl Editor {
             .selection
             .take()
             .and_then(|item| selection::remap_constraint(item, mapping));
+        if let Some(source) = &mut self.leaf_source {
+            source.remap(mapping);
+        }
         if let Some(group) = &mut self.group_clipboard {
             group.remap(mapping);
         }

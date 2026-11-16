@@ -286,11 +286,25 @@ Final checks05/06 and bounded grouped/leaf-v2 native acceptance pass, including
 the unchanged-binary minimum-window and Save/fresh-process follow-up. Typed
 Document recovery is exact; diagnostic/file decimal spelling is not raw-byte
 equality. The [native result](../examples/peach-bot/group-clipboard-native-result.peachy)
-is distinct from the MCP clip1 case. Owned processes are closed. General Tree multi-target
-mapping and a source receipt for single-leaf no-Tree fallback remain absent.
+is distinct from the MCP clip1 case. Owned processes are closed. General Tree
+multi-target mapping remains absent; the later leaf receipt contract follows.
 Actual MCP run02 and separate 208-pose runtime geometry checks validate the shared
 data path; they do not close native input acceptance. The exact pointer regression
 passes after a test repaint barrier refreshes post-Undo geometry.
+
+`timeline_leaf_clipboard.rs` adds a process-local canonical `LeafSourceReceipt`
+bound to exact owned payload text and copy-time animation diagnostics. The v2
+portable envelope is unchanged. Bone keys use explicit Bone/active Slot or true
+Region parent-Bone targets; otherwise no-owner/Animation fallback uses the owned
+source. Constraint effects remap/tombstone the receipt, and successful Open/New
+clears it. Foreign OS text cannot recreate ownership; failed operations preserve
+the prior valid clipboard/state. Source animation does not dictate destination clip.
+Final checks04 and five native routing cases pass; native Undo and same-case Save
+byte equality to MCP5d432/fresh exact typed reopen pass, while MCP/headless checks
+cover Undo/Redo and inactive/pending/remap guards. No native Redo or new runtime
+check is claimed. Slot global DrawOrder presentation and broader Region controls/
+styling remain gaps. See [leaf scope](slices/leaf-clipboard.md) and
+[scalar evidence](evidence/leaf-clipboard.json).
 
 
 The pure `KeySelection` model keeps an explicit Rows/Shown expansion phase separate

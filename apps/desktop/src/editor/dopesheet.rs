@@ -83,8 +83,16 @@ impl Editor {
                     constraint: *constraint,
                 })
             }
-            Some(TreeItem::Attachment(attachment)) if self.attachment_editable(attachment) => {
-                peachy_engine::deform_key_owner(self.session.document(), attachment).ok()
+            Some(TreeItem::Attachment(attachment)) => {
+                if let Some(bone) = self.selected_region_pose_bone() {
+                    // Keep an inactive Region's explicit scope, but make its
+                    // rows read-only below instead of falling back to all owners.
+                    Some(KeyOwner::Bone { bone })
+                } else if self.attachment_editable(attachment) {
+                    peachy_engine::deform_key_owner(self.session.document(), attachment).ok()
+                } else {
+                    None
+                }
             }
             _ => None,
         }
@@ -97,12 +105,20 @@ impl Editor {
             .filter(|owner| self.timeline_owner_editable(owner))
             .or_else(|| self.retained_graph_owner())
             .or_else(|| self.timeline_owner())
+            .filter(|owner| self.timeline_owner_editable(owner))
     }
     pub(super) fn primary_graph_key(&self) -> Option<peachy_engine::AnimationKey> {
         self.preferred_scalar_curve_selection()
             .or_else(|| self.key_selection.primary().cloned())
     }
     pub(super) fn timeline_owner_editable(&self, owner: &KeyOwner) -> bool {
+        if let Some(TreeItem::Attachment(attachment)) = &self.selection
+            && let Some(bone) = self.selected_region_pose_bone()
+            && (!self.attachment_editable(attachment)
+                || !self.session.document().activity(&self.skin).bones[bone])
+        {
+            return false;
+        }
         let KeyOwner::Deform { attachment } = owner else {
             return true;
         };
@@ -122,6 +138,19 @@ impl Editor {
                     })
                 })
         })
+    }
+    fn selected_region_pose_bone(&self) -> Option<usize> {
+        let TreeItem::Attachment(attachment) = self.selection.as_ref()? else {
+            return None;
+        };
+        let doc = self.session.document();
+        if !matches!(doc.attachment(attachment), Some(Attachment::Region(_))) {
+            return None;
+        }
+        doc.slots
+            .iter()
+            .find(|slot| slot.name == attachment.slot)
+            .map(|slot| slot.bone)
     }
     fn timeline_owner_name(&self, owner: &KeyOwner) -> String {
         let doc = self.session.document();

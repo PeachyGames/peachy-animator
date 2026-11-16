@@ -1,6 +1,17 @@
 # Peachy Animator
 
-The current engine/MCP interface provides **64 commands / 19 tools**, native v23
+The current **64 commands /19 tools**, native v23 checkpoint verifies leaf clipboard
+owner routing through five native cases: no-owner source fallback, explicit Bone,
+cross-animation, visible Animate Slot and true Region parent Bone. Each native
+typed document matches the actual **71-request** MCP case; the final native Save
+is byte-identical to the [Leaf Clipboard Lab](examples/peach-bot/leaf-clipboard-bot.peachy).
+Fresh reopen is exact with empty history/clipboard and one image. Native Undo and
+MCP/headless Undo/Redo pass; all owned processes are closed. See [scope](docs/slices/leaf-clipboard.md),
+[review](docs/evidence/leaf-clipboard.html) and [scalar evidence](docs/evidence/leaf-clipboard.json).
+Visible Slot Dopesheet scope remains global DrawOrder; full Slot/Region controls,
+Region row/header styling, general Tree mapping, Shift/Offset and Lock/Sync remain open.
+
+The preceding grouped checkpoint provides **64 commands / 19 tools**, native v23
 unchanged. Grouped clipboard copy/paste now shares one earliest-key origin and
 explicit entry-to-target mappings through the engine and MCP. The actual blank-
 root/one-PNG run02 passes **57 requests**, nine negative atomic cases, history/
@@ -15,8 +26,8 @@ pastes in clip 0; the MCP lab pastes in clip 1. Raw JSON byte equality is not cl
 See [scope](docs/slices/grouped-clipboard.md),
 [review](docs/evidence/grouped-clipboard.html) and
 [scalar evidence](docs/evidence/grouped-clipboard.json). General Tree target
-multi-selection, leaf fallback without a Tree owner, Shift/Offset and Lock/Sync
-remain open.
+multi-selection, Shift/Offset and Lock/Sync remain open. The later leaf checkpoint
+above closes the bounded no-Tree source fallback gap.
 
 The earlier ordinary multi-owner checkpoint used **63 commands / 18 tools**, with
 **native v23 unchanged**. `get_animation_keys` exposes exact authored owner/key
@@ -339,17 +350,18 @@ Click Dopesheet keys to select them, **Cmd/Ctrl-click** to toggle several, then
 press **Delete** while the canvas has focus or click its Delete icon. Double-click
 a key to delete it. Drag selected keys to retime them together; **Shift** disables
 frame snapping and **Cmd/Ctrl+Shift-drag** duplicates them. **Cmd/Ctrl+C/X/V**
-copies/cuts/pastes focused Dopesheet keys. A leaf paste targets the selected bone at the
-playhead, retaining relative timing and curves. The matching toolbar icons share
-these actions. **Cmd/Ctrl+A** expands selection to its rows, then all shown keys;
+copies/cuts/pastes focused Dopesheet keys. Bone leaf paste uses an explicit Bone
+or an active Slot/Region's parent Bone; without a target it uses its owned source
+receipt. It pastes at the playhead, retaining relative timing and curves. The
+matching toolbar icons share these actions. **Cmd/Ctrl+A** expands selection to its rows, then all shown keys;
 with no selection it selects all shown keys immediately. Click a property row label
 to select its Rotate/Translate/Scale tool. Escape cancels a live drag; each
 committed edit is one undo step.
 
 The bounded all-owner continuation shows represented keyed owners together when
 no editable Tree owner is selected. Ordinary typed-key moves can cross owners;
-the earlier leaf clipboard remains unchanged while grouped copy/paste is now
-implemented with bounded native minimum/persistence acceptance verified.
+leaf portable wire remains unchanged, with session-owned fallback receipts.
+Grouped copy/paste has bounded native minimum/persistence acceptance.
 Shift currently bypasses snapping;
 Spine-style Shift ripple and cycle Offset remain separate unimplemented controls.
 

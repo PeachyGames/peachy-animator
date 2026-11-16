@@ -4,6 +4,42 @@ Written November 10, 2026, at the end of the import-parity push. Read this
 first, then `AGENTS.md`. The workspace rules in `../AGENTS.md` and `../CLAUDE.md`
 still apply.
 
+## Verified bounded leaf owner routing — November 15, 2026
+
+Current v23 and **64 commands /19 tools** are unchanged. Desktop5825/source04
+passes the five native no-owner/explicit Bone/cross-animation/visible Slot/true
+Region cases against complete MCP71 typed documents. Original IDs stay selected,
+incoming keys stay unselected, Paste→Cut/two-Undo and other/cross/Slot Undo pass.
+Final same-name Region/clip1 native Save is byte-identical to public MCP5d432;
+fresh reopen is exact with empty history/clipboard and one image. Old OS Paste
+cannot revive the receipt. All owned processes are closed. Native Undo is
+verified; MCP/headless Undo/Redo is separate. No new native inactive/pending/remap
+or minimum-window claim is added. See [scope](slices/leaf-clipboard.md),
+[review](evidence/leaf-clipboard.html) and [scalar evidence](evidence/leaf-clipboard.json).
+
+**Next action:** calibrate the next bounded workflow beyond leaf routing: Slot
+compound Dopesheet scope/Region pose controls or general Tree target mapping.
+Visible Animate Slot still shows global DrawOrder scope; Region extra unkeyed/
+all-seven rows and single-owner-header styling remain. Shift ripple, cycle
+Offset and Lock/Sync remain separate implementation/calibration gates. Preserve
+the existing Slider strict-interchange failures, precision failures and guarded
+referenced domains. Do not repeat completed leaf fallback implementation.
+
+Leaf closure retires **163 enumerated task files** in `leaf-cleanup.json`, with
+absence verified: duplicate saved scratch/Spine clone, redundant captures/exports,
+failed-check logs/bytecode and both reassigned native controls/export helper/both
+builders. Accepted 03/04/06 reports/logs, 20 selected F12 and three OS-window proofs/
+metadata, MCP71 recipe/requests/scalars/poses and five reference goldens plus
+baseline/full source remain for current PR review and next compound Slot/Bone/
+Tree/Offset calibration until integration or supersession. Shared target serves
+the ongoing goal. All owned processes are closed; no reclaimed-space claim.
+
+Native input helpers must check the topmost window at each mouse target as well
+as the exact foreground PID. Capture starting bounds only after the editor has
+settled; a startup frame can be a different size. Coordinate foreground intervals
+with other active GUI tasks. The ended leaf helpers were retired, so retain these
+checks when recreating a focused probe.
+
 ## Verified bounded grouped clipboard — November 15, 2026 follow-up
 
 Current inventory is **64 commands /19 tools**, native v23 unchanged. Shared
@@ -29,14 +65,14 @@ one image. All owned native/MCP/Spine processes are closed. The leaf-v2
 native control also passes Copy 2, original-selection preservation on Paste and
 Cut/two-Undo recovery. The [native saved result](../examples/peach-bot/group-clipboard-native-result.peachy)
 uses clip 0 paste; public MCPd833 uses clip 1, so their bytes are intentionally distinct.
-**Next action:** calibrate one-owner leaf fallback from all-owner/no-Tree context;
-general Tree target selection and Shift/Offset remain separate work.
+**Historical next action:** the no-Tree leaf fallback below was subsequently
+accepted by the leaf checkpoint above; general Tree/Shift/Offset remains separate.
 Final source checks pass; installed paste preserves original-owner
 identity even when those same bones are reselected in reverse order. Two other
 selected parents map in the measured order; MCP explicit maps reproduce it, but
-general Tree multi-selection is absent. Single-leaf paste from no Tree owner still
-lacks a source receipt. Resolve that bounded fallback and lifecycle before
-claiming a complete native flow; Shift/Offset and Lock/Sync follow separately.
+general Tree multi-selection is absent. The later leaf checkpoint adds the owned
+single-leaf receipt and lifecycle guards without completing general Tree target
+mapping, Slot/Region scope, Shift/Offset or Lock/Sync.
 
 The group checkpoint retires **121 enumerated task-owned disposable files** in
 `group-cleanup.json`: generated runtime bundles/scratch, superseded MCP01 outputs,
@@ -47,9 +83,9 @@ exact to the public native1944 project: private scratch, redundant persistence
 captures and logs. Six accepted F12 JSON witnesses/two OS windows with metadata,
 selected earlier states and MCP02 recipes/requests/scalars stay for active PR
 review until integration or supersession. Reference goldens remain for Tree/
-Offset calibration. Both native-control helpers and the evidence builder are
-explicitly reassigned to active leaf-clipboard implementation/native QA and
-retire after that unit is accepted or superseded; minimum/persistence is complete.
+Offset calibration. Both native-control helpers and the evidence builder were
+reassigned to the leaf unit. That end condition is now reached and they are
+retired in its 163-file cleanup above; grouped minimum/persistence is complete.
 All owned processes are closed. Shared Cargo target serves the continuing goal.
 No reclaimed-space amount is claimed. Final workspace build07 after focused
 tests restores the accepted Desktop/MCP/CLI hashes recorded in the evidence.

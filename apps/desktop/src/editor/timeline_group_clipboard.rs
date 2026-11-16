@@ -112,19 +112,19 @@ impl GroupClipboard {
 }
 
 pub(super) enum CopiedKeys {
-    Single(AnimationKeyClipboard),
+    Single(super::leaf::CopiedLeaf),
     Group(GroupClipboard),
 }
 impl CopiedKeys {
     pub fn len(&self) -> usize {
         match self {
-            Self::Single(keys) => clipboard_len(keys),
+            Self::Single(copied) => clipboard_len(&copied.clipboard),
             Self::Group(keys) => keys.len(),
         }
     }
     pub fn text(&self) -> String {
         match self {
-            Self::Single(keys) => clipboard_text(keys),
+            Self::Single(copied) => copied.source.text().to_owned(),
             Self::Group(keys) => keys.text(),
         }
     }

@@ -149,9 +149,21 @@ Fresh typed Document equality is exact with empty history/clipboard and one imag
 raw JSON decimal spelling is not a byte-equality contract. The earlier `da1a1da`
 code push was partial at the user's request; its two native gates are now closed.
 All owned processes are closed. See the [native result](examples/peach-bot/group-clipboard-native-result.peachy).
-General
-Tree target multi-selection, no-Tree single-leaf fallback, Shift/Offset, Lock/Sync
-and unsupported families remain. See docs/slices/grouped-clipboard.md.
+General Tree target multi-selection, Shift/Offset, Lock/Sync and unsupported
+families remain. See docs/slices/grouped-clipboard.md.
+
+The later leaf-routing checkpoint keeps v23 and 64/19 unchanged. Capture the
+canonical single-owner source receipt separately from unchanged v2 portable data;
+no-owner/Animation fallback uses that receipt, while explicit Bone and active
+Slot/DrawOrderSlot/true Region parent-Bone targets override it. Preserve remap/
+tombstone and Open/New reset guards; OS text alone cannot revive a receipt.
+Checks04 and bounded five-case native acceptance pass on Desktop5825. Native
+Undo, final Save byte equality to MCP5d432 and exact fresh typed reopen with empty
+history/clipboard/one image pass; MCP/headless UndoRedo remains separate evidence.
+All owned processes are closed. Visible Animate Slot scope remains global
+DrawOrder; broader Slot/Region controls and Region row/header styling remain open.
+Inactive/pending/constraint-remap behavior has headless coverage, not new native
+acceptance. See docs/slices/leaf-clipboard.md and docs/evidence/leaf-clipboard.json.
 
 Native v21 adds `IkConstraint.stretch`. IK bones may have equal-magnitude
 scale (mirrored first bone allowed); see docs/slices/ik-scale-stretch.md for the
@@ -324,3 +336,6 @@ Native acceptance must verify actual typed values and resulting document state.
 Requested focus, highlighted text and a synthesized key event alone do not prove
 input reached a field. Keep native OS input confined to the verified task-owned
 foreground window, preserve other applications and remove temporary diagnostics.
+Before each mouse event, also verify that the owned window is topmost at the
+target point. Record original bounds from a settled editor capture rather than
+a transient startup frame, and serialize foreground checks with other GUI tasks.

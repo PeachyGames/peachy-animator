@@ -153,8 +153,9 @@ Accepted incoming IDs are diagnostics rather than automatic selection changes.
 
 These native authoring/history results pass separately from MCP/runtime checks.
 A separate version 2 leaf control verifies Copy 2, original selection retained on
-Paste, Cut removing originals and exact two-Undo recovery. This does not resolve
-the no-Tree fallback gap below.
+Paste, Cut removing originals and exact two-Undo recovery. That earlier control
+did not verify source fallback; the later [leaf continuation](leaf-clipboard.md)
+now accepts it separately.
 
 At historical `da1a1da`, the user chose **finish code checks and push first**.
 Native authoring was accepted and its baseline restored/owned processes closed;
@@ -195,17 +196,20 @@ captures and logs then retire. Six accepted F12 JSON witnesses and two OS-window
 proofs/metadata, selected earlier states and MCP02 recipes/requests/scalars remain
 for active PR review until integration or supersession. Original reference goldens
 remain for next Tree/Offset calibration. Both native-control helpers and the
-evidence builder are explicitly reassigned to active leaf-clipboard implementation/
-native QA, retiring after that unit is accepted or superseded. This retention
-does not imply leaf implementation acceptance; grouped minimum/persistence gates
-are complete and all owned processes are closed. Shared Cargo target supports
+evidence builder were reassigned to leaf implementation/native QA. That unit
+now passes bounded owner routing and Save/reopen, reaching their end condition;
+they are retired in its 163-file `leaf-cleanup.json` lifecycle record. See the
+[leaf retention scope](leaf-clipboard.md#lifecycle). Grouped minimum/persistence gates are complete
+and all owned processes are closed. Shared Cargo target supports
 the ongoing goal. Logical cleanup counts are not reclaimed-space measurements.
 
 General Tree multi-selection is absent, so native two-other-bone target mapping
 is not implemented; explicit MCP maps can reproduce that reference outcome.
-One-owner leaf copy from all-owner context without a Tree owner still lacks a
-source receipt for fallback paste. This is a concrete follow-up, not a completed
-native clipboard flow. Cross-project/system clipboard interoperability, arbitrary
+The later [leaf continuation](leaf-clipboard.md) adds canonical source receipts
+and verifies no-Tree fallback plus measured Slot/Region parent-Bone routing across
+MCP71 and five native complete typed-document cases. Native Undo and same-case
+native/MCP Save byte equality/fresh reopen pass; native Redo is not claimed.
+Full Slot/Region scope and controls remain open. Cross-project/system clipboard interoperability, arbitrary
 mapping and read-only/inactive owner behavior remain bounded. Shift/Offset,
 Lock/Sync, unsupported editable timeline families and the prior Slider lossy
 interchange/precision failures remain open.

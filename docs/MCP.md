@@ -12,7 +12,9 @@ Actual MCP, final checks05/06 and bounded native acceptance pass, including the
 later minimum-window and native Save/fresh-reopen checks on the same binary.
 The earlier `da1a1da` push was partial; those gates are now closed. All owned
 processes are closed. Earlier ordinary acceptance remains verified. Shift/Offset,
-Lock/Sync, general Tree target multi-selection and no-Tree leaf fallback remain open.
+Lock/Sync and general Tree target multi-selection remain open. The later leaf
+checkpoint keeps 64/19 unchanged and closes bounded desktop no-Tree fallback;
+actual MCP71 verifies its five explicit-owner data cases. See [scope](slices/leaf-clipboard.md).
 
 Each server process owns an independent headless document and history. It does
 **not** attach to a running desktop editor, change its selection, refresh its open
@@ -203,8 +205,28 @@ processes are closed. The earlier `da1a1da` code-push partial state is historica
 [Grouped Clipboard Lab](../examples/peach-bot/group-clipboard-bot.peachy),
 [scope](slices/grouped-clipboard.md), [review](evidence/grouped-clipboard.html) and
 [scalar evidence](evidence/grouped-clipboard.json) distinguish implementation
-from accepted interaction. General Tree target multi-selection, no-Tree
-single-leaf fallback, Shift/Offset and Lock/Sync remain outside this checkpoint.
+from accepted interaction. General Tree target multi-selection, Shift/Offset and
+Lock/Sync remain outside this checkpoint. Bounded single-leaf fallback is accepted
+by the later continuation below.
+
+## Leaf clipboard owner routing
+
+No new tool or command is added. Existing `copy_animation_keys` and
+`pasteAnimationKeys` retain the v2 leaf payload; MCP uses an explicit target owner.
+The desktop's process-local source receipt and Tree/pose target resolution are
+separate from the server. Actual MCP71 constructs from blank/one original PNG
+through 25 commands, reproduces five installed owner cases, checks two atomic
+negatives, Undo/Redo, 12 poses and exact Save/reopen; its child is closed. Inspect
+the [public lab](../examples/peach-bot/leaf-clipboard-bot.peachy) and
+[single paste command](../examples/peach-bot/leaf-clipboard-paste-commands.json).
+
+Independent native Desktop5825 matches all five complete case documents and
+verifies Undo, final same-name Region/clip1 Save byte equality to MCP5d432 and
+exact fresh reopen with empty history/clipboard/one image. Native Redo and a new
+external-runtime comparison are not claimed. All owned processes are closed.
+Slot global DrawOrder scope and broader Region controls/styling remain open.
+See [scope](slices/leaf-clipboard.md), [review](evidence/leaf-clipboard.html) and
+[scalar evidence](evidence/leaf-clipboard.json).
 
 ## Export targets
 
