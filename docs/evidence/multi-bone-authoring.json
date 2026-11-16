@@ -1,15 +1,15 @@
 {
   "date": "2026-11-16",
-  "status": "code/MCP checkpoint verified; native candidate acceptance pending; full parity remains open",
+  "status": "bounded native, code and MCP checkpoints verified; full parity remains open",
   "owner": "Peachy Animator multi-Bone authoring continuation",
-  "purpose": "Public original fixtures, exact hashes and bounded code/MCP/runtime proof without implying desktop OS acceptance",
+  "purpose": "Public original fixtures, exact hashes and distinct bounded native/code/MCP/runtime proofs",
   "nativeFormat": 23,
   "commands": 64,
   "tools": 23,
   "independentImplementation": true,
   "goalActive": true,
   "fullSpineParity": false,
-  "nativeCandidateAccepted": false,
+  "nativeCandidateAccepted": true,
   "fixture": {
     "baseline": "examples/peach-bot/multi-bone-bot.peachy",
     "baselineSha256": "71d533f9d1adbb266411b98d99fb3ba7e73910ce454b80a582ffcb01ea5178b1",
@@ -43,7 +43,11 @@
     "containsArtistData": false,
     "containsPrivatePaths": false,
     "regions": 4,
-    "meshes": 0
+    "meshes": 0,
+    "nativeEditedResult": "examples/peach-bot/multi-bone-native-result.peachy",
+    "nativeEditedResultSha256": "14f2e7039d5c90967f37fddd9d1233cac2537c4219c36b47f15313ecd9f513a2",
+    "nativeEditedResultCopiedByteExactly": true,
+    "nativeResultDistinctFromMcpAuthoredResult": true
   },
   "sharedScope": {
     "orderedBoneMembersAndExplicitLogicalPrimary": true,
@@ -147,7 +151,9 @@
     "doesNotEstablishOsInputOrRasterParity": true,
     "recordedMcpAuthoringBinarySha256": "dfebe81a7029baf8730f91390578440e2867e04545e1ffabeda38b53886229eb",
     "sameSourceReproducedByFinalMcpBinarySha256": "04cbd7c12b29efbfd652f832027513a62890a60c5dfa5d0441aa308003591505",
-    "meshCoverageClaimed": false
+    "meshCoverageClaimed": false,
+    "coversNativeEditedResult": false,
+    "nativeEditedResultExternalRuntimeExecuted": false
   },
   "installedReference": {
     "version": "4.3.26",
@@ -171,20 +177,60 @@
     }
   },
   "nativeCandidate": {
-    "accepted": false,
-    "status": "pending OS authoring acceptance on final candidate binary",
+    "accepted": true,
+    "status": "bounded OS authoring, minimum controls, Save and fresh-process recovery passed",
+    "desktopSha256": "1558c25671dde653965f221dcaab7c9bb41b1ff973f91dfe571787faa00e5763",
     "sourceEventTestsAreNotOsEvidence": true,
-    "pendingGates": [
-      "actual ordered selection and removal/ancestor anchors",
-      "Parent numeric and Local/Parent/World viewport translation",
-      "keying, pending and one-step Undo/Redo",
-      "changed held preview and Escape/block/release",
-      "minimum window controls",
-      "edited Save and fresh-process exact reopen"
-    ],
-    "screenshotsIncluded": false
+    "orderedTreeSelectionCases": 9,
+    "viewportCmdSelectionCases": 3,
+    "localParentWorldTranslation": true,
+    "nominalPrimaryTranslationDelta": 20,
+    "actualPrimaryTranslationDelta": 20.000030517578125,
+    "threeAxisTranslationOneUndoExact": true,
+    "selectedAncestorEffectiveGizmoAndFilteredEditRoots": true,
+    "parentTypedAssignmentIncludesDescendants": true,
+    "changedHeldPreviewEscapeRestoresDocumentAndRedo": true,
+    "continuedHeldBlockedUntilRelease": true,
+    "freshGestureAfterReleaseWorks": true,
+    "pendingSaveExcludedAndLiveValuesRetained": true,
+    "globalKeyAndFullSetXyKeyCreateFourKeys": true,
+    "keyUndoRestoresPendingAndRedoExact": true,
+    "pendingUndoScope": "Peachy pre-key pending restoration; exact Spine pending-Undo equivalence not claimed",
+    "minimum": {
+      "innerSize": [
+        1120,
+        740
+      ],
+      "visibleControls": [
+        "translateTool",
+        "value:X",
+        "value:Y",
+        "key:X",
+        "autoKey",
+        "keyEdited",
+        "axes:Local",
+        "axes:Parent",
+        "axes:World"
+      ],
+      "pendingPreserved": true,
+      "allTreeRowsVisible": false,
+      "fullRigVisible": false,
+      "limitations": "Tiny Tree pane and clipped rig; control visibility only"
+    },
+    "groupProperties": "membership presentation only; complete group controls remain open",
+    "savedNativeResultSha256": "14f2e7039d5c90967f37fddd9d1233cac2537c4219c36b47f15313ecd9f513a2",
+    "freshProcessTypedDocumentExact": true,
+    "freshEmptyUndoRedo": true,
+    "freshEmptyPending": true,
+    "freshEmptyClipboard": true,
+    "freshImageCount": 1,
+    "allOwnedNativeProcessesClosed": true,
+    "gallery": "docs/evidence/multi-bone-authoring.html",
+    "screenshotsIncluded": true,
+    "externalRuntimeOnNativeEditedResultExecuted": false
   },
   "remainingLimits": [
+    "Minimum Tree/rig presentation and complete group Properties controls; minimum acceptance covers visible transform/key controls only",
     "Group Rotate, Scale and Shear implementation and full calibrated pivot/axes semantics",
     "Non-Parent numeric assignment, group numeric dragging and broader mixed/operator behavior",
     "General Shift-range selection, selection/clipboard overlaps and arbitrary hierarchy/large-selection workflows",
@@ -193,5 +239,76 @@
     "Compensate Bones/Images authoring and broader transformed-parent/signed-scale calibration",
     "Live GUI/MCP bridge, raster/pixel parity, full Spine parity and hosted-CI acceptance"
   ],
-  "retention": "These original public fixtures and selected scalar evidence are checkpoint artifacts; private disposable producers/duplicates retire after verified integration under task ownership checks"
+  "retention": "These original public fixtures and selected scalar evidence are checkpoint artifacts; private disposable producers/duplicates retire after verified integration under task ownership checks",
+  "nativeMcpReadbacks": {
+    "passed": true,
+    "actualStdio": true,
+    "requests": 36,
+    "poseQueries": 14,
+    "units": [
+      {
+        "study": "setupSave",
+        "requests": 15,
+        "poseQueries": 6,
+        "reportSha256": "4e8d0a4162783d4f8068e12685d1aab16a421ae123d96ec542d874c7407b41e0",
+        "childClosed": true,
+        "childExitCode": 0
+      },
+      {
+        "study": "keyedSave",
+        "requests": 15,
+        "poseQueries": 6,
+        "reportSha256": "b240e78dd868a0138cf1c2777af84194d8733cbd1c9dada619762810554edcce",
+        "childClosed": true,
+        "childExitCode": 0
+      },
+      {
+        "study": "nativeArrayWitnesses",
+        "requests": 6,
+        "poseQueries": 2,
+        "reportSha256": "e9aca02ec92d5285354de90d687a6dd1df383e8f2e58c27812f27fe916e9d712",
+        "childClosed": true,
+        "childExitCode": 0
+      }
+    ],
+    "twoSavedFullDocumentsTypedExact": true,
+    "emptyPendingAndHistoryOnOpen": true,
+    "canonicalization": "Both expected F12 and saved Documents use production native MCP decoding; no blanket float casting or raw decimal spelling equality",
+    "setupAndEditedMidpointAuthoredAppliedWorldArraysExact": true,
+    "poseQueriesReadOnly": true,
+    "inputsAndBinariesUnchanged": true,
+    "allOwnedChildrenClosed": true,
+    "externalRuntimeExecuted": false,
+    "liveGuiBridge": false
+  },
+  "review": {
+    "gallery": "docs/evidence/multi-bone-authoring.html",
+    "images": [
+      {
+        "path": "docs/evidence/multi-bone-authoring/ordered-selection.png",
+        "sha256": "7ce860e7b8b4299319f30654f8ebb88ba4e258641311effd38f9d08f42524702",
+        "width": 1500,
+        "height": 992,
+        "originalUnscaledPeachyCapture": true
+      },
+      {
+        "path": "docs/evidence/multi-bone-authoring/minimum-pending.png",
+        "sha256": "0bd2056474c49217084f1718f0ab502ffbea36b6dd9a34f90d9ec8d1325e827e",
+        "width": 1120,
+        "height": 772,
+        "originalUnscaledPeachyCapture": true
+      },
+      {
+        "path": "docs/evidence/multi-bone-authoring/keyed-fresh-reopen.png",
+        "sha256": "3b9d20f982f0005670bdbc6f72b3184890584ae72430d06cb20dafc48a94fd18",
+        "width": 1500,
+        "height": 992,
+        "originalUnscaledPeachyCapture": true
+      }
+    ],
+    "licensedSpineScreenshotsPublished": false,
+    "browserRenderingClaimed": false,
+    "inspectionScope": "Selected original native Peachy captures and static gallery structure; different captured states are not pixel comparisons",
+    "minimumImageScope": "1120x772 window pixels;1120x740 editor content; tiny Tree/clipped rig"
+  }
 }

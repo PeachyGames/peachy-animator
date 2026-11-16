@@ -6,18 +6,23 @@ native window. The server calls the same document, command, Session, checked pos
 evaluation and file services as the desktop. It uses the official
 [Rust MCP SDK](https://github.com/modelcontextprotocol/rust-sdk), pinned by Cargo.lock.
 
-The multi-Bone **code/MCP checkpoint** keeps native **v23** and **64 commands**,
+The multi-Bone **bounded native/MCP checkpoint** keeps native **v23** and **64 commands**,
 with **23 tools** including shared semantic Translate. Actual run03 on the final
 workspace binary passes
 **104 stdio requests**, **57 construction commands**, **21 pose queries** and
 **four atomic negative cases** from a blank root/one original PNG, with
 pending/history, Auto Key and exact Save/reopen. Final combined source gates pass;
-**native candidate acceptance remains pending**. The exact authored result also
-passes 156 external-runtime poses at 0.001 with the current CLI, separately from
+**bounded native candidate acceptance also passes** on unchanged Desktop `1558`.
+Separate native-save Setup/keyed readbacks and native-pose witnesses use
+**36 actual MCP requests /14 pose queries**; Setup and 0.5-second authored/applied
+locals and worlds match exactly. Edited native Save/fresh reopen is exact with
+empty history/pending/clipboard and one PNG; all owned processes are closed.
+The MCP-authored result passes 156 external-runtime poses at 0.001 with the current CLI, separately from
 the MCP protocol run. See the
 [original baseline](../examples/peach-bot/multi-bone-bot.peachy),
 [construction recipe](../examples/peach-bot/multi-bone-authoring-commands.json),
 [authored result](../examples/peach-bot/multi-bone-authored-bot.peachy) and
+[native saved result](../examples/peach-bot/multi-bone-native-result.peachy), plus
 [checkpoint evidence](evidence/multi-bone-authoring.json).
 
 The preceding 22-tool explicit-pose
@@ -25,7 +30,8 @@ checkpoint passed 138 actual MCP requests from a blank project/one original PNG,
 plus 104 external-runtime poses across two clips at 0.001 (maximum world error
 1.200913195020803e−5; region error 1.52587890625e−5). Those are dated prior proofs;
 the new semantic study has its own separate 156-pose current-CLI comparison.
-Desktop OS input acceptance remains separate and pending. Explicit
+Bounded desktop OS input acceptance is separate evidence; the native `14f2` save
+differs from the MCP-authored `f3bd` result and has no fresh runtime comparison. Explicit
 pose inputs, pending readback and requested-skin evaluation are described below.
 
 The preceding grouped checkpoint used **64 commands /19 tools**. Shared
@@ -157,7 +163,10 @@ plus matching pending overlays through a read-only Session query. All effective
 domains and geometry derive from one checked solve. This is neither a transient
 skin switch nor a live GUI bridge. Current focused MCP checks pass six unit and
 four actual stdio cases; the 104-request study also exercises the semantic tool.
-These results do not accept native group viewport interaction.
+The later bounded native replay separately accepts selection, Translate, Parent
+numeric assignment, pending/keying/history and held cancellation. Minimum
+1120×740 acceptance covers tested toolbar controls only: the Tree is tiny and
+the rig clipped. Broader Properties/layout and full group-transform parity remain open.
 
 ## Semantic Bone translation — code/MCP checkpoint
 
@@ -196,7 +205,9 @@ unchanged. Parent/Local semantic deltas need no parent inverse; World requires
 one only for actual edit roots. Skipped descendants do not create an inverse
 requirement. Rotate/Scale/Shear group operations remain outside this tool.
 Decoder/state/stdio, actual 104-request checks and final combined source gates
-pass. Native candidate interaction acceptance remains pending.
+pass, alongside bounded native Translate interaction acceptance. Group
+Rotate/Scale/Shear, non-Parent numeric operations, group numeric dragging,
+semantic cycle Offset and a live GUI bridge remain open.
 
 ## Exact authored key inventory and mixed timing
 
@@ -950,7 +961,7 @@ calibration, differences and verification limits.
 
 ## World X to Rotate mapping
 
-The implementation inventory is v23, with **64 commands /23 tools**; semantic Translate awaits focused acceptance.
+The implementation inventory is v23, with **64 commands /23 tools**; bounded semantic Translate native/MCP acceptance passes.
 An existing world-space X→Rotate transform constraint can be edited by the same
 semantic range operation as the native Min/Max controls:
 

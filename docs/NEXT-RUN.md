@@ -4,7 +4,7 @@ Written November 10, 2026, at the end of the import-parity push. Read this
 first, then `AGENTS.md`. The workspace rules in `../AGENTS.md` and `../CLAUDE.md`
 still apply.
 
-## Multi-Bone code/MCP checkpoint — November 16, 2026
+## Bounded multi-Bone native acceptance — November 16, 2026
 
 Current inventory is native **v23 /64 commands /23 tools**. Shared Session edits
 now compose explicit per-Bone authored-local results and keys atomically, with
@@ -12,8 +12,24 @@ pending poses, grouped Auto Key, fixed-baseline previews and undo/redo. Shared
 semantic translation captures one evaluated input frame, keeps logical primary
 separate from its highest selected ancestor, and filters selected descendants
 for viewport movement. Parent numeric assignment instead affects every selected
-member, including descendants. The desktop ordered-selection and control code
-is implemented, but **native candidate acceptance is still pending**.
+member, including descendants. **Bounded native candidate acceptance now passes**
+on unchanged Desktop `1558c256…5763`.
+
+Actual input verifies nine Tree and three viewport selection steps, three
+viewport translation axes, selected-ancestor gizmo/filter behavior, changed
+held-preview Escape/block/release, Parent numeric assignment including selected
+descendants, Animate pending Save exclusion with live pending retained, global K,
+full-set keying and exact history. At 1120×740 only the listed toolbar controls
+are accepted: the Tree is tiny and the rig clipped. Final edited Save and fresh
+reopen restore the complete typed Document with empty history/pending/clipboard
+and one PNG. All owned native/MCP processes are closed.
+
+The [native result](../examples/peach-bot/multi-bone-native-result.peachy), SHA256
+`14f2e7039d5c90967f37fddd9d1233cac2537c4219c36b47f15313ecd9f513a2`,
+is distinct from the MCP-authored `f3bd…0983` result. Separate actual MCP Setup
+and keyed-save readbacks use 15+15 requests; a six-request native-witness process
+brings the total to 36 requests/14 pose queries. Setup and 0.5-second authored
+locals, applied locals and world matrices match exact native witnesses.
 
 Actual MCP run03 on the final workspace binary passes **104 requests**, **57 construction commands**, **21 pose
 queries** and **four atomic negative cases** from a blank root and one original
@@ -29,7 +45,8 @@ Graph47, Curves52, transform-gesture9 and Slider-creation5 (overlapping filters)
 plus formatting, all-target Clippy, workspace build and architecture7. The exact
 authored result passes 156 external-runtime poses at 0.001 with the current CLI:
 maximum world error 1.3313017376503922e−5 and region error 1.52587890625e−5.
-Hosted CI has not passed; these checks do not establish desktop OS acceptance.
+That 156-pose runtime proof belongs to the MCP-authored result; the native `14f2`
+save has no fresh external-runtime comparison. Hosted CI has not passed.
 
 Installed Spine 4.3.26 calibration confirms Cmd-add preserves the first unrelated
 anchor; removing it in a three-independent-branch selection chooses the first
@@ -41,10 +58,13 @@ the reference process is closed and its source restored exactly. Rotate/Scale
 observations remain incomplete and Shear was inconclusive; none promotes group
 Rotate/Scale/Shear implementation or acceptance.
 
-**Next action:** perform bounded native
-candidate selection/translation/numeric/keying, history, held cancellation,
-minimum-layout and Save/fresh-reopen acceptance. Keep code/MCP and OS evidence
-separate. Group Rotate/Scale/Shear, non-Parent numeric entry, group numeric drag,
+**Next action:** finish semantic cycle Offset reference calibration using the
+prepared four-clip original fixture: repeated-move memory/reselection, closing
+asymmetric Bezier and Stepped seams, and nonzero loop bounds. It is separate
+from ordinary retiming and is not implemented. Use selective additional
+Rotate/Scale/Shear probes before choosing further group-transform formulas.
+Keep source, native and runtime evidence separate. Group Rotate/Scale/Shear,
+non-Parent numeric entry, group numeric drag, full group Properties workflows,
 general selection/clipboard overlaps, compound Graph/Deform hierarchy,
 Shift/ripple/cycle Offset, Lock/Sync and the live GUI bridge remain open. The
 overall parity goal stays active; do not substitute primitive translation for
@@ -97,8 +117,8 @@ and key-drag4 (overlapping filters), fmt, Clippy, build and architecture7. MCP/C
 stay `0f659abb…d112` / `a414e845…18ab6`; v23 and64/19 stay unchanged. No new geometry
 algorithm or new licensed-runtime comparison is claimed by this UI follow-up.
 
-**The November 15 next action is advanced by the code/MCP checkpoint above;
-native candidate acceptance and semantic cycle Offset remain open.** A single ordered selection must drive Tree, viewport,
+**The November 15 next action is advanced by the accepted multi-Bone checkpoint above;
+semantic cycle Offset remains open.** A single ordered selection must drive Tree, viewport,
 primary/history/number groups and one atomic shared multi-pose Session operation;
 loop-boundary/memento Offset is separate from ordinary key retiming. Keep exact
 clipboard maps independent of Dopesheet/Graph. Probe sibling vs parent/child,

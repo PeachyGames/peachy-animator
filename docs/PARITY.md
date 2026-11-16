@@ -5,17 +5,25 @@ runtime JSON. A feature is accepted through independent implementation, command/
 history checks, native interaction where applicable, and a controlled editor/runtime
 comparison. The native `.peachy` format is our own editable model.
 
-Current **code/MCP checkpoint**: native **v23 /64 commands /23 tools**. Ordered
+Current **bounded native/MCP checkpoint**: native **v23 /64 commands /23 tools**. Ordered
 multi-Bone selection and shared atomic authored-pose edits/keying now support
 pending poses and Auto Key; shared translation filters selected descendants and
 uses one evaluated input frame. Actual blank-root MCP run03 passes 104 requests,
 57 construction commands, 21 pose queries, four atomic negatives and exact
 history/Save/reopen. Engine group8/Session9 and MCP6-unit/4-stdio focused checks
-pass, as do final combined source gates. The exact authored result passes 156
-external-runtime poses at 0.001. **Native candidate acceptance remains pending**;
-installed reference calibration is separate evidence. Hosted CI, pixel and full
-group-transform parity are not claimed. See
-[checkpoint evidence](evidence/multi-bone-authoring.json) and [UI scope](UI_PARITY.md).
+pass, as do final combined source gates. The MCP-authored `f3bdde6a…0983` result
+passes 156 external-runtime poses at 0.001. **Bounded native acceptance now passes
+on unchanged Desktop `1558c256…5763`**: ordered Tree/viewport selection, all three
+Translate axes, ancestor filtering, Parent numeric assignment, changed held
+preview cancellation, pending/keying/history, minimum controls and actual edited
+Save/fresh-process recovery. The separate [native result](../examples/peach-bot/multi-bone-native-result.peachy)
+is `14f2e703…13a2`; it has 36 actual MCP readback requests/14 pose queries, including
+exact native authored/applied/world witnesses. It has no new external-runtime
+comparison. Minimum acceptance covers visible transform/key controls, with a tiny
+Tree and clipped rig. Hosted CI, pixel and full group-transform parity are not
+claimed. All owned processes are closed. See
+[checkpoint evidence](evidence/multi-bone-authoring.json), [review](evidence/multi-bone-authoring.html)
+and [UI scope](UI_PARITY.md).
 
 Preceding leaf-routing checkpoint: native **v23**, **64 commands /19 tools** unchanged.
 Five native contexts match complete MCP71 case documents: no-owner source fallback,
@@ -115,10 +123,10 @@ not a new native claim. All final affected local checks pass. See
 
 | Spine capability | Current implementation | Evidence or remaining gate |
 | --- | --- | --- |
-| Workspace, controls and conventions | Layout/shortcut alignment plus typed Tree, ordered Bone membership/primary snapshots, contextual selection, filters, activation dots, picking, bounded Direct vertex multi-selection and nonoverlapping canvas/divider input | Earlier native divider checks pass. New ordered multi-Bone code/MCP checks are separate from pending native candidate acceptance; remaining tools, general selection overlaps and docking stay open. See [UI parity](UI_PARITY.md) |
+| Workspace, controls and conventions | Layout/shortcut alignment plus typed Tree, ordered Bone membership/primary snapshots, contextual selection, filters, activation dots, picking, bounded Direct vertex multi-selection and nonoverlapping canvas/divider input | Native ordered Tree/viewport selection, transform controls at 1120×740 and exact edited Save/fresh reopen pass. Minimum Tree/rig visibility, full group Properties, remaining tools, general overlaps and docking stay open. See [UI parity](UI_PARITY.md) |
 | Views discovery and auxiliary panels | 16 bounded implemented views, including Curves, Metrics and a compact Timeline | Actual installed 4.3.26 menu has 17 entries: Problems is missing; Slot Color needs current Color behavior. Advanced Graph, Preview mixing and general docking remain. See [native inventory audit](slices/spine-blog-audit-20261114.md) |
-| Transform tools and axes | Existing single-Bone tools plus shared multi-Bone Local/Parent/World translation, selected-ancestor filtering and separate all-member Parent numeric assignment; explicit authored results publish atomically | Actual MCP104 and focused source checks pass; latest OS candidate acceptance pending. Group Rotate/Scale/Shear, non-Parent numeric/group numeric drag, general transformed-parent domains and exact visual/tool conventions remain open |
-| Selection navigation | Ordered Bone membership and explicit primary, Page Up/Down history and Cmd/Ctrl+number storage / number recall use complete selection snapshots | Code/event coverage is separate from pending native candidate acceptance; general Shift-range and persisted group preferences remain open |
+| Transform tools and axes | Existing single-Bone tools plus shared multi-Bone Local/Parent/World translation, selected-ancestor filtering and separate all-member Parent numeric assignment; explicit authored results publish atomically | Actual MCP104, source checks and bounded Native1558 three-axis/ancestor/numeric/cancellation/keying checks pass. Runtime156 covers the MCP-authored result, not native14f2. Group Rotate/Scale/Shear, non-Parent numeric/group numeric drag, general transformed-parent domains and exact visual/tool conventions remain open |
+| Selection navigation | Ordered Bone membership and explicit primary, Page Up/Down history and Cmd/Ctrl+number storage / number recall use complete selection snapshots | Native Cmd-add/remove and ancestor anchors pass nine Tree and three viewport cases; navigation/group storage has code/event coverage. General Shift-range and persisted group preferences remain open |
 | Bone hierarchy and transforms | All five inheritance modes with stepped keyed changes; translation, rotation, scale and shear | Independent shear/affine math and black-box-derived inheritance formulas; Inherit Lab matches the external runtime. Degenerate zero-scale parents are refused. See [inheritance](slices/inherit-modes.md) |
 | Export consumer targets | Native chooser, CLI flag and strict MCP export option share Editor/Runtime policies; unsafe name overrides and contradictory cross-vertex bone order fail Editor output before writing, while Runtime preserves raw identity/fallback and influence arrays | Actual native/CLI/MCP exports and bounded installed-editor/runtime checks pass, including the final ordered weight lab. Editor re-export can prune zero entries/round weights. No full .spine conversion or exact export-dialog layout claim. See [export contract](slices/export-targets.md) and [weight interchange](slices/weight-multivertex.md#editor-guard-and-exact-final-interchange) |
 | Region attachments and skins | Image transforms, named skins, default fallback, Setup slot order; skin-required bones/constraints activated per skin (runtime-matched; see [skin scope](slices/skin-scope.md)) | Native editor round trip and external runtime |
@@ -132,7 +140,7 @@ not a new native claim. All final affected local checks pass. See
 | IK scale and stretch | Uniform/mirrored scaled chains (incl. keyed scale), one- and two-bone stretch with mix, off-axis children under stretch | IK Scale Lab matches the runtime; compress, uniform, softness and keyed stretch remain. See [IK scale and stretch](slices/ik-scale-stretch.md) |
 | Path constraints | Open constant-speed paths (plain/weighted), percent/fixed position, length/fixed/percent spacing, tangent rotation, mixes, position/spacing keys | Path Lab matches the runtime at every sample; closed paths, chain rotation, proportional spacing, mix keys and path editing remain. See [path constraints](slices/path-constraints.md) |
 | Bone animation and curves | Scalar transform keys, linear/stepped/Bezier, playback and scrubbing | External runtime boundaries, backwards scrubbing, full-turn rotation, native key/history checks |
-| Unkeyed poses and Auto Key | Atomic explicit multi-Bone edits/keying, transient bone transforms, IK Mix/Positive, mesh Deform, slot attachment/RGBA and global draw-order poses; Auto Key, K/contextual keys and unified Session undo | MCP exposes pending readback and requested-skin poses; pending-only Open/New requires explicit discard. Save/export excludes pending; global K keys mixed domains atomically. Native multi-Bone candidate and exact pending-history parity remain open; Peachy Undo intentionally restores pre-key pending poses |
+| Unkeyed poses and Auto Key | Atomic explicit multi-Bone edits/keying, transient bone transforms, IK Mix/Positive, mesh Deform, slot attachment/RGBA and global draw-order poses; Auto Key, K/contextual keys and unified Session undo | MCP exposes pending readback and requested-skin poses; pending-only Open/New requires explicit discard. Native multi-Bone pending Save exclusion/live preservation, global K/full-set keys, history and exact fresh recovery pass. Global K keys mixed domains atomically. Exact native pending-history equivalence remains open; Peachy Undo intentionally restores pre-key pending poses |
 | Animation transport | A/D reverse/forward play, bidirectional loops, W/S key navigation, Q/E start/last key and shared Playback speed controls | Nonlooping playback stays within native duration; FPS retiming and interpolation overrides remain pending |
 | Ghosting | Frame/key onion skins, keyed Current comparison, tint/opacity, Images/Solid, Anchor/Loop/On top, per-frame offsets and typed one-bone Selection/Lock/Refresh | Shared checked region/mesh/IK evaluation; bounded 64-pose sampling. Motion Vectors, Silhouette/Xray and exact installed comparison remain pending. See [Views scope](VIEWS.md) and [evidence](evidence/ghosting.json) |
 | Audio view | Bounded WAV waveform/independent audition, actual native clock, seek/zoom/pan/Loop/Volume/Mute and isolated lifecycle | Session-only; native macOS playback, waveform-only elsewhere. Audio attachment/event timelines, synchronization and export remain pending. See [scope](VIEWS.md) |

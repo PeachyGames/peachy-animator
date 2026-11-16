@@ -1,9 +1,9 @@
 # Spine workspace and interaction parity
 
-## Multi-Bone code/MCP checkpoint — November 16, 2026
+## Bounded multi-Bone authoring checkpoint — November 16, 2026
 
-**The implementation and actual MCP proof are available; native candidate
-authoring acceptance is pending.** Ordered Tree Bone membership and primary now
+**Bounded native authoring acceptance passes on Desktop `1558c256…5763`, alongside
+the separate actual MCP/source proof.** Ordered Tree Bone membership and primary now
 travel together through selection history, number groups, remaps and gesture
 contexts. Shared Session APIs compose explicit multi-Bone poses and keys before
 one publication. Parent numeric typing affects all selected members; viewport
@@ -19,7 +19,7 @@ suppression for all three Translate axes. Bones/Images compensation was off.
 Reference processes are closed and exact source restoration is verified.
 Some Rotate/Scale controls produced observations, but their general contract is
 incomplete; Shear was inconclusive. They do not authorize group Rotate/Scale/Shear
-implementation or a native Peachy acceptance claim.
+implementation or acceptance beyond the bounded Translate/numeric workflow.
 
 The original seven-Bone/three-clip study passes 104 actual MCP requests from a
 blank root/one PNG, including 57 construction commands, 21 pose queries, four
@@ -27,14 +27,42 @@ atomic negative cases, pending/history, Auto Key and exact Save/reopen. Engine
 group8/Session9 and MCP6-unit/4-stdio focused checks pass. All fourteen new
 desktop event tests and the final affected-context, formatting, all-target Clippy,
 workspace build and seven-crate architecture checks pass. The exact authored
-result also passes 156 external-runtime poses at 0.001. These are code/geometry
-results, not OS mouse/keyboard, held cancellation, minimum-window or fresh-process
-candidate acceptance. Hosted CI has not passed.
+result `f3bdde6a…0983` also passes 156 external-runtime poses at 0.001. These remain
+the MCP-authored geometry proof; the later native-edited result has no separate
+external-runtime comparison. Hosted CI has not passed.
+
+The unchanged native build passes nine actual Tree selection states and three
+viewport Cmd-add/remove cases, preserving ordered membership and logical primary.
+Local/Parent/World Translate previews commit nominal 20-unit movements (actual
+primary delta 20.000030517578125), each with one exact Undo. A selected descendant
+keeps its local transform while its selected ancestor moves; the effective gizmo
+anchors that ancestor. Changed held preview/Escape restores the exact baseline
+and redo, continued movement stays blocked, and release permits a fresh gesture.
+Parent numeric X assignment deliberately affects both ancestor and descendant.
+
+Native pending values survive Save while staying outside the saved Document.
+Global K and the full-set XY key button create the expected four keys; Undo
+restores pending values and Redo restores the exact keyed Document. This is
+Peachy's established pending-history policy, not a claim of exact Spine pending
+Undo equivalence. At **1120×740**, Translate, XY fields/key, Auto Key, Key Edited
+and all three axes controls are visible. The Tree is tiny and the rig is clipped;
+this does not accept all Tree rows or a fully fitted rig at minimum size. Group
+Properties currently reports membership, not complete group property controls.
+
+Actual edited Save produces public native `14f2e703…13a2`; fresh-process reopen
+matches the complete typed Document with empty Undo/Redo, pending and clipboard,
+and one original image loaded. Separate actual MCP readbacks total **36 requests
+and 14 pose queries**: two typed full-Document comparisons plus exact native Setup
+and edited 0.5-second authored/applied/world witnesses. Both sides use production native
+decoding rather than raw JSON decimal spelling comparisons. Queries are read-only,
+sources stay unchanged and all owned native/MCP processes are closed.
 
 Open the [baseline](../examples/peach-bot/multi-bone-bot.peachy),
-[MCP-authored result](../examples/peach-bot/multi-bone-authored-bot.peachy) or
+[MCP-authored result](../examples/peach-bot/multi-bone-authored-bot.peachy),
+[native-edited result](../examples/peach-bot/multi-bone-native-result.peachy) or
 [57-command construction recipe](../examples/peach-bot/multi-bone-authoring-commands.json).
-Exact hashes and scope are in [scalar evidence](evidence/multi-bone-authoring.json).
+Exact hashes and scope are in [scalar evidence](evidence/multi-bone-authoring.json)
+and the [native review gallery](evidence/multi-bone-authoring.html).
 Group Rotate/Scale/Shear, non-Parent numeric operations, group numeric dragging,
 general Shift-range, clipboard/selection overlaps, compound Graph/Deform editing,
 Shift/ripple/cycle Offset, Lock/Sync and a live GUI bridge remain open. Full Spine

@@ -1303,6 +1303,28 @@ The final workspace MCP independently constructs the public seven-Bone lab from
 156-pose separately licensed Spine 4.3.13 public-API oracle check are recorded in
 [the scalar evidence](evidence/multi-bone-authoring.json). The lab has four Region
 attachments; it adds no weighted-mesh evaluation claim. Desktop event checks are
-separate from OS input and raster evidence: native candidate acceptance remains
-pending, along with the broader group-transform, Offset and live desktop bridge
-work. Private reference captures and transcripts remain outside Git.
+separate from the later bounded native acceptance on unchanged Desktop
+`1558c25671dde653965f221dcaab7c9bb41b1ff973f91dfe571787faa00e5763`.
+Actual guarded input verifies nine Tree and three viewport selection steps,
+Local/Parent/World translation, selected-ancestor anchor/filter behavior, Parent
+numeric assignment including descendants, pending Save exclusion with live
+pending retained, global K/full-set keys, exact history and changed held-preview
+Escape/block/release. At 1120×740 the tested toolbar controls are visible; the
+Tree is tiny and the rig clipped, so full minimum-window usability is not claimed.
+
+The actual edited [native result](../examples/peach-bot/multi-bone-native-result.peachy)
+has SHA256 `14f2e7039d5c90967f37fddd9d1233cac2537c4219c36b47f15313ecd9f513a2`.
+Fresh-process reopen restores the complete typed Document with empty history,
+pending pose and clipboard, and one original PNG. Two separate actual MCP
+save-readback processes use 15 requests each; the native-witness process uses 6,
+for 36 requests/14 pose queries total. Full typed-document comparison and exact
+Setup/0.5-second authored locals, applied locals and world witnesses pass.
+No blanket f32 conversion or raw JSON decimal equality substitutes for typed
+comparison. All owned processes are closed.
+
+The native `14f2` result differs from the MCP-authored `f3bd` result covered by the
+156-pose external-runtime report; no new runtime comparison of native `14f2` is
+claimed. Broader group Rotate/Scale/Shear, numeric/group Properties, semantic
+cycle Offset and a live desktop bridge remain open. Hosted CI has not passed;
+no full Spine or pixel parity follows. Private reference captures and transcripts
+remain outside Git; only original fixture data and Peachy captures are public.

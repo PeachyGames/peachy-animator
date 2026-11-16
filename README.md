@@ -1,24 +1,32 @@
 # Peachy Animator
 
-The current **code/MCP checkpoint** adds ordered multi-Bone selection, atomic
+The current **bounded native checkpoint** adds ordered multi-Bone selection, atomic
 authored-pose edits and shared Local/Parent/World translation. Native v23 and
 64 commands stay unchanged; **23 MCP tools** include explicit pose editing,
 keying and semantic `transform_bones`. An actual blank-root/one-original-PNG run
 passes **104 requests**, 57 construction commands, 21 pose queries, four atomic
 negative cases, pending/history, Auto Key and exact Save/reopen. Final combined
-source checks pass; **native candidate acceptance remains pending**. Installed
-Spine observations and source event tests do not establish OS input acceptance.
-The broader parity goal remains active.
+source checks and **bounded native acceptance pass** on Desktop `1558c256…5763`.
+Actual input verifies Tree/viewport selection, all three translation axes,
+ancestor filtering, Parent numeric assignment, pending/keying/history and held
+Escape/block/release. At 1120×740 the tested toolbar controls are visible;
+the Tree remains tiny and the rig clipped, so this is not full minimum-layout
+parity. Edited Save/fresh reopen is exact with empty history/pending/clipboard
+and one PNG. Separate MCP readbacks use 36 requests/14 poses, including exact
+Setup and 0.5-second authored/applied/world witnesses. All owned processes are closed.
 
 Try the [original seven-Bone/three-clip lab](examples/peach-bot/multi-bone-bot.peachy),
-its [57-command construction recipe](examples/peach-bot/multi-bone-authoring-commands.json)
-and [MCP-authored result](examples/peach-bot/multi-bone-authored-bot.peachy).
+its [57-command construction recipe](examples/peach-bot/multi-bone-authoring-commands.json),
+the [MCP-authored result](examples/peach-bot/multi-bone-authored-bot.peachy) and
+[native saved result](examples/peach-bot/multi-bone-native-result.peachy).
 See the [checkpoint evidence](docs/evidence/multi-bone-authoring.json) and
 [shared MCP contract](docs/MCP.md#semantic-bone-translation--codemcp-checkpoint).
 Group Rotate/Scale/Shear, non-Parent numeric operations, group numeric dragging,
 Shift/ripple/cycle Offset, broader Graph/clipboard workflows and a live GUI bridge
-remain open. The exact authored result passes 156 external-runtime poses at
-0.001 with the current CLI; this is geometry evidence. Hosted CI has not passed.
+remain open, as do complete group Properties workflows. The MCP-authored result
+passes 156 external-runtime poses at 0.001; that result differs from the native
+save, which has no fresh runtime comparison. Full parity remains incomplete and
+the goal active. Hosted CI has not passed.
 
 The preceding accepted compound Dopesheet checkpoint groups a selected Bone, Slot or Region's direct Bone/Slot
 tracks together, retains Bone context on Draw order selection and hides unkeyed
