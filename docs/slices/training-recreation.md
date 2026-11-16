@@ -1,8 +1,15 @@
 # Tutorial recreation through MCP — November 14, 2026
 
+**Verification scope:** these authored studies were verified at the November 14,
+2026 checkpoint, baseline commit `a173c3e1229ab3a49115c94cbd14ede33cf89f40`.
+The recorded MCP replay, native playback and runtime results below do not establish
+a fresh replay on every later build. Later bounded Deform/Graph/Curves, multi-vertex
+Direct and clipboard acceptance is recorded in its own slices; those features
+must not be treated as wholly absent because this earlier study bypassed their UI.
+
 Fresh MCP authoring can build a rig and original animation studies from prepared
-artwork without loading a finished skeleton. `create_project` starts a native v22
-document containing one identity root and an empty default skin. `addBone`,
+artwork without loading a finished skeleton. At that checkpoint, `create_project`
+started a native v22 document containing one identity root and an empty default skin. `addBone`,
 `addSlot`, `addAttachment`, `setSlotAttachment`, `addAnimation`, `setKey` and
 `setDeformKey` then author the document through `apply_commands`. This is a
 separate acceptance path from opening an existing native or Spine export.
@@ -28,6 +35,23 @@ tracks are silent; Wind is silent until its final 16.4-second narrative showcase
 That outro's speech was not reliably transcribed, so low-confidence automatic
 text was rejected. Its visible subtitles were recorded separately as on-screen
 text with sample-bounded timings.
+
+## Four-group acceptance map
+
+The four supplied groups produced two authored animation studies, not four exact
+tutorial reproductions. Part2 and Part3 share the Halloween evidence below.
+
+| Training group | Accepted outcome | MCP / native / runtime evidence | Main workflow or fidelity limit |
+| --- | --- | --- | --- |
+| Halloween Part1 — artwork preparation | Supplied cutouts assembled and preserved unchanged; painting and occlusion repair are external prerequisites. | The Halloween study loads all 37 images natively; source PNG hashes remain unchanged. | Peachy PSD ingestion and raster painting/repair are not demonstrated. |
+| Halloween Part2 — rigging | Independently authored 79-bone, 27-mesh rig with blended weights and representative leg IK. | Shared Halloween study: 4,063 MCP authoring commands, exact history/Save/reopen, textured native playback and runtime geometry within 0.001. | Freeform Mesh New/Modify and automatic/brush/Smooth/Prune workflows were bypassed by explicit data; exact source hierarchy/topology/chest controls are unclaimed. |
+| Halloween Part3 — animation | Three original clips cover body/head, hat/hair, garment/accessory, limb/broom motion and five local Deform mechanisms. | All three clips play natively without evaluation errors; Deform isolation holds bone transforms fixed; maximum runtime mesh error is approximately 0.0007324. | Multi-bone cycle Offset/ripple workflow and exact artist poses/timing remain unverified; later bounded Graph/Curves and clipboard checks are separate evidence. |
+| Wind — hair and clothing | Five measured motion mechanisms using explicitly labeled artwork proxies; two original four-second clips. | 2,970 MCP commands, seven weighted meshes, native playback of both clips/all five panels, zero measured loop/root drift and maximum runtime mesh error approximately 0.0003662. | Original Wind art/rig was absent, preventing exact character comparison; native multi-bone cycle Offset remains a separate workflow gap. |
+
+Later [Curves](curves-authoring.md), [multi-vertex Direct](weight-multivertex.md),
+[grouped clipboard](grouped-clipboard.md) and [leaf routing](leaf-clipboard.md)
+checkpoints extend the available authoring workflows. Their finite acceptance
+does not turn these studies into exact source-animation or complete Spine UI parity.
 
 ## Recreation evidence
 
