@@ -280,6 +280,82 @@ pub(super) fn copy_animation_key_group_schema() -> Value {
     ])
 }
 
+pub(super) fn transform_bones_tool_schema() -> Value {
+    object(&[
+        ("expected_revision", index()),
+        (
+            "target",
+            json!({"oneOf":[
+                object(&[("mode", json!({"type":"string","const":"setup"}))]),
+                object(&[("mode", json!({"type":"string","const":"animate"})), ("animation", index()),
+                    ("time", json!({"type":"number","minimum":0}))])
+            ]}),
+        ),
+        ("skin", text()),
+        (
+            "bones",
+            json!({"type":"array","minItems":1,"uniqueItems":true,"items":index()}),
+        ),
+        ("primary", index()),
+        (
+            "operation",
+            object(&[
+                ("type", json!({"type":"string","const":"translate"})),
+                (
+                    "axes",
+                    json!({"type":"string","enum":["local","parent","world"]}),
+                ),
+                ("delta", object(&[("x", number()), ("y", number())])),
+            ]),
+        ),
+        ("auto_key", json!({"type":"boolean"})),
+    ])
+}
+
+pub(super) fn bone_pose_tool_schema(kind: &str) -> Value {
+    let properties = json!({"type":"array","minItems":1,"uniqueItems":true,
+        "items":{"type":"string","enum":["x","y","rotation","scaleX","scaleY","shearX","shearY"]}});
+    match kind {
+        "edit" => object(&[
+            ("expected_revision", index()),
+            (
+                "target",
+                json!({"oneOf":[
+                    object(&[("mode", json!({"type":"string","const":"setup"}))]),
+                    object(&[("mode", json!({"type":"string","const":"animate"})),
+                             ("animation", index()), ("time", json!({"type":"number","minimum":0}))])
+                ]}),
+            ),
+            (
+                "edits",
+                json!({"type":"array","minItems":1,"items":object(&[
+                    ("bone", index()),
+                    ("transform", object(&["x","y","rotation","scale_x","scale_y","shear_x","shear_y"].map(|name|(name,number())))),
+                    ("properties", properties)
+                ])}),
+            ),
+            ("auto_key", json!({"type":"boolean"})),
+        ]),
+        "key" => object(&[
+            ("expected_revision", index()),
+            ("animation", index()),
+            ("time", json!({"type":"number","minimum":0})),
+            (
+                "keys",
+                json!({"type":"array","minItems":1,"items":object(&[
+                    ("bone", index()), ("properties", properties)
+                ])}),
+            ),
+        ]),
+        "edited" => object(&[
+            ("expected_revision", index()),
+            ("animation", index()),
+            ("time", json!({"type":"number","minimum":0})),
+        ]),
+        _ => unreachable!("Unknown bone pose tool schema"),
+    }
+}
+
 fn object(fields: &[(&str, Value)]) -> Value {
     let properties: Map<String, Value> = fields
         .iter()

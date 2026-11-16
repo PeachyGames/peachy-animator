@@ -1,5 +1,6 @@
 //! Functional animation core and the in-memory session that records its results.
 mod authoring;
+mod bone_transform_group;
 mod clipping;
 mod color_curve_split;
 mod commands;
@@ -16,6 +17,7 @@ mod mesh;
 mod mesh_binding;
 mod mesh_soft_selection;
 mod mesh_weights;
+mod multi_bone;
 mod names;
 mod path_constraint;
 mod picking;
@@ -40,6 +42,7 @@ mod transform_constraint;
 mod transform_mapping;
 
 pub use authoring::{IkPoseEdit, KeyState, PoseEdits, transform_group};
+pub use bone_transform_group::BoneTransformFrame;
 pub use clipping::ClippedGeometry;
 pub use commands::{
     Command, CommandOutcome, EditTarget, apply_command, apply_command_with_effects,
@@ -72,6 +75,7 @@ pub use mesh_weights::{
     MeshWeightEdit, MeshWeightGesture, MeshWeightQuery, MeshWeightSelection, MeshWeightValue,
     VertexWeight, mesh_bone_weights,
 };
+pub use multi_bone::{BonePoseEdit, BonePoseKey};
 pub use path_constraint::{PathPose, path_cubics};
 pub use picking::{attachment_bounds, geometry_bounds, pick_attachment};
 pub use playback::{
@@ -124,6 +128,8 @@ mod bind_pose_inherit_tests;
 #[cfg(test)]
 mod binding_tests;
 #[cfg(test)]
+mod bone_transform_group_tests;
+#[cfg(test)]
 mod clipping_tests;
 #[cfg(test)]
 mod creation_tests;
@@ -161,6 +167,8 @@ mod linked_mesh_tests;
 mod mesh_soft_selection_tests;
 #[cfg(test)]
 mod mesh_weights_tests;
+#[cfg(test)]
+mod multi_bone_tests;
 #[cfg(test)]
 mod multi_owner_timeline_tests;
 #[cfg(test)]

@@ -2,6 +2,7 @@
 use super::*;
 use peachy_engine::{set_transform_value, transform_values};
 
+#[derive(Clone, Copy)]
 pub(super) struct SelectedPose {
     pub authored: Transform,
     pub applied: Transform,
@@ -58,10 +59,22 @@ impl Editor {
             rotation.rem_euclid(360.)
         }
     }
+    pub(super) fn transform_display_values(
+        &self,
+        item: Option<&TreeItem>,
+        local: Transform,
+        parent: Affine,
+    ) -> Transform {
+        let mut shown = transform_values(local, parent, self.axes);
+        if self.setup_mode {
+            shown.rotation = self.setup_rotation_value(item, shown.rotation);
+        }
+        shown
+    }
     pub(super) fn selected_pose(&self) -> Result<SelectedPose, String> {
         let item = self
             .selection
-            .as_ref()
+            .primary()
             .ok_or("Select an editable transform")?;
         let authored = self
             .selected_transform()
@@ -80,6 +93,48 @@ impl Editor {
             parent,
             world,
         })
+    }
+    pub(super) fn selected_bone_poses(&self) -> Result<Vec<(usize, SelectedPose)>, String> {
+        let bones = self.selected_bones();
+        if bones.is_empty() {
+            return Err("Select one or more bones".into());
+        }
+        let doc = self.session.document();
+        let pose = self.session.evaluated_pose(self.weights_edit_target())?;
+        let identity = Affine::from_transform(Transform::default());
+        bones
+            .into_iter()
+            .map(|bone| {
+                let definition = doc
+                    .bones
+                    .get(bone)
+                    .ok_or("Selected bone no longer exists")?;
+                if !pose.active_bones()[bone] {
+                    return Err(format!("Bone {} is inactive in this skin", definition.name));
+                }
+                Ok((
+                    bone,
+                    SelectedPose {
+                        authored: pose.authored_locals()[bone],
+                        applied: pose.applied_locals()[bone],
+                        parent: definition
+                            .parent
+                            .map_or(identity, |parent| pose.world()[parent]),
+                        world: pose.world()[bone],
+                    },
+                ))
+            })
+            .collect()
+    }
+    pub(super) fn selected_bone_transform_frame(&self) -> Result<BoneTransformFrame, String> {
+        let primary = self.primary_bone().ok_or("Select one or more bones")?;
+        let pose = self.session.evaluated_pose(self.weights_edit_target())?;
+        BoneTransformFrame::from_evaluated(
+            self.session.document(),
+            &pose,
+            &self.selected_bones(),
+            primary,
+        )
     }
     #[cfg(test)]
     pub(super) fn selected_parent(&self) -> Result<Affine, String> {
@@ -119,6 +174,25 @@ impl Editor {
         }
     }
     pub(super) fn nudge_transform(&mut self, delta: [f32; 2], fine: bool) {
+        if self.selection.len() > 1 {
+            if self.tool != Tool::Move {
+                self.status = "Group Rotate, Scale and Shear nudges await calibration".into();
+                return;
+            }
+            self.cancel_gesture();
+            let amount = if fine { 0.1 } else { 1. };
+            let result = self
+                .selected_bone_transform_frame()
+                .and_then(|frame| frame.translate(self.axes, delta.map(|value| value * amount)))
+                .and_then(|edits| {
+                    self.session
+                        .edit_poses(self.weights_edit_target(), &edits, self.auto_key)
+                });
+            if let Err(error) = result {
+                self.status = error;
+            }
+            return;
+        }
         self.cancel_gesture();
         let pose = match self.selected_pose() {
             Ok(pose) => pose,

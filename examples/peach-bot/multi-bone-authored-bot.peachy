@@ -1,0 +1,662 @@
+{
+  "format": 23,
+  "name": "Original three-branch Translate lab",
+  "fps": 60,
+  "bones": [
+    {
+      "name": "root",
+      "parent": null,
+      "length": 0.0,
+      "setup": {
+        "x": 0.0,
+        "y": 0.0,
+        "rotation": 0.0,
+        "scale_x": 1.0,
+        "scale_y": 1.0,
+        "shear_x": 0.0,
+        "shear_y": 0.0
+      },
+      "inherit": "normal"
+    },
+    {
+      "name": "source_parent",
+      "parent": 0,
+      "length": 0.0,
+      "setup": {
+        "x": 0.0,
+        "y": 120.0,
+        "rotation": 0.0,
+        "scale_x": 1.0,
+        "scale_y": 1.0,
+        "shear_x": 0.0,
+        "shear_y": 0.0
+      },
+      "inherit": "normal"
+    },
+    {
+      "name": "driver",
+      "parent": 1,
+      "length": 60.0,
+      "setup": {
+        "x": 20.0,
+        "y": 0.0,
+        "rotation": 0.0,
+        "scale_x": 1.0,
+        "scale_y": 1.0,
+        "shear_x": 0.0,
+        "shear_y": 0.0
+      },
+      "inherit": "normal"
+    },
+    {
+      "name": "follower_parent",
+      "parent": 0,
+      "length": 0.0,
+      "setup": {
+        "x": 0.0,
+        "y": -100.0,
+        "rotation": 0.0,
+        "scale_x": 1.0,
+        "scale_y": 1.0,
+        "shear_x": 0.0,
+        "shear_y": 0.0
+      },
+      "inherit": "normal"
+    },
+    {
+      "name": "follower",
+      "parent": 3,
+      "length": 120.0,
+      "setup": {
+        "x": 0.0,
+        "y": 0.0,
+        "rotation": 30.0,
+        "scale_x": 1.0,
+        "scale_y": 1.0,
+        "shear_x": 0.0,
+        "shear_y": 0.0
+      },
+      "inherit": "normal"
+    },
+    {
+      "name": "tip",
+      "parent": 4,
+      "length": 20.0,
+      "setup": {
+        "x": 120.0,
+        "y": 0.0,
+        "rotation": 0.0,
+        "scale_x": 1.0,
+        "scale_y": 1.0,
+        "shear_x": 0.0,
+        "shear_y": 0.0
+      },
+      "inherit": "normal"
+    },
+    {
+      "name": "third_branch",
+      "parent": 0,
+      "length": 80.0,
+      "setup": {
+        "x": 180.0,
+        "y": 50.0,
+        "rotation": -20.0,
+        "scale_x": 1.0,
+        "scale_y": 1.0,
+        "shear_x": 0.0,
+        "shear_y": 0.0
+      },
+      "inherit": "normal"
+    }
+  ],
+  "constraints": [],
+  "slots": [
+    {
+      "name": "driver_marker",
+      "bone": 2,
+      "attachment": "driver_marker",
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "name": "follower_bar",
+      "bone": 4,
+      "attachment": "follower_bar",
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "name": "follower_accent",
+      "bone": 4,
+      "attachment": "follower_accent",
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "name": "follower_zebra",
+      "bone": 4,
+      "attachment": "follower_zebra",
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ]
+    }
+  ],
+  "skins": {
+    "default": {
+      "driver_marker": {
+        "driver_marker": {
+          "type": "region",
+          "path": "blue_cutout",
+          "width": 128.0,
+          "height": 128.0,
+          "transform": {
+            "x": 0.0,
+            "y": 0.0,
+            "rotation": 0.0,
+            "scale_x": 0.1875,
+            "scale_y": 0.1875
+          }
+        }
+      },
+      "follower_accent": {
+        "follower_accent": {
+          "type": "region",
+          "path": "blue_cutout",
+          "width": 128.0,
+          "height": 128.0,
+          "transform": {
+            "x": 25.0,
+            "y": 35.0,
+            "rotation": 0.0,
+            "scale_x": 0.25,
+            "scale_y": 0.125
+          }
+        }
+      },
+      "follower_bar": {
+        "follower_bar": {
+          "type": "region",
+          "path": "blue_cutout",
+          "width": 128.0,
+          "height": 128.0,
+          "transform": {
+            "x": 60.0,
+            "y": 0.0,
+            "rotation": 0.0,
+            "scale_x": 0.9375,
+            "scale_y": 0.1875
+          }
+        }
+      },
+      "follower_zebra": {
+        "follower_zebra": {
+          "type": "region",
+          "path": "blue_cutout",
+          "width": 128.0,
+          "height": 128.0,
+          "transform": {
+            "x": 90.0,
+            "y": 35.0,
+            "rotation": 0.0,
+            "scale_x": 0.25,
+            "scale_y": 0.125
+          }
+        }
+      }
+    }
+  },
+  "skin_scope": {
+    "required_bones": [],
+    "required_constraints": [],
+    "skins": {}
+  },
+  "events": [],
+  "reference_scale": 100.0,
+  "animations": [
+    {
+      "name": "clipboard",
+      "tracks": [
+        {
+          "bone": 2,
+          "property": "y",
+          "keys": [
+            {
+              "time": 0.083333336,
+              "value": 3.0,
+              "curve": "linear"
+            },
+            {
+              "time": 0.41666666,
+              "value": 14.0,
+              "curve": "linear"
+            }
+          ]
+        },
+        {
+          "bone": 4,
+          "property": "rotation",
+          "keys": [
+            {
+              "time": 0.2,
+              "value": 11.0,
+              "curve": "linear"
+            },
+            {
+              "time": 0.5833333,
+              "value": -7.0,
+              "curve": "linear"
+            }
+          ]
+        }
+      ],
+      "ik_tracks": [],
+      "physics": [],
+      "physics_resets": [],
+      "inherit_tracks": [],
+      "deform_tracks": [],
+      "attachment_tracks": [
+        {
+          "slot": 1,
+          "keys": [
+            {
+              "time": 0.33333334,
+              "attachment": null
+            },
+            {
+              "time": 0.6666667,
+              "attachment": "follower_bar"
+            }
+          ]
+        }
+      ],
+      "color_tracks": [
+        {
+          "slot": 1,
+          "keys": [
+            {
+              "time": 0.16666667,
+              "color": [
+                255,
+                0,
+                0,
+                255
+              ],
+              "curves": [
+                "linear",
+                "linear",
+                "linear",
+                "linear"
+              ]
+            },
+            {
+              "time": 0.5,
+              "color": [
+                0,
+                255,
+                0,
+                128
+              ],
+              "curves": [
+                "linear",
+                "linear",
+                "linear",
+                "linear"
+              ]
+            }
+          ]
+        },
+        {
+          "slot": 2,
+          "keys": [
+            {
+              "time": 0.13333334,
+              "color": [
+                255,
+                255,
+                255,
+                255
+              ],
+              "curves": [
+                "linear",
+                "linear",
+                "linear",
+                "linear"
+              ]
+            },
+            {
+              "time": 0.46666667,
+              "color": [
+                136,
+                136,
+                255,
+                255
+              ],
+              "curves": [
+                "linear",
+                "linear",
+                "linear",
+                "linear"
+              ]
+            }
+          ]
+        },
+        {
+          "slot": 3,
+          "keys": [
+            {
+              "time": 0.06666667,
+              "color": [
+                255,
+                255,
+                255,
+                255
+              ],
+              "curves": [
+                "linear",
+                "linear",
+                "linear",
+                "linear"
+              ]
+            },
+            {
+              "time": 0.4,
+              "color": [
+                255,
+                136,
+                255,
+                255
+              ],
+              "curves": [
+                "linear",
+                "linear",
+                "linear",
+                "linear"
+              ]
+            }
+          ]
+        },
+        {
+          "slot": 0,
+          "keys": [
+            {
+              "time": 0.1,
+              "color": [
+                255,
+                255,
+                255,
+                255
+              ],
+              "curves": [
+                "linear",
+                "linear",
+                "linear",
+                "linear"
+              ]
+            },
+            {
+              "time": 0.43333334,
+              "color": [
+                255,
+                255,
+                0,
+                128
+              ],
+              "curves": [
+                "linear",
+                "linear",
+                "linear",
+                "linear"
+              ]
+            }
+          ]
+        }
+      ],
+      "events": [],
+      "draw_order": [
+        {
+          "time": 0.25,
+          "offsets": [
+            {
+              "slot": 1,
+              "offset": -1
+            }
+          ]
+        },
+        {
+          "time": 0.75,
+          "offsets": []
+        }
+      ],
+      "path_tracks": [],
+      "sequence_tracks": [],
+      "slider_tracks": []
+    },
+    {
+      "name": "retime",
+      "tracks": [
+        {
+          "bone": 2,
+          "property": "y",
+          "keys": [
+            {
+              "time": 0.0,
+              "value": 0.0,
+              "curve": "linear"
+            },
+            {
+              "time": 0.16666667,
+              "value": 12.0,
+              "curve": "linear"
+            },
+            {
+              "time": 0.6666667,
+              "value": -4.0,
+              "curve": "linear"
+            },
+            {
+              "time": 1.0,
+              "value": 0.0,
+              "curve": "linear"
+            }
+          ]
+        },
+        {
+          "bone": 4,
+          "property": "rotation",
+          "keys": [
+            {
+              "time": 0.083333336,
+              "value": 0.0,
+              "curve": "linear"
+            },
+            {
+              "time": 0.33333334,
+              "value": 35.0,
+              "curve": "linear"
+            },
+            {
+              "time": 0.75,
+              "value": -15.0,
+              "curve": "linear"
+            },
+            {
+              "time": 1.0,
+              "value": 0.0,
+              "curve": "linear"
+            }
+          ]
+        }
+      ],
+      "ik_tracks": [],
+      "physics": [],
+      "physics_resets": [],
+      "inherit_tracks": [],
+      "deform_tracks": [],
+      "attachment_tracks": [],
+      "color_tracks": [],
+      "events": [],
+      "draw_order": [],
+      "path_tracks": [],
+      "sequence_tracks": [],
+      "slider_tracks": []
+    },
+    {
+      "name": "selection",
+      "tracks": [
+        {
+          "bone": 2,
+          "property": "x",
+          "keys": [
+            {
+              "time": 0.0,
+              "value": 0.0,
+              "curve": "linear"
+            },
+            {
+              "time": 0.5,
+              "value": 44.0,
+              "curve": "linear"
+            },
+            {
+              "time": 1.0,
+              "value": 8.0,
+              "curve": "linear"
+            }
+          ]
+        },
+        {
+          "bone": 2,
+          "property": "y",
+          "keys": [
+            {
+              "time": 0.0,
+              "value": 0.0,
+              "curve": "linear"
+            },
+            {
+              "time": 0.5,
+              "value": -2.5,
+              "curve": "linear"
+            },
+            {
+              "time": 1.0,
+              "value": -5.0,
+              "curve": "linear"
+            }
+          ]
+        },
+        {
+          "bone": 4,
+          "property": "x",
+          "keys": [
+            {
+              "time": 0.0,
+              "value": 0.0,
+              "curve": "linear"
+            },
+            {
+              "time": 0.5,
+              "value": 42.320507,
+              "curve": "linear"
+            },
+            {
+              "time": 1.0,
+              "value": 10.0,
+              "curve": "linear"
+            }
+          ]
+        },
+        {
+          "bone": 4,
+          "property": "y",
+          "keys": [
+            {
+              "time": 0.0,
+              "value": 0.0,
+              "curve": "linear"
+            },
+            {
+              "time": 0.5,
+              "value": 6.5,
+              "curve": "linear"
+            },
+            {
+              "time": 1.0,
+              "value": -7.0,
+              "curve": "linear"
+            }
+          ]
+        },
+        {
+          "bone": 6,
+          "property": "x",
+          "keys": [
+            {
+              "time": 0.0,
+              "value": 0.0,
+              "curve": "linear"
+            },
+            {
+              "time": 0.5,
+              "value": 44.793854,
+              "curve": "linear"
+            },
+            {
+              "time": 1.0,
+              "value": 12.0,
+              "curve": "linear"
+            }
+          ]
+        },
+        {
+          "bone": 6,
+          "property": "y",
+          "keys": [
+            {
+              "time": 0.0,
+              "value": 0.0,
+              "curve": "linear"
+            },
+            {
+              "time": 0.5,
+              "value": -11.340401,
+              "curve": "linear"
+            },
+            {
+              "time": 1.0,
+              "value": -9.0,
+              "curve": "linear"
+            }
+          ]
+        }
+      ],
+      "ik_tracks": [],
+      "physics": [],
+      "physics_resets": [],
+      "inherit_tracks": [],
+      "deform_tracks": [],
+      "attachment_tracks": [],
+      "color_tracks": [],
+      "events": [],
+      "draw_order": [],
+      "path_tracks": [],
+      "sequence_tracks": [],
+      "slider_tracks": []
+    }
+  ]
+}

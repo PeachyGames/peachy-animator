@@ -113,7 +113,7 @@ impl Editor {
 
     fn slot_color_context(&self) -> Option<Context> {
         let doc = self.session.document();
-        let selection = self.selection.as_ref()?;
+        let selection = self.selection.single()?;
         let slot = self.selected_slot()?;
         Some(Context {
             slot,

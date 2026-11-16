@@ -410,7 +410,13 @@ impl Editor {
         &self,
         clipboard: &AnimationKeyClipboard,
     ) -> Result<peachy_engine::KeyOwner, String> {
-        if let Some(TreeItem::Attachment(attachment)) = &self.selection
+        if self.selection.len() > 1 {
+            return Err(
+                "Single-owner key paste to multiple Tree targets requires calibrated mapping"
+                    .into(),
+            );
+        }
+        if let Some(TreeItem::Attachment(attachment)) = self.selection.single()
             && !self.attachment_editable(attachment)
         {
             return Err("The selected attachment is read-only in this skin.".into());
@@ -425,7 +431,7 @@ impl Editor {
                 TreeItem::Slot(slot)
                 | TreeItem::DrawOrderSlot { slot }
                 | TreeItem::Placeholder { slot, .. },
-            ) = self.selection.as_ref()
+            ) = self.selection.single()
         {
             let doc = self.session.document();
             let bone = doc
@@ -462,7 +468,7 @@ impl Editor {
 
     fn bone_leaf_pose_target(&self) -> Result<Option<peachy_engine::KeyOwner>, String> {
         let doc = self.session.document();
-        let slot = match self.selection.as_ref() {
+        let slot = match self.selection.single() {
             Some(TreeItem::Slot(slot) | TreeItem::DrawOrderSlot { slot }) => *slot,
             Some(TreeItem::Attachment(attachment))
                 if matches!(doc.attachment(attachment), Some(Attachment::Region(_))) =>
@@ -485,8 +491,59 @@ impl Editor {
         Ok(Some(peachy_engine::KeyOwner::Bone { bone }))
     }
 
+    fn group_paste_targets(
+        &self,
+        group: &GroupClipboard,
+    ) -> Result<Vec<peachy_engine::AnimationKeyGroupTarget>, String> {
+        let originals = group.targets()?;
+        let bones = self.selected_bones();
+        if bones.len() < 2
+            || originals
+                .iter()
+                .any(|mapping| !matches!(mapping.target, peachy_engine::KeyOwner::Bone { .. }))
+        {
+            return Ok(originals);
+        }
+        let active = self.session.document().activity(&self.skin);
+        if bones.iter().any(|bone| !active.bones[*bone]) {
+            return Err("A selected paste target bone is inactive in this skin.".into());
+        }
+        if originals.len() != bones.len() {
+            return Err("The selected bone count does not match this copied key group.".into());
+        }
+        let matching = originals
+            .iter()
+            .filter(|mapping| match mapping.target {
+                peachy_engine::KeyOwner::Bone { bone } => bones.contains(&bone),
+                _ => false,
+            })
+            .count();
+        if matching == originals.len() {
+            return Ok(originals);
+        }
+        if matching != 0 {
+            return Err(
+                "Partly overlapping source and target bone groups require native calibration."
+                    .into(),
+            );
+        }
+        if originals.len() != 2 {
+            return Err(
+                "Mapping more than two different target bones requires native calibration.".into(),
+            );
+        }
+        Ok(bones
+            .into_iter()
+            .enumerate()
+            .map(|(entry, bone)| peachy_engine::AnimationKeyGroupTarget {
+                entry,
+                target: peachy_engine::KeyOwner::Bone { bone },
+            })
+            .collect())
+    }
+
     fn paste_key_group(&mut self, group: GroupClipboard) -> bool {
-        let targets = match group.targets() {
+        let targets = match self.group_paste_targets(&group) {
             Ok(targets) => targets,
             Err(error) => {
                 self.status = error;

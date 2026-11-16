@@ -93,7 +93,7 @@ fn clip(frames: u32) -> WavClip {
 }
 fn main_state(editor: &Editor) -> serde_json::Value {
     serde_json::json!({"document":editor.session.document(),"pending":editor.session.pose_edits(),
-        "selection":editor.selection.as_ref().map(TreeItem::key),"animation":editor.animation,"skin":editor.skin,
+        "selection":editor.selection.single().map(TreeItem::key),"animation":editor.animation,"skin":editor.skin,
         "time":editor.time,"playing":editor.playing,"direction":editor.play_direction,"looping":editor.looping,
         "speed":editor.playback_speed,"tool":editor.tool as u8,"undo":editor.session.can_undo(),"redo":editor.session.can_redo(),"dirty":editor.session.is_dirty()})
 }

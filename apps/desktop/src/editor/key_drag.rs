@@ -54,7 +54,7 @@ pub(super) struct KeyDrag {
     pub animation: usize,
     pub owner: KeyOwner,
     pub presentation_scope: TimelineScope,
-    pub presentation: Option<TreeItem>,
+    pub presentation: TreeSelection,
     pub snapshot: Option<KeySelectionSnapshot>,
     pub primary_before: Option<KeyId>,
     pressed: KeyId,
@@ -90,7 +90,7 @@ impl KeyDrag {
             animation,
             owner: pressed.owner(),
             presentation_scope: TimelineScope::Owners(vec![pressed.owner()]),
-            presentation: None,
+            presentation: Default::default(),
             snapshot: None,
             primary_before: selected.first().cloned(),
             pressed: pressed.clone(),
@@ -195,7 +195,7 @@ impl KeyDrag {
     pub fn diagnostic(&self) -> serde_json::Value {
         serde_json::json!({
             "active":self.active,"animation":self.animation,"owner":self.owner,
-            "sources":self.sources,"offset":self.offset,"copy":self.copy,"presentation":self.presentation.as_ref().map(TreeItem::diagnostic),
+            "sources":self.sources,"offset":self.offset,"copy":self.copy,"presentation":self.presentation.diagnostic(),
             "presentationScope":match &self.presentation_scope {TimelineScope::All=>serde_json::json!({"type":"all"}),TimelineScope::Owners(owners)=>serde_json::json!({"type":"owners","owners":owners})},
             "toggle":self.toggle,
             "pressedTime":self.pressed_time,"originX":self.origin_x,

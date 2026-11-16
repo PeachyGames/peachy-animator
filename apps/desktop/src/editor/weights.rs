@@ -115,7 +115,7 @@ impl Editor {
         }
         self.cancel_gesture();
         self.reconcile_weights();
-        let source = match self.selection.as_ref() {
+        let source = match self.selection.single() {
             Some(TreeItem::Bone(bone)) => Some(BindMode::Bone(*bone)),
             _ => self.weights.mesh.as_ref().and_then(|key| {
                 match self.session.document().attachment(key) {

@@ -266,7 +266,7 @@ fn actual_ghost_controls_change_preview_and_keep_pose_selection_and_workspace_li
     assert!(editor.ghosting.on_top);
     enter_number(&mut editor, &ctx, "ghostOffset0Value", "2.5");
     assert_eq!(editor.ghosting.offset[0], 2.5);
-    editor.select(selection.clone().unwrap());
+    editor.select(selection.single().cloned().unwrap());
     editor.toggle_views();
     settle(&mut editor, &ctx);
     assert!(editor.ghosting.enabled);

@@ -114,10 +114,11 @@ impl Editor {
 
     pub(super) fn main_tools(&mut self, ui: &mut egui::Ui) {
         self.record_target("mainToolsClip", ui.clip_rect());
+        let group = (self.selection.len() > 1).then(|| self.selected_bone_poses());
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
                 for (tool, label, properties) in layout::TRANSFORM_ROWS {
-                    self.transform_row(ui, label, properties, Some(tool));
+                    self.transform_row(ui, label, properties, Some(tool),group.as_ref());
                 }
             });
             ui.separator();
@@ -136,7 +137,9 @@ impl Editor {
             });
             ui.separator();
             ui.vertical(|ui| {
-                if let Some(item) = &self.selection {
+                if self.selection.len() > 1 {
+                    ui.label(RichText::new(format!("{} bones selected", self.selection.len())).color(ACCENT));
+                } else if let Some(item) = self.selection.primary() {
                     ui.label(RichText::new(item.label(self.session.document())).color(ACCENT));
                 } else {
                     ui.label(RichText::new("No selection").color(MUTED));
@@ -214,8 +217,25 @@ impl Editor {
         label: &str,
         properties: &[Property],
         tool: Option<Tool>,
+        group: Option<&Result<Vec<(usize, super::tools::SelectedPose)>, String>>,
     ) {
-        let (local, parent, query_error) = if self.transform_editable() {
+        let (local, parent, query_error) = if let Some(group) = group {
+            match group {
+                Ok(members) => {
+                    let pose = members
+                        .iter()
+                        .find(|(bone, _)| Some(*bone) == self.primary_bone())
+                        .map(|(_, pose)| *pose)
+                        .expect("Validated selection has a primary frame");
+                    (pose.authored, pose.parent, None)
+                }
+                Err(error) => (
+                    Transform::default(),
+                    Affine::from_transform(Transform::default()),
+                    Some(error.clone()),
+                ),
+            }
+        } else if self.transform_editable() {
             match self.selected_pose() {
                 Ok(pose) => (pose.authored, pose.parent, None),
                 Err(error) => {
@@ -234,16 +254,19 @@ impl Editor {
                 None,
             )
         };
-        let mut shown = peachy_engine::transform_values(local, parent, self.axes);
-        if self.setup_mode {
-            shown.rotation = self.setup_rotation_value(self.selection.as_ref(), shown.rotation);
-        }
-        let editable = tool.map_or_else(
-            || self.transform_editable(),
-            |tool| self.transform_tool_editable(tool),
-        );
+        let shown = self.transform_display_values(self.selection.primary(), local, parent);
+        let editable = group.is_some()
+            || tool.map_or_else(
+                || self.transform_editable(),
+                |tool| self.transform_tool_editable(tool),
+            );
         let scope = (
-            self.selection.as_ref().map(TreeItem::key),
+            self.selection
+                .members()
+                .iter()
+                .map(TreeItem::key)
+                .collect::<Vec<_>>(),
+            self.selection.primary().map(TreeItem::key),
             format!("{:?}", self.axes),
             self.setup_mode,
             self.animation,
@@ -277,28 +300,33 @@ impl Editor {
                 if tool == Some(Tool::Shear) { ui.label(RichText::new("Local").small().color(MUTED)).on_hover_text("Shear angles are edited in local coordinates."); }
                 for &property in properties {
                     let current = property.read(if property.is_scale() || matches!(property, Property::ShearX | Property::ShearY) {local}else{shown});
+                    let mixed = group.and_then(|group|group.as_ref().ok()).is_some_and(|members|members.iter().any(|(bone,pose)| {
+                        let shown=self.transform_display_values(Some(&TreeItem::Bone(*bone)),pose.authored,pose.parent);
+                        property.read(if property.is_scale() || matches!(property,Property::ShearX|Property::ShearY) {pose.authored}else{shown}) != current
+                    }));
                     if property != Property::Rotation {
                         ui.label(if matches!(property, Property::X | Property::ScaleX | Property::ShearX) {"X"} else {"Y"});
                     }
                     let id = ui.next_auto_id();
                     self.prepare_transform_numeric(ui, id);
                     let (mut value, base) = self.transform_numeric_values(id, current);
+                    let mixed=self.transform_numeric_mixed(id,mixed);
                     let focused = ui.memory(|memory|memory.has_focus(id));
                     let world_scale = property.is_scale() && self.axes==Axes::World && !focused && !ui.ctx().is_being_dragged(id);
                     let display = property.read(shown);
                     let parsed = std::cell::Cell::new(None);
-                    let response = ui.add(egui::DragValue::new(&mut value)
+                    let response = ui.add_enabled(group.is_none() || self.axes==Axes::Parent,egui::DragValue::new(&mut value)
                         .speed(if property.is_scale() {0.01} else {0.25})
                         .max_decimals(2).update_while_editing(false)
                         .custom_parser(|text| {let value=peachy_engine::parse_transform_input(text,base).map(f64::from);parsed.set(Some(value.is_some()));value})
-                        .custom_formatter(move |value,_|if focused {value.to_string()}else{format!("{:.2}",if world_scale {f64::from(display)}else{value})}));
+                        .custom_formatter(move |value,_|if mixed {String::new()}else if focused {value.to_string()}else{format!("{:.2}",if world_scale {f64::from(display)}else{value})}));
                     self.record_target(&format!("value:{property:?}"),response.rect);
                     if matches!(property,Property::ShearX|Property::ShearY) {response.clone().on_hover_text("Shear angles are edited in local coordinates.");}
                     if property.is_scale() && self.axes==Axes::World {response.clone().on_hover_text("World scale is shown; entry and dragging edit Local scale.");}
                     self.transform_numeric_response(&response,property,value,parsed.get());
                 }
                 if !self.setup_mode {
-                    let state = self.selected_bone().map_or(KeyState::Absent, |b| self.key_state(b, properties));
+                    let state = self.selected_key_state(properties);
                     let key = super::animation::pose_key_button(ui, state);
                     self.record_target(&format!("key:{:?}", properties[0]), key.rect);
                     if key.on_hover_text("Green: no key · Orange: unkeyed change · Red: keyed\nClick to key this transform; L keys the active tool.").clicked() {

@@ -739,7 +739,7 @@ fn skin_mesh_fixture(linked: bool) -> (Editor, AttachmentRef, AttachmentRef, egu
     editor.session = Session::new(doc).unwrap();
     editor.skin = "peach".into();
     editor.tree.all_skin_attachments = true;
-    editor.selection = Some(TreeItem::Attachment(selected.clone()));
+    editor.selection = Some(TreeItem::Attachment(selected.clone())).into();
     editor.reconcile_selection();
     (editor, selected, source, ctx)
 }

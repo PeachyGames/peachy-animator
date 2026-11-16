@@ -111,7 +111,7 @@ struct GraphEdit {
 
 struct RetainedGraphOwner {
     animation: usize,
-    presentation: Option<TreeItem>,
+    presentation: TreeSelection,
     owner: peachy_engine::KeyOwner,
 }
 

@@ -13,7 +13,7 @@ pub(super) struct DuplicateAnimationState {
 
 impl Editor {
     fn slider_creation_animation(&self) -> Option<usize> {
-        match self.selection {
+        match self.selection.single().cloned() {
             Some(TreeItem::Animation(animation))
                 if self.setup_mode && animation < self.session.document().animations.len() =>
             {

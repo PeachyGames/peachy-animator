@@ -355,7 +355,7 @@ fn weighted_and_inactive_meshes_do_not_acquire_soft_selection_edits() {
         .or_default()
         .insert(key.placeholder.clone(), attachment);
     editor.session = Session::new(doc).unwrap();
-    editor.selection = Some(TreeItem::Attachment(key.clone()));
+    editor.selection = Some(TreeItem::Attachment(key.clone())).into();
     editor.skin = "mint".into();
     let original = editor.session.document().clone();
     editor.begin_mesh_drag(key, 0, Pos2::ZERO);

@@ -54,7 +54,7 @@ fn fixture() -> (Editor, egui::Context) {
     ];
     editor.session = Session::new(doc).unwrap();
     editor.session.set_skin(&editor.skin);
-    editor.selection = None;
+    editor.selection = Default::default();
     editor.key_selection = Default::default();
     editor.reconcile_selection();
     let ctx = editor_context();
@@ -769,7 +769,7 @@ fn leaf_clipboard_linked_deform_uses_canonical_source_and_refuses_stale_rename_w
     editor.session = Session::new(doc).unwrap();
     editor.session.set_skin(&editor.skin);
     editor.setup_mode = false;
-    editor.selection = None;
+    editor.selection = Default::default();
     editor.key_selection = Default::default();
     editor.reconcile_selection();
     editor.key_selection.replace(vec![AnimationKey::Deform {

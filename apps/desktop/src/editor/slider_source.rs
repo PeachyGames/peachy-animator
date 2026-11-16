@@ -33,7 +33,7 @@ impl Editor {
     }
 
     pub(super) fn reconcile_slider_source_focus(&mut self) {
-        let focus = match self.selection {
+        let focus = match self.selection.single().cloned() {
             Some(TreeItem::Constraint(index)) if self.slider_constraint(index).is_some() => {
                 Some(index)
             }
@@ -58,7 +58,7 @@ impl Editor {
         self.cancel_gesture();
         self.weights.bind = None;
         if !self.slider_configuration_available(ctx)
-            || self.selection != Some(TreeItem::Constraint(constraint))
+            || self.selection.single() != Some(&TreeItem::Constraint(constraint))
         {
             return;
         }
@@ -83,7 +83,7 @@ impl Editor {
         if self.slider_view.picker.as_ref().is_some_and(|picker| {
             !self.show_tree
                 || !self.setup_mode
-                || self.selection != Some(TreeItem::Constraint(picker.constraint))
+                || self.selection.single() != Some(&TreeItem::Constraint(picker.constraint))
                 || self.animation != picker.animation
                 || self.time.to_bits() != picker.time.to_bits()
                 || self.skin != picker.skin
@@ -105,7 +105,7 @@ impl Editor {
             return true;
         };
         if !self.setup_mode
-            || self.selection != Some(TreeItem::Constraint(picker.constraint))
+            || self.selection.single() != Some(&TreeItem::Constraint(picker.constraint))
             || self.animation != picker.animation
             || self.time.to_bits() != picker.time.to_bits()
             || self.skin != picker.skin

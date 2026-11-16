@@ -80,7 +80,7 @@ impl Editor {
             .is_some_and(|edit| {
                 !self.setup_mode
                     || !self.show_tree
-                    || self.selection != Some(TreeItem::Constraint(edit.index))
+                    || self.selection.single() != Some(&TreeItem::Constraint(edit.index))
                     || self.animation != edit.animation
                     || self.time != edit.time
                     || self.skin != edit.skin
@@ -132,7 +132,7 @@ impl Editor {
         self.finish_constraint_edit();
         self.cancel_gesture();
         if !self.constraint_input_available(&response.ctx)
-            || self.selection != Some(TreeItem::Constraint(index))
+            || self.selection.single() != Some(&TreeItem::Constraint(index))
         {
             return Err("Select a Transform constraint in Setup".into());
         }
@@ -585,7 +585,7 @@ impl Editor {
         }
     }
     pub(super) fn constraint_edit_diagnostic(&self) -> serde_json::Value {
-        let selected = match self.selection {
+        let selected = match self.selection.single().cloned() {
             Some(TreeItem::Constraint(index)) if self.transform_constraint(index).is_some() => {
                 Some(index)
             }

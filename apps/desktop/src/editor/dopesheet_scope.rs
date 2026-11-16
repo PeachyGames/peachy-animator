@@ -7,41 +7,45 @@ use peachy_engine::KeyOwner;
 pub(super) enum DopesheetFocus {
     #[default]
     All,
-    Bone(usize),
+    Bones(Vec<usize>),
     Owner(KeyOwner),
 }
 
 impl Editor {
     pub(super) fn effective_dopesheet_focus(&self) -> DopesheetFocus {
         let doc = self.session.document();
-        let focus = match self.selection.as_ref() {
+        if self.selection.len() > 1 {
+            return DopesheetFocus::Bones(self.selected_bones());
+        }
+        let focus = match self.selection.single() {
             None => DopesheetFocus::All,
             Some(TreeItem::DrawOrder) => match &self.dopesheet_focus {
-                DopesheetFocus::All | DopesheetFocus::Bone(_) => self.dopesheet_focus.clone(),
+                DopesheetFocus::All | DopesheetFocus::Bones(_) => self.dopesheet_focus.clone(),
                 DopesheetFocus::Owner(_) => DopesheetFocus::Owner(KeyOwner::DrawOrder {}),
             },
-            Some(TreeItem::Bone(bone)) => DopesheetFocus::Bone(*bone),
-            Some(TreeItem::Slot(slot) | TreeItem::DrawOrderSlot { slot }) => doc
-                .slots
-                .get(*slot)
-                .map_or(DopesheetFocus::All, |slot| DopesheetFocus::Bone(slot.bone)),
+            Some(TreeItem::Bone(bone)) => DopesheetFocus::Bones(vec![*bone]),
+            Some(TreeItem::Slot(slot) | TreeItem::DrawOrderSlot { slot }) => {
+                doc.slots.get(*slot).map_or(DopesheetFocus::All, |slot| {
+                    DopesheetFocus::Bones(vec![slot.bone])
+                })
+            }
             Some(TreeItem::Attachment(_)) => self.selected_region_pose_bone().map_or_else(
                 || {
                     self.timeline_owner()
                         .map_or(DopesheetFocus::All, DopesheetFocus::Owner)
                 },
-                DopesheetFocus::Bone,
+                |bone| DopesheetFocus::Bones(vec![bone]),
             ),
             _ => self
                 .timeline_owner()
                 .map_or(DopesheetFocus::All, DopesheetFocus::Owner),
         };
-        match focus {
-            DopesheetFocus::Bone(bone) if bone >= doc.bones.len() => DopesheetFocus::All,
-            DopesheetFocus::Owner(
-                KeyOwner::Ik { constraint } | KeyOwner::Slider { constraint },
-            ) if constraint >= doc.constraints.len() => DopesheetFocus::All,
-            _ => focus,
+        if matches!(&focus,DopesheetFocus::Bones(bones) if bones.iter().any(|bone| *bone >= doc.bones.len()))
+            || matches!(&focus,DopesheetFocus::Owner(KeyOwner::Ik{constraint}|KeyOwner::Slider{constraint}) if *constraint >= doc.constraints.len())
+        {
+            DopesheetFocus::All
+        } else {
+            focus
         }
     }
 
@@ -70,9 +74,12 @@ impl Editor {
         match self.effective_dopesheet_focus() {
             DopesheetFocus::All => TimelineScope::All,
             DopesheetFocus::Owner(owner) => TimelineScope::Owners(vec![owner]),
-            DopesheetFocus::Bone(bone) => {
-                let mut owners = vec![KeyOwner::Bone { bone }];
-                owners.extend(self.compound_slot_owners(bone));
+            DopesheetFocus::Bones(bones) => {
+                let mut owners = Vec::new();
+                for bone in bones {
+                    owners.push(KeyOwner::Bone { bone });
+                    owners.extend(self.compound_slot_owners(bone));
+                }
                 owners.push(KeyOwner::DrawOrder {});
                 TimelineScope::Owners(owners)
             }
@@ -89,7 +96,10 @@ impl Editor {
     pub(super) fn dopesheet_focus_diagnostic(&self) -> serde_json::Value {
         match self.effective_dopesheet_focus() {
             DopesheetFocus::All => serde_json::json!({"type":"all"}),
-            DopesheetFocus::Bone(bone) => serde_json::json!({"type":"bone","bone":bone}),
+            DopesheetFocus::Bones(bones) if bones.len() == 1 => {
+                serde_json::json!({"type":"bone","bone":bones[0]})
+            }
+            DopesheetFocus::Bones(bones) => serde_json::json!({"type":"bones","bones":bones}),
             DopesheetFocus::Owner(owner) => serde_json::json!({"type":"owner","owner":owner}),
         }
     }

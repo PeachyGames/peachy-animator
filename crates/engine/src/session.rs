@@ -1,8 +1,8 @@
 use crate::{
-    AuthoredPose, Command, EditTarget, EvaluatedPose, IkPoseEdit, MeshBindPose, MeshWeightEdit,
-    MeshWeightGesture, MeshWeightSelection, PoseEdits, SliderPose, SliderPoseEdit, SlotPose,
-    SlotPoseEdit, SlotProperty, apply_command, checked_pose_from_authored, ik_keyframe_at,
-    transform_group,
+    AuthoredPose, BonePoseEdit, BonePoseKey, Command, EditTarget, EvaluatedPose, IkPoseEdit,
+    MeshBindPose, MeshWeightEdit, MeshWeightGesture, MeshWeightSelection, PoseEdits, SliderPose,
+    SliderPoseEdit, SlotPose, SlotPoseEdit, SlotProperty, apply_command,
+    checked_pose_from_authored, ik_keyframe_at, transform_group,
 };
 use peachy_document::{
     AttachmentRef, Constraint, Document, IkCurve, IkKeyframe, Property, SliderProperty, Transform,
@@ -400,6 +400,71 @@ impl WorkingState {
             }
         }
     }
+    /// Compose the complete multi-bone candidate before any Session publication.
+    fn edit_poses(
+        &self,
+        target: EditTarget,
+        edits: &[BonePoseEdit],
+        auto_key: bool,
+        skin: &str,
+    ) -> Result<Self, String> {
+        let properties = crate::multi_bone::validate_edits(&self.document, edits)?;
+        match target {
+            EditTarget::Setup => Ok(Self {
+                document: apply_command(
+                    &self.document,
+                    Command::Batch {
+                        commands: edits
+                            .iter()
+                            .map(|edit| Command::SetPose {
+                                bone: edit.bone,
+                                target,
+                                transform: edit.transform,
+                                properties: edit.properties.clone(),
+                            })
+                            .collect(),
+                    },
+                )?,
+                pose: self.pose.clone(),
+            }),
+            EditTarget::Animate { animation, time } => {
+                let mut pose = self.pose.clone();
+                for edit in edits {
+                    // This existing helper owns finite/time/scale validation and
+                    // merges only the requested pending channels. No state is
+                    // published until every member and optional key pass succeeds.
+                    pose = pose.edit(
+                        &self.document,
+                        animation,
+                        time,
+                        edit.bone,
+                        edit.transform,
+                        &edit.properties,
+                    )?;
+                }
+                let candidate = Self {
+                    document: self.document.clone(),
+                    pose,
+                };
+                if auto_key {
+                    candidate.key_targets(
+                        animation,
+                        time,
+                        KeyTargets {
+                            bones: properties
+                                .into_iter()
+                                .map(|(bone, properties)| (bone, transform_group(&properties)))
+                                .collect(),
+                            ..Default::default()
+                        },
+                        skin,
+                    )
+                } else {
+                    Ok(candidate)
+                }
+            }
+        }
+    }
     fn edit_slot_pose(
         &self,
         slot: usize,
@@ -648,6 +713,15 @@ impl Session {
     /// Read the full authored state without solving, keying or discarding it.
     pub fn authored_pose(&self, target: EditTarget) -> Result<AuthoredPose, String> {
         self.state.authored_pose(target, &self.skin)
+    }
+    /// Read sampled data with all pending overrides in an explicit skin context.
+    /// This does not change the Session's selected skin, pose, history or saved state.
+    pub fn authored_pose_with_skin(
+        &self,
+        target: EditTarget,
+        skin: &str,
+    ) -> Result<AuthoredPose, String> {
+        self.state.authored_pose(target, skin)
     }
     /// Full sampled/pending slot state, before attachment tint or display quantization.
     pub fn slot_pose(&self, slot: usize, target: EditTarget) -> Result<SlotPose, String> {
@@ -1253,6 +1327,49 @@ impl Session {
         self.replace(candidate);
         Ok(())
     }
+    /// Apply explicit authored-local results to distinct bones in one history step.
+    /// Empty/duplicate members or properties and any invalid member fail atomically.
+    /// Auto Key expands each bone's requested properties to its transform groups.
+    pub fn edit_poses(
+        &mut self,
+        target: EditTarget,
+        edits: &[BonePoseEdit],
+        auto_key: bool,
+    ) -> Result<(), String> {
+        let skin = self.skin.clone();
+        self.edit_poses_with_skin(target, edits, auto_key, &skin)
+    }
+    /// Apply the same atomic edit in an explicit sampling/keying skin context,
+    /// without changing the Session's selected skin or view preferences.
+    pub fn edit_poses_with_skin(
+        &mut self,
+        target: EditTarget,
+        edits: &[BonePoseEdit],
+        auto_key: bool,
+        skin: &str,
+    ) -> Result<(), String> {
+        let candidate = self.state.edit_poses(target, edits, auto_key, skin)?;
+        self.replace(candidate);
+        Ok(())
+    }
+    /// Rebuild an atomic multi-bone preview from the transaction's fixed baseline.
+    /// Failed members preserve the previous valid preview; cancel restores the exact
+    /// document and pending pose, while commit creates at most one Undo entry.
+    pub fn preview_edit_poses(
+        &mut self,
+        target: EditTarget,
+        edits: &[BonePoseEdit],
+        auto_key: bool,
+    ) -> Result<(), String> {
+        let base = &self
+            .transaction
+            .as_ref()
+            .ok_or("No active transaction")?
+            .state;
+        let candidate = base.edit_poses(target, edits, auto_key, &self.skin)?;
+        self.publish_preview(candidate, crate::EditEffects::default())?;
+        Ok(())
+    }
     /// Recompute a pose gesture from its transaction's fixed document and pending pose.
     /// Requires an active transaction. Auto Key off never creates animation keys;
     /// failures preserve the previous valid preview, baseline, saved state and history.
@@ -1287,6 +1404,27 @@ impl Session {
             time,
             KeyTargets {
                 bones: BTreeMap::from([(bone, properties.to_vec())]),
+                ..Default::default()
+            },
+            &self.skin,
+        )?;
+        self.replace(candidate);
+        Ok(())
+    }
+    /// Key distinct bones from one authored snapshot and clear only those overrides.
+    /// Unlike Auto Key, this keys exactly the explicitly requested properties.
+    pub fn key_poses(
+        &mut self,
+        animation: usize,
+        time: f32,
+        keys: &[BonePoseKey],
+    ) -> Result<(), String> {
+        let bones = crate::multi_bone::validate_keys(self.document(), keys)?;
+        let candidate = self.state.key_targets(
+            animation,
+            time,
+            KeyTargets {
+                bones,
                 ..Default::default()
             },
             &self.skin,

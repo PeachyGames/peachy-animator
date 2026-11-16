@@ -1,16 +1,18 @@
 //! Pure presentation navigation. Document history and the active selection stay separate.
+#[cfg(test)]
 use super::selection::TreeItem;
+use super::selection::TreeSelection;
 use peachy_document::Document;
 
 const LIMIT: usize = 128;
 #[derive(Default)]
 pub(super) struct SelectionHistory {
-    back: Vec<Option<TreeItem>>,
-    forward: Vec<Option<TreeItem>>,
-    groups: [Option<TreeItem>; 10],
+    back: Vec<TreeSelection>,
+    forward: Vec<TreeSelection>,
+    groups: [Option<TreeSelection>; 10],
 }
 impl SelectionHistory {
-    pub fn record(&mut self, previous: &Option<TreeItem>, next: &Option<TreeItem>) {
+    pub fn record(&mut self, previous: &TreeSelection, next: &TreeSelection) {
         if previous != next {
             self.back.push(previous.clone());
             if self.back.len() > LIMIT {
@@ -19,30 +21,34 @@ impl SelectionHistory {
             self.forward.clear();
         }
     }
-    pub fn previous(&mut self, current: &Option<TreeItem>) -> Option<Option<TreeItem>> {
+    pub fn previous(&mut self, current: &TreeSelection) -> Option<TreeSelection> {
         let previous = self.back.pop()?;
         self.forward.push(current.clone());
         Some(previous)
     }
-    pub fn next(&mut self, current: &Option<TreeItem>) -> Option<Option<TreeItem>> {
+    pub fn next(&mut self, current: &TreeSelection) -> Option<TreeSelection> {
         let next = self.forward.pop()?;
         self.back.push(current.clone());
         Some(next)
     }
-    pub fn store(&mut self, index: usize, selection: &Option<TreeItem>) {
+    pub fn store(&mut self, index: usize, selection: &TreeSelection) {
         if let Some(group) = self.groups.get_mut(index) {
-            *group = selection.clone();
+            *group = (!selection.is_empty()).then(|| selection.clone());
         }
     }
-    pub fn recall(&self, index: usize) -> Option<TreeItem> {
+    pub fn recall(&self, index: usize) -> Option<TreeSelection> {
         self.groups.get(index)?.clone()
     }
     pub fn reconcile(&mut self, doc: &Document) {
-        let valid = |item: &Option<TreeItem>| item.as_ref().is_none_or(|item| item.exists(doc));
-        self.back.retain(valid);
-        self.forward.retain(valid);
+        let valid = |selection: &mut TreeSelection| {
+            let empty = selection.is_empty();
+            selection.reconcile(doc);
+            empty || !selection.is_empty()
+        };
+        self.back.retain_mut(valid);
+        self.forward.retain_mut(valid);
         for group in &mut self.groups {
-            if !valid(group) {
+            if group.as_mut().is_some_and(|selection| !valid(selection)) {
                 *group = None;
             }
         }
@@ -50,18 +56,19 @@ impl SelectionHistory {
 
     pub fn remap_constraints(&mut self, mapping: &peachy_engine::ConstraintIndexRemap) {
         for entries in [&mut self.back, &mut self.forward] {
-            entries.retain_mut(|entry| {
-                let Some(item) = entry.take() else {
-                    return true;
-                };
-                *entry = super::selection::remap_constraint(item, mapping);
-                entry.is_some()
+            entries.retain_mut(|selection| {
+                let empty = selection.is_empty();
+                selection.remap_constraints(mapping);
+                empty || !selection.is_empty()
             });
         }
         for group in &mut self.groups {
-            *group = group
-                .take()
-                .and_then(|item| super::selection::remap_constraint(item, mapping));
+            if let Some(selection) = group {
+                selection.remap_constraints(mapping);
+                if selection.is_empty() {
+                    *group = None;
+                }
+            }
         }
     }
 }
@@ -76,35 +83,66 @@ mod tests {
         .unwrap()
     }
     #[test]
+    fn ordered_selection_history_and_number_groups_restore_members_and_primary() {
+        let first = TreeSelection::new(
+            vec![TreeItem::Bone(4), TreeItem::Bone(2)],
+            Some(TreeItem::Bone(4)),
+        )
+        .unwrap();
+        let second = TreeSelection::new(
+            vec![TreeItem::Bone(2), TreeItem::Bone(4)],
+            Some(TreeItem::Bone(4)),
+        )
+        .unwrap();
+        let mut history = SelectionHistory::default();
+        history.record(&TreeSelection::default(), &first);
+        history.record(&first, &second);
+        history.store(3, &first);
+        assert_eq!(history.previous(&second), Some(first.clone()));
+        assert_eq!(history.next(&first), Some(second));
+        assert_eq!(history.recall(3), Some(first));
+        history.store(3, &TreeSelection::default());
+        assert!(history.recall(3).is_none());
+    }
+    #[test]
     fn browsing_selection_preserves_empty_and_typed_targets_and_branches() {
         let mut history = SelectionHistory::default();
-        let bone = Some(TreeItem::Bone(1));
-        let slot = Some(TreeItem::Slot(0));
+        let bone = TreeSelection::singleton(TreeItem::Bone(1));
+        let slot = TreeSelection::singleton(TreeItem::Slot(0));
         history.record(&bone, &slot);
-        history.record(&slot, &None);
-        assert_eq!(history.previous(&None), Some(slot.clone()));
+        history.record(&slot, &TreeSelection::default());
+        assert_eq!(
+            history.previous(&TreeSelection::default()),
+            Some(slot.clone())
+        );
         assert_eq!(history.previous(&slot), Some(bone.clone()));
         assert_eq!(history.next(&bone), Some(slot.clone()));
-        history.record(&slot, &Some(TreeItem::Skin("mint".into())));
+        history.record(
+            &slot,
+            &TreeSelection::singleton(TreeItem::Skin("mint".into())),
+        );
         assert_eq!(history.next(&slot), None);
-        history.record(&None, &None); // Repeated selection is not a history entry.
-        assert_eq!(history.previous(&None), Some(slot));
+        history.record(&TreeSelection::default(), &TreeSelection::default()); // Repeated selection is not a history entry.
+        assert_eq!(history.previous(&TreeSelection::default()), Some(slot));
     }
     #[test]
     fn groups_are_explicit_single_item_targets_and_invalid_entities_are_pruned() {
         let mut history = SelectionHistory::default();
-        let bone = Some(TreeItem::Bone(1));
-        let bad = Some(TreeItem::Bone(999));
+        let bone = TreeSelection::singleton(TreeItem::Bone(1));
+        let bad = TreeSelection::singleton(TreeItem::Bone(999));
         history.store(1, &bone);
-        history.store(2, &Some(TreeItem::Slot(0)));
+        history.store(2, &TreeSelection::singleton(TreeItem::Slot(0)));
         history.store(3, &bad);
         history.record(&bad, &bone);
         history.reconcile(&doc());
-        assert_eq!(history.recall(1), bone);
-        assert_eq!(history.recall(2), Some(TreeItem::Slot(0)));
+        assert_eq!(history.recall(1), Some(bone));
+        assert_eq!(
+            history.recall(2),
+            Some(TreeSelection::singleton(TreeItem::Slot(0)))
+        );
         assert_eq!(history.recall(3), None);
-        assert_eq!(history.previous(&None), None);
-        history.store(1, &None);
+        assert_eq!(history.previous(&TreeSelection::default()), None);
+        history.store(1, &TreeSelection::default());
         assert_eq!(history.recall(1), None);
         assert_eq!(history.recall(99), None);
     }
@@ -114,11 +152,11 @@ mod tests {
         let mut history = SelectionHistory::default();
         for i in 0..200 {
             history.record(
-                &Some(TreeItem::Bone(i % 2)),
-                &Some(TreeItem::Bone((i + 1) % 2)),
+                &TreeSelection::singleton(TreeItem::Bone(i % 2)),
+                &TreeSelection::singleton(TreeItem::Bone((i + 1) % 2)),
             );
         }
-        let mut current = None;
+        let mut current = TreeSelection::default();
         let mut count = 0;
         while let Some(next) = history.previous(&current) {
             current = next;
@@ -142,7 +180,7 @@ mod rename_tests {
         ))
         .unwrap();
         let slot = before.slots.iter().position(|s| s.name == "head").unwrap();
-        let attachment = Some(TreeItem::Attachment(AttachmentRef {
+        let attachment = TreeSelection::singleton(TreeItem::Attachment(AttachmentRef {
             skin: "peach".into(),
             slot: "head".into(),
             placeholder: "head".into(),
@@ -150,7 +188,7 @@ mod rename_tests {
         let mut selection = attachment.clone();
         let mut history = SelectionHistory::default();
         history.store(1, &attachment);
-        history.record(&attachment, &Some(TreeItem::Slot(slot)));
+        history.record(&attachment, &TreeSelection::singleton(TreeItem::Slot(slot)));
         let after = apply_command(
             &before,
             Command::RenameSlot {
@@ -163,7 +201,10 @@ mod rename_tests {
         history.reconcile(&after);
         assert_eq!(selection, None);
         assert_eq!(history.recall(1), None);
-        assert_eq!(history.previous(&Some(TreeItem::Slot(slot))), None);
+        assert_eq!(
+            history.previous(&TreeSelection::singleton(TreeItem::Slot(slot))),
+            None
+        );
         assert!(TreeItem::Slot(slot).exists(&after));
         // Reusing the name for another slot cannot revive a pruned target/group.
         let another = if slot == 0 { 1 } else { 0 };

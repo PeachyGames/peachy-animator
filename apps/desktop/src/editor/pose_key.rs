@@ -8,9 +8,8 @@ pub(super) enum PoseKeyAction {
         constraint: usize,
         properties: Vec<SliderProperty>,
     },
-    Transform {
-        bone: usize,
-        properties: Vec<Property>,
+    Transforms {
+        keys: Vec<peachy_engine::BonePoseKey>,
     },
     Edited {
         bone: Option<usize>,
@@ -31,6 +30,7 @@ pub(super) struct PoseKeyRequest {
     action: PoseKeyAction,
     animation: usize,
     time: f32,
+    selection: TreeSelection,
 }
 
 impl Editor {
@@ -49,6 +49,7 @@ impl Editor {
             action,
             animation: self.animation,
             time: self.time,
+            selection: self.selection.clone(),
         };
         if self.drag.is_some()
             || self.ik_edit.is_some()
@@ -64,7 +65,17 @@ impl Editor {
     }
 
     fn apply_pose_key(&mut self, request: PoseKeyRequest) {
+        if matches!(&request.action, PoseKeyAction::Transforms { .. })
+            && request.selection != self.selection
+        {
+            self.status = "Bone selection changed before keying".into();
+            return;
+        }
         let result = match request.action {
+            PoseKeyAction::Transforms { keys } => {
+                self.session
+                    .key_poses(request.animation, request.time, &keys)
+            }
             PoseKeyAction::Slider {
                 constraint,
                 properties,
@@ -76,10 +87,6 @@ impl Editor {
             ),
             PoseKeyAction::DrawOrder => {
                 self.session.key_draw_order(request.animation, request.time)
-            }
-            PoseKeyAction::Transform { bone, properties } => {
-                self.session
-                    .key_pose(request.animation, request.time, bone, &properties)
             }
             PoseKeyAction::Edited { bone } => {
                 self.session

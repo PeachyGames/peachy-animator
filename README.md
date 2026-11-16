@@ -1,6 +1,26 @@
 # Peachy Animator
 
-Compound Dopesheet groups a selected Bone, Slot or Region's direct Bone/Slot
+The current **code/MCP checkpoint** adds ordered multi-Bone selection, atomic
+authored-pose edits and shared Local/Parent/World translation. Native v23 and
+64 commands stay unchanged; **23 MCP tools** include explicit pose editing,
+keying and semantic `transform_bones`. An actual blank-root/one-original-PNG run
+passes **104 requests**, 57 construction commands, 21 pose queries, four atomic
+negative cases, pending/history, Auto Key and exact Save/reopen. Final combined
+source checks pass; **native candidate acceptance remains pending**. Installed
+Spine observations and source event tests do not establish OS input acceptance.
+The broader parity goal remains active.
+
+Try the [original seven-Bone/three-clip lab](examples/peach-bot/multi-bone-bot.peachy),
+its [57-command construction recipe](examples/peach-bot/multi-bone-authoring-commands.json)
+and [MCP-authored result](examples/peach-bot/multi-bone-authored-bot.peachy).
+See the [checkpoint evidence](docs/evidence/multi-bone-authoring.json) and
+[shared MCP contract](docs/MCP.md#semantic-bone-translation--codemcp-checkpoint).
+Group Rotate/Scale/Shear, non-Parent numeric operations, group numeric dragging,
+Shift/ripple/cycle Offset, broader Graph/clipboard workflows and a live GUI bridge
+remain open. The exact authored result passes 156 external-runtime poses at
+0.001 with the current CLI; this is geometry evidence. Hosted CI has not passed.
+
+The preceding accepted compound Dopesheet checkpoint groups a selected Bone, Slot or Region's direct Bone/Slot
 tracks together, retains Bone context on Draw order selection and hides unkeyed
 channels. Native input on Desktop14b verifies 12-key mixed retiming, exact
 Undo/Redo, held cancellation, explicit Slot-color paste and all 12 timeline targets
@@ -14,7 +34,7 @@ Try the [original lab](examples/peach-bot/compound-dopesheet-bot.peachy), its
 [43-command construction recipe](examples/peach-bot/compound-dopesheet-authoring-commands.json),
 the [one-command mixed move](examples/peach-bot/compound-dopesheet-move-commands.json)
 and the [native saved result](examples/peach-bot/compound-dopesheet-native-result.peachy).
-Inventory remains native v23, **64 commands /19 tools**. Compound Graph/Deform
+That checkpoint used native v23, **64 commands /19 tools**. Compound Graph/Deform
 hierarchy, general Tree multi-selection, full visible Slot/Region properties and
 pose controls, Shift/Offset and
 Lock/Sync remain open; the minimum claim covers timeline targets, not every Tree row.

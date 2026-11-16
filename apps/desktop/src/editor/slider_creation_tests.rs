@@ -194,10 +194,10 @@ fn slider_creation_native_menu_remaps_pending_and_groups_with_one_undo_redo() {
     let (mut editor, ctx) = ready();
     editor
         .selection_history
-        .store(1, &Some(TreeItem::Constraint(0)));
+        .store(1, &TreeSelection::singleton(TreeItem::Constraint(0)));
     editor
         .selection_history
-        .store(2, &Some(TreeItem::Constraint(1)));
+        .store(2, &TreeSelection::singleton(TreeItem::Constraint(1)));
     editor.timeline_clipboard = Some(AnimationKeyClipboard::Slider {
         keys: vec![peachy_engine::SliderClipboardKey {
             property: SliderProperty::Mix,
@@ -244,11 +244,17 @@ fn slider_creation_native_menu_remaps_pending_and_groups_with_one_undo_redo() {
         document.animations[1].slider_tracks[0].keys
     );
     assert_eq!(
-        editor.selection_history.recall(1),
+        editor
+            .selection_history
+            .recall(1)
+            .and_then(|selection| selection.single().cloned()),
         Some(TreeItem::Constraint(1))
     );
     assert_eq!(
-        editor.selection_history.recall(2),
+        editor
+            .selection_history
+            .recall(2)
+            .and_then(|selection| selection.single().cloned()),
         Some(TreeItem::Constraint(2))
     );
     assert_eq!(editor.timeline_clipboard, clipboard);
@@ -260,11 +266,17 @@ fn slider_creation_native_menu_remaps_pending_and_groups_with_one_undo_redo() {
         "removed Slider must not select the old constraint at index zero"
     );
     assert_eq!(
-        editor.selection_history.recall(1),
+        editor
+            .selection_history
+            .recall(1)
+            .and_then(|selection| selection.single().cloned()),
         Some(TreeItem::Constraint(0))
     );
     assert_eq!(
-        editor.selection_history.recall(2),
+        editor
+            .selection_history
+            .recall(2)
+            .and_then(|selection| selection.single().cloned()),
         Some(TreeItem::Constraint(1))
     );
     key(
@@ -314,7 +326,7 @@ fn slider_creation_failed_command_never_replays_previous_structural_effects() {
     let (mut editor, _) = ready();
     editor
         .selection_history
-        .store(2, &Some(TreeItem::Constraint(1)));
+        .store(2, &TreeSelection::singleton(TreeItem::Constraint(1)));
     assert!(editor.dispatch(Command::CreateSliderConstraint { animation: 0 }));
     editor.select(TreeItem::Constraint(2));
     let document = editor.session.document().clone();
@@ -328,7 +340,10 @@ fn slider_creation_failed_command_never_replays_previous_structural_effects() {
     assert_eq!(editor.pose_view_generation, generation);
     assert_eq!(editor.selection, Some(TreeItem::Constraint(2)));
     assert_eq!(
-        editor.selection_history.recall(2),
+        editor
+            .selection_history
+            .recall(2)
+            .and_then(|selection| selection.single().cloned()),
         Some(TreeItem::Constraint(2))
     );
 }

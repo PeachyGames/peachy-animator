@@ -6,7 +6,29 @@ native window. The server calls the same document, command, Session, checked pos
 evaluation and file services as the desktop. It uses the official
 [Rust MCP SDK](https://github.com/modelcontextprotocol/rust-sdk), pinned by Cargo.lock.
 
-The current native format is **v23**, with **64 commands / 19 tools**. Shared
+The multi-Bone **code/MCP checkpoint** keeps native **v23** and **64 commands**,
+with **23 tools** including shared semantic Translate. Actual run03 on the final
+workspace binary passes
+**104 stdio requests**, **57 construction commands**, **21 pose queries** and
+**four atomic negative cases** from a blank root/one original PNG, with
+pending/history, Auto Key and exact Save/reopen. Final combined source gates pass;
+**native candidate acceptance remains pending**. The exact authored result also
+passes 156 external-runtime poses at 0.001 with the current CLI, separately from
+the MCP protocol run. See the
+[original baseline](../examples/peach-bot/multi-bone-bot.peachy),
+[construction recipe](../examples/peach-bot/multi-bone-authoring-commands.json),
+[authored result](../examples/peach-bot/multi-bone-authored-bot.peachy) and
+[checkpoint evidence](evidence/multi-bone-authoring.json).
+
+The preceding 22-tool explicit-pose
+checkpoint passed 138 actual MCP requests from a blank project/one original PNG,
+plus 104 external-runtime poses across two clips at 0.001 (maximum world error
+1.200913195020803e−5; region error 1.52587890625e−5). Those are dated prior proofs;
+the new semantic study has its own separate 156-pose current-CLI comparison.
+Desktop OS input acceptance remains separate and pending. Explicit
+pose inputs, pending readback and requested-skin evaluation are described below.
+
+The preceding grouped checkpoint used **64 commands /19 tools**. Shared
 grouped clipboard copy/paste adds one global origin and explicit target mapping.
 Actual MCP, final checks05/06 and bounded native acceptance pass, including the
 later minimum-window and native Save/fresh-reopen checks on the same binary.
@@ -59,12 +81,16 @@ client's working directory. Absolute paths are accepted only inside that root.
 
 | Tool | Behavior |
 | --- | --- |
-| `get_document` | Complete native document, current revision, dirty flag, undo/redo availability, source and animation/skin inventory. Before Open it returns revision 0 and no document. |
+| `get_document` | Complete native document, current revision, committed-data dirty flag, undo/redo availability, source and animation/skin inventory. `hasPendingEdits` and `pendingPose` describe transient values separately. Before Open it returns revision 0 and no document. |
 | `create_project` | New in-memory root-only native document with an empty default skin. Uses an existing asset directory within `--root`; no finished rig is loaded and no file is written. Source is null until Save. |
 | `inspect_file` | Read-only native validation or Spine capability report. Does not replace the working document. |
 | `open_project` | Load `.peachy` (including supported legacy migrations) or supported Spine 4.3 JSON into a new Session. Failed imports leave the current session intact. |
 | `get_command_schema` | Full JSON Schema for the 64 supported flat command variants; the same schema appears inline in `apply_commands` discovery. |
 | `apply_commands` | Apply a nonempty flat list through one engine Batch, atomically and as one undo step. No file writes. |
+| `edit_bone_poses` | Revision-checked explicit multi-Bone Session edit. Setup replaces complete authored-local transforms; Animate edits exact per-Bone properties, either pending or Auto Key. Atomic across all records. |
+| `transform_bones` | Revision-checked semantic Translate for an explicit ordered Bone selection, selected primary and required skin. Uses one evaluated input frame and shared Local/Parent/World conversion, filters selected descendants, then applies all candidate poses atomically through Session. |
+| `key_bone_poses` | Revision-checked keying of explicit per-Bone property lists from one shared authored/pending snapshot. One atomic undo step; no implicit X/Y grouping. |
+| `key_edited_pose` | Revision-checked global K equivalent: key every edited Bone/IK/Slider/Deform/Slot/DrawOrder target for one animation/time in one shared Session operation. |
 | `get_animation_keys` | Revision-checked authored inventory and exact keys for required explicit owners. Empty owners return inventory with no selected keys. Reports unsupported timeline families; no pending pose, geometry solve, visibility filtering or mutation. See the strict contract below. |
 | `copy_animation_keys` | Read-only capture of exact keys from one bone, IK or Slider constraint, Deform attachment, slot or global draw order. Slider clipboards retain independent Time/Mix identities and one relative origin. Slot clipboards can mix attachment and color keys; Deform includes vertex/influence layout. Draw order requires the identical ordered slot-name layout on paste. Requires the current revision. |
 | `copy_animation_key_group` | Revision-checked read-only mixed-owner copy of exact typed keys. Returns portable `clipboard.entries` sharing one global origin and separate `sourceOwners` in first-owner appearance order. Paste through `pasteAnimationKeyGroup` with an explicit complete entry-to-target map. |
@@ -75,15 +101,102 @@ client's working directory. Absolute paths are accepted only inside that root.
 | `get_slider_source_choices` | Revision-checked six property/range choices for a bound Slider from Session view preferences. Each includes an explicit `setSliderSourceProperty` command snapshot; querying does not remember a choice or alter preferences. |
 | `get_slider_evaluation` | Revision-checked own-turn snapshot from one checked solve: incoming/applied settings, eligibility and effective `sampleTime` after Loop. `sampleTime` is null when no application occurs. Accepts Setup or an exact host animation name, host seconds and skin; never recomputes from a later final source pose. |
 | `history` | Undo or redo one complete edit using the shared Session history. |
-| `evaluate_pose` | Setup or a named animation at a nonnegative time in seconds, with optional skin. Returns authored `locals`, ordered-constraint `appliedLocals`, effective `inherits`, world matrices, raw `slotAttachments`/`slotColors`, complete `drawOrder`, `authoredSliderPoses`/`appliedSliderPoses`, textured geometry and bounds from one checked solve. |
+| `evaluate_pose` | Setup or a named animation at a nonnegative time, with requested skin and matching Session pending overlays. Does not change Session skin, history or revision. Returns authored `locals`, ordered-constraint `appliedLocals`, effective `inherits`, world matrices, raw `slotAttachments`/`slotColors`, complete `drawOrder`, `authoredSliderPoses`/`appliedSliderPoses`, textured geometry and bounds from one checked solve. |
 | `save_project` | Create a new directory containing `project.peachy` and the required loose `images/`; marks the headless Session saved. |
 | `export_project` | New Spine JSON file, or a fresh packed JSON/atlas/PNG directory inside an existing parent. Optional `target` defaults to `spineEditor43`; use `runtime43` to retain independent attachment names/placeholders for runtime consumers. Does not mark the native document saved. |
 
-These 19 tools publish parameter schemas, descriptions and behavior annotations through
+These 23 tools publish parameter schemas, descriptions and behavior annotations through
 MCP `tools/list`. Successful results include both `structuredContent` and matching
 serialized text for older clients. Operational failures return `isError: true`
 with the current revision; malformed tool arguments use the SDK's protocol error.
 Read-only tools do not change session state.
+
+## Explicit multi-Bone poses and pending edits
+
+`edit_bone_poses` requires exactly `expected_revision`, `target`, `edits` and
+`auto_key`. Target is `{"mode":"setup"}` or
+`{"mode":"animate","animation":0,"time":0.5}`. Each edit contains `bone`,
+a complete seven-field local `transform` and a nonempty exact `properties` list.
+Properties are string tokens `x`, `y`, `rotation`, `scaleX`, `scaleY`, `shearX`,
+`shearY`; transform field names use the native snake-case form below.
+
+```json
+{"expected_revision":2,"target":{"mode":"animate","animation":0,"time":0.5},"auto_key":false,"edits":[{"bone":1,"transform":{"x":73.25,"y":0,"rotation":0,"scale_x":1,"scale_y":1,"shear_x":0,"shear_y":0},"properties":["x"]}]}
+```
+
+Setup replaces each complete transform, matching the existing Session Setup
+contract; its property list is still required and validated. Animate changes
+only the listed properties, with no automatic X/Y expansion or group/pivot/axis
+calculation. Values are authored local poses, not setup-relative raw key offsets.
+Auto Key off creates undoable transient poses; `get_document.document` and
+Save/export exclude them while `state.hasPendingEdits`/`state.pendingPose` expose
+their presence and exact authored overrides. Auto Key on keys the corresponding
+translation, scale or shear property groups (for example, X also keys Y).
+Open/Create refuse to replace a session with pending edits unless
+`discard_changes:true` is explicit, including after a Save that excluded those
+pending values. This guard is specific to the headless session.
+
+`key_bone_poses` requires `expected_revision`, `animation`, `time` and `keys`, e.g.
+`[{"bone":1,"properties":["x"]},{"bone":2,"properties":["y"]}]` for `keys`.
+It samples the shared authored/pending pose once and keys exact properties.
+`key_edited_pose` requires only `expected_revision`, `animation` and `time`; it
+keys all edited domains for that animation, including pending non-Bone targets.
+Both are independent of the editor Tree and create at most one undo entry.
+
+New inputs require objects at every object boundary. Missing/null/unknown fields,
+positional arrays, non-string property tokens, duplicate bones/properties, empty
+record/property lists, nonfinite transforms/times, bad indices and stale revisions
+reject without changing document, pending values, history or revision. Successful
+mutators advance revision even for a no-op, matching `apply_commands` policy.
+Save retains pending Session values but writes only Document data; successful
+Open/New replaces the Session and clears pending state. `dirty` continues to
+describe committed document changes, separately from pending values.
+
+`evaluate_pose` and Slider own-turn evaluation use requested-skin authored sampling
+plus matching pending overlays through a read-only Session query. All effective
+domains and geometry derive from one checked solve. This is neither a transient
+skin switch nor a live GUI bridge. Current focused MCP checks pass six unit and
+four actual stdio cases; the 104-request study also exercises the semantic tool.
+These results do not accept native group viewport interaction.
+
+## Semantic Bone translation — code/MCP checkpoint
+
+`transform_bones` requires exactly `expected_revision`, `target`, `skin`, `bones`,
+`primary`, `operation` and `auto_key`. `bones` is a nonempty ordered unique list;
+`primary` must be a member. Target uses the same explicit Setup/Animate shape as
+`edit_bone_poses`. Skin is required and selects the sampling/keying context
+without changing Session's selected skin.
+
+```json
+{"expected_revision":4,"target":{"mode":"animate","animation":0,"time":0.5},"skin":"default","bones":[2,4],"primary":2,"operation":{"type":"translate","axes":"world","delta":{"x":10,"y":-4}},"auto_key":false}
+```
+
+The delta is in named tool-space units, independent of pointer movement. Parent
+adds the delta to each edited root's authored local XY. Local uses each member's
+applied rotation; World converts the common world delta through each edited
+root's parent. Selected descendants inherit movement from their highest selected
+ancestor and receive no second authored-local edit. This differs from explicit
+numeric assignment, which can intentionally assign both ancestor and descendant.
+The logical primary stays explicit; the shared frame chooses its selected
+ancestor as the effective Translate anchor when necessary.
+
+The shell samples the requested skin/pending pose and checks one evaluated input
+frame, then asks the same engine transform operation used by the viewport for
+all candidate edits. Session commits the complete result atomically; Auto Key
+may perform additional continuity validation and keys translation groups.
+Auto Key off retains pending values outside Save/export, as above. The tool does
+not simulate a pointer, solve separately per member or mutate Session skin.
+
+Only `operation.type:"translate"` and string axes `local`, `parent`, `world` are
+published. Every object boundary is strict, including `operation` and `delta`;
+arrays, missing/null/unknown fields, duplicate/empty Bone lists, a primary outside
+the list, invalid/inactive members, nonfinite/unrepresentable results and stale
+revisions reject with document, pending values, history, revision and skin
+unchanged. Parent/Local semantic deltas need no parent inverse; World requires
+one only for actual edit roots. Skipped descendants do not create an inverse
+requirement. Rotate/Scale/Shear group operations remain outside this tool.
+Decoder/state/stdio, actual 104-request checks and final combined source gates
+pass. Native candidate interaction acceptance remains pending.
 
 ## Exact authored key inventory and mixed timing
 
@@ -837,7 +950,7 @@ calibration, differences and verification limits.
 
 ## World X to Rotate mapping
 
-The current native format is v23, with **64 commands / 19 tools**.
+The implementation inventory is v23, with **64 commands /23 tools**; semantic Translate awaits focused acceptance.
 An existing world-space X→Rotate transform constraint can be edited by the same
 semantic range operation as the native Min/Max controls:
 

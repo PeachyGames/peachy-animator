@@ -67,7 +67,7 @@ impl Editor {
         self.key_selection.mark_readonly(readonly);
     }
     pub(super) fn timeline_owner(&self) -> Option<peachy_engine::KeyOwner> {
-        match self.selection.as_ref() {
+        match self.selection.single() {
             Some(TreeItem::DrawOrder | TreeItem::DrawOrderSlot { .. }) => {
                 Some(peachy_engine::KeyOwner::DrawOrder {})
             }
@@ -117,7 +117,7 @@ impl Editor {
             .or_else(|| self.key_selection.primary().cloned())
     }
     pub(super) fn timeline_owner_editable(&self, owner: &KeyOwner) -> bool {
-        if let Some(TreeItem::Attachment(attachment)) = &self.selection
+        if let Some(TreeItem::Attachment(attachment)) = self.selection.single()
             && let Some(bone) = self.selected_region_pose_bone()
             && (!self.attachment_editable(attachment)
                 || !self.session.document().activity(&self.skin).bones[bone])
@@ -145,7 +145,7 @@ impl Editor {
         })
     }
     pub(super) fn selected_region_pose_bone(&self) -> Option<usize> {
-        let TreeItem::Attachment(attachment) = self.selection.as_ref()? else {
+        let TreeItem::Attachment(attachment) = self.selection.single()? else {
             return None;
         };
         let doc = self.session.document();
@@ -201,7 +201,11 @@ impl Editor {
         let focus = self.effective_dopesheet_focus();
         let explicit_global = matches!(&focus, DopesheetFocus::Owner(KeyOwner::DrawOrder {}));
         match focus {
-            DopesheetFocus::Bone(bone) => append_bone(&mut result, bone),
+            DopesheetFocus::Bones(bones) => {
+                for bone in bones {
+                    append_bone(&mut result, bone);
+                }
+            }
             DopesheetFocus::Owner(KeyOwner::DrawOrder {}) => {}
             DopesheetFocus::Owner(owner) => {
                 for row in dopesheet_selection::rows(Some(owner.clone())) {

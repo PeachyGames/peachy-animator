@@ -47,7 +47,7 @@ impl Editor {
         Some(ik)
     }
     pub(super) fn selected_ik(&self) -> Option<usize> {
-        match self.selection {
+        match self.selection.single().cloned() {
             Some(TreeItem::Constraint(index)) => Some(index),
             _ => None,
         }
@@ -693,7 +693,7 @@ mod tests {
         editor.session = Session::new(document).unwrap();
         editor.skin = "default".into();
         editor.tree = TreeState::for_document(editor.session.document(), &editor.skin);
-        editor.selection = Some(TreeItem::Bone(1));
+        editor.selection = Some(TreeItem::Bone(1)).into();
         editor.setup_mode = setup;
         editor.auto_key = false;
         editor.time = 0.;

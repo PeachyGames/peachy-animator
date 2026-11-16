@@ -36,7 +36,7 @@ fn fixture() -> (Editor, egui::Context) {
         animations: false,
         constraints: false,
     };
-    editor.selection = Some(TreeItem::DrawOrderSlot { slot: 0 });
+    editor.selection = Some(TreeItem::DrawOrderSlot { slot: 0 }).into();
     editor.key_selection.clear();
     editor.reconcile_selection();
     let ctx = editor_context();

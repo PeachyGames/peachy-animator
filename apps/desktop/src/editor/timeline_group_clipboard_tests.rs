@@ -38,7 +38,7 @@ fn fixture() -> (Editor, egui::Context) {
     ];
     editor.session = Session::new(doc).unwrap();
     editor.session.set_skin(&editor.skin);
-    editor.selection = None;
+    editor.selection = Default::default();
     editor.key_selection = Default::default();
     editor.time = 1.;
     editor.reconcile_selection();
@@ -690,7 +690,7 @@ fn group_clipboard_stale_deform_binding_after_slot_rename_refuses_atomically() {
     editor.session = Session::new(doc).unwrap();
     editor.session.set_skin(&editor.skin);
     editor.setup_mode = false;
-    editor.selection = None;
+    editor.selection = Default::default();
     editor.key_selection = Default::default();
     editor.time = 1.;
     editor.reconcile_selection();

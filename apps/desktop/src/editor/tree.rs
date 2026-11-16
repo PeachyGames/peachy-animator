@@ -8,7 +8,7 @@ enum Action {
     KeyDrawOrder,
     DeleteDrawOrder,
     BeginDrawOrderDrag(usize),
-    Select(TreeItem),
+    Select(TreeItem, egui::Modifiers),
     Rename(TreeItem),
     Dot(TreeItem, bool),
     Branch(usize, bool),
@@ -139,7 +139,7 @@ impl Editor {
                     }
                     let key = e.item.key();
                     let dot = self.tree_dot(&e.item);
-                    let selected = self.selection.as_ref() == Some(&e.item);
+                    let selected = self.selection.contains(&e.item);
                     ui.scope_builder(egui::UiBuilder::new().id(egui::Id::new(("tree-row",&key))),|ui| { ui.horizontal(|ui| {
                         let (r, response) = ui.allocate_exact_size(vec2(15., 19.), Sense::click());
                         if let Some(active) = dot {
@@ -225,6 +225,7 @@ impl Editor {
                         let row=if matches!(e.item,TreeItem::DrawOrderSlot{..}) {
                             ui.add(egui::Button::selectable(selected,text).sense(Sense::click_and_drag()).truncate())
                         } else {ui.selectable_label(selected,text)};
+                        self.selection_input.observe(&row, &e.item);
                         if let TreeItem::DrawOrderSlot{slot}=e.item {
                             #[cfg(test)]
                             self.record_draw_order_row_id(slot,row.id);
@@ -249,7 +250,8 @@ impl Editor {
                         if row.double_clicked() {
                             actions.push(Action::Rename(e.item.clone()));
                         } else if row.clicked() {
-                            actions.push(Action::Select(e.item.clone()));
+                            let modifiers = self.selection_input.modifiers(&row, &e.item);
+                            actions.push(Action::Select(e.item.clone(), modifiers));
                         }
                         if row.secondary_clicked() && children[index] {
                             actions.push(Action::Branch(index, true));
@@ -298,7 +300,7 @@ impl Editor {
                                     for (constraint,name) in annotations.into_iter().rev() {
                                         let annotation=icons::toolbar_button(ui,icons::Icon::IkConstraint,&format!("Select IK constraint: {name}"),"",true);
                                         self.record_target(&format!("ikAnnotation:{bone}:{constraint}"),annotation.rect);
-                                        if annotation.clicked() { actions.push(Action::Select(TreeItem::Constraint(constraint))); }
+                                        if annotation.clicked() { actions.push(Action::Select(TreeItem::Constraint(constraint),egui::Modifiers::NONE)); }
                                     }
                                 });
                             }
@@ -318,8 +320,8 @@ impl Editor {
                         self.begin_draw_order_drag(slot, &order_rows, drop_rect, ui.ctx());
                     }
                 }
-                Action::Select(item) => {
-                    self.select(item);
+                Action::Select(item, modifiers) => {
+                    self.select_with_modifiers(item, modifiers);
                     // A clicked row is already visible. Scrolling it here can move
                     // the target away between the two clicks of a double-click.
                     self.tree.reveal = None;

@@ -24,6 +24,8 @@ mod key_drag;
 mod layout;
 mod mesh;
 mod mesh_tools;
+#[cfg(test)]
+mod multi_bone_ui_tests;
 mod panels;
 mod physics;
 mod playback;
@@ -34,6 +36,7 @@ mod rename;
 mod scene_view;
 mod selection;
 mod selection_history;
+mod selection_input;
 mod shortcuts;
 mod slider;
 mod slider_edit;
@@ -55,7 +58,7 @@ mod transform_gesture;
 use transform_gesture::TransformEdit;
 mod tree;
 mod tree_model;
-use selection::{Folder, TreeItem};
+use selection::{Folder, TreeItem, TreeSelection};
 use tree_model::TreeState;
 mod viewport;
 mod viewport_overlays;
@@ -66,7 +69,8 @@ mod weights_selection;
 use eframe::egui::{self, Color32, FontId, Pos2, RichText, Sense, Stroke, Vec2, pos2, vec2};
 use peachy_document::*;
 use peachy_engine::{
-    Affine, Axes, Command, EditTarget, KeyState, PlayDirection, Session, TransformTool,
+    Affine, Axes, BoneTransformFrame, Command, EditTarget, KeyState, PlayDirection, Session,
+    TransformTool,
 };
 use peachy_io as files;
 use std::{
@@ -110,7 +114,8 @@ pub(crate) struct Editor {
     project_path: Option<PathBuf>,
     asset_root: PathBuf,
     textures: BTreeMap<String, egui::TextureHandle>,
-    selection: Option<TreeItem>,
+    selection: TreeSelection,
+    selection_input: selection_input::SelectionInput,
     selection_history: selection_history::SelectionHistory,
     key_selection: dopesheet_selection::KeySelection,
     dopesheet_focus: dopesheet_scope::DopesheetFocus,
@@ -247,7 +252,8 @@ impl Editor {
             project_path,
             asset_root,
             textures: BTreeMap::new(),
-            selection: Some(TreeItem::Bone(initial_bone)),
+            selection: Some(TreeItem::Bone(initial_bone)).into(),
+            selection_input: Default::default(),
             selection_history: Default::default(),
             key_selection: Default::default(),
             dopesheet_focus: Default::default(),
@@ -366,10 +372,7 @@ impl Editor {
         let Some(mapping) = self.session.last_edit_effects().constraint_indices.as_ref() else {
             return;
         };
-        self.selection = self
-            .selection
-            .take()
-            .and_then(|item| selection::remap_constraint(item, mapping));
+        self.selection.remap_constraints(mapping);
         if let Some(source) = &mut self.leaf_source {
             source.remap(mapping);
         }
@@ -421,13 +424,22 @@ impl Editor {
     }
 
     fn selected_bone(&self) -> Option<usize> {
-        self.selection.as_ref().and_then(TreeItem::bone)
+        self.selection.single().and_then(TreeItem::bone)
+    }
+    fn selected_bones(&self) -> Vec<usize> {
+        self.selection.bones()
+    }
+    fn primary_bone(&self) -> Option<usize> {
+        self.selection.primary().and_then(TreeItem::bone)
     }
     fn selected_attachment(&self) -> Option<&AttachmentRef> {
-        self.selection.as_ref().and_then(TreeItem::attachment)
+        self.selection.single().and_then(TreeItem::attachment)
     }
     fn transform_editable(&self) -> bool {
-        match &self.selection {
+        if self.selection.len() > 1 {
+            return self.axes == Axes::Parent || self.tool == Tool::Move;
+        }
+        match self.selection.single() {
             Some(TreeItem::Bone(_)) => true,
             Some(TreeItem::Attachment(k)) => {
                 self.setup_mode
@@ -441,11 +453,11 @@ impl Editor {
         }
     }
     fn transform_tool_editable(&self, tool: Tool) -> bool {
-        self.transform_editable() && (tool != Tool::Shear || self.selected_bone().is_some())
+        self.transform_editable() && (tool != Tool::Shear || !self.selected_bones().is_empty())
     }
     fn selected_transform(&self) -> Option<Transform> {
         let doc = self.session.document();
-        match self.selection.as_ref()? {
+        match self.selection.primary()? {
             TreeItem::Bone(i) => self
                 .session
                 .local_pose(self.active_animation(), self.time)
@@ -465,7 +477,11 @@ impl Editor {
         key.skin == "default" || key.skin == self.skin
     }
     fn edit_transform(&mut self, local: Transform, properties: &[Property]) {
-        if let Some(item) = self.selection.clone() {
+        if self.selection.len() > 1 {
+            self.status = "Group transform authoring awaits calibrated shared transforms".into();
+            return;
+        }
+        if let Some(item) = self.selection.single().cloned() {
             self.edit_item_transform(item, local, properties);
         }
     }
@@ -542,17 +558,22 @@ impl Editor {
         if !item.exists(self.session.document()) {
             return;
         }
-        self.selection_history
-            .record(&self.selection, &Some(item.clone()));
-        self.restore_selection(Some(item));
+        let next = TreeSelection::singleton(item);
+        self.selection_history.record(&self.selection, &next);
+        self.restore_tree_selection(next);
     }
-    fn restore_selection(&mut self, item: Option<TreeItem>) {
+    fn restore_selection(&mut self, item: impl Into<TreeSelection>) {
+        self.restore_tree_selection(item.into());
+    }
+    fn restore_tree_selection(&mut self, selection: TreeSelection) {
         self.cancel_gesture();
         self.weights.bind = None;
-        self.selection = item.clone();
+        self.selection = selection;
         self.reconcile_dopesheet_focus();
         self.reconcile_slider_source_focus();
-        let Some(item) = item else { return };
+        let Some(item) = self.selection.primary().cloned() else {
+            return;
+        };
         if let Some(key) = item.attachment() {
             self.capture_weights_mesh(key);
         }
@@ -635,6 +656,7 @@ impl Editor {
         self.reconcile_dopesheet_selection();
     }
     fn undo(&mut self) {
+        self.selection_input.clear();
         if self.slider_edit_active() {
             self.cancel_slider_edit();
             return;
@@ -691,6 +713,7 @@ impl Editor {
         self.reconcile_selection();
     }
     fn redo(&mut self) {
+        self.selection_input.clear();
         if self.slider_edit_active() {
             self.cancel_slider_edit();
             return;
@@ -787,6 +810,7 @@ impl Editor {
                             None
                         };
                     self.selection_history = Default::default();
+                    self.selection_input = Default::default();
                     self.key_selection = Default::default();
                     self.dopesheet_focus = Default::default();
                     self.key_drag = None;
@@ -810,7 +834,7 @@ impl Editor {
                     self.transform_blocked = false;
                     self.transform_blocked_control = None;
                     self.weights_handles.clear();
-                    self.selection = Some(TreeItem::Skeleton);
+                    self.selection = Some(TreeItem::Skeleton).into();
                     self.animation = 0;
                     self.time = 0.0;
                     self.playing = false;
@@ -1150,8 +1174,8 @@ impl Editor {
                     eprintln!("Capture failed: {e}");
                 }
                 let mut report = serde_json::json!({
-                    "document":self.session.document(),"selection":self.selection.as_ref().map(TreeItem::diagnostic),
-                    "selectedBone":self.selected_bone(),"hasSelection":self.selection.is_some(),
+                    "document":self.session.document(),"selection":self.selection.primary().map(TreeItem::diagnostic),
+                    "selectedBone":self.selected_bone(),"hasSelection":!self.selection.is_empty(),
                     "tool":match self.tool {Tool::Rotate=>"rotate",Tool::Move=>"translate",Tool::Scale=>"scale",Tool::Shear=>"shear",Tool::Mesh=>"vertices",Tool::Weights=>"weights"},
                     "treeVisible":self.show_tree,"dopesheetVisible":!self.setup_mode && self.show_dopesheet,"showDopesheet":self.show_dopesheet,
                     "animation":self.animation,"skin":self.skin,"time":self.time,"playing":self.playing,"playDirection":self.play_direction,"looping":self.looping,"zoom":self.zoom,
@@ -1184,6 +1208,10 @@ impl Editor {
                 report["playbackSpeed"] = self.playback_speed.into();
                 report["status"] = self.status.clone().into();
                 report["timelineOwner"] = serde_json::json!(self.timeline_owner());
+                report["treeSelection"] = self.selection.diagnostic();
+                report["viewportPress"] = self.viewport_press_diagnostic();
+                report["selectedBones"] = serde_json::json!(self.selected_bones());
+                report["primaryBone"] = serde_json::json!(self.primary_bone());
                 report["timelineFocus"] = self.dopesheet_focus_diagnostic();
                 report["timelineScope"] = self.key_selection.diagnostic()["scope"].clone();
                 report["animationEnd"] = self.animation_end().into();

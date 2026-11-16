@@ -14,6 +14,10 @@ use std::{
 };
 
 static NEXT: AtomicU64 = AtomicU64::new(0);
+#[path = "protocol/bone_poses.rs"]
+mod bone_poses;
+#[path = "protocol/transform_bones.rs"]
+mod transform_bones;
 struct Sandbox(PathBuf);
 impl Sandbox {
     fn new() -> Self {
@@ -859,7 +863,7 @@ async fn stdio_discovery_atomic_edit_history_save_and_export() {
     let original = fs::read(&source).unwrap();
     let client = start(&root.0).await;
     let tools = client.list_tools(Default::default()).await.unwrap().tools;
-    assert_eq!(tools.len(), 19);
+    assert_eq!(tools.len(), 23);
     assert!(tools.iter().all(|tool| !tool.input_schema.is_empty()));
     let apply = tools
         .iter()
@@ -3918,7 +3922,7 @@ async fn stdio_group_clipboard_shared_origin_explicit_targets_atomic_history_and
     let original = fs::read(&original_path).unwrap();
     let client = start(&root.0).await;
     let tools = client.list_tools(Default::default()).await.unwrap().tools;
-    assert_eq!(tools.len(), 19);
+    assert_eq!(tools.len(), 23);
     let tool = tools
         .iter()
         .find(|tool| tool.name == "copy_animation_key_group")

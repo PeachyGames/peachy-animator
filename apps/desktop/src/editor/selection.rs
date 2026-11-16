@@ -25,6 +25,153 @@ pub enum TreeItem {
     Constraint(usize),
 }
 
+/// One authoritative presentation selection. Bone groups retain click order;
+/// every other item remains an explicit singleton.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub(super) struct TreeSelection {
+    members: Vec<TreeItem>,
+    primary: Option<TreeItem>,
+}
+
+#[derive(Clone, Copy)]
+pub(super) enum PrimaryPolicy {
+    Keep,
+}
+
+impl TreeSelection {
+    pub fn new(members: Vec<TreeItem>, primary: Option<TreeItem>) -> Result<Self, String> {
+        if members
+            .iter()
+            .enumerate()
+            .any(|(i, item)| members[..i].contains(item))
+        {
+            return Err("Selection members must be unique".into());
+        }
+        if members.len() > 1 && !members.iter().all(|item| matches!(item, TreeItem::Bone(_))) {
+            return Err("Only bones can form a multiple selection".into());
+        }
+        if members.is_empty() != primary.is_none()
+            || primary.as_ref().is_some_and(|item| !members.contains(item))
+        {
+            return Err("Selection primary must be one of its members".into());
+        }
+        Ok(Self { members, primary })
+    }
+    pub fn singleton(item: TreeItem) -> Self {
+        Self::new(vec![item.clone()], Some(item)).expect("A singleton selection is valid")
+    }
+    pub fn members(&self) -> &[TreeItem] {
+        &self.members
+    }
+    pub fn primary(&self) -> Option<&TreeItem> {
+        self.primary.as_ref()
+    }
+    pub fn single(&self) -> Option<&TreeItem> {
+        (self.members.len() == 1).then(|| &self.members[0])
+    }
+    pub fn contains(&self, item: &TreeItem) -> bool {
+        self.members.contains(item)
+    }
+    pub fn is_empty(&self) -> bool {
+        self.members.is_empty()
+    }
+    pub fn len(&self) -> usize {
+        self.members.len()
+    }
+    pub fn bones(&self) -> Vec<usize> {
+        self.members.iter().filter_map(TreeItem::bone).collect()
+    }
+    pub fn set_primary(&mut self, item: TreeItem) -> Result<(), String> {
+        if !self.members.contains(&item) {
+            return Err("Selection primary must be a member".into());
+        }
+        self.primary = Some(item);
+        Ok(())
+    }
+    fn choose_primary(&mut self, policy: PrimaryPolicy) {
+        let primary = match policy {
+            PrimaryPolicy::Keep
+                if self
+                    .primary
+                    .as_ref()
+                    .is_some_and(|item| self.members.contains(item)) =>
+            {
+                self.primary.clone()
+            }
+            _ => self.members.first().cloned(),
+        };
+        if let Some(primary) = primary {
+            self.set_primary(primary)
+                .expect("Primary was chosen from the member set");
+        } else {
+            self.primary = None;
+        }
+    }
+    pub fn toggle_bone(&mut self, bone: usize, policy: PrimaryPolicy) {
+        let item = TreeItem::Bone(bone);
+        if self
+            .members
+            .iter()
+            .any(|member| !matches!(member, TreeItem::Bone(_)))
+        {
+            self.members.clear();
+            self.primary = None;
+        }
+        if let Some(index) = self.members.iter().position(|member| member == &item) {
+            self.members.remove(index);
+        } else {
+            self.members.push(item);
+        }
+        self.choose_primary(policy);
+    }
+    pub fn reconcile(&mut self, doc: &Document) {
+        self.members.retain(|item| item.exists(doc));
+        self.choose_primary(PrimaryPolicy::Keep);
+    }
+    pub fn remap_constraints(&mut self, mapping: &peachy_engine::ConstraintIndexRemap) {
+        self.members = self
+            .members
+            .drain(..)
+            .filter_map(|item| remap_constraint(item, mapping))
+            .collect();
+        self.primary = self
+            .primary
+            .take()
+            .and_then(|item| remap_constraint(item, mapping));
+        self.choose_primary(PrimaryPolicy::Keep);
+    }
+    pub fn diagnostic(&self) -> Value {
+        json!({"members":self.members.iter().map(TreeItem::diagnostic).collect::<Vec<_>>(),"primary":self.primary().map(TreeItem::diagnostic)})
+    }
+}
+
+impl From<Option<TreeItem>> for TreeSelection {
+    fn from(item: Option<TreeItem>) -> Self {
+        item.map_or_else(Self::default, Self::singleton)
+    }
+}
+impl From<TreeItem> for TreeSelection {
+    fn from(item: TreeItem) -> Self {
+        Self::singleton(item)
+    }
+}
+
+#[cfg(test)]
+impl PartialEq<Option<TreeItem>> for TreeSelection {
+    fn eq(&self, item: &Option<TreeItem>) -> bool {
+        match item {
+            Some(item) => self.single() == Some(item),
+            None => self.is_empty(),
+        }
+    }
+}
+#[cfg(test)]
+impl PartialEq<TreeSelection> for Option<TreeItem> {
+    fn eq(&self, selection: &TreeSelection) -> bool {
+        selection == self
+    }
+}
+
 impl TreeItem {
     pub fn key(&self) -> String {
         match self {
@@ -127,10 +274,8 @@ impl TreeItem {
     }
 }
 
-pub fn reconcile(selection: &mut Option<TreeItem>, doc: &Document) {
-    if selection.as_ref().is_some_and(|s| !s.exists(doc)) {
-        *selection = None;
-    }
+pub(super) fn reconcile(selection: &mut TreeSelection, doc: &Document) {
+    selection.reconcile(doc);
 }
 
 /// Structural edits supply the identity mapping; an absent target never falls back.
@@ -151,4 +296,62 @@ pub(super) fn remap_constraint(
 /// "default" also represents no named skin when no default attachments exist.
 pub fn active_skin_exists(doc: &Document, skin: &str) -> bool {
     skin == "default" || doc.skins.contains_key(skin)
+}
+
+#[cfg(test)]
+mod ordered_selection_tests {
+    use super::*;
+
+    #[test]
+    fn ordered_selection_preserves_first_primary_and_toggle_order_without_rebinding() {
+        let mut selection = TreeSelection::singleton(TreeItem::Bone(4));
+        selection.toggle_bone(2, PrimaryPolicy::Keep);
+        assert_eq!(selection.bones(), vec![4, 2]);
+        assert_eq!(selection.primary(), Some(&TreeItem::Bone(4)));
+        assert!(selection.single().is_none());
+        selection.toggle_bone(4, PrimaryPolicy::Keep);
+        assert_eq!(selection.bones(), vec![2]);
+        assert_eq!(selection.primary(), Some(&TreeItem::Bone(2)));
+        selection.toggle_bone(4, PrimaryPolicy::Keep);
+        assert_eq!(selection.bones(), vec![2, 4]);
+        assert_eq!(selection.primary(), Some(&TreeItem::Bone(2)));
+        selection.toggle_bone(3, PrimaryPolicy::Keep);
+        assert_eq!(selection.bones(), vec![2, 4, 3]);
+        assert_eq!(selection.primary(), Some(&TreeItem::Bone(2)));
+        selection.set_primary(TreeItem::Bone(3)).unwrap();
+        assert_eq!(selection.primary(), Some(&TreeItem::Bone(3)));
+        selection.set_primary(TreeItem::Bone(2)).unwrap();
+        assert_eq!(selection.bones(), vec![2, 4, 3]);
+        assert!(selection.set_primary(TreeItem::Bone(999)).is_err());
+        let mut independent = TreeSelection::new(
+            vec![TreeItem::Bone(4), TreeItem::Bone(2), TreeItem::Bone(3)],
+            Some(TreeItem::Bone(4)),
+        )
+        .unwrap();
+        independent.toggle_bone(4, PrimaryPolicy::Keep);
+        assert_eq!(independent.bones(), vec![2, 3]);
+        assert_eq!(independent.primary(), Some(&TreeItem::Bone(2)));
+    }
+
+    #[test]
+    fn ordered_selection_rejects_mixed_duplicate_and_external_primary_snapshots() {
+        for (members, primary) in [
+            (
+                vec![TreeItem::Bone(1), TreeItem::Slot(0)],
+                Some(TreeItem::Bone(1)),
+            ),
+            (
+                vec![TreeItem::Bone(1), TreeItem::Bone(1)],
+                Some(TreeItem::Bone(1)),
+            ),
+            (vec![TreeItem::Bone(1)], Some(TreeItem::Bone(2))),
+            (vec![TreeItem::Bone(1)], None),
+            (vec![], Some(TreeItem::Bone(1))),
+        ] {
+            assert!(TreeSelection::new(members, primary).is_err());
+        }
+        let mut selection = TreeSelection::singleton(TreeItem::Slot(0));
+        selection.toggle_bone(2, PrimaryPolicy::Keep);
+        assert_eq!(selection.single(), Some(&TreeItem::Bone(2)));
+    }
 }

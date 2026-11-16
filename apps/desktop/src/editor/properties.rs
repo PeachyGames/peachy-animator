@@ -3,7 +3,15 @@ use super::*;
 impl Editor {
     pub(super) fn inspector(&mut self, ui: &mut egui::Ui) {
         self.record_target("properties", ui.clip_rect());
-        let title = match self.selection {
+        if self.selection.len() > 1 {
+            ui.label(RichText::new(format!("{} Bones", self.selection.len())).strong());
+            ui.label("Use the transform toolbar to edit the selected bones together.");
+            for item in self.selection.members() {
+                ui.label(item.label(self.session.document()));
+            }
+            return;
+        }
+        let title = match self.selection.single().cloned() {
             Some(TreeItem::DrawOrder | TreeItem::DrawOrderSlot { .. }) => "Draw order".into(),
             Some(TreeItem::Constraint(index)) => self
                 .session
@@ -17,7 +25,7 @@ impl Editor {
         };
         ui.horizontal(|ui| {
             let heading = ui.label(RichText::new(title).strong());
-            if matches!(self.selection, Some(TreeItem::Constraint(_))) {
+            if matches!(self.selection.single(), Some(TreeItem::Constraint(_))) {
                 self.record_target("ikHeader", heading.rect);
             }
             if let Some(
@@ -25,7 +33,7 @@ impl Editor {
                 | TreeItem::Slot(_)
                 | TreeItem::Animation(_)
                 | TreeItem::Constraint(_)),
-            ) = self.selection.clone()
+            ) = self.selection.single().cloned()
             {
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if let TreeItem::Animation(animation) = item {
@@ -57,7 +65,7 @@ impl Editor {
             }
         });
         ui.separator();
-        let Some(item) = self.selection.clone() else {
+        let Some(item) = self.selection.single().cloned() else {
             ui.label("Select an item in the Tree or viewport.");
             return;
         };

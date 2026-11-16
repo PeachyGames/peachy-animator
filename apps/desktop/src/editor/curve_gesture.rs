@@ -26,7 +26,7 @@ pub(super) struct CurveGesture {
     animation: usize,
     cursor: f32,
     skin: String,
-    selection: Option<TreeItem>,
+    selection: TreeSelection,
     keys: Vec<AnimationKey>,
     tool: Tool,
     axes: Axes,

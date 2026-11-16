@@ -1,5 +1,45 @@
 # Spine workspace and interaction parity
 
+## Multi-Bone code/MCP checkpoint — November 16, 2026
+
+**The implementation and actual MCP proof are available; native candidate
+authoring acceptance is pending.** Ordered Tree Bone membership and primary now
+travel together through selection history, number groups, remaps and gesture
+contexts. Shared Session APIs compose explicit multi-Bone poses and keys before
+one publication. Parent numeric typing affects all selected members; viewport
+Translate uses one frozen evaluated frame and suppresses selected descendants.
+The effective gizmo anchor can be the logical primary's highest selected
+ancestor without changing selection order. Local movement follows each edited
+Bone's frame; Parent and World use their shared engine conversions.
+
+Installed Spine 4.3.26 reference controls separately establish Cmd-add behavior,
+first-survivor fallback in three independent branches, effective ancestor anchors,
+Parent numeric assignment to both ancestor and descendant, and descendant
+suppression for all three Translate axes. Bones/Images compensation was off.
+Reference processes are closed and exact source restoration is verified.
+Some Rotate/Scale controls produced observations, but their general contract is
+incomplete; Shear was inconclusive. They do not authorize group Rotate/Scale/Shear
+implementation or a native Peachy acceptance claim.
+
+The original seven-Bone/three-clip study passes 104 actual MCP requests from a
+blank root/one PNG, including 57 construction commands, 21 pose queries, four
+atomic negative cases, pending/history, Auto Key and exact Save/reopen. Engine
+group8/Session9 and MCP6-unit/4-stdio focused checks pass. All fourteen new
+desktop event tests and the final affected-context, formatting, all-target Clippy,
+workspace build and seven-crate architecture checks pass. The exact authored
+result also passes 156 external-runtime poses at 0.001. These are code/geometry
+results, not OS mouse/keyboard, held cancellation, minimum-window or fresh-process
+candidate acceptance. Hosted CI has not passed.
+
+Open the [baseline](../examples/peach-bot/multi-bone-bot.peachy),
+[MCP-authored result](../examples/peach-bot/multi-bone-authored-bot.peachy) or
+[57-command construction recipe](../examples/peach-bot/multi-bone-authoring-commands.json).
+Exact hashes and scope are in [scalar evidence](evidence/multi-bone-authoring.json).
+Group Rotate/Scale/Shear, non-Parent numeric operations, group numeric dragging,
+general Shift-range, clipboard/selection overlaps, compound Graph/Deform editing,
+Shift/ripple/cycle Offset, Lock/Sync and a live GUI bridge remain open. Full Spine
+interaction parity and the overall goal are incomplete.
+
 ## Installed compound Bone/Slot/Region scope — November 15, 2026
 
 **Bounded native Peachy acceptance now passes on Desktop `14b0575f…68d4`,

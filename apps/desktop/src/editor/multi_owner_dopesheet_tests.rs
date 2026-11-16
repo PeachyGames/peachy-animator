@@ -32,7 +32,7 @@ fn fixture() -> (Editor, egui::Context) {
     ];
     editor.session = Session::new(doc).unwrap();
     editor.key_selection = Default::default();
-    editor.selection = None;
+    editor.selection = Default::default();
     let ctx = editor_context();
     settle(&mut editor, &ctx);
     (editor, ctx)
@@ -146,7 +146,7 @@ fn multi_owner_dopesheet_lists_keyed_owners_and_owner_name_prunes_without_select
 fn multi_owner_dopesheet_real_cmd_selection_and_two_previews_retime_three_keys_once() {
     let (mut editor, ctx) = fixture();
     select_group(&mut editor, &ctx);
-    assert!(editor.selection.is_none());
+    assert!(editor.selection.is_empty());
     assert_eq!(editor.graph_owner(), Some(KeyOwner::Bone { bone: 8 }));
     let before = editor.session.document().clone();
     let sources = editor.key_selection.keys().to_vec();
@@ -527,7 +527,7 @@ fn multi_owner_dopesheet_slider_primary_dispatches_graph_without_changing_tree_o
     editor.open_curves_view();
     editor.open_graph_view();
     settle(&mut editor, &ctx);
-    assert!(editor.selection.is_none());
+    assert!(editor.selection.is_empty());
     assert_eq!(editor.graph_owner(), Some(KeyOwner::Slider { constraint }));
     assert_eq!(editor.key_selection.keys(), keys);
     assert!(editor.capture_targets.contains_key("graphSliderCanvas"));
@@ -636,7 +636,7 @@ fn multi_owner_dopesheet_graph_property_switch_retains_the_explicit_bone_with_no
     click(&mut editor, &ctx, "graphProperty:X", egui::Modifiers::NONE);
     settle(&mut editor, &ctx);
     assert_eq!(editor.graph_owner(), Some(KeyOwner::Bone { bone: 8 }));
-    assert!(editor.selection.is_none());
+    assert!(editor.selection.is_empty());
     assert!(editor.key_selection.is_empty());
     assert_eq!(editor.graph_diagnostic()["context"]["bone"], 8);
     assert_eq!(editor.graph_diagnostic()["context"]["property"], "x");

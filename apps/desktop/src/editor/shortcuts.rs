@@ -3,6 +3,7 @@ use super::*;
 
 impl Editor {
     pub(super) fn cancel_gesture(&mut self) {
+        self.selection_input.clear();
         self.cancel_slider_edit();
         self.cancel_constraint_edit();
         self.cancel_weights_pointer();
@@ -96,8 +97,9 @@ impl Editor {
 
     pub(super) fn deselect(&mut self) {
         self.cancel_gesture();
-        self.selection_history.record(&self.selection, &None);
-        self.selection = None;
+        self.selection_history
+            .record(&self.selection, &TreeSelection::default());
+        self.selection = Default::default();
     }
     pub(super) fn step_frames(&mut self, delta: f32) {
         self.playing = false;
@@ -292,7 +294,7 @@ impl Editor {
             return;
         }
         if ctx.input_mut(|input| input.consume_key(egui::Modifiers::NONE, egui::Key::F2)) {
-            if let Some(item) = self.selection.clone() {
+            if let Some(item) = self.selection.single().cloned() {
                 self.begin_rename(item);
             }
             return;
@@ -315,7 +317,7 @@ impl Editor {
                 self.selection_history.store(index, &self.selection);
                 self.status = format!(
                     "Selection group {index} {}",
-                    if self.selection.is_some() {
+                    if !self.selection.is_empty() {
                         "stored"
                     } else {
                         "cleared"
@@ -324,13 +326,14 @@ impl Editor {
             } else if ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, key))
                 && let Some(item) = self.selection_history.recall(index)
             {
-                self.select(item);
+                self.selection_history.record(&self.selection, &item);
+                self.restore_tree_selection(item);
             }
         }
 
         if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::L))
             && !self.setup_mode
-            && self.selected_bone().is_some()
+            && !self.selected_bones().is_empty()
             && self.selected_transform().is_some()
         {
             self.key_transform(&Property::ALL);
@@ -351,12 +354,12 @@ impl Editor {
         if ctx.input(|i| i.key_pressed(egui::Key::PageUp))
             && let Some(item) = self.selection_history.previous(&self.selection)
         {
-            self.restore_selection(item);
+            self.restore_tree_selection(item);
         }
         if ctx.input(|i| i.key_pressed(egui::Key::PageDown))
             && let Some(item) = self.selection_history.next(&self.selection)
         {
-            self.restore_selection(item);
+            self.restore_tree_selection(item);
         }
         if ctx.input(|i| i.key_pressed(egui::Key::F9)) {
             self.toggle_views();
@@ -404,7 +407,7 @@ impl Editor {
                 ));
                 self.playing = false;
             }
-            if self.selected_bone().is_some() && ctx.input(|i| i.key_pressed(egui::Key::L)) {
+            if !self.selected_bones().is_empty() && ctx.input(|i| i.key_pressed(egui::Key::L)) {
                 let properties = self.tool.properties();
                 if !properties.is_empty() && self.selected_transform().is_some() {
                     self.key_transform(properties);

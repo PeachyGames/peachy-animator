@@ -130,26 +130,36 @@ pub fn project_with_order(
     let mut entries = vec![];
     let root = add(&mut entries, TreeItem::Skeleton, None, doc);
     if options.filters.bones {
-        let mut pending: Vec<_> = doc
-            .bones
-            .iter()
-            .enumerate()
-            .rev()
-            .filter(|(_, b)| b.parent.is_none())
-            .map(|(i, _)| (i, root))
-            .collect();
-        while let Some((bone, parent)) = pending.pop() {
-            let node = add(&mut entries, TreeItem::Bone(bone), Some(parent), doc);
-            for (slot, _) in doc.slots.iter().enumerate().filter(|(_, s)| s.bone == bone) {
-                slot_entries(&mut entries, doc, slot, node, skin, options);
-            }
-            for (child, _) in doc
+        let bone_children = |parent| {
+            let mut children: Vec<_> = doc
                 .bones
                 .iter()
                 .enumerate()
-                .rev()
-                .filter(|(_, b)| b.parent == Some(bone))
-            {
+                .filter(|(_, bone)| bone.parent == parent)
+                .map(|(bone, _)| bone)
+                .collect();
+            children.sort_by(|a, b| doc.bones[*a].name.cmp(&doc.bones[*b].name));
+            children
+        };
+        let mut pending: Vec<_> = bone_children(None)
+            .into_iter()
+            .rev()
+            .map(|bone| (bone, root))
+            .collect();
+        while let Some((bone, parent)) = pending.pop() {
+            let node = add(&mut entries, TreeItem::Bone(bone), Some(parent), doc);
+            let mut slots: Vec<_> = doc
+                .slots
+                .iter()
+                .enumerate()
+                .filter(|(_, slot)| slot.bone == bone)
+                .map(|(slot, _)| slot)
+                .collect();
+            slots.sort_by(|a, b| doc.slots[*a].name.cmp(&doc.slots[*b].name));
+            for slot in slots {
+                slot_entries(&mut entries, doc, slot, node, skin, options);
+            }
+            for child in bone_children(Some(bone)).into_iter().rev() {
                 pending.push((child, node));
             }
         }
@@ -297,6 +307,48 @@ mod tests {
         .unwrap()
     }
     #[test]
+    fn multi_bone_tree_siblings_show_named_slots_before_named_child_bones() {
+        let mut d = doc();
+        d.bones[7].parent = Some(0);
+        d.bones[7].name = "zeta-bone".into();
+        d.bones[8].parent = Some(0);
+        d.bones[8].name = "alpha-bone".into();
+        for slot in &mut d.slots[..3] {
+            slot.bone = 0;
+        }
+        let state = TreeState {
+            filters: Filters {
+                attachments: false,
+                skins: false,
+                animations: false,
+                constraints: false,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        let rows = project(&d, "peach", true, &state);
+        let parent = rows
+            .iter()
+            .position(|row| row.item == TreeItem::Bone(0))
+            .unwrap();
+        let children: Vec<_> = rows
+            .iter()
+            .filter(|row| row.parent == Some(parent))
+            .map(|row| row.item.clone())
+            .collect();
+        assert_eq!(
+            children,
+            vec![
+                TreeItem::Slot(2),
+                TreeItem::Slot(1),
+                TreeItem::Slot(0),
+                TreeItem::Bone(8),
+                TreeItem::Bone(1),
+                TreeItem::Bone(7)
+            ]
+        );
+    }
+    #[test]
     fn constraint_rows_keep_application_order_and_typed_search_reveal_and_filtering() {
         use peachy_document::{Constraint, IkConstraint, IkSetup};
         let mut d = doc();
@@ -358,7 +410,7 @@ mod tests {
                 .iter()
                 .all(|entry| !matches!(entry.item, TreeItem::Constraint(_)))
         );
-        let mut selection = Some(selected);
+        let mut selection = super::super::selection::TreeSelection::singleton(selected);
         d.constraints.pop();
         super::super::selection::reconcile(&mut selection, &d);
         assert_eq!(selection, None);
@@ -476,18 +528,19 @@ mod tests {
             setup: Default::default(),
             inherit: peachy_document::Inherit::Normal,
         });
-        let mut selected = Some(TreeItem::Bone(last));
+        let mut selected = super::super::selection::TreeSelection::singleton(TreeItem::Bone(last));
         d.bones.pop();
         super::super::selection::reconcile(&mut selected, &d);
-        assert!(selected.is_none());
+        assert!(selected.is_empty());
         let slot = TreeItem::Slot(0);
         assert!(slot.bone().is_none());
         assert!(slot.attachment().is_none());
-        let mut selected = Some(TreeItem::Skin("mint".into()));
+        let mut selected =
+            super::super::selection::TreeSelection::singleton(TreeItem::Skin("mint".into()));
         super::super::selection::reconcile(&mut selected, &d);
-        assert!(selected.is_some());
+        assert!(!selected.is_empty());
         d.skins.remove("mint");
         super::super::selection::reconcile(&mut selected, &d);
-        assert!(selected.is_none());
+        assert!(selected.is_empty());
     }
 }

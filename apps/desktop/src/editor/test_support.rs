@@ -52,7 +52,8 @@ pub(super) fn editor_fixture() -> Editor {
         project_path: None,
         asset_root: PathBuf::new(),
         textures: BTreeMap::new(),
-        selection: Some(TreeItem::Bone(8)),
+        selection: Some(TreeItem::Bone(8)).into(),
+        selection_input: Default::default(),
         selection_history: Default::default(),
         key_selection: Default::default(),
         dopesheet_focus: Default::default(),
@@ -174,7 +175,7 @@ pub(super) fn animated_ik_editor() -> Editor {
     }];
     editor.session = Session::new(document).unwrap();
     editor.time = 0.25;
-    editor.selection = Some(TreeItem::Constraint(1));
+    editor.selection = Some(TreeItem::Constraint(1)).into();
     editor.key_selection.clear();
     editor.reconcile_selection();
     editor
@@ -223,7 +224,7 @@ pub(super) fn mesh_editor(weighted: bool) -> (Editor, AttachmentRef) {
     }
     editor.session = Session::new(document).unwrap();
     editor.setup_mode = true;
-    editor.selection = Some(TreeItem::Attachment(key.clone()));
+    editor.selection = Some(TreeItem::Attachment(key.clone())).into();
     editor.time = 0.;
     editor.fit = true;
     editor.reconcile_selection();

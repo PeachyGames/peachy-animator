@@ -82,7 +82,7 @@ fn begin_picker(editor: &mut Editor, ctx: &egui::Context) -> Pos2 {
 }
 fn pending_redo(editor: &mut Editor) {
     editor.setup_mode = false;
-    editor.selection = Some(TreeItem::Bone(8));
+    editor.selection = Some(TreeItem::Bone(8)).into();
     let mut pose = editor.selected_transform().unwrap();
     pose.rotation += 13.;
     editor.edit_transform(pose, &[Property::Rotation]);
@@ -95,7 +95,7 @@ fn pending_redo(editor: &mut Editor) {
         .unwrap();
     editor.session.undo();
     editor.setup_mode = true;
-    editor.selection = Some(TreeItem::Slot(0));
+    editor.selection = Some(TreeItem::Slot(0)).into();
     assert!(editor.session.can_redo());
     assert!(!editor.session.pose_edits().is_empty());
 }

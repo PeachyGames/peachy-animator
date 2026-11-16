@@ -4,8 +4,8 @@ mod schema;
 
 use paths::WorkspaceRoot;
 use peachy_engine::{
-    Command, Session, checked_pose_from_authored, checked_scene_from_evaluated,
-    sample_authored_pose_with_skin,
+    BonePoseEdit, BonePoseKey, BoneTransformFrame, Command, EditTarget, Session,
+    checked_pose_from_authored, checked_scene_from_evaluated,
 };
 use rmcp::{
     ServerHandler, handler::server::wrapper::Parameters, model::CallToolResult, tool, tool_handler,
@@ -63,11 +63,11 @@ impl State {
     fn summary(&self) -> Value {
         match &self.project {
             None => {
-                json!({"revision":self.revision,"open":false,"dirty":false,"canUndo":false,"canRedo":false})
+                json!({"revision":self.revision,"open":false,"dirty":false,"canUndo":false,"canRedo":false,"hasPendingEdits":false,"pendingPose":null})
             }
             Some(project) => {
                 let doc = project.session.document();
-                json!({"revision":self.revision,"open":true,"source":project.source.as_ref().map(|source|self.root.display(source)),"dirty":project.session.is_dirty(),"canUndo":project.session.can_undo(),"canRedo":project.session.can_redo(),"name":doc.name,"format":doc.format,"fps":doc.fps,"bones":doc.bones.len(),"slots":doc.slots.len(),"constraints":doc.constraints.len(),"skins":doc.skins.keys().collect::<Vec<_>>(),"animations":doc.animations.iter().enumerate().map(|(index,animation)|json!({"index":index,"name":animation.name,"duration":animation.duration()})).collect::<Vec<_>>()})
+                json!({"revision":self.revision,"open":true,"source":project.source.as_ref().map(|source|self.root.display(source)),"dirty":project.session.is_dirty(),"canUndo":project.session.can_undo(),"canRedo":project.session.can_redo(),"hasPendingEdits":!project.session.pose_edits().is_empty(),"pendingPose":project.session.pose_edits(),"name":doc.name,"format":doc.format,"fps":doc.fps,"bones":doc.bones.len(),"slots":doc.slots.len(),"constraints":doc.constraints.len(),"skins":doc.skins.keys().collect::<Vec<_>>(),"animations":doc.animations.iter().enumerate().map(|(index,animation)|json!({"index":index,"name":animation.name,"duration":animation.duration()})).collect::<Vec<_>>()})
             }
         }
     }
@@ -117,7 +117,7 @@ struct OpenInput {
     path: String,
     /// Current revision from get_document; zero before the first open.
     expected_revision: u64,
-    /// Explicitly discard an unsaved headless document when opening another. Defaults to false.
+    /// Explicitly discard unsaved document and pending pose changes when opening another. Defaults to false.
     #[serde(default)]
     discard_changes: bool,
 }
@@ -180,6 +180,151 @@ struct EvaluateInput {
     /// Exact skin name; defaults to default. Attachments use the engine's default-skin fallback.
     #[serde(default = "default_skin")]
     skin: String,
+}
+
+struct BonePropertyInput(peachy_document::Property);
+
+impl<'de> Deserialize<'de> for BonePropertyInput {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        use peachy_document::Property;
+        use serde::de::Error;
+        let value = String::deserialize(deserializer)?;
+        Ok(Self(match value.as_str() {
+            "x" => Property::X,
+            "y" => Property::Y,
+            "rotation" => Property::Rotation,
+            "scaleX" => Property::ScaleX,
+            "scaleY" => Property::ScaleY,
+            "shearX" => Property::ShearX,
+            "shearY" => Property::ShearY,
+            _ => return Err(D::Error::custom("Unknown bone property")),
+        }))
+    }
+}
+
+struct BoneTransformInput(peachy_document::Transform);
+
+impl<'de> Deserialize<'de> for BoneTransformInput {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        Ok(Self(schema::deserialize_object(deserializer)?))
+    }
+}
+
+struct PoseTargetInput(EditTarget);
+
+impl<'de> Deserialize<'de> for PoseTargetInput {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        Ok(Self(schema::deserialize_object(deserializer)?))
+    }
+}
+
+macro_rules! pose_object_input {
+    ($name:ident { $($field:ident : $value:ty),+ $(,)? }) => {
+        struct $name { $($field: $value),+ }
+        impl<'de> Deserialize<'de> for $name {
+            fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+                #[derive(Deserialize)]
+                #[serde(deny_unknown_fields)]
+                struct Fields { $($field: $value),+ }
+                let fields: Fields = schema::deserialize_object(deserializer)?;
+                Ok(Self { $($field: fields.$field),+ })
+            }
+        }
+    };
+}
+
+pose_object_input!(BonePoseEditInput {
+    bone: usize, transform: BoneTransformInput, properties: Vec<BonePropertyInput>,
+});
+pose_object_input!(BonePoseKeyInput { bone: usize, properties: Vec<BonePropertyInput> });
+pose_object_input!(EditBonePosesInput {
+    expected_revision: u64, target: PoseTargetInput,
+    edits: Vec<BonePoseEditInput>, auto_key: bool,
+});
+pose_object_input!(KeyBonePosesInput {
+    expected_revision: u64, animation: usize, time: f32, keys: Vec<BonePoseKeyInput>,
+});
+pose_object_input!(KeyEditedPoseInput {
+    expected_revision: u64,
+    animation: usize,
+    time: f32
+});
+
+macro_rules! pose_tool_schema {
+    ($name:ident, $kind:literal) => {
+        impl JsonSchema for $name {
+            fn schema_name() -> std::borrow::Cow<'static, str> {
+                stringify!($name).into()
+            }
+            fn json_schema(_: &mut schemars::SchemaGenerator) -> schemars::Schema {
+                schemars::Schema::try_from(schema::bone_pose_tool_schema($kind))
+                    .expect("Bone pose tool schema is an object")
+            }
+        }
+    };
+}
+pose_tool_schema!(EditBonePosesInput, "edit");
+pose_tool_schema!(KeyBonePosesInput, "key");
+pose_tool_schema!(KeyEditedPoseInput, "edited");
+
+struct BoneAxesInput(peachy_engine::Axes);
+
+impl<'de> Deserialize<'de> for BoneAxesInput {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        use serde::de::Error;
+        Ok(Self(match String::deserialize(deserializer)?.as_str() {
+            "local" => peachy_engine::Axes::Local,
+            "parent" => peachy_engine::Axes::Parent,
+            "world" => peachy_engine::Axes::World,
+            _ => return Err(D::Error::custom("Unknown transform axes")),
+        }))
+    }
+}
+
+pose_object_input!(BoneTranslationDeltaInput { x: f32, y: f32 });
+
+struct BoneTranslationInput {
+    axes: BoneAxesInput,
+    delta: BoneTranslationDeltaInput,
+}
+
+impl<'de> Deserialize<'de> for BoneTranslationInput {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        use serde::de::Error;
+        #[derive(Deserialize)]
+        #[serde(deny_unknown_fields)]
+        struct Fields {
+            #[serde(rename = "type")]
+            kind: String,
+            axes: BoneAxesInput,
+            delta: BoneTranslationDeltaInput,
+        }
+        let input: Fields = schema::deserialize_object(deserializer)?;
+        if input.kind != "translate" {
+            return Err(D::Error::custom(
+                "Only Translate is supported by transform_bones",
+            ));
+        }
+        Ok(Self {
+            axes: input.axes,
+            delta: input.delta,
+        })
+    }
+}
+
+pose_object_input!(TransformBonesInput {
+    expected_revision: u64, target: PoseTargetInput, skin: String,
+    bones: Vec<usize>, primary: usize, operation: BoneTranslationInput, auto_key: bool,
+});
+
+impl JsonSchema for TransformBonesInput {
+    fn schema_name() -> std::borrow::Cow<'static, str> {
+        "TransformBonesInput".into()
+    }
+    fn json_schema(_: &mut schemars::SchemaGenerator) -> schemars::Schema {
+        schemars::Schema::try_from(schema::transform_bones_tool_schema())
+            .expect("Bone transform tool schema is an object")
+    }
 }
 
 #[derive(Deserialize, JsonSchema)]
@@ -380,7 +525,7 @@ impl AnimatorServer {
     }
 
     #[tool(
-        description = "Create a new root-only native document in the independent headless session, without importing a finished rig or writing files. asset_root must be an existing directory inside --root; image paths resolve through its images/ child. A dirty session requires explicit discard_changes=true. Append bones, slots and region/mesh attachments through apply_commands, then save_project to a fresh directory.",
+        description = "Create a new root-only native document in the independent headless session, without importing a finished rig or writing files. asset_root must be an existing directory inside --root; image paths resolve through its images/ child. A session with unsaved document or pending pose changes requires explicit discard_changes=true. Append bones, slots and region/mesh attachments through apply_commands, then save_project to a fresh directory.",
         annotations(
             destructive_hint = true,
             idempotent_hint = false,
@@ -393,11 +538,11 @@ impl AnimatorServer {
             if state
                 .project
                 .as_ref()
-                .is_some_and(|project| project.session.is_dirty())
+                .is_some_and(|project| project.session.is_dirty() || !project.session.pose_edits().is_empty())
                 && !input.discard_changes
             {
                 return Err(
-                    "Unsaved headless changes; save_project or explicitly set discard_changes=true"
+                    "Unsaved headless document or pending pose changes; key/save them or explicitly set discard_changes=true"
                         .into(),
                 );
             }
@@ -454,11 +599,11 @@ impl AnimatorServer {
             if state
                 .project
                 .as_ref()
-                .is_some_and(|project| project.session.is_dirty())
+                .is_some_and(|project| project.session.is_dirty() || !project.session.pose_edits().is_empty())
                 && !input.discard_changes
             {
                 return Err(
-                    "Unsaved headless changes; save_project or explicitly set discard_changes=true"
+                    "Unsaved headless document or pending pose changes; key/save them or explicitly set discard_changes=true"
                         .into(),
                 );
             }
@@ -611,7 +756,8 @@ impl AnimatorServer {
                 return Err("Unknown skin".into());
             }
             let animation = input.animation.as_ref().map(|name| document.animations.iter().position(|clip| &clip.name == name).ok_or("Unknown animation")).transpose()?;
-            let authored = sample_authored_pose_with_skin(document, animation, input.time, &input.skin)?;
+            let target = animation.map_or(EditTarget::Setup, |animation| EditTarget::Animate { animation, time: input.time });
+            let authored = state.project()?.session.authored_pose_with_skin(target, &input.skin)?;
             let pose = checked_pose_from_authored(document, &authored)?;
             let evaluation = pose.slider_evaluations().get(input.constraint).copied().flatten().ok_or("Missing Slider own-turn evaluation")?;
             Ok(json!({"revision":state.revision,"constraint":input.constraint,"animation":input.animation,"hostTime":input.time,"skin":input.skin,"kind":"ownTurn","evaluation":evaluation}))
@@ -742,6 +888,141 @@ impl AnimatorServer {
     }
 
     #[tool(
+        description = "Edit explicit bones atomically through the shared Session. target is Setup or an animation index/time. Every transform supplies seven authored-local fields. Setup replaces the complete transform; Animate changes only the listed pending properties. Animate auto_key=false creates undoable pending poses outside saved/exported data; auto_key=true keys the corresponding translation, scale or shear property groups in one step. No group pivot/axis math is inferred. Requires latest revision; failure preserves document, pending edits and history.",
+        annotations(
+            destructive_hint = false,
+            idempotent_hint = false,
+            open_world_hint = false
+        )
+    )]
+    fn edit_bone_poses(&self, Parameters(input): Parameters<EditBonePosesInput>) -> CallToolResult {
+        self.access(|state| {
+            state.check_revision(input.expected_revision)?;
+            let edits: Vec<_> = input
+                .edits
+                .into_iter()
+                .map(|edit| BonePoseEdit {
+                    bone: edit.bone,
+                    transform: edit.transform.0,
+                    properties: edit
+                        .properties
+                        .into_iter()
+                        .map(|property| property.0)
+                        .collect(),
+                })
+                .collect();
+            state
+                .project_mut()?
+                .session
+                .edit_poses(input.target.0, &edits, input.auto_key)?;
+            state.revision += 1;
+            Ok(state.summary())
+        })
+    }
+
+    #[tool(
+        description = "Translate an explicit ordered bone selection with its selected primary through the same evaluated transform frame as the desktop. Requires an exact skin and Setup or animation index/time target. operation is {type:translate,axes:local|parent|world,delta:{x,y}} in named tool-space units, not pointer coordinates. Local uses each bone's applied rotation; Parent adds local XY; World converts the common delta through each edited root's parent. Selected descendants inherit their selected ancestor's movement without a second local edit. Captures one checked source solve, applies all candidate poses atomically, never switches Session skin, and supports pending edits or Auto Key. Only Translate is supported. Requires latest revision; rejection preserves document, pending, history, revision and skin.",
+        annotations(
+            destructive_hint = false,
+            idempotent_hint = false,
+            open_world_hint = false
+        )
+    )]
+    fn transform_bones(
+        &self,
+        Parameters(input): Parameters<TransformBonesInput>,
+    ) -> CallToolResult {
+        self.access(|state| {
+            state.check_revision(input.expected_revision)?;
+            let project = state.project()?;
+            let document = project.session.document();
+            if !document.skins.is_empty() && !document.skins.contains_key(&input.skin) {
+                return Err("Unknown skin".into());
+            }
+            let authored = project
+                .session
+                .authored_pose_with_skin(input.target.0, &input.skin)?;
+            let evaluated = checked_pose_from_authored(document, &authored)?;
+            let frame = BoneTransformFrame::from_evaluated(
+                document,
+                &evaluated,
+                &input.bones,
+                input.primary,
+            )?;
+            let edits = frame.translate(
+                input.operation.axes.0,
+                [input.operation.delta.x, input.operation.delta.y],
+            )?;
+            state.project_mut()?.session.edit_poses_with_skin(
+                input.target.0,
+                &edits,
+                input.auto_key,
+                &input.skin,
+            )?;
+            state.revision += 1;
+            Ok(state.summary())
+        })
+    }
+
+    #[tool(
+        description = "Key exact property lists for explicit bones at an animation index/time through one shared Session edit. Uses current authored values including pending poses, not constrained applied values. Duplicate/empty/invalid targets fail atomically. Requires the latest revision.",
+        annotations(
+            destructive_hint = false,
+            idempotent_hint = false,
+            open_world_hint = false
+        )
+    )]
+    fn key_bone_poses(&self, Parameters(input): Parameters<KeyBonePosesInput>) -> CallToolResult {
+        self.access(|state| {
+            state.check_revision(input.expected_revision)?;
+            let keys: Vec<_> = input
+                .keys
+                .into_iter()
+                .map(|key| BonePoseKey {
+                    bone: key.bone,
+                    properties: key
+                        .properties
+                        .into_iter()
+                        .map(|property| property.0)
+                        .collect(),
+                })
+                .collect();
+            state
+                .project_mut()?
+                .session
+                .key_poses(input.animation, input.time, &keys)?;
+            state.revision += 1;
+            Ok(state.summary())
+        })
+    }
+
+    #[tool(
+        description = "Key every edited target for one animation at an exact time through Session.key_edited: pending bones, IK/Sliders, Deform, Slot and global draw order. One atomic history entry; no implicit Tree selection. Save/export exclude pending values until they are keyed. Requires the latest revision.",
+        annotations(
+            destructive_hint = false,
+            idempotent_hint = false,
+            open_world_hint = false
+        )
+    )]
+    fn key_edited_pose(&self, Parameters(input): Parameters<KeyEditedPoseInput>) -> CallToolResult {
+        self.access(|state| {
+            state.check_revision(input.expected_revision)?;
+            if !input.time.is_finite() || input.time < 0. {
+                return Err("Pose time must be finite and nonnegative".into());
+            }
+            if input.animation >= state.project()?.session.document().animations.len() {
+                return Err("Unknown animation".into());
+            }
+            state
+                .project_mut()?
+                .session
+                .key_edited(input.animation, input.time, None)?;
+            state.revision += 1;
+            Ok(state.summary())
+        })
+    }
+
+    #[tool(
         description = "Undo or redo one complete headless edit through the shared engine history. Requires latest revision. Source files remain unchanged. Successful results include index-remapping effects for the transition; an undone creation maps the removed constraint to null.",
         annotations(
             destructive_hint = false,
@@ -775,7 +1056,7 @@ impl AnimatorServer {
     }
 
     #[tool(
-        description = "Evaluate Setup or an animation at a time using the shared checked pose/IK/mesh engine. Returns authored locals, appliedLocals, effective per-bone inherits modes, world transforms, slotAttachments, raw unmultiplied float slotColors, complete back-to-front drawOrder slot indices, textured geometry and bounds. Capture appliedLocals and inherits together for a binding/weight command pose. Slot arrays and drawOrder include hidden and empty slots, before tint and byte display rounding. All effective fields and geometry come from one solve. authoredSliderPoses/appliedSliderPoses are indexed by the full constraint list (non-Slider entries are inactive placeholders). This is geometry, not a raster preview or live desktop pose.",
+        description = "Evaluate Setup or an animation at a time, including matching Session pending poses and the requested skin without changing Session skin or revision. Returns authored locals, appliedLocals, effective per-bone inherits modes, world transforms, slotAttachments, raw unmultiplied float slotColors, complete back-to-front drawOrder slot indices, textured geometry and bounds. Capture appliedLocals and inherits together for a binding/weight command pose. Slot arrays and drawOrder include hidden and empty slots, before tint and byte display rounding. All effective fields and geometry come from one solve. authoredSliderPoses/appliedSliderPoses are indexed by the full constraint list (non-Slider entries are inactive placeholders). This is geometry, not a raster preview or live desktop pose.",
         annotations(read_only_hint = true, idempotent_hint = true, open_world_hint = false)
     )]
     fn evaluate_pose(&self, Parameters(input): Parameters<EvaluateInput>) -> CallToolResult {
@@ -783,7 +1064,9 @@ impl AnimatorServer {
             let document=state.project()?.session.document();
             let animation=input.animation.as_ref().map(|name|document.animations.iter().position(|clip|&clip.name==name).ok_or("Unknown animation")).transpose()?;
             if !document.skins.is_empty() && !document.skins.contains_key(&input.skin){return Err("Unknown skin".into());}
-            let authored=sample_authored_pose_with_skin(document,animation,input.time,&input.skin)?;
+            if !input.time.is_finite() || input.time < 0. { return Err("Pose time must be finite and nonnegative".into()); }
+            let target = animation.map_or(EditTarget::Setup, |animation| EditTarget::Animate { animation, time: input.time });
+            let authored=state.project()?.session.authored_pose_with_skin(target,&input.skin)?;
             let evaluated=checked_pose_from_authored(document,&authored)?;
             // Read every effective domain from the same ordered constraint solve
             // that supplies geometry and binding locals; never re-solve here.
@@ -869,4 +1152,8 @@ impl ServerHandler for AnimatorServer {}
 #[cfg(test)]
 mod animation_key_query_tests;
 #[cfg(test)]
+mod bone_pose_tests;
+#[cfg(test)]
 mod group_clipboard_tests;
+#[cfg(test)]
+mod transform_bones_tests;

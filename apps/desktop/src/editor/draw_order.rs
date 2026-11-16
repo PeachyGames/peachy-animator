@@ -24,7 +24,7 @@ struct DrawOrderDrag {
     animation: usize,
     time: f32,
     skin: String,
-    selection: Option<TreeItem>,
+    selection: TreeSelection,
     filters: tree_model::Filters,
     query: String,
     collapsed: BTreeSet<String>,
@@ -265,7 +265,7 @@ impl Editor {
         }
         let Some(slot) = self
             .selection
-            .as_ref()
+            .single()
             .and_then(|item| item.slot(self.session.document()))
         else {
             return;
@@ -346,7 +346,7 @@ impl Editor {
             ui.label("Draw order is authored in Animate.");
             return;
         }
-        if let Some(TreeItem::DrawOrderSlot { slot }) = self.selection {
+        if let Some(TreeItem::DrawOrderSlot { slot }) = self.selection.single().cloned() {
             ui.label(format!(
                 "Slot: {}",
                 self.session.document().slots[slot].name
@@ -384,7 +384,9 @@ impl Editor {
         if !self.draw_order_input_available(ctx) || ctx.text_edit_focused() {
             return false;
         }
-        let Some(TreeItem::DrawOrderSlot { .. } | TreeItem::Slot(_)) = self.selection else {
+        let Some(TreeItem::DrawOrderSlot { .. } | TreeItem::Slot(_)) =
+            self.selection.single().cloned()
+        else {
             return false;
         };
         let delta = ctx.input(|input| {

@@ -106,7 +106,7 @@ impl Editor {
         self.reconcile_slider_source_picker();
         if self.slider_view.edit.as_ref().is_some_and(|edit| {
             !self.show_tree
-                || self.selection != Some(TreeItem::Constraint(edit.constraint))
+                || self.selection.single() != Some(&TreeItem::Constraint(edit.constraint))
                 || self.setup_mode != edit.setup
                 || self.animation != edit.animation
                 || self.time.to_bits() != edit.time.to_bits()
@@ -174,7 +174,7 @@ impl Editor {
         self.finish_slider_edit();
         self.cancel_gesture();
         if !self.slider_input_available(&response.ctx)
-            || self.selection != Some(TreeItem::Constraint(index))
+            || self.selection.single() != Some(&TreeItem::Constraint(index))
             || !self.slider_field_available(index, field)
         {
             return Err("Select an editable Slider property".into());
@@ -604,7 +604,7 @@ impl Editor {
     }
 
     pub(super) fn slider_edit_diagnostic(&self) -> serde_json::Value {
-        let selected = match self.selection {
+        let selected = match self.selection.single().cloned() {
             Some(TreeItem::Constraint(index)) if self.slider_constraint(index).is_some() => {
                 Some(index)
             }

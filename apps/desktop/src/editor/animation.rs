@@ -47,12 +47,16 @@ impl Editor {
         }
     }
     pub(super) fn key_transform(&mut self, properties: &[Property]) {
-        if !self.setup_mode
-            && let Some(bone) = self.selected_bone()
-        {
-            self.request_pose_key(pose_key::PoseKeyAction::Transform {
-                bone,
-                properties: properties.to_vec(),
+        let bones = self.selected_bones();
+        if !self.setup_mode && !bones.is_empty() {
+            self.request_pose_key(pose_key::PoseKeyAction::Transforms {
+                keys: bones
+                    .into_iter()
+                    .map(|bone| peachy_engine::BonePoseKey {
+                        bone,
+                        properties: properties.to_vec(),
+                    })
+                    .collect(),
             });
         }
     }
@@ -69,6 +73,20 @@ impl Editor {
             bone,
             properties,
         )
+    }
+    pub(super) fn selected_key_state(&self, properties: &[Property]) -> KeyState {
+        let states: Vec<_> = self
+            .selected_bones()
+            .into_iter()
+            .map(|bone| self.key_state(bone, properties))
+            .collect();
+        if states.contains(&KeyState::Edited) {
+            KeyState::Edited
+        } else if !states.is_empty() && states.iter().all(|state| *state == KeyState::Keyed) {
+            KeyState::Keyed
+        } else {
+            KeyState::Absent
+        }
     }
 }
 
