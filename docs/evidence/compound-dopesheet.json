@@ -1,0 +1,101 @@
+{
+  "date": "2026-11-15",
+  "status": "source and MCP checkpoint; new desktop native acceptance pending",
+  "formatVersion": 23,
+  "commands": 64,
+  "tools": 19,
+  "independentImplementation": true,
+  "fixture": {
+    "project": "examples/peach-bot/compound-dopesheet-bot.peachy",
+    "sha256": "2aebcfd82effac00880921c45a1cccaf78f5f4524c7272cb275fc44dae99a2d5",
+    "constructionRecipe": "examples/peach-bot/compound-dopesheet-authoring-commands.json",
+    "constructionCommands": 43,
+    "finishedRigImported": false,
+    "bones": 6,
+    "slots": 4,
+    "clips": 2,
+    "uniqueOriginalImages": 1,
+    "imageSha256": "6e8f281942e95b5a77774e683622dac99ea2aef706c99f3627dad968d6c2120f"
+  },
+  "sourceChecks": {
+    "passed": true,
+    "dopesheet": 41,
+    "clipboard": 45,
+    "graph": 47,
+    "curves": 52,
+    "keyDrag": 4,
+    "filtersOverlap": true,
+    "newCompoundTests": 7,
+    "newScopeTests": 5,
+    "formatCheck": true,
+    "clippyWorkspaceAllTargets": true,
+    "workspaceBuild": true,
+    "architectureCrates": 7,
+    "binaries": {
+      "peachy-animator": "14b0575fff64d33f621954f09af426daa7010fcb4d88d1c634d64f4c87a068d4",
+      "peachy-mcp": "0f659abb43c80d6dd4c502c35e91284848a9851947e13c682afdef290879d112",
+      "peachy-cli": "a414e845f0500c562e4ffaa579da64df8ca6a3e6379a6a2127aa7d9c6c618ab6"
+    }
+  },
+  "mcp": {
+    "passed": true,
+    "actualRequests": 44,
+    "actualStdio": true,
+    "fromBlankRoot": true,
+    "compoundKeys": 12,
+    "copyReadOnly": true,
+    "mixedRetimeUndoRedoExact": true,
+    "explicitSlotColorPasteUndoRedoExact": true,
+    "negativeAtomicCases": 1,
+    "poseSamples": 12,
+    "saveReopenExact": true,
+    "emptyReopenHistory": true,
+    "childClosed": true,
+    "liveGuiBridge": false
+  },
+  "installedReference": {
+    "version": "4.3.26",
+    "originalThreeSlotAndFourSlotControls": true,
+    "boneSlotAndRegionDirectFamilyUnion": true,
+    "unrelatedAndDescendantKeysExcluded": true,
+    "globalDrawOrderRetained": true,
+    "unkeyedSelectedBoneHeaderRetained": true,
+    "unkeyedChannelsHidden": true,
+    "clearReturnsAll": true,
+    "slotRows": "All RGBA sorted by Slot name, then all Attachment rows sorted by Slot name",
+    "treeSlotOrderDistinct": true,
+    "explicitSlotColorPasteAtFrame": 50,
+    "pasteAndUndoVisualEvidence": true,
+    "pasteExactExportReadbackPending": true,
+    "allOwnedReferenceProcessesClosed": true
+  },
+  "nativeCandidate": {
+    "accepted": false,
+    "pending": true,
+    "desktopSha256": "14b0575fff64d33f621954f09af426daa7010fcb4d88d1c634d64f4c87a068d4",
+    "beforeDesktopSha256": "7edd697b394f786554d0868e45fdae314e225566a5939464076b798914450ba1",
+    "sameFixtureBeforeCaptured": true,
+    "beforeVisibleSelection": {
+      "type": "drawOrderSlot",
+      "slot": 2
+    },
+    "beforeDocumentMatchesMcpBaseline": true,
+    "beforeShowsGlobalOnly": true,
+    "allOwnedDesktopProcessesClosed": true,
+    "remainingGates": [
+      "new native Slot/Region compound scope and global retained focus",
+      "mixed-key retime/history/held cancellation",
+      "explicit Slot leaf paste",
+      "minimum window with original artwork",
+      "Save and fresh-process typed reopen"
+    ]
+  },
+  "limits": [
+    "Installed Graph shows compound curves together; Peachy Graph remains bounded to exact typed owners.",
+    "General Tree multi-selection, mixed Deform compound hierarchy, Sync/Lock/filter modes, Shift/ripple and cyclic Offset remain open.",
+    "Region pose controls and exact row/header styling remain open.",
+    "Nonempty pending/inactive/remap coverage is headless, not new native acceptance.",
+    "Required hosted CI remains unavailable; draft PR only.",
+    "This checkpoint does not establish full Spine compatibility."
+  ]
+}

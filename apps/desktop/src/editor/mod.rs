@@ -8,6 +8,7 @@ mod curve_widgets;
 mod curves;
 mod deform_curves;
 mod dopesheet;
+mod dopesheet_scope;
 mod dopesheet_selection;
 mod draw_order;
 mod export_dialog;
@@ -112,6 +113,7 @@ pub(crate) struct Editor {
     selection: Option<TreeItem>,
     selection_history: selection_history::SelectionHistory,
     key_selection: dopesheet_selection::KeySelection,
+    dopesheet_focus: dopesheet_scope::DopesheetFocus,
     key_drag: Option<key_drag::KeyDrag>,
     timeline_clipboard: Option<peachy_engine::AnimationKeyClipboard>,
     leaf_source: Option<timeline_clipboard::LeafSourceReceipt>,
@@ -248,6 +250,7 @@ impl Editor {
             selection: Some(TreeItem::Bone(initial_bone)),
             selection_history: Default::default(),
             key_selection: Default::default(),
+            dopesheet_focus: Default::default(),
             key_drag: None,
             timeline_clipboard: None,
             leaf_source: None,
@@ -374,6 +377,13 @@ impl Editor {
             group.remap(mapping);
         }
         self.selection_history.remap_constraints(mapping);
+        if let dopesheet_scope::DopesheetFocus::Owner(owner) = &self.dopesheet_focus {
+            self.dopesheet_focus = mapping
+                .map_owner(owner)
+                .ok()
+                .flatten()
+                .map_or(Default::default(), dopesheet_scope::DopesheetFocus::Owner);
+        }
         self.tree.remap_constraints(mapping);
         // Like document Undo/Redo, a structural transition drops key selection.
         // Clipboard payloads have no constraint owner and remain unchanged.
@@ -540,6 +550,7 @@ impl Editor {
         self.cancel_gesture();
         self.weights.bind = None;
         self.selection = item.clone();
+        self.reconcile_dopesheet_focus();
         self.reconcile_slider_source_focus();
         let Some(item) = item else { return };
         if let Some(key) = item.attachment() {
@@ -580,6 +591,7 @@ impl Editor {
         }
     }
     fn reconcile_selection(&mut self) {
+        self.reconcile_dopesheet_focus();
         self.reconcile_slider_context();
         self.reconcile_constraint_context();
         self.reconcile_transform_edit();
@@ -588,7 +600,8 @@ impl Editor {
             self.setup_mode
                 || !self.dopesheet_visible()
                 || self.animation != drag.animation
-                || self.timeline_owner() != drag.presentation_owner
+                || self.timeline_scope() != drag.presentation_scope
+                || self.selection != drag.presentation
         }) {
             self.cancel_dopesheet_drag();
         }
@@ -775,6 +788,7 @@ impl Editor {
                         };
                     self.selection_history = Default::default();
                     self.key_selection = Default::default();
+                    self.dopesheet_focus = Default::default();
                     self.key_drag = None;
                     self.clear_timeline_clipboard();
                     self.timeline_input = Default::default();
@@ -1170,6 +1184,8 @@ impl Editor {
                 report["playbackSpeed"] = self.playback_speed.into();
                 report["status"] = self.status.clone().into();
                 report["timelineOwner"] = serde_json::json!(self.timeline_owner());
+                report["timelineFocus"] = self.dopesheet_focus_diagnostic();
+                report["timelineScope"] = self.key_selection.diagnostic()["scope"].clone();
                 report["animationEnd"] = self.animation_end().into();
                 report["deformDragging"] = self.deform_drag.is_some().into();
                 report["weightedMeshCount"] = self.weighted_mesh_count().into();

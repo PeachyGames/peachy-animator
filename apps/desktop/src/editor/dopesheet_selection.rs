@@ -1,7 +1,6 @@
 //! Pure typed presentation selection. Playhead movement never implies key selection.
-use std::sync::Arc;
+use std::{collections::BTreeSet, sync::Arc};
 
-#[cfg(test)]
 use peachy_document::Document;
 use peachy_document::{Property, SliderProperty};
 use peachy_engine::{
@@ -181,6 +180,53 @@ pub(super) enum SelectionScope {
     Shown,
 }
 
+/// Presentation scope is independent of an explicit clipboard/edit target.
+/// Owner order is meaningful; an empty owner list never means all owners.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub(super) enum TimelineScope {
+    #[default]
+    All,
+    Owners(Vec<KeyOwner>),
+}
+impl TimelineScope {
+    fn canonicalized(&self, document: &Document) -> Result<Self, String> {
+        match self {
+            Self::All => Ok(Self::All),
+            Self::Owners(owners) => {
+                let mut canonical = Vec::with_capacity(owners.len());
+                let mut seen = BTreeSet::new();
+                for owner in owners {
+                    let owner = match owner {
+                        KeyOwner::Deform { attachment } => {
+                            peachy_engine::deform_key_owner(document, attachment)?
+                        }
+                        _ => owner.clone(),
+                    };
+                    // A presentation union may contain linked aliases. The
+                    // engine's explicit-owner query remains strict and sees
+                    // only this stable, canonical union.
+                    if seen.insert(owner.clone()) {
+                        canonical.push(owner);
+                    }
+                }
+                Ok(Self::Owners(canonical))
+            }
+        }
+    }
+    fn single_owner(&self) -> Option<&KeyOwner> {
+        match self {
+            Self::Owners(owners) if owners.len() == 1 => owners.first(),
+            _ => None,
+        }
+    }
+    fn diagnostic(&self) -> serde_json::Value {
+        match self {
+            Self::All => serde_json::json!({"type":"all"}),
+            Self::Owners(owners) => serde_json::json!({"type":"owners","owners":owners}),
+        }
+    }
+}
+
 #[derive(Clone, Default)]
 pub(super) struct ShownKeys {
     pub owners: Vec<KeyOwner>,
@@ -192,13 +238,24 @@ pub(super) struct ShownKeys {
 struct TimelineCache {
     generation: u64,
     animation: Option<usize>,
-    owner: Option<KeyOwner>,
+    requested_scope: TimelineScope,
+    scope: TimelineScope,
     shown: Result<Arc<ShownKeys>, String>,
+}
+
+/// Gesture state only: metadata is always refreshed from the current Session
+/// when restoring, so canceled preview times cannot prune the original keys.
+#[derive(Clone, Debug)]
+pub(super) struct KeySelectionSnapshot {
+    context: (Option<usize>, TimelineScope),
+    keys: Vec<AnimationKey>,
+    primary: Option<AnimationKey>,
+    expansion: SelectionScope,
 }
 
 #[derive(Default)]
 pub(super) struct KeySelection {
-    context: (Option<usize>, Option<KeyOwner>),
+    context: (Option<usize>, TimelineScope),
     keys: Vec<AnimationKey>,
     primary: Option<AnimationKey>,
     cache: Option<TimelineCache>,
@@ -209,41 +266,59 @@ impl KeySelection {
     pub fn invalidate_cache(&mut self) {
         self.cache = None;
     }
-    /// Cache validated metadata, never mesh payloads, by the accepted Session document.
+    /// Cache validated metadata, never mesh payloads, by the accepted Session
+    /// document and canonical ordered scope. View-specific read-only masks are
+    /// reapplied separately after preparation, including on skin changes.
     pub fn prepare(
         &mut self,
         session: &Session,
         animation: Option<usize>,
-        owner: Option<KeyOwner>,
+        requested_scope: TimelineScope,
     ) -> Result<(), String> {
         let generation = session.document_generation();
         if self.cache.as_ref().is_none_or(|cached| {
             cached.generation != generation
                 || cached.animation != animation
-                || cached.owner != owner
+                || cached.requested_scope != requested_scope
         }) {
             let shown = (|| {
+                let scope = requested_scope.canonicalized(session.document())?;
+                if let Some(cached) = &self.cache
+                    && cached.generation == generation
+                    && cached.animation == animation
+                    && cached.scope == scope
+                    && let Ok(shown) = &cached.shown
+                {
+                    return Ok((scope, Arc::clone(shown)));
+                }
                 let Some(animation) = animation else {
-                    return Ok(Arc::new(ShownKeys::default()));
+                    return Ok((scope, Arc::new(ShownKeys::default())));
                 };
-                let (owners, unsupported) = if let Some(owner) = &owner {
-                    (vec![owner.clone()], None)
-                } else {
-                    let inventory = animation_key_inventory(session.document(), animation)?;
-                    (inventory.owners, Some(inventory.unsupported_timelines))
+                let (owners, unsupported) = match &scope {
+                    TimelineScope::Owners(owners) => (owners.clone(), None),
+                    TimelineScope::All => {
+                        let inventory = animation_key_inventory(session.document(), animation)?;
+                        (inventory.owners, Some(inventory.unsupported_timelines))
+                    }
                 };
                 let query = animation_keys(session.document(), animation, &owners)?;
-                Ok(Arc::new(ShownKeys {
+                let shown = Arc::new(ShownKeys {
                     owners,
                     keys: query.keys,
                     unsupported: unsupported.unwrap_or(query.unsupported_timelines),
                     readonly_owners: vec![],
-                }))
+                });
+                Ok((scope, shown))
             })();
+            let (scope, shown) = match shown {
+                Ok((scope, shown)) => (scope, Ok(shown)),
+                Err(error) => (requested_scope.clone(), Err(error)),
+            };
             self.cache = Some(TimelineCache {
                 generation,
                 animation,
-                owner: owner.clone(),
+                requested_scope,
+                scope,
                 shown,
             });
         }
@@ -253,17 +328,27 @@ impl KeySelection {
             .unwrap()
             .shown
             .as_ref()
+            .map(Arc::clone)
             .map_err(Clone::clone)?;
-        let shown_keys = &shown.keys;
+        let scope = self.cache.as_ref().unwrap().scope.clone();
+        self.reconcile_keys(animation, scope, &shown.keys);
+        Ok(())
+    }
+    fn reconcile_keys(
+        &mut self,
+        animation: Option<usize>,
+        scope: TimelineScope,
+        shown_keys: &[AnimationKey],
+    ) {
         if self.context.0 != animation {
             self.keys.clear();
             self.primary = None;
             self.expansion = SelectionScope::None;
         }
-        if self.context != (animation, owner.clone()) {
+        if self.context != (animation, scope.clone()) {
             self.expansion = SelectionScope::None;
         }
-        self.context = (animation, owner);
+        self.context = (animation, scope);
         let previous_len = self.keys.len();
         self.keys.retain(|key| shown_keys.contains(key));
         if self.keys.len() != previous_len {
@@ -276,6 +361,60 @@ impl KeySelection {
         {
             self.primary = self.keys.first().cloned();
         }
+    }
+    pub fn scope(&self) -> &TimelineScope {
+        &self.context.1
+    }
+    pub fn snapshot(&self) -> KeySelectionSnapshot {
+        KeySelectionSnapshot {
+            context: self.context.clone(),
+            keys: self.keys.clone(),
+            primary: self.primary.clone(),
+            expansion: self.expansion,
+        }
+    }
+    /// Call after canceling the Session transaction. Restore the exact selection
+    /// phase only in its original canonical context; otherwise keep its valid
+    /// intersection. As with prepare, the shell refreshes the current skin's
+    /// read-only mask after restoration.
+    pub fn restore_snapshot(
+        &mut self,
+        session: &Session,
+        animation: Option<usize>,
+        scope: TimelineScope,
+        snapshot: KeySelectionSnapshot,
+    ) -> Result<(), String> {
+        // Keep the current view mask, not the snapshot's historical mask, when
+        // canceling a preview advances the Session's document generation.
+        let readonly = self.shown().readonly_owners.clone();
+        self.prepare(session, animation, scope)?;
+        let owners = self.shown().owners.clone();
+        self.mark_readonly(
+            readonly
+                .into_iter()
+                .filter(|owner| owners.contains(owner))
+                .collect(),
+        );
+        let same_context = self.context == snapshot.context;
+        let shown = self.shown();
+        let original_len = snapshot.keys.len();
+        self.keys = if self.context.0 == snapshot.context.0 {
+            snapshot
+                .keys
+                .into_iter()
+                .filter(|key| {
+                    shown.keys.contains(key) && !shown.readonly_owners.contains(&key.owner())
+                })
+                .collect()
+        } else {
+            vec![]
+        };
+        self.set_primary(snapshot.primary);
+        self.expansion = if same_context && self.keys.len() == original_len {
+            snapshot.expansion
+        } else {
+            SelectionScope::None
+        };
         Ok(())
     }
     pub fn shown(&self) -> Arc<ShownKeys> {
@@ -311,10 +450,13 @@ impl KeySelection {
         if self.context.0 != animation {
             self.clear();
         }
-        if self.context != (animation, owner.clone()) {
+        let scope = owner.map_or(TimelineScope::All, |owner| {
+            TimelineScope::Owners(vec![owner])
+        });
+        if self.context != (animation, scope.clone()) {
             self.expansion = SelectionScope::None;
         }
-        self.context = (animation, owner);
+        self.context = (animation, scope);
         let previous_len = self.keys.len();
         self.keys.retain(|key| shown.contains(key));
         if self.keys.len() != previous_len {
@@ -335,8 +477,12 @@ impl KeySelection {
             if shown.readonly_owners != owners {
                 Arc::make_mut(shown).readonly_owners = owners;
             }
+            let previous_len = self.keys.len();
             self.keys
                 .retain(|key| !shown.readonly_owners.contains(&key.owner()));
+            if self.keys.len() != previous_len {
+                self.expansion = SelectionScope::None;
+            }
             if self
                 .primary
                 .as_ref()
@@ -504,7 +650,7 @@ impl KeySelection {
         })
     }
     pub fn diagnostic(&self) -> serde_json::Value {
-        serde_json::json!({"animation":self.context.0,"owner":self.context.1,"keys":self.keys,"primary":self.primary,
+        serde_json::json!({"animation":self.context.0,"owner":self.context.1.single_owner(),"scope":self.context.1.diagnostic(),"keys":self.keys,"primary":self.primary,
             "shownOwners":self.cache.as_ref().and_then(|cache| cache.shown.as_ref().ok()).map(|shown| &shown.owners),
             "readOnlyTimelines":self.cache.as_ref().and_then(|cache| cache.shown.as_ref().ok()).map(|shown| &shown.unsupported),
             "readOnlyOwners":self.cache.as_ref().and_then(|cache| cache.shown.as_ref().ok()).map(|shown| &shown.readonly_owners),
@@ -1014,6 +1160,386 @@ mod tests {
         selection.select(key(0.5), false);
         selection.reconcile(&doc, None, Some(KeyOwner::Bone { bone: 0 }));
         assert!(selection.deletion().is_none());
+    }
+
+    fn scope_doc() -> (Document, AttachmentRef, AttachmentRef, usize) {
+        let mut doc = expansion_doc();
+        let (source, mut mesh) = doc
+            .skins
+            .iter()
+            .flat_map(|(skin, slots)| {
+                slots.iter().flat_map(move |(slot, attachments)| {
+                    attachments
+                        .iter()
+                        .filter_map(move |(placeholder, attachment)| match attachment {
+                            Attachment::Mesh(mesh) if mesh.link.is_none() => Some((
+                                AttachmentRef {
+                                    skin: skin.clone(),
+                                    slot: slot.clone(),
+                                    placeholder: placeholder.clone(),
+                                },
+                                mesh.clone(),
+                            )),
+                            _ => None,
+                        })
+                })
+            })
+            .next()
+            .unwrap();
+        mesh.sequence = Some(SequenceDef {
+            count: 3,
+            start: 1,
+            digits: 1,
+            setup_index: 0,
+        });
+        let alias = AttachmentRef {
+            placeholder: "original scope alias".into(),
+            ..source.clone()
+        };
+        let mut linked = mesh.clone();
+        linked.link = Some(MeshLink {
+            skin: source.skin.clone(),
+            source: source.placeholder.clone(),
+            timelines: true,
+        });
+        let attachments = doc
+            .skins
+            .get_mut(&source.skin)
+            .unwrap()
+            .get_mut(&source.slot)
+            .unwrap();
+        attachments.insert(source.placeholder.clone(), Attachment::Mesh(mesh.clone()));
+        attachments.insert(alias.placeholder.clone(), Attachment::Mesh(linked));
+        let slot = doc
+            .slots
+            .iter()
+            .position(|slot| slot.name == source.slot)
+            .unwrap();
+        doc.animations[0].deform_tracks = vec![DeformTrack {
+            attachment: source.clone(),
+            keys: vec![DeformKey {
+                time: 0.125,
+                offsets: vec![1.; mesh.vertices.deform_len()],
+                curve: Curve::Linear,
+            }],
+        }];
+        doc.animations[0].inherit_tracks = vec![InheritTrack {
+            bone: 0,
+            keys: vec![InheritKey {
+                time: 0.,
+                inherit: Inherit::Normal,
+            }],
+        }];
+        doc.animations[0].sequence_tracks = vec![SequenceTrack {
+            attachment: source.clone(),
+            keys: vec![SequenceKey {
+                time: 0.125,
+                mode: SequenceMode::Hold,
+                index: 1,
+                delay: 0.25,
+            }],
+        }];
+        doc.events.push(EventDef::new("original scope marker"));
+        doc.animations[0].events.push(EventKey {
+            time: 0.25,
+            event: doc.events.len() - 1,
+            int: None,
+            float: None,
+            string: None,
+            volume: None,
+            balance: None,
+        });
+        doc.validate().unwrap();
+        (doc, source, alias, slot)
+    }
+
+    #[test]
+    fn timeline_scope_all_empty_and_unkeyed_owner_are_distinct_and_invalid_queries_do_not_publish()
+    {
+        let (doc, _, _, _) = scope_doc();
+        let session = Session::new(doc).unwrap();
+        let mut selection = KeySelection::default();
+        selection
+            .prepare(&session, Some(0), TimelineScope::All)
+            .unwrap();
+        assert!(selection.shown().keys.contains(&KeyId::Bone {
+            bone: 1,
+            property: Property::Rotation,
+            time: 0.9
+        }));
+        assert!(
+            selection
+                .shown()
+                .unsupported
+                .iter()
+                .any(|track| matches!(track, UnsupportedAnimationTimeline::Event { .. }))
+        );
+        selection
+            .prepare(&session, Some(0), TimelineScope::Owners(vec![]))
+            .unwrap();
+        assert_eq!(selection.scope(), &TimelineScope::Owners(vec![]));
+        assert!(selection.shown().owners.is_empty());
+        assert!(selection.shown().keys.is_empty());
+        assert!(selection.shown().unsupported.is_empty());
+        let unkeyed = TimelineScope::Owners(vec![KeyOwner::DrawOrder {}]);
+        selection
+            .prepare(&session, Some(0), unkeyed.clone())
+            .unwrap();
+        assert_eq!(selection.scope(), &unkeyed);
+        assert_eq!(selection.shown().owners, vec![KeyOwner::DrawOrder {}]);
+        assert!(selection.shown().keys.is_empty());
+        selection
+            .prepare(
+                &session,
+                Some(0),
+                TimelineScope::Owners(vec![KeyOwner::Bone { bone: 0 }]),
+            )
+            .unwrap();
+        selection.select(x(0.4), false);
+        let selected = selection.snapshot();
+        for scope in [
+            TimelineScope::Owners(vec![
+                KeyOwner::Bone { bone: 0 },
+                KeyOwner::Bone { bone: usize::MAX },
+            ]),
+            TimelineScope::Owners(vec![KeyOwner::Deform {
+                attachment: AttachmentRef {
+                    skin: "missing".into(),
+                    slot: "missing".into(),
+                    placeholder: "missing".into(),
+                },
+            }]),
+        ] {
+            assert!(selection.prepare(&session, Some(0), scope).is_err());
+            assert_eq!(selection.keys(), selected.keys);
+            assert_eq!(selection.primary(), selected.primary.as_ref());
+            assert_eq!(selection.scope(), &selected.context.1);
+            assert!(
+                selection.shown().keys.is_empty(),
+                "a failed query must not display the previous scope's metadata"
+            );
+        }
+    }
+
+    #[test]
+    fn timeline_scope_compound_aliases_keep_order_scoped_metadata_and_phase_without_requery() {
+        let (doc, source, alias, slot) = scope_doc();
+        let session = Session::new(doc.clone()).unwrap();
+        let mut selection = KeySelection::default();
+        let source_owner = KeyOwner::Deform {
+            attachment: source.clone(),
+        };
+        let scope = TimelineScope::Owners(vec![
+            KeyOwner::Bone { bone: 1 },
+            KeyOwner::Deform { attachment: alias },
+            KeyOwner::Slot { slot },
+            KeyOwner::Bone { bone: 0 },
+            source_owner.clone(),
+        ]);
+        selection.prepare(&session, Some(0), scope).unwrap();
+        let owners = vec![
+            KeyOwner::Bone { bone: 1 },
+            source_owner.clone(),
+            KeyOwner::Slot { slot },
+            KeyOwner::Bone { bone: 0 },
+        ];
+        assert_eq!(selection.scope(), &TimelineScope::Owners(owners.clone()));
+        assert_eq!(selection.shown().owners, owners);
+        assert_eq!(
+            selection.shown().unsupported.len(),
+            2,
+            "Sequence is listed once even when Slot and Deform both contain it"
+        );
+        assert!(
+            selection.shown().unsupported.iter().any(|track| matches!(
+                track,
+                UnsupportedAnimationTimeline::Inherit { bone: 0, .. }
+            ))
+        );
+        assert!(selection.shown().unsupported.iter().any(|track| matches!(track, UnsupportedAnimationTimeline::Sequence { attachment, .. } if *attachment == source)));
+        assert!(
+            !selection
+                .shown()
+                .unsupported
+                .iter()
+                .any(|track| matches!(track, UnsupportedAnimationTimeline::Event { .. }))
+        );
+        let deform = KeyId::Deform {
+            attachment: source,
+            time: 0.125,
+        };
+        selection.select(deform, false);
+        selection.select(x(0.123455), true);
+        selection.set_primary(Some(x(0.123455)));
+        assert_eq!(selection.select_all_shown().unwrap(), SelectionScope::Rows);
+        let expected = selection.keys().to_vec();
+        let metadata = selection.shown();
+        selection
+            .prepare(&session, Some(0), TimelineScope::Owners(owners.clone()))
+            .unwrap();
+        assert!(
+            Arc::ptr_eq(&metadata, &selection.shown()),
+            "canonical alias spelling changes reuse validated metadata"
+        );
+        assert_eq!(selection.keys(), expected);
+        assert_eq!(selection.primary(), Some(&x(0.123455)));
+        assert_eq!(selection.expansion, SelectionScope::Rows);
+        let mut reversed = owners;
+        reversed.reverse();
+        selection
+            .prepare(&session, Some(0), TimelineScope::Owners(reversed.clone()))
+            .unwrap();
+        assert_eq!(selection.shown().owners, reversed);
+        assert_eq!(selection.keys(), expected);
+        assert_eq!(selection.primary(), Some(&x(0.123455)));
+        assert_eq!(selection.expansion, SelectionScope::None);
+        assert_eq!(session.document(), &doc);
+    }
+
+    #[test]
+    fn timeline_scope_snapshot_restores_fractional_selection_after_fixed_base_previews_and_cancel()
+    {
+        let mut session = Session::new(expansion_doc()).unwrap();
+        let mut pose = session.local_pose(Some(0), 0.4)[1];
+        pose.rotation += 9.25;
+        session
+            .edit_pose(
+                1,
+                peachy_engine::EditTarget::Animate {
+                    animation: 0,
+                    time: 0.4,
+                },
+                pose,
+                &[Property::Rotation],
+                false,
+            )
+            .unwrap();
+        session
+            .dispatch(Command::RenameAnimation {
+                animation: 0,
+                name: "redo witness".into(),
+            })
+            .unwrap();
+        session.undo();
+        assert!(session.can_redo());
+        let before = session.document().clone();
+        let pending = session.pose_edits().clone();
+        let redo = session.can_redo();
+        let scope =
+            TimelineScope::Owners(vec![KeyOwner::Bone { bone: 0 }, KeyOwner::Bone { bone: 1 }]);
+        let mut selection = KeySelection::default();
+        selection.prepare(&session, Some(0), scope.clone()).unwrap();
+        selection.select(x(0.12345), false);
+        let other = KeyId::Bone {
+            bone: 1,
+            property: Property::Rotation,
+            time: 0.9,
+        };
+        selection.select(other.clone(), true);
+        selection.set_primary(Some(other));
+        assert_eq!(selection.select_all_shown().unwrap(), SelectionScope::Rows);
+        let snapshot = selection.snapshot();
+        let expected = selection.keys().to_vec();
+        let generation = session.document_generation();
+        session.begin_transaction();
+        for delta in [0.1, 0.2] {
+            let incoming = session
+                .preview_move_animation_keys(0, &expected, delta, false)
+                .unwrap();
+            selection.prepare(&session, Some(0), scope.clone()).unwrap();
+            selection.replace(incoming);
+        }
+        session.cancel_transaction();
+        assert_ne!(session.document_generation(), generation);
+        selection
+            .restore_snapshot(&session, Some(0), scope, snapshot.clone())
+            .unwrap();
+        assert_eq!(selection.keys(), expected);
+        assert_eq!(selection.primary(), snapshot.primary.as_ref());
+        assert_eq!(selection.expansion, SelectionScope::Rows);
+        assert_eq!(session.document(), &before);
+        assert_eq!(session.pose_edits(), &pending);
+        assert_eq!(session.can_redo(), redo);
+    }
+
+    #[test]
+    fn timeline_scope_restore_prunes_changed_scope_and_current_readonly_mask_without_cross_clip_aliasing()
+     {
+        let mut doc = expansion_doc();
+        doc.animations[1].tracks[0].keys[0].time = 0.4;
+        let session = Session::new(doc).unwrap();
+        let all_bones =
+            TimelineScope::Owners(vec![KeyOwner::Bone { bone: 0 }, KeyOwner::Bone { bone: 1 }]);
+        let other_scope = TimelineScope::Owners(vec![KeyOwner::Bone { bone: 1 }]);
+        let other = KeyId::Bone {
+            bone: 1,
+            property: Property::Rotation,
+            time: 0.9,
+        };
+        let mut selection = KeySelection::default();
+        selection
+            .prepare(&session, Some(0), all_bones.clone())
+            .unwrap();
+        selection.select(x(0.4), false);
+        selection.select(other.clone(), true);
+        selection.set_primary(Some(other.clone()));
+        assert_eq!(selection.select_all_shown().unwrap(), SelectionScope::Rows);
+        let snapshot = selection.snapshot();
+        selection
+            .restore_snapshot(&session, Some(0), other_scope.clone(), snapshot.clone())
+            .unwrap();
+        assert_eq!(selection.keys(), std::slice::from_ref(&other));
+        assert_eq!(selection.primary(), Some(&other));
+        assert_eq!(selection.expansion, SelectionScope::None);
+        selection.mark_readonly(vec![KeyOwner::Bone { bone: 1 }]);
+        selection
+            .restore_snapshot(&session, Some(0), other_scope, snapshot.clone())
+            .unwrap();
+        assert!(selection.is_empty());
+        assert!(selection.primary().is_none());
+        assert_eq!(selection.expansion, SelectionScope::None);
+        selection
+            .restore_snapshot(&session, Some(1), all_bones, snapshot)
+            .unwrap();
+        assert!(
+            selection.is_empty(),
+            "equal key IDs in another clip do not restore old selection"
+        );
+        assert!(selection.deletion().is_none());
+    }
+
+    #[test]
+    fn timeline_scope_cancel_refreshes_metadata_but_keeps_current_readonly_mask_outside_snapshot() {
+        let mut session = Session::new(expansion_doc()).unwrap();
+        let scope = TimelineScope::Owners(vec![KeyOwner::Bone { bone: 0 }]);
+        let mut selection = KeySelection::default();
+        selection.prepare(&session, Some(0), scope.clone()).unwrap();
+        selection.select(x(0.12345), false);
+        assert_eq!(selection.select_all_shown().unwrap(), SelectionScope::Rows);
+        let snapshot = selection.snapshot();
+        let sources = selection.keys().to_vec();
+        let before = session.document().clone();
+        session.begin_transaction();
+        let incoming = session
+            .preview_move_animation_keys(0, &sources, 0.1, false)
+            .unwrap();
+        selection.prepare(&session, Some(0), scope.clone()).unwrap();
+        selection.replace(incoming);
+        selection.mark_readonly(vec![KeyOwner::Bone { bone: 0 }]);
+        let preview_metadata = selection.shown();
+        session.cancel_transaction();
+        selection
+            .restore_snapshot(&session, Some(0), scope, snapshot)
+            .unwrap();
+        assert!(!Arc::ptr_eq(&preview_metadata, &selection.shown()));
+        assert_eq!(
+            selection.shown().readonly_owners,
+            vec![KeyOwner::Bone { bone: 0 }]
+        );
+        assert!(selection.is_empty());
+        assert!(selection.primary().is_none());
+        assert_eq!(selection.expansion, SelectionScope::None);
+        assert_eq!(session.document(), &before);
     }
 
     #[test]

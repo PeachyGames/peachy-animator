@@ -1,6 +1,17 @@
 # Peachy Animator
 
-The current **64 commands /19 tools**, native v23 checkpoint verifies leaf clipboard
+The compound Dopesheet candidate groups a selected Bone, Slot or Region's direct
+Bone/Slot tracks together, retains Bone context on Draw order selection, and hides
+unkeyed channels. Slot leaf paste uses the explicit selected Slot. Local source
+checks and a fresh **44-request MCP** study pass; **native acceptance of this new
+desktop build remains pending**. Try the original
+[Compound Dopesheet Lab](examples/peach-bot/compound-dopesheet-bot.peachy) and its
+[43-command construction recipe](examples/peach-bot/compound-dopesheet-authoring-commands.json).
+See the [candidate evidence](docs/evidence/compound-dopesheet.json) and
+[installed observations](docs/UI_PARITY.md#installed-compound-boneslotregion-scope--november-15-2026).
+Inventory remains native v23, **64 commands /19 tools**.
+
+The preceding **64 commands /19 tools**, native v23 checkpoint verifies leaf clipboard
 owner routing through five native cases: no-owner source fallback, explicit Bone,
 cross-animation, visible Animate Slot and true Region parent Bone. Each native
 typed document matches the actual **71-request** MCP case; the final native Save
@@ -8,7 +19,7 @@ is byte-identical to the [Leaf Clipboard Lab](examples/peach-bot/leaf-clipboard-
 Fresh reopen is exact with empty history/clipboard and one image. Native Undo and
 MCP/headless Undo/Redo pass; all owned processes are closed. See [scope](docs/slices/leaf-clipboard.md),
 [review](docs/evidence/leaf-clipboard.html) and [scalar evidence](docs/evidence/leaf-clipboard.json).
-Visible Slot Dopesheet scope remains global DrawOrder; full Slot/Region controls,
+At that leaf checkpoint, visible Slot scope was still global DrawOrder. Full Slot/Region controls,
 Region row/header styling, general Tree mapping, Shift/Offset and Lock/Sync remain open.
 
 The preceding grouped checkpoint provides **64 commands / 19 tools**, native v23

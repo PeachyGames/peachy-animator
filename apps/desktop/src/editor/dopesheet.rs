@@ -1,10 +1,14 @@
 //! Dopesheet controls adapt pointer/keyboard input to shared commands.
-use super::dopesheet_selection::KeyId;
+use super::dopesheet_scope::DopesheetFocus;
+use super::dopesheet_selection::{KeyId, ShownKeys};
 use super::icons::Icon;
 use super::key_drag::{ChartGeometry, KeyDrag, primary_pointer_event};
 use super::*;
 use peachy_engine::{KeyOwner, UnsupportedAnimationTimeline};
 
+#[cfg(test)]
+#[path = "compound_dopesheet_tests.rs"]
+mod compound_tests;
 #[cfg(test)]
 #[path = "multi_owner_dopesheet_tests.rs"]
 mod multi_owner_tests;
@@ -45,9 +49,10 @@ impl Editor {
             && ctx.memory(|memory| memory.has_focus(Self::dopesheet_id()))
     }
     pub(super) fn reconcile_dopesheet_selection(&mut self) {
+        self.reconcile_dopesheet_focus();
         let animation = self.active_animation();
-        let owner = self.timeline_owner();
-        if let Err(error) = self.key_selection.prepare(&self.session, animation, owner) {
+        let scope = self.timeline_scope();
+        if let Err(error) = self.key_selection.prepare(&self.session, animation, scope) {
             self.key_selection.clear();
             self.status = error;
         }
@@ -105,7 +110,7 @@ impl Editor {
             .filter(|owner| self.timeline_owner_editable(owner))
             .or_else(|| self.retained_graph_owner())
             .or_else(|| self.timeline_owner())
-            .filter(|owner| self.timeline_owner_editable(owner))
+            .filter(|owner| self.timeline_owner_editable(owner) && self.graph_owner_in_scope(owner))
     }
     pub(super) fn primary_graph_key(&self) -> Option<peachy_engine::AnimationKey> {
         self.preferred_scalar_curve_selection()
@@ -139,7 +144,7 @@ impl Editor {
                 })
         })
     }
-    fn selected_region_pose_bone(&self) -> Option<usize> {
+    pub(super) fn selected_region_pose_bone(&self) -> Option<usize> {
         let TreeItem::Attachment(attachment) = self.selection.as_ref()? else {
             return None;
         };
@@ -151,6 +156,98 @@ impl Editor {
             .iter()
             .find(|slot| slot.name == attachment.slot)
             .map(|slot| slot.bone)
+    }
+    fn shown_dopesheet_rows(&self, shown: &ShownKeys) -> Vec<ShownRow> {
+        let mut result = Vec::new();
+        let append_keyed = |result: &mut Vec<ShownRow>, owner: KeyOwner| {
+            let channels = if matches!(owner, KeyOwner::Slot { .. }) {
+                vec![
+                    dopesheet_selection::TimelineRow::SlotColor,
+                    dopesheet_selection::TimelineRow::SlotAttachment,
+                ]
+            } else {
+                dopesheet_selection::rows(Some(owner.clone()))
+            };
+            for row in channels {
+                if shown
+                    .keys
+                    .iter()
+                    .any(|key| key.owner() == owner && row.matches(key.clone()))
+                {
+                    result.push(ShownRow::Channel(owner.clone(), row));
+                }
+            }
+        };
+        let append_bone = |result: &mut Vec<ShownRow>, bone: usize| {
+            let owner = KeyOwner::Bone { bone };
+            result.push(ShownRow::Owner(owner.clone()));
+            append_keyed(result, owner);
+            let slots = self.compound_slot_owners(bone);
+            for row in [
+                dopesheet_selection::TimelineRow::SlotColor,
+                dopesheet_selection::TimelineRow::SlotAttachment,
+            ] {
+                for slot in &slots {
+                    if shown
+                        .keys
+                        .iter()
+                        .any(|key| key.owner() == *slot && row.matches(key.clone()))
+                    {
+                        result.push(ShownRow::Channel(slot.clone(), row));
+                    }
+                }
+            }
+        };
+        let focus = self.effective_dopesheet_focus();
+        let explicit_global = matches!(&focus, DopesheetFocus::Owner(KeyOwner::DrawOrder {}));
+        match focus {
+            DopesheetFocus::Bone(bone) => append_bone(&mut result, bone),
+            DopesheetFocus::Owner(KeyOwner::DrawOrder {}) => {}
+            DopesheetFocus::Owner(owner) => {
+                for row in dopesheet_selection::rows(Some(owner.clone())) {
+                    result.push(ShownRow::Channel(owner.clone(), row));
+                }
+            }
+            DopesheetFocus::All => {
+                let doc = self.session.document();
+                for bone in 0..doc.bones.len() {
+                    if shown.owners.iter().any(|owner| match owner {
+                        KeyOwner::Bone { bone: index } => *index == bone,
+                        KeyOwner::Slot { slot } => doc.slots[*slot].bone == bone,
+                        _ => false,
+                    }) {
+                        append_bone(&mut result, bone);
+                    }
+                }
+                for owner in &shown.owners {
+                    if !matches!(
+                        owner,
+                        KeyOwner::Bone { .. } | KeyOwner::Slot { .. } | KeyOwner::DrawOrder {}
+                    ) {
+                        result.push(ShownRow::Owner(owner.clone()));
+                        append_keyed(&mut result, owner.clone());
+                    }
+                }
+            }
+        }
+        if explicit_global
+            || shown
+                .keys
+                .iter()
+                .any(|key| matches!(key, KeyId::DrawOrder { .. }))
+        {
+            result.push(ShownRow::Owner(KeyOwner::DrawOrder {}));
+            if explicit_global {
+                result.push(ShownRow::Channel(
+                    KeyOwner::DrawOrder {},
+                    dopesheet_selection::TimelineRow::DrawOrder,
+                ));
+            } else {
+                append_keyed(&mut result, KeyOwner::DrawOrder {});
+            }
+        }
+        result.extend(shown.unsupported.iter().cloned().map(ShownRow::ReadOnly));
+        result
     }
     fn timeline_owner_name(&self, owner: &KeyOwner) -> String {
         let doc = self.session.document();
@@ -417,38 +514,9 @@ impl Editor {
                 MUTED,
             );
         }
-        if self.timeline_owner() == Some(KeyOwner::DrawOrder {}) {
-            self.record_target(
-                "timelineGroup:drawOrder",
-                egui::Rect::from_min_size(rect.min, vec2(label_width, 24.)),
-            );
-            painter.text(
-                pos2(rect.left() + 12., rect.top() + 12.),
-                egui::Align2::LEFT_CENTER,
-                "Draw order",
-                FontId::proportional(12.),
-                Color32::from_rgb(80, 157, 224),
-            );
-        }
         let shown = self.key_selection.shown();
-        let single_owner = self.timeline_owner().is_some();
-        let mut rows = Vec::new();
-        for owner in &shown.owners {
-            if !single_owner {
-                rows.push(ShownRow::Owner(owner.clone()));
-            }
-            for row in dopesheet_selection::rows(Some(owner.clone())) {
-                if single_owner
-                    || shown
-                        .keys
-                        .iter()
-                        .any(|key| key.owner() == *owner && row.matches(key.clone()))
-                {
-                    rows.push(ShownRow::Channel(owner.clone(), row));
-                }
-            }
-        }
-        rows.extend(shown.unsupported.iter().cloned().map(ShownRow::ReadOnly));
+        let explicit_owner = self.timeline_owner();
+        let rows = self.shown_dopesheet_rows(&shown);
         let mut key_targets = Vec::new();
         let row_area = egui::Rect::from_min_max(pos2(rect.left(), rect.top() + 26.), rect.max);
         let mut row_ui = ui.new_child(
@@ -492,6 +560,9 @@ impl Editor {
                                 &format!("timelineOwner:{}", owner_id(owner)),
                                 group,
                             );
+                            if matches!(owner, KeyOwner::DrawOrder {}) {
+                                self.record_target("timelineGroup:drawOrder", group);
+                            }
                             if response.clicked() {
                                 self.select_timeline_owner(owner.clone());
                             }
@@ -688,7 +759,7 @@ impl Editor {
                     });
                     if label.rect.is_positive() {
                         self.record_target(&format!("timelineRow:{qualified}"), label.rect);
-                        if single_owner {
+                        if explicit_owner.as_ref() == Some(&row_owner) {
                             self.record_target(&target, label.rect);
                         }
                     }
@@ -737,7 +808,7 @@ impl Editor {
                                 key_rect.intersect(rows_clip),
                             );
                         }
-                        if single_owner && editable {
+                        if explicit_owner.as_ref() == Some(&row_owner) && editable {
                             let legacy = match key_id {
                                 KeyId::Slider {
                                     constraint,
@@ -809,8 +880,8 @@ impl Editor {
         {
             self.cancel_gesture();
             self.reconcile_dopesheet_selection();
-            let presentation_owner = self.timeline_owner();
-            let primary_before = self.key_selection.primary().cloned();
+            let presentation_scope = self.key_selection.scope().clone();
+            let snapshot = self.key_selection.snapshot();
             self.key_drag = KeyDrag::new(
                 self.animation,
                 pressed,
@@ -820,8 +891,9 @@ impl Editor {
                 modifiers,
             );
             if let Some(drag) = self.key_drag.as_mut() {
-                drag.presentation_owner = presentation_owner;
-                drag.primary_before = primary_before;
+                drag.presentation_scope = presentation_scope;
+                drag.presentation = self.selection.clone();
+                drag.snapshot = Some(snapshot);
             }
             response.request_focus();
         }

@@ -55,6 +55,7 @@ pub(super) fn editor_fixture() -> Editor {
         selection: Some(TreeItem::Bone(8)),
         selection_history: Default::default(),
         key_selection: Default::default(),
+        dopesheet_focus: Default::default(),
         key_drag: None,
         timeline_clipboard: None,
         leaf_source: None,

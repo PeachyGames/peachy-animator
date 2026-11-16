@@ -4,6 +4,39 @@ Written November 10, 2026, at the end of the import-parity push. Read this
 first, then `AGENTS.md`. The workspace rules in `../AGENTS.md` and `../CLAUDE.md`
 still apply.
 
+## Compound Dopesheet candidate — November 15, 2026
+
+Source checks03/04 pass: Dopesheet41, clipboard45, broad Graph47, broad Curves52
+and key-drag4 (overlapping filters), fmt, Clippy, workspace build and architecture7.
+Desktop is `14b0575fff64d33f621954f09af426daa7010fcb4d88d1c634d64f4c87a068d4`;
+MCP/CLI stay `0f659abb…d112` / `a414e845…18ab6`. Inventory stays v23, 64/19.
+Actual MCP run03 passes44 requests/43 construction commands from a blank root and
+one original PNG, mixed12-key retiming, explicit Slot-color paste, exact history,
+one negative atomic case,12 poses and Save/reopen. The public
+[original compound lab](../examples/peach-bot/compound-dopesheet-bot.peachy)
+is byte-identical to its saved baseline `2aebcfd8…a2d5`.
+
+**Next action: finish new native candidate acceptance before claiming UI parity.**
+Use a task-owned scratch copy of that public lab; check actual visible Slot and
+true Region family scope, global-root retained Bone focus, mixed retime/history/
+held Escape, explicit Slot-color paste, minimum layout and Save/fresh reopen.
+Installed reference calibration and old7edd same-fixture before capture are done.
+Native reference Slot-color paste has visual Undo evidence; exact saved scratch
+CLI export readback remains pending. No native replay on Desktop14b is claimed.
+See [candidate evidence](evidence/compound-dopesheet.json) and
+[observations](UI_PARITY.md#installed-compound-boneslotregion-scope--november-15-2026).
+
+Private records reuse `.local/training-spine-20261114/timeline/multi-owner/task.json`.
+The guarded `compound_native_control.py` supports explicit Session-file selection,
+F12 snapshots and inner-to-native target mapping. Preserve process identity,
+foreground and topmost-at-point checks, including during F12 polling. All owned
+native/MCP instances are closed. Scratch reference/helper, selected captures and
+MCP44 protocol remain required by the pending native gates until integration;
+retire superseded/disposable artifacts after acceptance. Do not repeat the
+completed Slot-order probe: sibling RGBA rows sort by name before all Attach rows;
+Tree front-to-back order is distinct. General Tree/mixed-Deform/Graph-all-curves,
+Shift/Offset, Lock/Sync and broader parity remain open.
+
 ## Verified bounded leaf owner routing — November 15, 2026
 
 Current v23 and **64 commands /19 tools** are unchanged. Desktop5825/source04

@@ -1,5 +1,5 @@
 //! A fixed drag snapshot; screen input stays here and key transitions stay in the engine.
-use super::dopesheet_selection::KeyId;
+use super::dopesheet_selection::{KeyId, KeySelectionSnapshot, TimelineScope};
 use super::*;
 use peachy_engine::{AnimationKey, KeyOwner};
 
@@ -53,7 +53,9 @@ impl ChartGeometry {
 pub(super) struct KeyDrag {
     pub animation: usize,
     pub owner: KeyOwner,
-    pub presentation_owner: Option<KeyOwner>,
+    pub presentation_scope: TimelineScope,
+    pub presentation: Option<TreeItem>,
+    pub snapshot: Option<KeySelectionSnapshot>,
     pub primary_before: Option<KeyId>,
     pressed: KeyId,
     pub geometry: ChartGeometry,
@@ -87,7 +89,9 @@ impl KeyDrag {
         Some(Self {
             animation,
             owner: pressed.owner(),
-            presentation_owner: Some(pressed.owner()),
+            presentation_scope: TimelineScope::Owners(vec![pressed.owner()]),
+            presentation: None,
+            snapshot: None,
             primary_before: selected.first().cloned(),
             pressed: pressed.clone(),
             geometry,
@@ -191,7 +195,8 @@ impl KeyDrag {
     pub fn diagnostic(&self) -> serde_json::Value {
         serde_json::json!({
             "active":self.active,"animation":self.animation,"owner":self.owner,
-            "sources":self.sources,"offset":self.offset,"copy":self.copy,"presentationOwner":self.presentation_owner,
+            "sources":self.sources,"offset":self.offset,"copy":self.copy,"presentation":self.presentation.as_ref().map(TreeItem::diagnostic),
+            "presentationScope":match &self.presentation_scope {TimelineScope::All=>serde_json::json!({"type":"all"}),TimelineScope::Owners(owners)=>serde_json::json!({"type":"owners","owners":owners})},
             "toggle":self.toggle,
             "pressedTime":self.pressed_time,"originX":self.origin_x,
             "chart":{"start":self.geometry.start,"width":self.geometry.width,"extent":self.geometry.extent}
@@ -200,14 +205,30 @@ impl KeyDrag {
 }
 
 impl Editor {
+    fn restore_dopesheet_drag_selection(&mut self, drag: KeyDrag) {
+        if let Some(snapshot) = drag.snapshot {
+            let animation = self.active_animation();
+            let scope = self.timeline_scope();
+            if let Err(error) =
+                self.key_selection
+                    .restore_snapshot(&self.session, animation, scope, snapshot)
+            {
+                self.key_selection.clear();
+                self.status = error;
+            }
+        } else {
+            // Pure legacy drag fixtures construct the snapshot without a view.
+            self.key_selection.replace(drag.selection_before);
+            self.key_selection.set_primary(drag.primary_before);
+        }
+        self.reconcile_dopesheet_selection();
+    }
     pub(super) fn cancel_dopesheet_drag(&mut self) {
         if let Some(drag) = self.key_drag.take() {
             if drag.active {
                 self.session.cancel_transaction();
             }
-            self.key_selection.replace(drag.selection_before);
-            self.key_selection.set_primary(drag.primary_before);
-            self.reconcile_dopesheet_selection();
+            self.restore_dopesheet_drag_selection(drag);
         }
     }
     pub(super) fn update_dopesheet_drag(&mut self, pointer_x: f32, unsnapped: bool) {
@@ -250,9 +271,7 @@ impl Editor {
             }
             Err(error) => {
                 self.session.cancel_transaction();
-                self.key_selection.replace(drag.selection_before);
-                self.key_selection.set_primary(drag.primary_before);
-                self.reconcile_dopesheet_selection();
+                self.restore_dopesheet_drag_selection(drag);
                 self.error = Some(error);
             }
         }

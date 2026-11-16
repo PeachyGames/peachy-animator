@@ -35,7 +35,8 @@ pub(super) fn timeline_row_pitch(ui: &egui::Ui) -> f32 {
     (ui.text_style_height(&egui::TextStyle::Body) + 11.).max(24.)
 }
 pub(super) fn timeline_chart_height(ui: &egui::Ui) -> f32 {
-    24. + Property::ALL.len() as f32 * timeline_row_pitch(ui) + 13.
+    // One Bone group heading plus all seven authored scalar channels.
+    24. + (Property::ALL.len() + 1) as f32 * timeline_row_pitch(ui) + 13.
 }
 pub(super) fn timeline_panel_height(ui: &egui::Ui) -> f32 {
     let header = ui
@@ -67,12 +68,50 @@ mod tests {
     use super::*;
 
     fn target(editor: &Editor, name: &str) -> egui::Rect {
-        let [left, top, right, bottom] = editor.capture_targets[name];
+        let [left, top, right, bottom] = *editor.capture_targets.get(name).unwrap_or_else(|| {
+            let relevant: Vec<_> = editor
+                .capture_targets
+                .iter()
+                .filter(|(key, _)| {
+                    key.starts_with("timelineRow:")
+                        || key.starts_with("timelineOwner:")
+                        || key.starts_with("value:")
+                        || matches!(
+                            key.as_str(),
+                            "dopesheetClip"
+                                | "timelineRowsClip"
+                                | "timelineFooter"
+                                | "mainToolsClip"
+                        )
+                })
+                .collect();
+            panic!("Missing layout target {name}; relevant targets: {relevant:?}")
+        });
         egui::Rect::from_min_max(pos2(left, top), pos2(right, bottom))
     }
     #[test]
     fn seven_dopesheet_rows_and_four_transform_rows_fit_minimum_panels_with_real_editor_style() {
         let mut editor = editor_fixture();
+        let mut document = editor.session.document().clone();
+        document.animations[0] = Animation::new(
+            "Seven authored channels",
+            Property::ALL
+                .into_iter()
+                .map(|property| Track {
+                    bone: 8,
+                    property,
+                    keys: vec![Keyframe {
+                        time: 0.,
+                        value: property.neutral(),
+                        curve: Curve::Linear,
+                    }],
+                })
+                .collect(),
+        );
+        editor.session = Session::new(document).unwrap();
+        editor.session.set_skin(&editor.skin);
+        editor.key_selection = Default::default();
+        editor.reconcile_selection();
         let ctx = editor_context();
         let mut output = ctx.run_ui(
             egui::RawInput {
@@ -100,6 +139,8 @@ mod tests {
         );
         output.textures_delta.clear();
         let clip = target(&editor, "dopesheetClip");
+        let header = target(&editor, "timelineOwner:bone:8");
+        assert!(clip.contains_rect(header));
         for property in Property::ALL {
             let row = target(&editor, &format!("timelineRow:{property:?}"));
             assert!(row.width() > 0. && row.height() > 0., "{property:?}");

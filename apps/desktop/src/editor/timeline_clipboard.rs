@@ -420,6 +420,28 @@ impl Editor {
         {
             return Ok(target);
         }
+        if matches!(clipboard, AnimationKeyClipboard::Slot { .. })
+            && let Some(
+                TreeItem::Slot(slot)
+                | TreeItem::DrawOrderSlot { slot }
+                | TreeItem::Placeholder { slot, .. },
+            ) = self.selection.as_ref()
+        {
+            let doc = self.session.document();
+            let bone = doc
+                .slots
+                .get(*slot)
+                .ok_or("The selected slot no longer exists")?
+                .bone;
+            if !doc.activity(&self.skin).bones[bone] {
+                return Err("The selected item's parent bone is inactive in this skin.".into());
+            }
+            let target = peachy_engine::KeyOwner::Slot { slot: *slot };
+            if !self.timeline_owner_editable(&target) {
+                return Err("The selected slot is read-only in this skin.".into());
+            }
+            return Ok(target);
+        }
         // Explicit typed targets retain their shared kind/layout validation.
         if let Some(target) = self.timeline_owner() {
             if !self.timeline_owner_editable(&target) {

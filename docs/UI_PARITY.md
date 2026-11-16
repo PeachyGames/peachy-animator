@@ -1,5 +1,48 @@
 # Spine workspace and interaction parity
 
+## Installed compound Bone/Slot/Region scope — November 15, 2026
+
+**Installed Spine 4.3.26 observations and Peachy local source/MCP checks pass;
+new Peachy native acceptance remains pending.** The original compound fixture distinguishes these scopes in
+the active `clipboard` animation:
+
+| Selected context | Observed Dopesheet rows |
+| --- | --- |
+| `follower` Bone, either sibling Slot, or true `follower_bar` Region | `follower` header, Rotate, RGBA for both `follower_accent` and `follower_bar`, Attach for `follower_bar`, plus global Draw order → Default |
+| Unrelated `driver_marker` Slot | `driver` header, Translate Y and RGBA for `driver_marker`, plus the same global Draw order; the follower family is excluded |
+| Unkeyed `follower_parent` Bone | Its empty Bone header and global Draw order; no empty scalar channels or descendant follower rows |
+| Cleared selection | Both keyed Bone/Slot families and global Draw order; no empty seven-channel expansion |
+
+These are compound presentation groups, not a conversion of Slot keys into Bone
+keys. Switching the selected Region to `offset`, which has only Bone keys, shows
+the follower header and Rotate without empty RGBA/Attach or DrawOrder rows.
+Selecting the global Draw order Tree node retains the preceding follower family
+in one capture and driver family in another; it does not force a global-only
+row list in these observed states.
+
+The installed Graph retains the compound row tree and displays the family's
+Bone/RGBA curves together. Peachy's bounded typed-owner Graph does not yet
+establish that complete compound display/editing workflow; visible curves alone
+do not verify editing every timeline kind. Region pose-tool behavior and exact
+row/header styling remain separate acceptance questions.
+
+The four-slot discriminator resolves the observed ordering: the Tree lists zebra,
+accent, bar and driver (indices 3/2/1/0), while the follower Dopesheet lists Rotate,
+then all keyed RGBA rows in name order accent/bar/zebra, then the Attach row for
+bar. Slot property families are grouped together, not interleaved per Slot or
+ordered by the Tree's front-to-back list.
+
+An explicit `Slot: driver_marker` paste at Frame 50 visibly receives the red
+source `follower_bar` RGBA key. An Undo capture exists; exact CLI export readback
+remains pending, so no exact-data/history claim follows from that image alone.
+Peachy's before-candidate capture of the actual visible `DrawOrderSlot:2` shows
+only global DrawOrder rows, with its complete Document unchanged. The new
+compound implementation's native acceptance remains pending.
+
+These finite observations do not establish
+general Tree multi-selection, recursive descendant scope, every Sync/filter
+mode, Shift/Offset or full Spine interaction parity.
+
 ## Verified bounded leaf target routing — November 15, 2026
 
 Desktop `58255481…a4c19` passes all five native owner cases against complete MCP71
@@ -18,8 +61,9 @@ all owned processes are closed. Inventory stays v23, **64 commands /19 tools**.
 See [scope](slices/leaf-clipboard.md), [review](evidence/leaf-clipboard.html) and
 [scalar evidence](evidence/leaf-clipboard.json).
 
-The visible Slot's Dopesheet still has global DrawOrder scope. Slot compound
-scope, full Region pose controls/picking, extra unkeyed/all-seven rows and
+At that leaf checkpoint the visible Slot's Dopesheet still had global DrawOrder
+scope. The compound candidate above addresses presentation; its native acceptance,
+full Region pose controls/picking and
 single-owner-header styling remain gaps. This adds no native inactive/pending/
 constraint-remap or minimum-window claim; those guards have headless coverage
 and prior grouped minimum evidence stays separate. General Tree/Shift/Offset/

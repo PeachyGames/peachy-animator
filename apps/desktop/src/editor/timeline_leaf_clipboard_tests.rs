@@ -254,7 +254,12 @@ fn leaf_clipboard_explicit_bone_slot_and_region_pose_targets_override_the_origin
             );
             assert_eq!(
                 editor.key_selection.shown().owners,
-                vec![KeyOwner::Bone { bone: target }]
+                vec![
+                    KeyOwner::Bone { bone: target },
+                    KeyOwner::Slot { slot: 12 },
+                    KeyOwner::Slot { slot: 0 },
+                    KeyOwner::DrawOrder {},
+                ]
             );
             assert!(
                 editor
@@ -662,7 +667,12 @@ fn leaf_clipboard_inactive_explicit_slot_and_region_refuse_before_original_sourc
             assert_eq!(editor.timeline_owner(), Some(KeyOwner::Bone { bone: 7 }));
             assert_eq!(
                 editor.key_selection.shown().readonly_owners,
-                vec![KeyOwner::Bone { bone: 7 }]
+                vec![
+                    KeyOwner::Bone { bone: 7 },
+                    KeyOwner::Slot { slot: 12 },
+                    KeyOwner::Slot { slot: 0 },
+                    KeyOwner::DrawOrder {},
+                ]
             );
             assert!(editor.key_selection.is_empty());
             assert!(editor.graph_owner().is_none());

@@ -320,8 +320,9 @@ impl Editor {
         let retained = self.graph.owner.as_ref()?;
         (!self.setup_mode
             && retained.animation == self.animation
-            && retained.presentation == self.selection)
-            .then(|| retained.owner.clone())
+            && retained.presentation == self.selection
+            && self.graph_owner_in_scope(&retained.owner))
+        .then(|| retained.owner.clone())
     }
     pub(super) fn reconcile_retained_graph_owner(&mut self) {
         if self.graph.owner.is_some() && self.retained_graph_owner().is_none() {
